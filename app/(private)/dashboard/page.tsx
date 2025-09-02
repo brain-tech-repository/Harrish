@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Main from "./main";
 import Sidebar from "./sidebar";
 import TopBar from "./topBar";
 
 const DashboardPage = () => {
 
-    const [horizontalSidebar, setHorizontalSidebar] = useState(
-        localStorage.getItem("horizontalSidebar") === "true"
+    const [horizontalSidebar, setHorizontalSidebar] = useState<boolean>(
+       true
     );
 
     const toggleSidebar = () => {
-        localStorage.setItem(
+        localStorage?.setItem(
             "horizontalSidebar",
             (!horizontalSidebar).toString()
         );
         setHorizontalSidebar(!horizontalSidebar);
     };
+
+
+    useEffect(()=>{
+      setHorizontalSidebar( localStorage?.getItem("horizontalSidebar") === 'true')
+    },[])
 
     return (
         <div className="h-[100vh] w-[100%] m-auto overflow-scroll bg-[#FAFAFA]">

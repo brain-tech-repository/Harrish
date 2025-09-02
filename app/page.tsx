@@ -1,9 +1,8 @@
 import Link from "next/link";
+import LoginPage from "./(public)/login/page";
 
 export default function Home() {
   return (
-      <Link href="/pages/login" className="text-blue-500 hover:underline text-2xl">
-        Login Page
-      </Link>
+      <LoginPage/>
   );
 }
