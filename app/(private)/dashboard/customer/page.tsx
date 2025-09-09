@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import BorderIconButton from "@/app/components/borderIconButton";
 import SearchBar from "../searchBar";
 import { Icon } from "@iconify-icon/react";
@@ -123,9 +123,10 @@ export default function Customer() {
                         <div className="w-[320px]">
                             <SearchBar />
                         </div>
-                        <button
+                        <Link href="/dashboard/customer/add">
+                              <button
                             className="rounded-lg bg-[#EA0A2A] text-white px-4 py-[10px] flex items-center gap-[8px]"
-                            onClick={() => alert("Add Customer")}
+                          
                         >
                             <Icon icon="tabler:plus" width={20} />
                             <span className="md:block hidden">
@@ -135,6 +136,8 @@ export default function Customer() {
                                 Add
                             </span>
                         </button>
+                        </Link>
+                  
                     </div>
 
                     <div className="overflow-x-auto rounded-lg border border-[#E9EAEB]">

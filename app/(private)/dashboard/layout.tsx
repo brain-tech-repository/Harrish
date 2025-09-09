@@ -127,7 +127,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <div className="h-[100vh] w-[100%] m-auto overflow-scroll bg-[#FAFAFA]">
+        <div className=" w-[100%] m-auto overflow-scroll bg-[#FAFAFA]">
             {!horizontalSidebar && <Sidebar data={sidebarData} onClickHandler={handleLinkClick} />}
             <TopBar
                 horizontalSidebar={horizontalSidebar}
