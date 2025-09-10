@@ -32,6 +32,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "lucide:user",
                 iconColor: "text-green-500"
             },
+             {
+                isActive: false,
+                href: "/dashboard/company",
+                label: "Company",
+                leadingIcon: "lucide:user",
+                iconColor: "text-green-500"
+            },
             {
                 isActive: false,
                 href: "/dashboard/landmark",
