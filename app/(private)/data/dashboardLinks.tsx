@@ -32,6 +32,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "lucide:user",
                 iconColor: "text-green-500"
             },
+             {
+                isActive: false,
+                href: "/dashboard/company",
+                label: "Company",
+                leadingIcon: "lucide:user",
+                iconColor: "text-green-500"
+            },
             {
                 isActive: false,
                 href: "/dashboard/landmark",
@@ -57,6 +64,20 @@ export const initialLinkData: SidebarDataType[] = [
                 label: "Masters",
                 leadingIcon: "hugeicons:workflow-square-06",
                 trailingIcon: "mdi-light:chevron-right",
+                iconColor: "text-yellow-400"
+            },
+            {
+                isActive: false,
+                href: "/dashboard/route",
+                label: "Route",
+                leadingIcon: "mdi:map",
+                iconColor: "text-yellow-400"
+            },
+            {
+                isActive: false,
+                href: "/dashboard/vehicle",
+                label: "Vehicle",
+                leadingIcon: "mdi:car",
                 iconColor: "text-yellow-400"
             },
             {

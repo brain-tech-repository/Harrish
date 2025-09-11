@@ -1,5 +1,5 @@
 "use client";
-import { ActionDispatch, createContext, useReducer, useState } from "react";
+import { ActionDispatch, createContext, useReducer } from "react";
 import SettingsReducer from "../utils/settingsReducer";
 import { initialSettingsData, SettingsDataType } from "../data/settings";
 

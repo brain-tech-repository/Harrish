@@ -2,7 +2,7 @@
 
 export default function Toggle({
     label,
-    isChecked,
+    isChecked = true,
     onChange,
 }: {
     label?: string;
