@@ -1,15 +1,18 @@
 "use client";
-
+import CustomPasswordInput from "@/app/components/customPasswordInput";
 import { useState } from "react";
 import InputFields from "@/app/components/inputFields";
 
-export default function CustomerContactDetails() {
+export default function SalesmanContactDetails() {
   const [primaryCode, setPrimaryCode] = useState("uae");
   const [primaryContact, setPrimaryContact] = useState("");
   const [secondaryCode, setSecondaryCode] = useState("uae");
   const [secondaryContact, setSecondaryContact] = useState("");
+    const [mobileDevice, setMobileDevice] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+    const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
-
+ const [password, setPassword] = useState("uae");
   const countryOptions = [
     { value: "uae", label: "UAE" },
     { value: "in", label: "India" },
@@ -72,6 +75,21 @@ export default function CustomerContactDetails() {
           />
         </div>
       </div>
+                                      <InputFields
+        label="Mobile Device"
+        value={mobileDevice}
+        onChange={(e) => setMobileDevice(e.target.value)}
+      />
+       <InputFields
+        label="Divice ID"
+        value={deviceId}
+        onChange={(e) => setDeviceId(e.target.value)}
+      />
+ <InputFields
+        label="User Name"
+        value={userName}
+        onChange={(e) => setUserName(e.target.value)}
+      />
 
       {/* Email */}
       <InputFields
@@ -79,6 +97,14 @@ export default function CustomerContactDetails() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+       <CustomPasswordInput
+                                          label="Password"
+                                          value={password}
+                                          onChange={(e) =>
+                                              setPassword(e.target.value)
+                                          }
+                                      />
+       
     </div>
   );
 }
