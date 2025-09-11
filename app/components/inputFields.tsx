@@ -25,6 +25,7 @@ export default function InputFields({
   options,
   type = "text",
 }: Props) {
+
   return (
     <div className="flex flex-col gap-2 w-full max-w-[406px]">
       <label

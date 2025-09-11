@@ -34,6 +34,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "lucide:user",
                 iconColor: "text-green-500"
             },
+            {
+                isActive: false,
+                href: "/dashboard/salesman",
+                label: "Salesman",
+                leadingIcon: "lucide:user",
+                iconColor: "text-green-500"
+            },
             
             
         ],
@@ -110,6 +117,7 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "hugeicons:transaction",
                 iconColor: "text-fuchsia-500"
             },
+            
                
         ],
     },
