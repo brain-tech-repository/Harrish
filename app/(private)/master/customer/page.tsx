@@ -124,11 +124,7 @@ export default function Customer() {
                         <div className="w-[320px]">
                             <SearchBar />
                         </div>
-<<<<<<< HEAD:app/(private)/dashboard/customer/page.tsx
-                        <Link href="/dashboard/customer/addCustomer">
-=======
                         <Link href="/master/customer/add">
->>>>>>> e82252310e53a4795e1e5c162785b6150e577644:app/(private)/master/customer/page.tsx
                               <button
                             className="rounded-lg bg-[#EA0A2A] text-white px-4 py-[10px] flex items-center gap-[8px]"
                           
