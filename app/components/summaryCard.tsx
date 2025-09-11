@@ -2,7 +2,7 @@
 
 import { Icon } from "@iconify-icon/react";
 
-export default function InfoCard({
+export default function SummaryCard({
     icon,
     iconWidth = 30,
     className,
