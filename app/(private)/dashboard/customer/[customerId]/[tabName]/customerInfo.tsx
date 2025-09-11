@@ -2,14 +2,14 @@
 
 import ContainerCard from "@/app/components/containerCard";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import InfoCard from "@/app/components/InfoCard";
 import KeyValueData from "../keyValueData";
+import SummaryCard from "@/app/components/summaryCard";
 
 export default function CustomerInfo() {
     return (
         <div className="flex gap-[20px] w-full">
             <ContainerCard className="w-[350px] space-y-[30px]">
-                <InfoCard
+                <SummaryCard
                     icon="fa6-solid:building-wheat"
                     iconWidth={40}
                     iconCircleTw="flex item-center justify-center bg-[#E9EAEB] text-[#535862] w-[80px] h-[80px] p-[20px]"

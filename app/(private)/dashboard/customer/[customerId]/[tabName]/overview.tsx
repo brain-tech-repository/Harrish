@@ -4,8 +4,7 @@ import { useParams } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
 import Toggle from "@/app/components/toggle";
 import { useState } from "react";
-// import InfoCard from "@/app/components/infoCard";
-import InfoCard from "@/app/components/InfoCard";
+import SummaryCard from "@/app/components/summaryCard";
 
 export default function Overview() {
     const { tabName } = useParams();
@@ -70,7 +69,7 @@ export default function Overview() {
                     </ContainerCard>
 
                     <ContainerCard className="w-full sm:w-[400px] h-[183px] bg-gradient-to-r from-[#E7ECFF] to-[#FFFFFF]">
-                        <InfoCard
+                        <SummaryCard
                             className="justify-between"
                             icon="mingcute:bill-fill"
                             iconCircleTw="bg-[#487FFF] text-white w-[60px] h-[60px] p-[15px]"
@@ -80,7 +79,7 @@ export default function Overview() {
                                 isChecked={isDataShareChecked}
                                 onChange={() => setIsDataShareChecked(!isDataShareChecked)}
                             />
-                        </InfoCard>
+                        </SummaryCard>
 
                         <div className="mt-[17px] text-[16px] text-[#181D27]">
                             <span className="font-semibold">Client Portal</span>
@@ -120,7 +119,7 @@ export default function Overview() {
                             Transaction & Promotion
                         </div>
                         <ContainerCard className="w-full mb-[25px] bg-gradient-to-r from-[#E7FAFF] to-[#FFFFFF]">
-                            <InfoCard
+                            <SummaryCard
                                 icon="prime:barcode"
                                 iconCircleTw="bg-[#00B8F2] text-white w-[60px] h-[60px] p-[15px]"
                                 iconWidth={30}
@@ -155,7 +154,7 @@ export default function Overview() {
                             Financial Information
                         </div>
                         <ContainerCard className="w-full mb-[25px] bg-gradient-to-r from-[#FFEFEF] to-[#FFFFFF]">
-                            <InfoCard
+                            <SummaryCard
                                 icon="iconoir:wallet-solid"
                                 iconWidth={30}
                                 title={

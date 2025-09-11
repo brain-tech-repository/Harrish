@@ -35,36 +35,6 @@ export default function InputFields({
                 {label}
             </label>
 
-<<<<<<< HEAD
-      {options && options.length > 0 ? (
-        <select
-          id={label}
-          value={value}
-          onChange={onChange}
-          className="border border-gray-300 rounded-md px-3 mt-[6px] h-[44px] w-full"
-     
-        >
-          <option value="">{`Select ${label}`}</option>
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          id={label}
-          type="text"
-          value={value}
-          onChange={onChange}
-          className="border border-gray-300 rounded-md px-3 mt-[6px] h-[44px]"
-      
-          placeholder={`Enter ${label}`}  // ✅ moved here
-        />
-      )}
-    </div>
-  );
-=======
             {(options && options.length > 0) ? (
                 <select
                     id={label}
@@ -101,5 +71,5 @@ export default function InputFields({
 
         </div>
     );
->>>>>>> fe1e7808dff555d008c30b52b3f59a6517be6d49
+
 }
