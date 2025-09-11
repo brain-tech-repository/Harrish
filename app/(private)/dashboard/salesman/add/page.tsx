@@ -3,12 +3,12 @@
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import ContainerCard from "@/app/components/containerCard";
-import CustomerDetailsForm from "./customerDetailsForm";
-import CustomerContactDetails from "./customerContactDetails";
-import CustomerLocationInformation from "./customerLocationInformation";
-import CustomerFinancialInformation from "./customerFinancialInformation";
-import CustomerTransactionPromotion from "./customerTransactionPromotion";
-import CustomerAdditionalInformation from "./customerAdditionalInformation";
+import SalesmanDetailsForm from "./salesmanDetailsForm";
+import SalesmanContactDetails from "./salesmanContactDetails";
+// import CustomerLocationInformation from "./customerLocationInformation";
+// import CustomerFinancialInformation from "./customerFinancialInformation";
+// import CustomerTransactionPromotion from "./customerTransactionPromotion";
+import SalesmanAdditionalInformation from "./salesmanAdditionalInformation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 export default function AddCustomer() {
 
@@ -17,11 +17,11 @@ export default function AddCustomer() {
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
                 <div className="flex items-center gap-[16px]">
-                    <Link href="/dashboard/customer">
+                    <Link href="/dashboard/salesman">
                         <Icon icon="lucide:arrow-left" width={24} />
                     </Link>
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-                        Add New Customer
+                        Add New Salesman
                     </h1>
                 </div>
             </div>
@@ -29,21 +29,24 @@ export default function AddCustomer() {
             {/* content */}
             <div>
                 <ContainerCard>
-                    <h2 className=" text-gray-700  font-medium mb-6">Customer Details</h2>
-                    <CustomerDetailsForm />
+                    <h2 className="text-lg font-semibold mb-6">Salesman Details</h2>
+                    <SalesmanDetailsForm />
                 </ContainerCard>
 
                 <ContainerCard>
                     <h2 className="text-lg font-semibold mb-6">Contact</h2>
-                    <CustomerContactDetails />
+                    <SalesmanContactDetails />
                 </ContainerCard>
-
-                <ContainerCard>
+   <ContainerCard>
+                    <h2 className="text-lg font-semibold mb-6">Additional Information</h2>
+                    <SalesmanAdditionalInformation /> 
+                 </ContainerCard>
+                {/* <ContainerCard>
                     <h2 className="text-lg font-semibold mb-6">Location Information</h2>
                     <CustomerLocationInformation />
-                </ContainerCard>
+                </ContainerCard> */}
 
-                <ContainerCard>
+                {/* <ContainerCard>
                     <h2 className="text-lg font-semibold mb-6">Financial Information </h2>
                     <CustomerFinancialInformation />
                 </ContainerCard>
@@ -55,8 +58,8 @@ export default function AddCustomer() {
 
                 <ContainerCard>
                     <h2 className="text-lg font-semibold mb-6">Additional Information</h2>
-                    <CustomerAdditionalInformation />
-                </ContainerCard>
+                    <CustomerAdditionalInformation /> */}
+                {/* </ContainerCard> */}
 
                 <div className="flex justify-end gap-3 mt-6">
                     {/* Cancel button */}

@@ -30,7 +30,7 @@ export default function InputFields({
         <div className="flex flex-col gap-2">
             <label
                 htmlFor={label}
-                className="text-sm font-medium text-gray-700"
+                className=" font-medium text-gray-700 "
             >
                 {label}
             </label>

@@ -102,6 +102,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "mingcute:bill-line",
                 iconColor: "text-violet-500"
             },
+                {
+                isActive: false,
+                href: "/dashboard/salesman",
+                label: "Salesman",
+                leadingIcon: "mingcute:bill-line",
+                iconColor: "text-violet-500"
+            },
             {
                 isActive: false,
                 href: "/dashboard/harissTransaction",
@@ -109,6 +116,7 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "hugeicons:transaction",
                 iconColor: "text-fuchsia-500"
             },
+            
                
         ],
     },
