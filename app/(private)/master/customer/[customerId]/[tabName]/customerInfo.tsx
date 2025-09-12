@@ -4,23 +4,11 @@ import ContainerCard from "@/app/components/containerCard";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "../keyValueData";
 import SummaryCard from "@/app/components/summaryCard";
-import Table from "@/app/components/customTable";
+import Table, { TableDataType } from "@/app/components/customTable";
 
-export type tableDataType = {
-    id: number;
-    title: string;
-    address: string;
-    country: string;
-    city: string;
-    globalPosition: string;
-    route: string;
-    phoneNumber: string;
-    landmark: string;
-};
-
-const tableData: tableDataType[] = new Array(3).fill(null).map((_, i) => ({
-    id: i + 1,
-    title: "Title here",
+const tableData = new Array(3).fill(null).map((_, i) => ({
+    id: i.toString(),
+    title: `Title here ${i +1}`,
     address: "Cedre Villa K Addres Line 1 Here, Addres Line 2 Here,",
     country: `UAE`,
     city: `DUB`,
@@ -34,8 +22,8 @@ const columns = [
     {
         key: "title",
         label: "Title",
-        render: (value: string) => (
-            <span className="font-semibold text-[#181D27] text-[14px]">{value}</span>
+        render: (row: TableDataType) => (
+            <span className="font-semibold text-[#181D27] text-[14px]">{row.title}</span>
         ),
     },
     { key: "address", label: "Address", width: 200 },
@@ -202,7 +190,7 @@ export default function CustomerInfo() {
                                 },
                                 {
                                     icon: "lucide:trash-2",
-                                    onClick: (data) => {
+                                    onClick: () => {
                                         confirm(
                                             "Are you sure you want to delete this customer?"
                                         );

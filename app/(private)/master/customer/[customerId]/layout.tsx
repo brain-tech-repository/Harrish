@@ -6,9 +6,8 @@ import CustomDropdown from "@/app/components/customDropdown";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn";
 import { Icon } from "@iconify-icon/react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { tabs } from "./[tabName]/page";
 
 const dropdownDataList = [
     { icon: "humbleicons:radio", label: "Inactive", iconWidth: 20 },

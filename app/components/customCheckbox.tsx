@@ -45,7 +45,7 @@ export default function CustomCheckbox({
     );
 
     return (
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center ${label && "gap-3"}`}>
             <input
                 type="checkbox"
                 id={id}
