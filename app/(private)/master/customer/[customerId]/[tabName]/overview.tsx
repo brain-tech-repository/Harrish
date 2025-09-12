@@ -1,6 +1,5 @@
 import ContainerCard from "@/app/components/containerCard";
 import KeyValueData from "../keyValueData";
-import { useParams } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
 import Toggle from "@/app/components/toggle";
 import { useState } from "react";

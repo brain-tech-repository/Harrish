@@ -102,7 +102,7 @@ export default function Role() {
                         <div className="w-[320px]">
                             <SearchBar />
                         </div>
-                        <Link href="/master/role/add">
+                        {/* <Link href="/master/role/add">
                             <button
                                 className="rounded-lg bg-[#EA0A2A] text-white px-4 py-[10px] flex items-center gap-[8px] cursor-pointer"
                                 onClick={() => {}}
@@ -115,7 +115,7 @@ export default function Role() {
                                     Add
                                 </span>
                             </button>
-                        </Link>
+                        </Link> */}
                     </div>
 
                     <div className="overflow-x-auto rounded-lg border border-[#E9EAEB]">

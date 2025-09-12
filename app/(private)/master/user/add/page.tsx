@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import InputFields from "@/app/components/inputFields";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import CustomPasswordInput from "@/app/components/customPasswordInput";
 
 export default function AddUser() {
   const [userName, setUserName] = useState("");
@@ -85,11 +86,12 @@ export default function AddUser() {
 
               </div>
               <div>
-                <InputFields
-                  label="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                 <CustomPasswordInput
+                          label="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+               
 
               </div>
 

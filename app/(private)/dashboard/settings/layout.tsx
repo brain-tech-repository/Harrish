@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { SettingsContext, SettingsContextValue } from "../contexts";
 import { useContext } from "react";

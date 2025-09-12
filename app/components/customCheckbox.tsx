@@ -6,7 +6,7 @@ export default function CustomCheckbox({
     onChange,
 }: {
     id: string;
-    label: string | any;
+    label: string | React.ReactNode;
     checked: boolean;
     indeterminate?: boolean;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
