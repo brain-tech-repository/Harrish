@@ -132,13 +132,14 @@ function TableContainer() {
 
 function TableHeader() {
     const { header } = useContext(Config);
+    const [searchBarValue, setSearchBarValue] = useState("");
 
     return (
         header && (
             <>
                 <div className="px-[24px] py-[20px] w-full flex justify-between items-center gap-1 sm:gap-0">
                     <div className="w-[320px]">
-                        {header?.searchBar && <SearchBar />}
+                        {header?.searchBar && <SearchBar value={searchBarValue} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchBarValue(e.target.value)} />}
                     </div>
 
                     {/* actions */}
