@@ -10,47 +10,47 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 
 const data = new Array(100).fill(null).map((_, i) => ({
     id: (i + 1).toString(),
-    salesmanCode: "AC0001604",
+    code: "AC0001604",
     sapId: "-",
-    salesmanName: `Abdul Retail Shop ${i + 1}`,
-    salesmanType: `Musinguzi Abdul`,
-    salesmanSubType: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
-    joiningDate: "20/04/2005",
+    customerName: `Abdul Retail Shop ${i + 1}`,
+    ownerName: `Musinguzi Abdul`,
+    depotName: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
+    depotLocation: "Ggaba",
     phoneNumber: "0789517400, 0702563915",
-    mobileDivice: "Kansanga Road",
-    diviceId: "kampala",
-    salesmanRoute: "RT0671",
+    address: "Kansanga Road",
+    district: "kampala",
+    route: "RT0671",
     status: "Active",
 }));
 
 const columns = [
     {
-        key: "salesmanCode",
-        label: "Salesmancode",
+        key: "code",
+        label: "Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.salesmanCode}
+                {row.code}
             </span>
         ),
     },
     { key: "sapId", label: "Sap ID" },
     {
-        key: "salesmanName",
-        label: "Salesman Name",
+        key: "customerName",
+        label: "Customer Name",
         render: (row: TableDataType) => (
             <Link
-                href={`/master/customer/${row.id}/overview`}
+                href={`/dashboard/master/customer/${row.id}/overview`}
                 className="flex items-center cursor-pointer hover:text-[#EA0A2A]"
             >
-                {row.salesmanName}
+                {row.customerName}
             </Link>
         ),
         isSortable: true,
     },
-    { key: "salesmanType", label: "Salesman Type", isSortable: true },
+    { key: "ownerName", label: "Owner Name", isSortable: true },
     {
-        key: "salesmanSubType",
-        label: "Salesman Sub Type",
+        key: "depotName",
+        label: "Depot Name",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
@@ -60,23 +60,23 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanSubType}
+                            {row.depotId}
                         </span>
                         <span className="w-full overflow-hidden text-ellipsis">
-                            {row.salesmanSubType}
+                            {row.depotName}
                         </span>
                     </div>
                 )),
         },
         width: 218,
     },
-    { key: "joiningDate", label: "Joining Date", isSortable: true },
+    { key: "depotLocation", label: "Depot Location", isSortable: true },
     { key: "phoneNumber", label: "Phone Number", width: 150 },
-    { key: "mobileDivice", label: "Mobile Divice" },
-    { key: "diviceId", label: "Divice Id" },
+    { key: "address", label: "Address" },
+    { key: "district", label: "District" },
     {
-        key: "salesmanRoute",
-        label: "Salesman Route",
+        key: "route",
+        label: "Route",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
@@ -86,7 +86,8 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanRoute}
+                            
+                            
                         </span>
                     </div>
                 )),
@@ -126,7 +127,7 @@ export default function Customer() {
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
                 <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
-                 Salesman
+                    Customer
                 </h1>
 
                 {/* top bar action buttons */}
@@ -177,10 +178,10 @@ export default function Customer() {
                             actions: [
                                 <SidebarBtn
                                     key={0}
+                                    href="/dashboard/master/customer/add"
                                     isActive={true}
                                     leadingIcon="lucide:plus"
-                                    label="Add Salsman"
-                                    href="/dashboard/salesman/add"
+                                    label="Add Item"
                                 />,
                             ],
                         },

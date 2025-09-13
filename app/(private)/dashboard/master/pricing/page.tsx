@@ -4,110 +4,65 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
 import CustomDropdown from "@/app/components/customDropdown";
-import Link from "next/link";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 
-const data = new Array(100).fill(null).map((_, i) => ({
+const data = new Array(10).fill(null).map((_, i) => ({
     id: (i + 1).toString(),
-    salesmanCode: "AC0001604",
-    sapId: "-",
-    salesmanName: `Abdul Retail Shop ${i + 1}`,
-    salesmanType: `Musinguzi Abdul`,
-    salesmanSubType: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
-    joiningDate: "20/04/2005",
-    phoneNumber: "0789517400, 0702563915",
-    mobileDivice: "Kansanga Road",
-    diviceId: "kampala",
-    salesmanRoute: "RT0671",
-    status: "Active",
+    OSACode: "AC0001604",
+    pricingPlanName: "Standard Price",
+    pricingPlanDesc: "Standard Price Description",
+    fromDate: `2023-10-${i + 1 < 10 ? "0" : ""}${i + 1}`,
+    toDate: `2024-12-${i + 1 < 10 ? "0" : ""}${i + 1}`,
+    applyOn: "Item",
 }));
 
 const columns = [
     {
-        key: "salesmanCode",
-        label: "Salesmancode",
+        key: "OSACode",
+        label: "OSA Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.salesmanCode}
+                {row.OSACode}
             </span>
         ),
     },
-    { key: "sapId", label: "Sap ID" },
+    { key: "pricingPlanName", label: "Pricing Plan Name" },
     {
-        key: "salesmanName",
-        label: "Salesman Name",
-        render: (row: TableDataType) => (
-            <Link
-                href={`/master/customer/${row.id}/overview`}
-                className="flex items-center cursor-pointer hover:text-[#EA0A2A]"
-            >
-                {row.salesmanName}
-            </Link>
-        ),
+        key: "pricingPlanDesc",
+        label: "Pricing Plan Desc",
+    },
+    { key: "fromDate", label: "From Date" },
+    {
+        key: "toDate",
+        label: "To Date",
         isSortable: true,
     },
-    { key: "salesmanType", label: "Salesman Type", isSortable: true },
     {
-        key: "salesmanSubType",
-        label: "Salesman Sub Type",
+        key: "applyOn",
+        label: "Apply On",
         filter: {
             isFilterable: true,
-            render: (data: TableDataType[]) =>
-                data.map((row: TableDataType, index: number) => (
-                    <div
-                        key={index}
-                        className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
-                    >
-                        <span className="font-[500] text-[#181D27]">
-                            {row.salesmanSubType}
-                        </span>
-                        <span className="w-full overflow-hidden text-ellipsis">
-                            {row.salesmanSubType}
-                        </span>
-                    </div>
-                )),
+            render: (data: TableDataType[]) => (
+                <>
+                    {["Customer", "Channel", "Category"].map((item, index) => {
+                        return (
+                            <div
+                            key={index+1}
+                            className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
+                        >
+                            <span className="font-[500] text-[#181D27]">
+                                {index}
+                            </span>
+                            <span className="w-full overflow-hidden text-ellipsis">
+                                {item}
+                            </span>
+                        </div>
+                        );
+                    })}
+                </>
+            ),
         },
-        width: 218,
-    },
-    { key: "joiningDate", label: "Joining Date", isSortable: true },
-    { key: "phoneNumber", label: "Phone Number", width: 150 },
-    { key: "mobileDivice", label: "Mobile Divice" },
-    { key: "diviceId", label: "Divice Id" },
-    {
-        key: "salesmanRoute",
-        label: "Salesman Route",
-        filter: {
-            isFilterable: true,
-            render: (data: TableDataType[]) =>
-                data.map((row: TableDataType, index: number) => (
-                    <div
-                        key={index}
-                        className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
-                    >
-                        <span className="font-[500] text-[#181D27]">
-                            {row.salesmanRoute}
-                        </span>
-                    </div>
-                )),
-        },
-    },
-    {
-        key: "status",
-        label: "Status",
-        render: (row: TableDataType) => (
-            <div className="flex items-center">
-                {row.status ? (
-                    <span className="text-sm text-[#027A48] bg-[#ECFDF3] font-[500] p-1 px-4 rounded-xl text-[12px]">
-                        Active
-                    </span>
-                ) : (
-                    <span className="text-sm text-red-700 bg-red-200 p-1 px-4 rounded-xl text-[12px]">
-                        Inactive
-                    </span>
-                )}
-            </div>
-        ),
     },
 ];
 
@@ -126,7 +81,7 @@ export default function Customer() {
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
                 <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
-                 Salesman
+                    Pricing
                 </h1>
 
                 {/* top bar action buttons */}
@@ -179,8 +134,8 @@ export default function Customer() {
                                     key={0}
                                     isActive={true}
                                     leadingIcon="lucide:plus"
-                                    label="Add Salsman"
-                                    href="/dashboard/salesman/add"
+                                    label="Add Pricing Plan"
+                                    href="/dashboard/master/pricing/add"
                                 />,
                             ],
                         },

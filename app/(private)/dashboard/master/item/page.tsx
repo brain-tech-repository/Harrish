@@ -1,56 +1,55 @@
+
 "use client";
 
 import BorderIconButton from "@/app/components/borderIconButton";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
 import CustomDropdown from "@/app/components/customDropdown";
-import Link from "next/link";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 
 const data = new Array(100).fill(null).map((_, i) => ({
-    id: (i + 1).toString(),
-    salesmanCode: "AC0001604",
-    sapId: "-",
-    salesmanName: `Abdul Retail Shop ${i + 1}`,
-    salesmanType: `Musinguzi Abdul`,
-    salesmanSubType: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
-    joiningDate: "20/04/2005",
-    phoneNumber: "0789517400, 0702563915",
-    mobileDivice: "Kansanga Road",
-    diviceId: "kampala",
-    salesmanRoute: "RT0671",
+    itemCode: "AC0001604",
+    sapId: "500-0001604",
+    hsnCode: "1001", 
+    itemName: 'Test Item',
+    itemDescription: `This is a description for item ${i + 1}`,
+    itemCategory: 'Beverages',
+    itemSubCategory: 'Soft Drinks',
+    itemGroup: 'Non-Alcoholic',
+    itemUPC: `123456789012`,
+    itemUom: 'Pieces',
+    itemBasePrice: '100.00',
+    exciseCode: 'EXC123',
+    shelfLife: '12 months',
     status: "Active",
 }));
 
 const columns = [
     {
-        key: "salesmanCode",
-        label: "Salesmancode",
+        key: "itemCode",
+        label: "Item Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.salesmanCode}
+                {row.itemCode}
             </span>
         ),
     },
     { key: "sapId", label: "Sap ID" },
+    { key: "hsnCode", label: "HSN Code" },
+   
     {
-        key: "salesmanName",
-        label: "Salesman Name",
-        render: (row: TableDataType) => (
-            <Link
-                href={`/master/customer/${row.id}/overview`}
-                className="flex items-center cursor-pointer hover:text-[#EA0A2A]"
-            >
-                {row.salesmanName}
-            </Link>
-        ),
+        key: "itemName",
+        label: "Item Name",
         isSortable: true,
     },
-    { key: "salesmanType", label: "Salesman Type", isSortable: true },
     {
-        key: "salesmanSubType",
-        label: "Salesman Sub Type",
+        key: "itemDescription",
+        label: "Item Description",
+    },
+    {
+        key: "itemCategory",
+        label: "Item Category",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
@@ -60,23 +59,17 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanSubType}
+                            {row.itemCategory}
                         </span>
-                        <span className="w-full overflow-hidden text-ellipsis">
-                            {row.salesmanSubType}
-                        </span>
+                        
                     </div>
                 )),
         },
         width: 218,
     },
-    { key: "joiningDate", label: "Joining Date", isSortable: true },
-    { key: "phoneNumber", label: "Phone Number", width: 150 },
-    { key: "mobileDivice", label: "Mobile Divice" },
-    { key: "diviceId", label: "Divice Id" },
     {
-        key: "salesmanRoute",
-        label: "Salesman Route",
+        key: "itemSubCategory",
+        label: "Item Sub Category",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
@@ -86,12 +79,21 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanRoute}
+                            {row.itemSubCategory}
                         </span>
+                        
                     </div>
                 )),
         },
+        width: 218,
     },
+    { key: "itemGroup", label: "Item Group"},
+    { key: "itemUPC", label: "Item UPC" },
+    { key: "itemUom", label: "Item Uom" },
+    { key: "itemBasePrice", label: "Item Base Price" },
+    { key: "exciseCode", label: "Excise Code" },
+    { key: "shelfLife", label: "Shelf Life" },
+   
     {
         key: "status",
         label: "Status",
@@ -119,14 +121,14 @@ const dropdownDataList = [
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
-export default function Customer() {
+export default function Item() {
     const [showDropdown, setShowDropdown] = useState(false);
     return (
         <>
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
                 <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
-                 Salesman
+                    Item
                 </h1>
 
                 {/* top bar action buttons */}
@@ -178,9 +180,9 @@ export default function Customer() {
                                 <SidebarBtn
                                     key={0}
                                     isActive={true}
+                                     href="/dashboard/master/item/add"
                                     leadingIcon="lucide:plus"
-                                    label="Add Salsman"
-                                    href="/dashboard/salesman/add"
+                                    label="Add Item"
                                 />,
                             ],
                         },
@@ -204,7 +206,7 @@ export default function Customer() {
                                 icon: "lucide:more-vertical",
                                 onClick: () => {
                                     confirm(
-                                        "Are you sure you want to delete this customer?"
+                                        "Are you sure you want to delete this item?"
                                     );
                                 },
                             },

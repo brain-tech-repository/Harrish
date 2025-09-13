@@ -4,54 +4,30 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
 import CustomDropdown from "@/app/components/customDropdown";
-import Link from "next/link";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 
 const data = new Array(100).fill(null).map((_, i) => ({
     id: (i + 1).toString(),
-    salesmanCode: "AC0001604",
-    sapId: "-",
-    salesmanName: `Abdul Retail Shop ${i + 1}`,
-    salesmanType: `Musinguzi Abdul`,
-    salesmanSubType: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
-    joiningDate: "20/04/2005",
-    phoneNumber: "0789517400, 0702563915",
-    mobileDivice: "Kansanga Road",
-    diviceId: "kampala",
-    salesmanRoute: "RT0671",
+    routeCode: "AC0001604",
+    routeName: `Abdul Retail Shop`,
+    depotName: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
+    routeType: `DP01 - Zuwote Trading Group Ltd - Ggaba`,
     status: "Active",
 }));
 
 const columns = [
     {
-        key: "salesmanCode",
-        label: "Salesmancode",
+        key: "routeCode",
+        label: "Route Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.salesmanCode}
+                {row.routeCode}
             </span>
         ),
     },
-    { key: "sapId", label: "Sap ID" },
-    {
-        key: "salesmanName",
-        label: "Salesman Name",
-        render: (row: TableDataType) => (
-            <Link
-                href={`/master/customer/${row.id}/overview`}
-                className="flex items-center cursor-pointer hover:text-[#EA0A2A]"
-            >
-                {row.salesmanName}
-            </Link>
-        ),
-        isSortable: true,
-    },
-    { key: "salesmanType", label: "Salesman Type", isSortable: true },
-    {
-        key: "salesmanSubType",
-        label: "Salesman Sub Type",
-        filter: {
+    { key: "routeName", label: "Route Name" ,isSortable: true },
+    { key: "depotName", label: "Deopt Name" ,filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
                 data.map((row: TableDataType, index: number) => (
@@ -60,24 +36,15 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanSubType}
+                            {row.depotName}
                         </span>
-                        <span className="w-full overflow-hidden text-ellipsis">
-                            {row.salesmanSubType}
-                        </span>
+                       
                     </div>
                 )),
+                width:218,
         },
-        width: 218,
-    },
-    { key: "joiningDate", label: "Joining Date", isSortable: true },
-    { key: "phoneNumber", label: "Phone Number", width: 150 },
-    { key: "mobileDivice", label: "Mobile Divice" },
-    { key: "diviceId", label: "Divice Id" },
-    {
-        key: "salesmanRoute",
-        label: "Salesman Route",
-        filter: {
+},
+    { key: "routeType", label: "Route Type" ,filter: {
             isFilterable: true,
             render: (data: TableDataType[]) =>
                 data.map((row: TableDataType, index: number) => (
@@ -86,12 +53,17 @@ const columns = [
                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                     >
                         <span className="font-[500] text-[#181D27]">
-                            {row.salesmanRoute}
+                            {row.routeType}
                         </span>
+                       
                     </div>
                 )),
         },
-    },
+         width:218,
+},
+   
+    
+
     {
         key: "status",
         label: "Status",
@@ -119,14 +91,14 @@ const dropdownDataList = [
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
-export default function Customer() {
+export default function Route() {
     const [showDropdown, setShowDropdown] = useState(false);
     return (
         <>
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
                 <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
-                 Salesman
+                    Route
                 </h1>
 
                 {/* top bar action buttons */}
@@ -178,9 +150,9 @@ export default function Customer() {
                                 <SidebarBtn
                                     key={0}
                                     isActive={true}
+                                     href="/dashboard/master/route/add"
                                     leadingIcon="lucide:plus"
-                                    label="Add Salsman"
-                                    href="/dashboard/salesman/add"
+                                    label="Add Route"
                                 />,
                             ],
                         },
@@ -204,7 +176,7 @@ export default function Customer() {
                                 icon: "lucide:more-vertical",
                                 onClick: () => {
                                     confirm(
-                                        "Are you sure you want to delete this customer?"
+                                        "Are you sure you want to delete this route?"
                                     );
                                 },
                             },
