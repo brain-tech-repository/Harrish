@@ -26,12 +26,6 @@ export default function Settings({children}:{children: React.ReactNode}) {
                         href="/dashboard/settings/userRole"
                     />
                     <SidebarBtn
-                        label="Change Password"
-                        leadingIcon="mynaui:lock"
-                        leadingIconSize={20}
-                        href="/dashboard/settings/changePassword"
-                    />
-                    <SidebarBtn
                         label="Master Data"
                         leadingIcon="tabler:database"
                         leadingIconSize={20}

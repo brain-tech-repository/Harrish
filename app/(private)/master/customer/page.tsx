@@ -177,6 +177,7 @@ export default function Customer() {
                             actions: [
                                 <SidebarBtn
                                     key={0}
+                                    href="/master/customer/add"
                                     isActive={true}
                                     leadingIcon="lucide:plus"
                                     label="Add Customer"

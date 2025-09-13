@@ -59,8 +59,10 @@ export default function TopBar({
                             alt="Profile Picture"
                             src="/dummyuser.jpg"
                             onClick={() => {
+                                router.push("/dashboard/settings/changePassword");
                                 toggleSidebar();
                             }}
+                            
                         />
                     </div>
                 </div>
