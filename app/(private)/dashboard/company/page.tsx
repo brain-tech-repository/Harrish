@@ -2,11 +2,18 @@
 
 import BorderIconButton from "@/app/components/borderIconButton";
 import { Icon } from "@iconify-icon/react";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import CustomDropdown from "@/app/components/customDropdown";
 import Link from "next/link";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import {
+  companyList,
+  companyById,
+  addCompany,
+  updateCompany,
+  deleteCompany,
+} from "@/app/services/allApi";
 
 const data = new Array(100).fill(null).map((_, i) => ({
     id: (i + 1).toString(),
@@ -79,7 +86,39 @@ const dropdownDataList = [
 
 export default function Customer() {
     const [showDropdown, setShowDropdown] = useState(false);
+    const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const companyId = "123"; 
+
+        const [listRes, singleRes, addRes, updateRes, deleteRes] =
+          await Promise.all([
+            companyList(),
+            companyById(companyId),
+            addCompany({ companyName: "New Test Company" }),
+            updateCompany(companyId, { companyName: "Updated Name" }),
+            deleteCompany(companyId),
+          ]);
+
+        setData({
+          list: listRes,
+          single: singleRes,
+          added: addRes,
+          updated: updateRes,
+          deleted: deleteRes,
+        });
+      } catch (error: any) {
+        console.error("❌ API error:", error?.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
 
     return (
         <>
@@ -171,3 +210,6 @@ export default function Customer() {
         </>
     );
 }
+
+
+
