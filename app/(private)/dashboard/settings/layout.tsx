@@ -64,9 +64,10 @@ export default function Settings({ children }: { children: React.ReactNode }) {
               leadingIconSize={20}
             />
             <SidebarBtn
-              label="Reason"
+              label="Region"
               leadingIcon="lucide:life-buoy"
               leadingIconSize={20}
+            href="/dashboard/settings/region"
             />
             <SidebarBtn
               label="Bank"
