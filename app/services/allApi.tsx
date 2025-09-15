@@ -24,12 +24,15 @@ API.interceptors.request.use(
 
 
 export const login = async (credentials: { email: string; password: string }) => {
-  const res = await API.post("/master/auth/login", credentials);
+  const res = await API.post("/api/master/auth/login", credentials);
   return res.data;
 };
 
 export const isVerify = async () => {
- 
-  const res = await API.get("/master/auth/tokenCheck");
-  return res.data;
+  try{
+    const res = await API.get("/api/master/auth/me");
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
 };

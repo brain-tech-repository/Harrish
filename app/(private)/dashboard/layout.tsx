@@ -21,13 +21,6 @@ export default function DashboardLayout({
 }
 
 function LayoutSelector({ children }: { children: React.ReactNode }) {
-
-  useEffect(()=>{
-    isVerify().then((res)=>{
-        console.log(res)
-    })
-  },[])
-
     const context = useContext<SettingsContextValue | undefined>(
         SettingsContext
     );
@@ -37,6 +30,12 @@ function LayoutSelector({ children }: { children: React.ReactNode }) {
         );
     }
     const { settings } = context;
+
+    useEffect(() => {
+        isVerify().then((res) => {
+            console.log(res);
+        });
+    }, []);
 
     return (
         <>
