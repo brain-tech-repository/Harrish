@@ -15,3 +15,23 @@ body{
     --color-text-primary: #252b37;
     --color-text-secondary: #414651;
 }
+
+.layoutTheme {
+  --primary-btn-color: #EA0A2A;
+  --secondary-btn-color: #FFF0F2;
+  --primary-btn-text-color: #181d27;
+  --secondary-btn-text-color: #EA0A2A;
+  --primary-btn-border-color: #EA0A2A; 
+  --secondary-btn-border-color: #EA0A2A;
+  --text-primary-color: #181D27;
+  --text-secondary-color: #535862;
+  --bg-color: #FFF;
+}
+
+.layoutTheme2 {
+  --primary-btn-color: #1E40AF;
+  --secondary-btn-color: #7a869e;
+  --text-primary-color: #252B37;
+  --text-secondary-color: #F5F5F5;
+  --bg-color: #F5F5F5;
+}

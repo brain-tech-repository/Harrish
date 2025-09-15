@@ -5,6 +5,7 @@ import DashboardLayout1 from "./layout1";
 import Contexts, { SettingsContext, SettingsContextValue } from "./contexts";
 import { useContext, useEffect } from "react";
 import { isVerify } from "@/app/services/allApi";
+import { useThemeToggle } from "../utils/useThemeToggle";
 
 export default function DashboardLayout({
     children,
@@ -21,6 +22,7 @@ export default function DashboardLayout({
 }
 
 function LayoutSelector({ children }: { children: React.ReactNode }) {
+    const { theme, toggle } = useThemeToggle();
     const context = useContext<SettingsContextValue | undefined>(
         SettingsContext
     );
