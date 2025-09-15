@@ -12,7 +12,7 @@ const API = axios.create({
 API.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token"); // or whatever key you use
+      const token = localStorage.getItem("token"); 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -44,5 +44,26 @@ export const logout = async () => {
     return res.data;
   } catch (error) {
     console.log(error)
+  }
+};
+
+export const addCompany = async (data: Record<string, string>) => {
+  try {
+    const res = await API.post("/api/master/company/add_company", data);
+    return res.data;
+  } catch (error) {
+    console.error("Add company failed ❌", error);
+    throw error;
+  }
+};
+
+
+export const countryList = async (data: Record<string, string>) => {
+  try {
+    const res = await API.get("/api/master/country/list_country", data);
+    return res.data;
+  } catch (error) {
+    console.error("Country List failed ❌", error);
+    throw error;
   }
 };
