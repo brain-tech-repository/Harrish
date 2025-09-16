@@ -9,7 +9,7 @@ import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
 import { useState, useEffect } from "react";
-import { countryList } from "@/app/services/allApi";
+import { countryList, addCompany } from "@/app/services/allApi";
 
 export default function AddCustomer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,44 +33,102 @@ export default function AddCustomer() {
   const [landmark, setLandmark] = useState("");
   const [country, setCountry] = useState("");
   const [tinNumber, setTinNumber] = useState("");
-  const [sellingCurrency, setSellingCurrency] = useState("usd");
-  const [sellingAmount, setSellingAmount] = useState("");
-  const [purchaseCurrency, setPurchaseCurrency] = useState("usd");
-  const [purchaseAmount, setPurchaseAmount] = useState("");
+  const [sellingCurrency, setSellingCurrency] = useState("USD");
+  const [purchaseCurrency, setPurchaseCurrency] = useState("USD");
   const [vatNo, setVatNo] = useState("");
   const [modules, setModules] = useState("");
-  const [company, setCompany] = useState("");
+  const [serviceType, setServiceType] = useState("");
 
-  
+ 
   const [countries, setCountries] = useState<{ value: string; label: string }[]>([]);
-  const [currency, setCurrency ] = useState<{ value: string; label: string }[]>([]);
+  const [currency, setCurrency] = useState<{ value: string; label: string }[]>([]);
 
   type ApiCountry = {
-  id?: string;
-  code?: string;
-  name?: string;
-  country_name?: string;
-};
-
-useEffect(() => {
-  const fetchCountries = async () => {
-    try {
-      const res = await countryList({ page: "1", limit: "200" });
-
-      const options = res.data.map((c: ApiCountry) => ({
-        value: c.code ?? c.id ?? "",
-        label: c.name ?? c.country_name ?? "",
-      }));
-
-      setCountries(options);
-    } catch (error) {
-      console.error("Failed to fetch countries ❌", error);
-    }
+    id?: string;
+    code?: string;
+    name?: string;
+    country_name?: string;
+    currency?: string;
   };
 
-  fetchCountries();
-}, []);
+  // type ApiCompany = {
+  //   id?: string;
+  //   company_code?: string;
+  //   company_type?: string;
+  //   service_type?: string;
+  // };
 
+  // ✅ Fetch dropdown data
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        const countryRes = await countryList({ page: "1", limit: "200" });
+        const countryOptions = countryRes.data.map((c: ApiCountry) => ({
+          value: c.id ?? "",
+          label: c.name ?? c.country_name ?? "",
+        }));
+        const countryCurrency = countryRes.data.map((c: ApiCountry) => ({
+          value: c.currency ?? "",
+          label: c.currency ?? "",
+        }));
+        setCurrency(countryCurrency);
+        setCountries(countryOptions);
+
+        // const companyRes = await companyList();
+        // const companyOptions = companyRes.data.map((c: ApiCompany) => ({
+        //   value: c.company_code ?? "",
+        //   label: c.company_type ?? "",
+        // }));
+        // const companyService = companyRes.data.map((c: ApiCompany) => ({
+        //   value: c.company_code ?? "",
+        //   label: c.service_type ?? "",
+        // }));
+        // setCompanies(companyOptions);
+        // setServiceType(companyService);
+      } catch (error) {
+        console.error("Failed to fetch dropdown data ❌", error);
+      }
+    };
+
+    fetchDropdowns();
+  }, []);
+
+  
+  const handleSubmit = async () => {
+    const payload = {
+      company_code: companyCode,
+      company_name: companyName,
+      email,
+      tin_number: tinNumber,
+      vat: vatNo,
+      country_id: country,
+      selling_currency: sellingCurrency,
+      purchase_currency: purchaseCurrency,
+      toll_free_no: `${tollFreeCode}${tollFreeNumber}`,
+      logo: companyLogo,
+      website: companyWebsite,
+      service_type: serviceType, 
+      company_type: companyType,
+      status: "active",
+      module_access: modules,
+      district,
+      town,
+      street,
+      landmark,
+      region,
+      sub_region: subRegion,
+      primary_contact: `${primaryCode}${primaryContact}`,
+    };
+
+    try {
+      const res = await addCompany(payload);
+      console.log("Company Added ✅", res);
+      alert("Company added successfully!");
+    } catch (error) {
+      console.error("Add Company failed ❌", error);
+      alert("Failed to add company!");
+    }
+  };
 
   return (
     <>
@@ -92,47 +150,49 @@ useEffect(() => {
           <h2 className="text-lg font-semibold mb-6">Company Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <InputFields
+              name="companyName"
               label="Company Name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
             />
-
             <InputFields
+              name="companyType"
               label="Company Type"
               value={companyType}
               onChange={(e) => setCompanyType(e.target.value)}
-             options={countries}
+              options={[
+                                {value: "manufacturing", label: "Manufacturing"},
+                                { value: "trading", label: "Trading" },
+                            ]}
             />
-
             <div className="flex items-end gap-2 max-w-[406px]">
               <InputFields
+                name="companyCode"
                 label="Company Code"
                 value={companyCode}
                 onChange={(e) => setCompanyCode(e.target.value)}
               />
-
               <IconButton
                 bgClass="white"
                 className="mb-2 cursor-pointer text-[#252B37]"
                 icon="mi:settings"
                 onClick={() => setIsOpen(true)}
               />
-
               <SettingPopUp
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
                 title="Company Code"
               />
             </div>
-
             <InputFields
+              name="companyLogo"
               label="Company Logo"
               type="file"
               value={companyLogo}
               onChange={(e) => setCompanyLogo(e.target.value)}
             />
-
             <InputFields
+              name="companyWebsite"
               label="Company Website"
               value={companyWebsite}
               onChange={(e) => setCompanyWebsite(e.target.value)}
@@ -153,7 +213,6 @@ useEffect(() => {
               onCodeChange={(e) => setPrimaryCode(e.target.value)}
               options={countries}
             />
-
             <FormInputField
               type="contact"
               label="Toll Free Number"
@@ -163,8 +222,8 @@ useEffect(() => {
               onCodeChange={(e) => setTollFreeCode(e.target.value)}
               options={countries}
             />
-
             <InputFields
+              name="email"
               label="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -177,48 +236,50 @@ useEffect(() => {
           <h2 className="text-lg font-semibold mb-6">Location Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <InputFields
+              name="region"
               label="Region"
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              options={countries}
             />
             <InputFields
+              name="subRegion"
               label="Sub Region"
               value={subRegion}
               onChange={(e) => setSubRegion(e.target.value)}
-              options={countries}
             />
             <InputFields
+              name="district"
               label="District"
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
             />
-
             <InputFields
+              name="town"
               label="Town/Village"
               value={town}
               onChange={(e) => setTown(e.target.value)}
             />
             <InputFields
+              name="street"
               label="Street"
               value={street}
               onChange={(e) => setStreet(e.target.value)}
             />
             <InputFields
+              name="landmark"
               label="Landmark"
               value={landmark}
               onChange={(e) => setLandmark(e.target.value)}
             />
-
-
             <InputFields
+              name="country"
               label="Country"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               options={countries}
             />
-
             <InputFields
+              name="tinNumber"
               label="TIN Number"
               value={tinNumber}
               onChange={(e) => setTinNumber(e.target.value)}
@@ -230,28 +291,22 @@ useEffect(() => {
         <ContainerCard>
           <h2 className="text-lg font-semibold mb-6">Financial Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <FormInputField
-              type="amount"
-              label="Selling Currency"
-              amount={sellingAmount}
-              currency={sellingCurrency}
-              onAmountChange={(e) => setSellingAmount(e.target.value)}
-              onCurrencyChange={(e) => setSellingCurrency(e.target.value)}
-              options={currency}
-            />
-
-            <FormInputField
-              type="amount"
-              label="Purchase Currency"
-              amount={purchaseAmount}
-              currency={purchaseCurrency}
-              onAmountChange={(e) => setPurchaseAmount(e.target.value)}
-              onCurrencyChange={(e) => setPurchaseCurrency(e.target.value)}
-              options={currency}
-            />
-
             <InputFields
-              id="vatNo"
+              name="sellingCurrency"
+              label="Selling Currency"
+              value={sellingCurrency}
+              onChange={(e) => setSellingCurrency(e.target.value)}
+              options={currency}
+            />
+            <InputFields
+              name="purchaseCurrency"
+              label="Purchase Currency"
+              value={purchaseCurrency}
+              onChange={(e) => setPurchaseCurrency(e.target.value)}
+              options={currency}
+            />
+            <InputFields
+              name="vatNo"
               label="VAT No (%)"
               value={vatNo}
               onChange={(e) => setVatNo(e.target.value)}
@@ -263,18 +318,21 @@ useEffect(() => {
         <ContainerCard>
           <h2 className="text-lg font-semibold mb-6">Additional Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <InputFields
-              label="Modules"
-              value={modules}
-              onChange={(e) => setModules(e.target.value)}
-             options={countries}
-            />
+            <InputFields name="modules" label="Modules" 
+            value={modules}
+             onChange={(e) => 
+             setModules(e.target.value)} />
 
+             
             <InputFields
-              label="Company Type"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              options={countries}
+              name="company"
+              label="Service Type"
+              value={serviceType}
+              onChange={(e) => setServiceType(e.target.value)}
+              options={[
+                                {value: "branch", label: "Branch"},
+                                { value: "warehouse", label: "Warehouse" },
+                            ]}
             />
           </div>
         </ContainerCard>
@@ -288,12 +346,11 @@ useEffect(() => {
         >
           Cancel
         </button>
-
         <SidebarBtn
           label="Submit"
           isActive={true}
           leadingIcon="mdi:check"
-          onClick={() => console.log("Form submitted ✅")}
+          onClick={handleSubmit}
         />
       </div>
     </>

@@ -259,7 +259,7 @@ function TableBody() {
     const { selectedColumns } =
         useContext<columnFilterConfigType>(ColumnFilterConfig);
     const [selectedItems, setSelectedItems] = useState<Array<number>>([]);
-    const allItemsCount: number = tableData.length;
+    const allItemsCount: number = tableData.length || 0;
     const isAllSelected = selectedItems.length === allItemsCount;
     const isIndeterminate = selectedItems.length > 0 && !isAllSelected;
 
