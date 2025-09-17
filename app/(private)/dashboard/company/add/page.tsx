@@ -18,13 +18,13 @@ export default function AddCustomer() {
   const [countries, setCountries] = useState<{ value: string; label: string }[]>([]);
   const [currency, setCurrency] = useState<{ value: string; label: string }[]>([]);
 
-  type ApiCountry = {
-    id?: string;
-    code?: string;
-    name?: string;
-    country_name?: string;
-    currency?: string;
-  };
+    type ApiCountry = {
+        id?: string;
+        code?: string;
+        name?: string;
+        country_name?: string;
+        currency?: string;
+    };
 
   // ✅ Yup Validation Schema
   const validationSchema = Yup.object({
@@ -126,19 +126,19 @@ export default function AddCustomer() {
     fetchDropdowns();
   }, []);
 
-  return (
-    <>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
-          <Link href="/dashboard/company">
-            <Icon icon="lucide:arrow-left" width={24} />
-          </Link>
-          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            Add New Company
-          </h1>
-        </div>
-      </div>
+    return (
+        <>
+            {/* Header */}
+            <div className="flex justify-between items-center mb-[20px]">
+                <div className="flex items-center gap-[16px]">
+                    <Link href="/dashboard/company">
+                        <Icon icon="lucide:arrow-left" width={24} />
+                    </Link>
+                    <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
+                        Add New Company
+                    </h1>
+                </div>
+            </div>
 
       <form
   onSubmit={(e) => {
