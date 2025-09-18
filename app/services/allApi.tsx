@@ -21,6 +21,18 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+function handleError(error: unknown) {
+  if (axios.isAxiosError(error) && error.response) {
+    console.error('API Error:', error.response.data);
+    return { error: true, data: error.response.data };
+  } else if (error instanceof Error) {
+    console.error('Request Error:', error.message);
+    return { error: true, data: { message: error.message } };
+  } else {
+    console.error('An unknown error occurred.');
+    return { error: true, data: { message: 'An unknown error occurred.' } };
+  }
+}
 
 export const login = async (credentials: { email: string; password: string }) => {
     try {
@@ -250,18 +262,7 @@ export const deleteItemSubCategory = async (sub_category_id: number) => {
   }
 };
 
-function handleError(error: unknown) {
-  if (axios.isAxiosError(error) && error.response) {
-    console.error('API Error:', error.response.data);
-    return { error: true, data: error.response.data };
-  } else if (error instanceof Error) {
-    console.error('Request Error:', error.message);
-    return { error: true, data: { message: error.message } };
-  } else {
-    console.error('An unknown error occurred.');
-    return { error: true, data: { message: 'An unknown error occurred.' } };
-  }
-}
+
 export const regionList = async () => {
   try {
               const res = await API.get("/api/master/region/list_region");
@@ -300,7 +301,7 @@ export const updateRegion = async (id:string,body:object) => {
 
 export const routeList = async () => {
   try {
-           const res = await API.get("/api/master/route/list_routes");
+    const res = await API.get("/api/master/route/list_routes");
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -938,6 +939,7 @@ export const createUserType = async (body:object) => {
     return handleError(error);
   }
 };
+
 
 
 
