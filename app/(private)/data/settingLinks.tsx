@@ -20,9 +20,12 @@ export const initialLinkData: SidebarDataType[] = [
         data: [
             {
                 isActive: false,
+
+               
                 href: "/dashboard/settings/theme",
                 label: "Theme",
                 leadingIcon: "hugeicons:workflow-square-06",
+
                 iconColor: "text-green-500",
             },
             {
@@ -54,6 +57,7 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "mdi:account-tie",
                 iconColor: "text-green-500",
             },
+
             {
                 isActive: false,
                 href: "#",
@@ -126,12 +130,12 @@ export const initialLinkData: SidebarDataType[] = [
                         iconColor: "text-yellow-400",
                     },
                     {
-                        isActive: false,
-                        href: "/dashboard/master/pricing",
-                        label: "Country",
-                        leadingIcon: "mdi:currency-usd",
-                        iconColor: "text-yellow-400",
-                    },
+                            isActive: false,
+                            href: "/dashboard/settings/country",
+                            label: "Country",
+                            leadingIcon: "mdi:earth",
+                            iconColor: "text-green-500",
+                        },
                     {
                         isActive: false,
                         href: "/dashboard/master/vehicle",
@@ -204,7 +208,7 @@ export const initialLinkData: SidebarDataType[] = [
                 isActive: false,
                 href: "#",
                 label: "Vehicle",
-                leadingIcon: "mdi:car",
+                leadingIcon: "qlementine-icons:items-grid-16",
                 trailingIcon: "mdi-light:chevron-right",
                 iconColor: "text-yellow-400",
                 children: [
@@ -219,6 +223,30 @@ export const initialLinkData: SidebarDataType[] = [
                         isActive: false,
                         href: "/dashboard/master/item",
                         label: "Vehicle Brand",
+                        leadingIcon: "mdi:package-variant",
+                        iconColor: "text-cyan-500",
+                    },
+                ],
+            },
+            {
+                isActive: false,
+                href: "#",
+                label: "Item",
+                leadingIcon: "mdi:car",
+                trailingIcon: "qlementine-icons:items-grid-small-24",
+                iconColor: "text-yellow-400",
+                children: [
+                    {
+                        isActive: false,
+                        href: "/dashboard/settings/item/category",
+                        label: "Item Category",
+                        leadingIcon: "lucide:user",
+                        iconColor: "text-green-500",
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/settings/item/subCategory",
+                        label: "Item Sub Category",
                         leadingIcon: "mdi:package-variant",
                         iconColor: "text-cyan-500",
                     },
