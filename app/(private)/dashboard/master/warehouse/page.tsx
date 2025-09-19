@@ -59,7 +59,7 @@ export default function Warehouse() {
   type TableRow = TableDataType & { id?: string };
     // typed row for warehouse table
     type WarehouseRow = TableDataType & {
-      id?: number | string;
+      id?:string;
       code?: string;
       sapId?: string;
       warehouseName?: string;
@@ -204,10 +204,15 @@ export default function Warehouse() {
                 },
               },
               // { icon: "lucide:edit-2", onClick: console.log },
-              {
+               {
                 icon: "lucide:more-vertical",
-                onClick: () =>
-                  confirm("Are you sure you want to delete this Warehouse?"),
+                onClick: (data: object) => {
+                  const row = data as TableRow;
+                  if (row.id) {
+                    setSelectedRow({ id: String(row.id) });
+                  }
+                  setShowDeletePopup(true);
+                },
               },
             ],
             pageSize: 10,
