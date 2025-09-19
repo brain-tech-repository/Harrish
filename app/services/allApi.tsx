@@ -1103,4 +1103,45 @@ export const updateChannel = async (id:string,payload:object) => {
     return res.data;
 };
 
+// salesman type APIs
+export const salesmanTypeList = async (data: Record<string, string>) => {
+  try {
+    const res = await API.get("/api/settings/salesman_type/list", data);
+   
+    return res.data;
+  } catch (error) {
+    console.error("User List failed ❌", error);
+    throw error;
+  }
+};
+
+
+export const addSalesmanType = async (payload:object) => {
+    const res = await API.post("/api/settings/salesman_type/create", payload);
+
+    return res.data;
+};
+
+
+export const getSalesmanTypeById = async (id:string) => {
+    const res = await API.get(`/api/settings/salesman_type/${id}`);
+ 
+    return res.data;
+  
+};
+
+
+export const updateSalesmanType = async (id:string,payload:object) => {
+    const res = await API.put(`/api/settings/salesman_type/${id}/update`,payload);
+ 
+    return res.data;
+};
+
+//{id}/delete
+
+
+export const deleteSalesmanType = async (id:string) => {
+    const res = await API.delete(`api/settings/salesman_type/${id}/delete`);
+    return res.data;
+};
 
