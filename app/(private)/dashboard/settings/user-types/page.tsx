@@ -7,7 +7,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { userList, deleteUser } from "@/app/services/allApi";
+import { userTypes, deleteUserType } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -61,7 +61,7 @@ export default function Country() {
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        const listRes = await userList({});
+        const listRes = await userTypes();
         setCountries(listRes.data);
       } catch (error: unknown) {
         console.error("API Error:", error);
@@ -80,7 +80,7 @@ export default function Country() {
   }
 
   try {
-    await deleteUser(String(selectedRow.id));
+    await deleteUserType(String(selectedRow.id));
 
     // ✅ Update state immediately without full refresh
     setCountries((prev) => prev.filter((c) => String(c.id) !== String(selectedRow.id)));

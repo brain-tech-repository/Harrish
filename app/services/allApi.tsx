@@ -1,7 +1,6 @@
 // app/services/allApi.ts
 import axios from "axios";
 
-
 const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL, 
   headers: {
@@ -22,18 +21,6 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-function handleError(error: unknown) {
-  if (axios.isAxiosError(error) && error.response) {
-    console.error('API Error:', error.response.data);
-    return { error: true, data: error.response.data };
-  } else if (error instanceof Error) {
-    console.error('Request Error:', error.message);
-    return { error: true, data: { message: error.message } };
-  } else {
-    console.error('An unknown error occurred.');
-    return { error: true, data: { message: 'An unknown error occurred.' } };
-  }
-}
 
 export const login = async (credentials: { email: string; password: string }) => {
     try {
@@ -81,26 +68,14 @@ export const updateCompany = async (id: string, data: object) => {
   }
 };
 
-export const editCompany = async (id: string, data: object) => {
-  try {
-    const res = await API.put(`/api/master/company/company/${id}`, data);
-    console.log("Response:", res);
+export const deleteCompany = async (id: string) => {
+   try {
+    const res = await API.delete(`/api/master/company/${id}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
-
-export const getCompanyById = async (id: string) => {
-  try {
-    const res = await API.get(`/api/master/company/${id}`);
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-
 
 export const logout = async () => {
   try {
@@ -112,7 +87,7 @@ export const logout = async () => {
 
 };
 
-export const addCompany = async (data:FormData | Record<string, string>) => {
+export const addCompany = async (data:FormData) => {
   try {
     const res = await API.post("/api/master/company/add_company", data);
     return res.data;
@@ -121,11 +96,6 @@ export const addCompany = async (data:FormData | Record<string, string>) => {
   }
   
 };
-
-export const deleteCompany = async (id:string) => {
-    const res = await API.delete(`/api/master/company/company/${id}`);
-    return res.data;
-}
 
 
 export const countryList = async (data: Record<string, string>) => {
@@ -219,7 +189,7 @@ export const updateItemCategory = async (category_id: number, category_name?: st
   }
 
   try {
-    const res = await API.put(`/api/settings/item_category/${category_id}`, body);
+    const res = await API.put(`/api/settings/item_category/${category_id}/update`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -228,7 +198,7 @@ export const updateItemCategory = async (category_id: number, category_name?: st
 
 export const deleteItemCategory = async (category_id: number) => {
   try {
-    const res = await API.delete(`/api/settings/item_category/${category_id}`);
+    const res = await API.delete(`/api/settings/item_category/${category_id}/delete`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -282,7 +252,18 @@ export const deleteItemSubCategory = async (sub_category_id: number) => {
   }
 };
 
-
+function handleError(error: unknown) {
+  if (axios.isAxiosError(error) && error.response) {
+    console.error('API Error:', error.response.data);
+    return { error: true, data: error.response.data };
+  } else if (error instanceof Error) {
+    console.error('Request Error:', error.message);
+    return { error: true, data: { message: error.message } };
+  } else {
+    console.error('An unknown error occurred.');
+    return { error: true, data: { message: 'An unknown error occurred.' } };
+  }
+}
 export const regionList = async () => {
   try {
               const res = await API.get("/api/master/region/list_region");
@@ -321,7 +302,7 @@ export const updateRegion = async (id:string,body:object) => {
 
 export const routeList = async () => {
   try {
-    const res = await API.get("/api/master/route/list_routes");
+           const res = await API.get("/api/master/route/list_routes");
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -467,12 +448,6 @@ export const getSubRegion = async () => {
     return handleError(error);
   }
 };
-
-export const subRegionList = async () => {
-    const res = await API.get("/api/master/area/list_area");
-    return res.data;
-}
-
 
 export const getCompanyCustomers = async () => {
   try {
@@ -695,20 +670,6 @@ export const customerTypeList = async (params?: Record<string, string>) => {
 };
 
 
-
-export const getCustomerType = async (id: string) => {
-  try {
-    const res = await API.get(`/api/settings/customer-type/${id}`);
-    return res.data;
-  } catch (error) {
-    console.error("Get Customer Type by ID failed ❌", error);
-    throw error;
-  }
-};
-
-
-
-
 export const addRegion = async  (payload?: {regionName: string, countryId: number, status: number}) => {
   try {
     const res = await API.post("/api/master/region/add_region", { payload });
@@ -759,15 +720,16 @@ export const getRouteTypeById = async (id: string) => {
   }
 };
 
-export const updateRouteTypeById = async (id: string, payload: object) => {
+
+export const updateRouteTypeById = async (id: string,payload:object) => {
   try {
-    const res = await API.put(`/api/settings/route-type/${id}/update`, payload);
+    const res = await API.put(`/api/settings/route-type/${id}/update`,payload);
+
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
-
 
 export const deleteRouteTypeById = async (id: string) => {
   try {
@@ -980,101 +942,5 @@ export const createUserType = async (body:object) => {
 };
 
 
-
-
-
-
-
-export const customerCategoryList = async (params?: Record<string, string>) => {
-  try {
-    const res = await API.get("/api/settings/customer-category/list", { params }); 
-    return res.data;
-  } catch (error) {
-    console.error("Customer Category List failed ❌", error);
-    throw error;
-  } 
-};
-
-
-
-
-
-
-export const addCustomerCategory = async (payload: Record<string, string | number>) => {
-  try {
-    const res = await API.post("/api/settings/customer-category/create", payload);
-    return res.data;
-  } catch (error) {
-    console.error("Add Customer Category failed ❌", error);
-    throw error;
-  }
-};
-
-export const updateCustomerCategory = async (id: string, payload: Record<string, string | number>) => {
-  try {
-    const res = await API.put(`/api/settings/customer-category/${id}`, payload);
-    return res.data;
-  } catch (error) {
-    console.error("Update Customer Category failed ❌", error);
-    throw error;
-  }
-};
-
-
-
-export const userList = async (data: Record<string, string>) => {
-  try {
-    const res = await API.get("/api/settings/user-type/list", data);
-    return res.data;
-  } catch (error) {
-    console.error("User List failed ❌", error);
-    throw error;
-  }
-};
-
-export const addUser = async (payload:object) => {
-    const res = await API.post("/api/settings/user-type/create", payload);
-
-    return res.data;
-};
-
-
-export const editUser = async (id:string,payload:object) => {
-    const res = await API.put(`/api/master/country/update_country/${id}`,payload);
-    return res.data;
-};
-
-
-export const deleteUser = async (id:string) => {
-    const res = await API.delete(`/api/settings/user-type/${id}`);
-   
-    
-    return res.data;
-};
-
-
-export const outletChannelList = async (data: Record<string, string>) => {
-  try {
-    const res = await API.get("/api/settings/outlet-channels/list", data);
-   
-    return res.data;
-  } catch (error) {
-    console.error("User List failed ❌", error);
-    throw error;
-  }
-};
-
-
-
-
-export const deleteChannel = async (id:string) => {
-    const res = await API.delete(`/api/settings/outlet-channels/${id}`);
-    return res.data;
-};
-
-export const updateChannel = async (id:string,payload:object) => {
-    const res = await API.put(`/api/settings/outlet-channels/{id}/${id}`,payload);
-    return res.data;
-};
 
 

@@ -8,7 +8,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { outletChannelList, deleteChannel } from "@/app/services/allApi";
+import { channelList, deleteOutletChannel } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -62,7 +62,7 @@ export default function ChannelList() {
  useEffect(() => {
   const fetchChannels = async () => {
     try {
-      const listRes = await outletChannelList({});
+      const listRes = await channelList();
       console.log("API Response 👉", listRes);
 
       // ✅ Correct array path
@@ -88,7 +88,7 @@ export default function ChannelList() {
 
   try {
   if (!selectedRow?.id) throw new Error('Missing id');
-  await deleteChannel(String(selectedRow.id)); // call API
+  await deleteOutletChannel(String(selectedRow.id)); // call API
       
       showSnackbar("Channel deleted successfully ", "success"); 
       router.refresh();
