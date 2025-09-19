@@ -66,7 +66,7 @@ export default function AddCustomer() {
       companyType: "",
       companyCode: "",
       companyName: "",
-      companyLogo: File ,
+      companyLogo: null,
       companyWebsite: "",
       primaryCode: "uae",
       primaryContact: "",
@@ -128,10 +128,14 @@ export default function AddCustomer() {
       );
 
       // ✅ Handle logo
-      if (values.companyLogo instanceof File) {
-        formData.append("logo", values.companyLogo);
+      // runtime guard: File is only available in browsers
+      // Avoid `instanceof File` at build-time: use duck-typing for a File-like object
+      const maybeFile = values.companyLogo as unknown;
+      if (maybeFile && typeof maybeFile === 'object' && 'name' in (maybeFile as Record<string, unknown>)) {
+        // treat as file-like
+        formData.append("logo", maybeFile as Blob);
       } else if (typeof values.companyLogo === "boolean") {
-        formData.append("logo", values.companyLogo);
+        formData.append("logo", String(values.companyLogo));
       }
 
       // ✅ Append modules as array

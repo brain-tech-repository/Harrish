@@ -1,37 +1,68 @@
 "use client";
 
-import ContainerCard from "@/app/components/containerCard";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import InputFields from "@/app/components/inputFields";
-import { addCustomerType, customerTypeList } from "@/app/services/allApi";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify-icon/react";
-import { useFormik } from "formik";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import * as Yup from "yup";
+import { useRouter } from "next/navigation";
 
-type ApiCustomerType = {
-  id: string;
-  code: string;
-  name: string;
+import BorderIconButton from "@/app/components/borderIconButton";
+import CustomDropdown from "@/app/components/customDropdown";
+import Table, { TableDataType } from "@/app/components/customTable";
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import Loading from "@/app/components/Loading";
+import DismissibleDropdown from "@/app/components/dismissibleDropdown";
+import DeleteConfirmPopup from "@/app/components/deletePopUp";
+import { useSnackbar } from "@/app/services/snackbarContext";
+import { customerTypeList, deleteCustomerType } from "@/app/services/allApi";
+
+// 🔹 API response type
+interface CustomerType {
+  id?: string | number;
+  code?: string;
+  name?: string;
   status?: string;
-};
+  [key: string]: string | number | undefined;
+}
 
-export default function AddCustomerType() {
-  const [customerTypes, setCustomerTypes] = useState<
-    { value: string; label: string }[]
-  >([]);
+// 🔹 Dropdown menu items
+const dropdownDataList = [
+  { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+  { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+  { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
+  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
+];
 
-  // ✅ Fetch customer type list for dropdown
+// 🔹 Table columns
+const columns = [
+  { key: "code", label: "Code" },
+  { key: "name", label: "Name" },
+  { key: "status", label: "Status" },
+];
+
+export default function CustomerPage() {
+  const [customers, setCustomers] = useState<CustomerType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<CustomerType | null>(null);
+
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter();
+
+  // normalize table data
+  const tableData: TableDataType[] = customers.map((c) => ({
+    id: c.id?.toString() ?? "",
+    code: c.code ?? "",
+    name: c.name ?? "",
+    status: c.status === "active" ? "Active" : "Inactive",
+  }));
+
+  // fetch list
   useEffect(() => {
-    const fetchCustomerTypes = async () => {
+    const fetchCustomers = async () => {
       try {
-        const listRes = await customerTypeList({ page: "1", limit: "200" });
-        const options = (listRes.data || []).map((c: ApiCustomerType) => ({
-          value: c.id,
-          label: c.name,
-        }));
-        setCustomerTypes(options);
+        const res = await customerTypeList();
+        setCustomers(res.data || []);
       } catch (error) {
         console.error("Failed to fetch customer types ❌", error);
       }
@@ -71,13 +102,38 @@ export default function AddCustomerType() {
     <>
       {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
-          <Link href="/dashboard/settings/customer/customerType">
-            <Icon icon="lucide:arrow-left" width={24} />
-          </Link>
-          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            Add Customer Type
-          </h1>
+        <h1 className="text-[20px] font-semibold text-[#181D27]">Customer Type</h1>
+
+        <div className="flex gap-[12px] relative">
+          <BorderIconButton icon="gala:file-document" label="Export CSV" />
+          <BorderIconButton icon="mage:upload" />
+
+          <DismissibleDropdown
+            isOpen={showDropdown}
+            setIsOpen={setShowDropdown}
+            button={<BorderIconButton icon="ic:sharp-more-vert" />}
+            dropdown={
+              <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                <CustomDropdown>
+                  {dropdownDataList.map((link, idx) => (
+                    <div
+                      key={idx}
+                      className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
+                    >
+                      <Icon
+                        icon={link.icon}
+                        width={link.iconWidth}
+                        className="text-[#717680]"
+                      />
+                      <span className="text-[#181D27] font-[500] text-[16px]">
+                        {link.label}
+                      </span>
+                    </div>
+                  ))}
+                </CustomDropdown>
+              </div>
+            }
+          />
         </div>
       </div>
 
@@ -143,7 +199,7 @@ export default function AddCustomerType() {
             type="submit"
           />
         </div>
-      </form>
+      )}
     </>
   );
 }

@@ -164,12 +164,14 @@ export default function addwarehouse() {
                             </button>
 
                             {/* Submit button with icon */}
-                            <SidebarBtn
-                                label={isSubmitting ? 'Submitting...' : 'Submit'}
-                                isActive={!isSubmitting}
-                                leadingIcon="mdi:check"
+                            <button
                                 type="submit"
-                            />
+                                disabled={isSubmitting}
+                                className="px-4 py-2 h-[40px] rounded-md font-semibold bg-red-500 text-white disabled:opacity-60 flex items-center gap-2"
+                            >
+                                <Icon icon="mdi:check" width={18} />
+                                {isSubmitting ? 'Submitting...' : 'Submit'}
+                            </button>
                         </div>
                     </div>
                 </Form>
