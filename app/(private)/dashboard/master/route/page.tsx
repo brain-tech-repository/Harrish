@@ -140,11 +140,11 @@ export default function Route() {
     if (!selectedRow?.id) throw new Error('Missing id');
     await deleteRoute(String(selectedRow.id)); // call API
         
-        showSnackbar("Country deleted successfully ", "success"); 
+        showSnackbar("Route deleted successfully ", "success"); 
         router.refresh();
       } catch (error) {
         console.error("Delete failed ❌:", error);
-        showSnackbar("Failed to delete country ❌", "error"); 
+        showSnackbar("Failed to delete Route ❌", "error"); 
       } finally {
         setShowDeletePopup(false);
         setSelectedRow(null);
@@ -250,7 +250,7 @@ export default function Route() {
             {showDeletePopup && (
                     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
                       <DeleteConfirmPopup
-                        title="Country"
+                        title="Route"
                         onClose={() => setShowDeletePopup(false)}
                         onConfirm={handleConfirmDelete}
                       />
