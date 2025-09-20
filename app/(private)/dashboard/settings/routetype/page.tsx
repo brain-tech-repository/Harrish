@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify-icon/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
@@ -43,69 +43,65 @@ export default function RouteType() {
   }
 
   const [routeType, setRouteType] = useState<RouteTypeItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedRow, setSelectedRow] = useState<RouteTypeItem | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const updated = searchParams.get("updated"); // detect if redirected after update
   const { showSnackbar } = useSnackbar();
 
   type TableRow = TableDataType & { id?: string };
 
-  const tableData: TableDataType[] = routeType.map((item) => ({
-    id: String(item.id ?? ""),
-    route_type_code: item.route_type_code ?? "",
-    route_type_name: item.route_type_name ?? "",
-    status: item.status === 1 ? "Active" : "Inactive",
+  // ✅ Table data mapping
+  const tableData: TableDataType[] = routeType.map((c) => ({
+    id: c.id?.toString() ?? "",
+    route_type_code: c.route_type_code ?? "",
+    route_type_name: c.route_type_name ?? "",
+    status: c.status === 1 ? "Active" : "Inactive",
   }));
 
-  useEffect(() => {
-    const fetchRouteTypes = async () => {
-      setLoading(true);
-      try {
-        const res = await routeTypeList({});
-        setRouteType(res.data);
-      } catch (error) {
-        console.error("API Error:", error);
-        showSnackbar("Failed to fetch Route Types", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRouteTypes();
-  }, [updated]); // refetch automatically after update
-
-  const handleConfirmDelete = async () => {
-    if (!selectedRow?.id) return;
-    const idToDelete = String(selectedRow.id);
-    setDeletingId(idToDelete);
-
+  // ✅ Reusable fetch function
+  const fetchRouteTypes = async () => {
+    setLoading(true);
     try {
-      await deleteRouteTypeById(idToDelete);
-      setRouteType((prev) =>
-        prev.filter((item) => String(item.id) !== idToDelete)
-      );
-      showSnackbar("Route Type deleted successfully", "success");
+      const listRes = await routeTypeList({});
+      setRouteType(listRes.data || []);
     } catch (error) {
-      console.error("Delete failed:", error);
-      showSnackbar("Failed to delete Route Type", "error");
+      console.error("API Error:", error);
+      showSnackbar("Failed to fetch Route Type ❌", "error");
     } finally {
-      setShowDeletePopup(false);
-      setSelectedRow(null);
-      setDeletingId(null);
+      setLoading(false);
     }
   };
 
-  if (loading) return <Loading />;
+  useEffect(() => {
+    fetchRouteTypes();
+  }, []);
 
-  return (
+  // ✅ Delete handler with refresh
+  const handleConfirmDelete = async () => {
+    if (!selectedRow?.id) return;
+
+    try {
+      await deleteRouteTypeById(String(selectedRow.id));
+      showSnackbar("Route Type deleted successfully ✅", "success");
+
+      // 🔄 Refresh list from server instead of just local filter
+      await fetchRouteTypes();
+    } catch (error) {
+      console.error("Delete failed ❌:", error);
+      showSnackbar("Failed to delete Route Type ❌", "error");
+    } finally {
+      setShowDeletePopup(false);
+      setSelectedRow(null);
+    }
+  };
+
+  return loading ? (
+    <Loading />
+  ) : (
     <>
-      {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
         <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
           Route Type
@@ -144,7 +140,6 @@ export default function RouteType() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="h-[calc(100%-60px)]">
         <Table
           data={tableData}
@@ -172,17 +167,14 @@ export default function RouteType() {
                 icon: "lucide:edit-2",
                 onClick: (data: object) => {
                   const row = data as TableRow;
-                  router.push(
-                    `/dashboard/settings/routetype/update_routetype/${row.id}`
-                  );
+                  router.push(`/dashboard/settings/routetype/update/${row.id}`);
                 },
               },
               {
-                icon: "lucide:trash",
+                icon: "lucide:more-vertical",
                 onClick: (data: object) => {
                   const row = data as TableRow;
-                  if (deletingId === String(row.id)) return;
-                  setSelectedRow({ id: String(row.id) });
+                  setSelectedRow({ id: row.id });
                   setShowDeletePopup(true);
                 },
               },
@@ -192,7 +184,6 @@ export default function RouteType() {
         />
       </div>
 
-      {/* Delete popup */}
       {showDeletePopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <DeleteConfirmPopup

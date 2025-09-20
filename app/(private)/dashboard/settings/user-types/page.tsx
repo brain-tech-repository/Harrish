@@ -6,7 +6,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { userTypesList, deleteUserType } from "@/app/services/allApi";
+import { userTypesList, deleteUser } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -96,7 +96,7 @@ useEffect(() => {
   }
 
   try {
-    await deleteUserType(String(selectedRow.id));
+    await deleteUser(String(selectedRow.id));
       await fetchCountries();
 
     // ✅ Update state immediately without full refresh
