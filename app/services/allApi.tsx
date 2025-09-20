@@ -23,6 +23,18 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+function handleError(error: unknown) {
+  if (axios.isAxiosError(error) && error.response) {
+    console.error('API Error:', error.response.data);
+    return { error: true, data: error.response.data };
+  } else if (error instanceof Error) {
+    console.error('Request Error:', error.message);
+    return { error: true, data: { message: error.message } };
+  } else {
+    console.error('An unknown error occurred.');
+    return { error: true, data: { message: 'An unknown error occurred.' } };
+  }
+}
 
 export const login = async (credentials: { email: string; password: string }) => {
     try {
@@ -70,14 +82,26 @@ export const updateCompany = async (id: string, data: object) => {
   }
 };
 
-export const deleteCompany = async (id: string) => {
-   try {
-    const res = await API.delete(`/api/master/company/${id}`);
+export const editCompany = async (id: string, data: object) => {
+  try {
+    const res = await API.put(`/api/master/company/company/${id}`, data);
+    console.log("Response:", res);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
+export const getCompanyById = async (id: string) => {
+  try {
+    const res = await API.get(`/api/master/company/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 
 export const logout = async () => {
   try {
@@ -89,7 +113,7 @@ export const logout = async () => {
 
 };
 
-export const addCompany = async (data:FormData) => {
+export const addCompany = async (data:FormData | Record<string, string>) => {
   try {
     const res = await API.post("/api/master/company/add_company", data);
     return res.data;
@@ -98,6 +122,11 @@ export const addCompany = async (data:FormData) => {
   }
   
 };
+
+export const deleteCompany = async (id:string) => {
+    const res = await API.delete(`/api/master/company/company/${id}`);
+    return res.data;
+}
 
 
 export const countryList = async (data: Record<string, string>) => {
@@ -275,18 +304,7 @@ export const deleteItemSubCategory = async (sub_category_id: number) => {
   }
 };
 
-function handleError(error: unknown) {
-  if (axios.isAxiosError(error) && error.response) {
-    console.error('API Error:', error.response.data);
-    return { error: true, data: error.response.data };
-  } else if (error instanceof Error) {
-    console.error('Request Error:', error.message);
-    return { error: true, data: { message: error.message } };
-  } else {
-    console.error('An unknown error occurred.');
-    return { error: true, data: { message: 'An unknown error occurred.' } };
-  }
-}
+
 export const regionList = async () => {
   try {
               const res = await API.get("/api/master/region/list_region");
@@ -325,7 +343,7 @@ export const updateRegion = async (id:string,body:object) => {
 
 export const routeList = async () => {
   try {
-           const res = await API.get("/api/master/route/list_routes");
+    const res = await API.get("/api/master/route/list_routes");
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -471,6 +489,12 @@ export const getSubRegion = async () => {
     return handleError(error);
   }
 };
+
+export const subRegionList = async () => {
+    const res = await API.get("/api/master/area/list_area");
+    return res.data;
+}
+
 
 export const getCompanyCustomers = async () => {
   try {
@@ -693,6 +717,20 @@ export const customerTypeList = async (params?: Record<string, string>) => {
 };
 
 
+
+export const getCustomerType = async (id: string) => {
+  try {
+    const res = await API.get(`/api/settings/customer-type/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Get Customer Type by ID failed ❌", error);
+    throw error;
+  }
+};
+
+
+
+
 export const addRegion = async  (payload?: {regionName: string, countryId: number, status: number}) => {
   try {
     const res = await API.post("/api/master/region/add_region", { payload });
@@ -726,6 +764,7 @@ export const routeTypeList = async (params?: Record<string, string>) => {
 export const addRouteType = async (payload: Record<string, string | number>) => {
   try {
     const res = await API.post("/api/settings/route-type/add", payload);
+
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

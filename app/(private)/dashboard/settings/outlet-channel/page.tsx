@@ -8,7 +8,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { channelList, deleteOutletChannel } from "@/app/services/allApi";
+import { outletChannelList, deleteOutletChannel } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -83,7 +83,7 @@ const handleConfirmDelete = async () => {
   if (!selectedRow?.id) return;
 
   try {
-    await deleteChannel(String(selectedRow.id)); // API call
+    await deleteOutletChannel(String(selectedRow.id)); // API call
     await fetchChannels();
 
     // ✅ Remove deleted row from state
