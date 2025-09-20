@@ -1280,42 +1280,65 @@ export const vehicleList = async () => {
   try {
     const res = await API.get("/api/master/vehicle/list");
     return res.data;
-  } catch (error: unknown) {
+} catch (error: unknown) {
     return handleError(error);
-  }
+}
 };
 
-export const deleteVehicle = async (id: string) => {
+export const getDiscountTypeList = async () => {
   try {
-    const res = await API.delete(`/api/master/vehicle/${id}/delete`);
+           const res = await API.get(`/api/settings/discount_type/list`);
+
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
+export const getDiscountTypeById = async (id:string) => {
+  try {
+           const res = await API.get(`/api/settings/discount_type/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const createDiscountType = async (body:object) => {
+  try {
+           const res = await API.post(`/api/settings/discount_type/create`,body);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updateDiscountType = async (id:string,body:object) => {
+  try {
+           const res = await API.put(`/api/settings/discount_type/${id}/update`,body);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deleteDiscountType = async (id:string) => {
+  try {
+           const res = await API.delete(`/api/settings/discount_type/${id}/delete`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 
 export const addVehicle = async (data: FormData | Record<string, string>) => {
   try {
     const res = await API.post("/api/master/vehicle/create", data);
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-
-export const updateVehicle = async (id: string, data: FormData | Record<string, string>) => {
-  try {
-    const res = await API.put(`/api/master/vehicle/${id}`, data);
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const getVehicleById = async (id: string) => {
-  try {
-    const res = await API.get(`/api/master/vehicle/${id}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
