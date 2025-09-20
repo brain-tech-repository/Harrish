@@ -325,20 +325,20 @@ export const initialLinkData: SidebarDataType[] = [
     //             leadingIcon: "mdi:briefcase-account",
     //             iconColor: "text-yellow-400",
     //         },
-    //         {
-    //             isActive: false,
-    //             href: "/dashboard/company",
-    //             label: "Salesman Type",
-    //             leadingIcon: "mdi:account-tie",
-    //             iconColor: "text-green-500",
-    //         },
-    //         {
-    //             isActive: false,
-    //             href: "/dashboard/salesman",
-    //             label: "Salesman Organization",
-    //             leadingIcon: "mdi:account-multiple-outline",
-    //             iconColor: "text-green-500",
-    //         },
+            {
+                isActive: false,
+                href: "/dashboard/settings/salesman-type",
+                label: "Salesman Type",
+                leadingIcon: "mdi:account-tie",
+                iconColor: "text-green-500",
+            },
+            {
+                isActive: false,
+                href: "/dashboard/salesman",
+                label: "Salesman Organization",
+                leadingIcon: "mdi:account-multiple-outline",
+                iconColor: "text-green-500",
+            },
 
     //         {
     //             isActive: false,
@@ -353,6 +353,13 @@ export const initialLinkData: SidebarDataType[] = [
                 href: "/dashboard/settings/expenseType",
                 label: "Expense Type",
                 leadingIcon: "mdi:currency-usd",
+                iconColor: "text-green-500",
+            },
+            {
+                isActive: false,
+                href: "/dashboard/settings/promotionTypes",
+                label: "Promotion Type",
+                leadingIcon: "hugeicons:promotion",
                 iconColor: "text-green-500",
             },
 

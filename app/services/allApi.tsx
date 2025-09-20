@@ -1,5 +1,6 @@
 // app/services/allApi.ts
 import axios from "axios";
+import { Params } from "next/dist/server/request/params";
 
 
 
@@ -241,7 +242,7 @@ export const updateItemCategory = async (category_id: number, category_name?: st
   }
 
   try {
-    const res = await API.put(`/api/settings/item_category/${category_id}/update`, body);
+    const res = await API.put(`/api/settings/item_category/${category_id}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -250,7 +251,7 @@ export const updateItemCategory = async (category_id: number, category_name?: st
 
 export const deleteItemCategory = async (category_id: number) => {
   try {
-    const res = await API.delete(`/api/settings/item_category/${category_id}/delete`);
+    const res = await API.delete(`/api/settings/item_category/${category_id}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -279,16 +280,16 @@ export const itemSubCategoryById = async (id: string) => {
 
 export const createItemSubCategory = async (category_id: number, sub_category_name: string, status: 0 | 1) => {
   try {
-    const res = await API.post(`/api/settings/item-sub-category/create`, { category_id, sub_category_name, status, created_user: 13 });
+    const res = await API.post(`/api/settings/item-sub-category/create`, { category_id, sub_category_name, status });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const updateItemSubCategory = async (category_id: number, sub_category_name: string, status: 0 | 1) => {
+export const updateItemSubCategory = async (category_id: number, sub_category_id: number, sub_category_name: string, status: 0 | 1) => {
   try {
-    const res = await API.put(`/api/settings/item-sub-category/${category_id}/update`, { sub_category_name, status });
+    const res = await API.put(`/api/settings/item-sub-category/${sub_category_id}/update`, { sub_category_name, status, category_id });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1339,6 +1340,71 @@ export const deleteDiscountType = async (id:string) => {
 export const addVehicle = async (data: FormData | Record<string, string>) => {
   try {
     const res = await API.post("/api/master/vehicle/create", data);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const updateVehicle = async (id: string, data: FormData | Record<string, string>) => {
+  try {
+    const res = await API.put(`/api/master/vehicle/${id}`, data);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getVehicleById = async (id: string) => {
+  try {
+    const res = await API.get(`/api/master/vehicle/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+// Promotion Type
+export const promotionTypeList = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/settings/promotion_type/list`, params);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getPromotionTypeById = async (params: Params, id: string) => {
+  try {
+    const res = await API.get(`/api/settings/promotion_type/${id}`, params);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const addPromotionType = async (body: { code: string, name: string, status: number }) => {
+  try {
+    const res = await API.post(`/api/settings/promotion_type/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updatePromotionType = async (body: { code: string, name: string, status: number }, id: number) => {
+  try {
+    const res = await API.put(`/api/settings/promotion_type/${id}/update`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deletePromotionType = async (id: number) => {
+  try {
+    const res = await API.delete(`/api/settings/promotion_type/${id}/delete`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
