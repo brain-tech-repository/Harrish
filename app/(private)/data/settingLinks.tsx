@@ -143,13 +143,13 @@ export const initialLinkData: SidebarDataType[] = [
                             leadingIcon: "mdi:earth",
                             iconColor: "text-green-500",
                         },
-                    {
-                        isActive: false,
-                        href: "/dashboard/master/vehicle",
-                        label: "Region",
-                        leadingIcon: "mdi:car",
-                        iconColor: "text-yellow-400",
-                    },
+                    // {
+                    //     isActive: false,
+                    //     href: "/dashboard/master/vehicle",
+                    //     label: "Region",
+                    //     leadingIcon: "mdi:car",
+                    //     iconColor: "text-yellow-400",
+                    // },
                     {
                         isActive: false,
                         href: "/dashboard/settings/company/subRegion",
