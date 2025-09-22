@@ -20,12 +20,14 @@ import {
 } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 
+
 export default function AddCustomer() {
   const [isOpen, setIsOpen] = useState(false);
   const [countries, setCountries] = useState<{ value: string; label: string }[]>([]);
   const [currency, setCurrency] = useState<{ value: string; label: string }[]>([]);
   const [regions, setRegions] = useState<{ value: string; label: string }[]>([]);
   const [subRegions, setSubRegions] = useState<{ value: string; label: string }[]>([]);
+ 
 
   type ApiCountry = {
     id?: string;
@@ -86,6 +88,7 @@ export default function AddCustomer() {
       vatNo: "",
       modules: "",
       serviceType: "",
+      status: "1",
     },
 
     validationSchema: CompanySchema,
@@ -115,7 +118,7 @@ export default function AddCustomer() {
       formData.append("website", values.companyWebsite);
       formData.append("service_type", values.serviceType);
       formData.append("company_type", values.companyType);
-      formData.append("status", "active");
+      formData.append("status", values.status);
       formData.append("district", values.district);
       formData.append("town", values.town);
       formData.append("street", values.street);
@@ -126,6 +129,7 @@ export default function AddCustomer() {
         "primary_contact",
         `${values.primaryCode}${values.primaryContact}`
       );
+
 
       // ✅ Handle logo
       // runtime guard: File is only available in browsers
@@ -153,6 +157,7 @@ export default function AddCustomer() {
       } else {
         showSnackbar("COMPANY added successfully ", "success");
         formik.resetForm();
+       
       }
 
 
@@ -427,6 +432,23 @@ export default function AddCustomer() {
                 { value: "branch", label: "Branch" },
                 { value: "warehouse", label: "Warehouse" },
               ]}
+            />
+            <InputFields
+              label="Status"
+              type="select"
+              name="status"
+              value={formik.values.status}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              options={[
+                { value: "1", label: "Active" },
+                { value: "0", label: "Inactive" },
+              ]}
+              error={
+                formik.touched.status && formik.errors.status
+                  ? formik.errors.status
+                  : ""
+              }
             />
           </div>
         </ContainerCard>

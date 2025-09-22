@@ -95,7 +95,7 @@ export const editCompany = async (id: string, data: object) => {
 
 export const getCompanyById = async (id: string) => {
   try {
-    const res = await API.get(`/api/master/company/${id}`);
+    const res = await API.get(`/api/master/company/company/${id}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -760,7 +760,6 @@ export const routeTypeList = async (params?: Record<string, string>) => {
 export const addRouteType = async (payload: Record<string, string | number>) => {
   try {
     const res = await API.post("/api/settings/route-type/add", payload);
-
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -778,16 +777,15 @@ export const getRouteTypeById = async (id: string) => {
   }
 };
 
-
-export const updateRouteTypeById = async (id: string,payload:object) => {
+export const updateRouteTypeById = async (id: string, payload: object) => {
   try {
-    const res = await API.put(`/api/settings/route-type/${id}/update`,payload);
-
+    const res = await API.put(`/api/settings/route-type/${id}/update`, payload);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
 
 export const deleteRouteTypeById = async (id: string) => {
   try {
@@ -1344,7 +1342,7 @@ export const addVehicle = async (data: FormData | Record<string, string>) => {
 
 export const updateVehicle = async (id: string, data: FormData | Record<string, string>) => {
   try {
-    const res = await API.put(`/api/master/vehicle/${id}`, data);
+    const res = await API.put(`/api/master/vehicle/${id}/update`, data);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

@@ -3,14 +3,15 @@
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 
 import InputFields from "@/app/components/inputFields";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { addVehicle, warehouseList } from "@/app/services/allApi";
+import { warehouseList, getVehicleById, updateVehicle } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import Loading from "@/app/components/Loading";
 
 interface Warehouse {
   id: number;
@@ -23,29 +24,15 @@ interface VehicleFormValues {
   chassisNumber: string;
   vehicleType: string;
   ownerType: string;
-  warehouseId: string; // form value is string
+  warehouseId: string;
   odoMeter: string;
   capacity: string;
-  status: "active" | "inactive"; // form value is string
+  status: "active" | "inactive";
   validFrom: string;
   validTo: string;
 }
 
-interface VehiclePayload {
-  number_plat: string;
-  vehicle_chesis_no: string;
-  description: string;
-  capacity: string;
-  vehicle_type: string;
-  owner_type: string;
-  warehouse_id: number;
-  opening_odometer: string;
-  status: number;
-  valid_from: string;
-  valid_to: string;
-}
-
-// Yup validation
+// Yup validation schema
 const VehicleSchema = Yup.object().shape({
   vehicleBrand: Yup.string().required("Vehicle Brand is required"),
   numberPlate: Yup.string()
@@ -57,9 +44,7 @@ const VehicleSchema = Yup.object().shape({
   vehicleType: Yup.string().required("Vehicle Type is required"),
   ownerType: Yup.string().required("Owner Type is required"),
   warehouseId: Yup.string().required("Warehouse is required"),
-  odoMeter: Yup.string()
-    .matches(/^\d+$/, "Odometer must be numeric")
-    .required("Odometer is required"),
+  odoMeter: Yup.string().matches(/^\d+$/, "Odometer must be numeric").required("Odometer is required"),
   capacity: Yup.string()
     .matches(/^\d+(\s?kg)?$/i, "Capacity must be numeric or numeric + 'kg'")
     .required("Capacity is required"),
@@ -70,10 +55,29 @@ const VehicleSchema = Yup.object().shape({
     .required("Valid To date is required"),
 });
 
-export default function AddVehicle() {
+export default function UpdateVehicle() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [loading, setLoading] = useState(true);
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
+  const params = useParams();
+  
+  // Ensure id is string, handle undefined
+  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+
+  const [initialValues, setInitialValues] = useState<VehicleFormValues>({
+    vehicleBrand: "",
+    numberPlate: "",
+    chassisNumber: "",
+    vehicleType: "",
+    ownerType: "",
+    warehouseId: "",
+    odoMeter: "",
+    capacity: "",
+    status: "active",
+    validFrom: "",
+    validTo: "",
+  });
 
   // Fetch warehouses
   useEffect(() => {
@@ -89,36 +93,78 @@ export default function AddVehicle() {
     fetchWarehouses();
   }, [showSnackbar]);
 
-  const handleSubmit = async (values: VehicleFormValues) => {
-    try {
-      // Convert warehouseId and status to numbers
-      const payload: Record<string, string> = {
-  number_plat: values.numberPlate,
-  vehicle_chesis_no: values.chassisNumber,
-  description: values.vehicleBrand,
-  capacity: values.capacity,
-  vehicle_type: values.vehicleType,
-  owner_type: values.ownerType,
-  warehouse_id: values.warehouseId, // string
-  opening_odometer: values.odoMeter,
-  status: values.status === "active" ? "1" : "0", // string
-  valid_from: values.validFrom,
-  valid_to: values.validTo,
-};
+  // Fetch vehicle data by ID
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      showSnackbar("Vehicle ID is missing ❌", "error");
+      return;
+    }
 
-      const res = await addVehicle(payload);
+    const fetchVehicle = async () => {
+      try {
+        const res = await getVehicleById(id);
+        if (res?.data) {
+          const vehicle = res.data;
+          setInitialValues({
+            vehicleBrand: vehicle.description || "",
+            numberPlate: vehicle.number_plat || "",
+            chassisNumber: vehicle.vehicle_chesis_no || "",
+            vehicleType: vehicle.vehicle_type || "",
+            ownerType: vehicle.owner_type || "",
+            warehouseId: String(vehicle.warehouse_id) || "",
+            odoMeter: vehicle.opening_odometer || "",
+            capacity: vehicle.capacity || "",
+            status: vehicle.status === 1 ? "active" : "inactive",
+            validFrom: vehicle.valid_from || "",
+            validTo: vehicle.valid_to || "",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch vehicle ❌", err);
+        showSnackbar("Failed to fetch vehicle ❌", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicle();
+  }, [id, showSnackbar]);
+
+  const handleSubmit = async (values: VehicleFormValues) => {
+    if (!id) return;
+
+    try {
+      // All values as strings to satisfy API
+      const payload: Record<string, string> = {
+        number_plat: values.numberPlate,
+        vehicle_chesis_no: values.chassisNumber,
+        description: values.vehicleBrand,
+        capacity: values.capacity,
+        vehicle_type: values.vehicleType,
+        owner_type: values.ownerType,
+        warehouse_id: String(values.warehouseId),
+        opening_odometer: values.odoMeter,
+        status: String(values.status === "active" ? 1 : 0),
+        valid_from: values.validFrom,
+        valid_to: values.validTo,
+      };
+
+      const res = await updateVehicle(id, payload);
 
       if (res?.error) {
-        showSnackbar(res.message || "Failed to add vehicle ❌", "error");
+        showSnackbar(res.message || "Failed to update vehicle ❌", "error");
       } else {
-        showSnackbar("Vehicle added successfully ✅", "success");
+        showSnackbar("Vehicle updated successfully ✅", "success");
         router.push("/dashboard/master/vehicle");
       }
     } catch (err) {
-      console.error("Add vehicle failed ❌", err);
-      showSnackbar("Add vehicle failed ❌", "error");
+      console.error("Update vehicle failed ❌", err);
+      showSnackbar("Update vehicle failed ❌", "error");
     }
   };
+
+  if (loading) return <div><Loading /></div>;
 
   return (
     <>
@@ -128,25 +174,14 @@ export default function AddVehicle() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            Add New Vehicle
+            Update Vehicle
           </h1>
         </div>
       </div>
 
       <Formik<VehicleFormValues>
-        initialValues={{
-          vehicleBrand: "",
-          numberPlate: "",
-          chassisNumber: "",
-          vehicleType: "",
-          ownerType: "",
-          warehouseId: "",
-          odoMeter: "",
-          capacity: "",
-          status: "active",
-          validFrom: "",
-          validTo: "",
-        }}
+        enableReinitialize
+        initialValues={initialValues}
         validationSchema={VehicleSchema}
         onSubmit={handleSubmit}
       >
@@ -197,8 +232,10 @@ export default function AddVehicle() {
 
             {/* Buttons */}
             <div className="flex justify-end gap-4 pr-0 mt-4">
-              <button type="button" className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100" onClick={() => router.push("/dashboard/master/vehicle")}>Cancel</button>
-              <SidebarBtn label="Submit" isActive={true} leadingIcon="mdi:check" type="submit" />
+              <button type="button" className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100" onClick={() => router.push("/dashboard/master/vehicle")}>
+                Cancel
+              </button>
+              <SidebarBtn label="Update" isActive={true} leadingIcon="mdi:check" type="submit" />
             </div>
           </Form>
         )}
