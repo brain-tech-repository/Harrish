@@ -11,8 +11,7 @@
     import SidebarBtn from "@/app/components/dashboardSidebarBtn";
     import { useSnackbar } from "@/app/services/snackbarContext";
     import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-    import axios from "axios";
-
+import { addCompanyCustomers } from "@/app/services/allApi";
     // ---------------------- API Call ----------------------
     interface CompanyCustomerPayload {
     sap_code: string;
@@ -55,27 +54,8 @@
     status: number;
     }
 
-    const API = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    headers: { "Content-Type": "application/json" },
-    });
-
-    const handleError = (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response) {
-        console.error("API Error:", error.response.data);
-        return { errors: error.response.data };
-    }
-    return { errors: { message: ["Unknown error"] } };
-    };
-
-    export const addCompanyCustomers = async (body: CompanyCustomerPayload) => {
-    try {
-        const res = await API.post("/api/master/companycustomer/create", body);
-        return res.data;
-    } catch (error: unknown) {
-        return handleError(error);
-    }
-    };
+ 
+  
 
     // ---------------------- Validation Schema ----------------------
     const CompanyCustomerSchema = Yup.object().shape({

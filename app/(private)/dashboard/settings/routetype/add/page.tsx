@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import InputFields from "@/app/components/inputFields";
 import { addRouteType } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
-
-// ✅ Validation schema
+import InputFields from "@/app/components/inputFields";
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import Link from "next/link";
+import { Icon } from "@iconify-icon/react";
+// Define the validation schema using Yup
 const validationSchema = Yup.object({
   routeTypeName: Yup.string()
     .trim()
@@ -62,6 +60,7 @@ export default function AddRouteType() {
       }
     },
   });
+      
 
   return (
     <div className="p-6">
@@ -71,13 +70,14 @@ export default function AddRouteType() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">Add New Route Type</h1>
+        <h1 className="text-xl font-semibold">Add New Route Type</h1>
       </div>
 
       {/* Form */}
       <div className="bg-white rounded-xl shadow p-6">
         <form onSubmit={formik.handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Route Type Name */}
+            {/* Route Type Name Field */}
             <InputFields
               label="Route Type Name"
               type="text"
@@ -92,7 +92,7 @@ export default function AddRouteType() {
               }
             />
 
-            {/* Status */}
+            {/* Status Field */}
             <InputFields
               label="Status"
               type="select"

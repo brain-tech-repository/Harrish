@@ -48,8 +48,6 @@ type FormValues = {
     is_branch: string;
     invoice_sync: string;
     is_efris: string;
-    created_user: string;
-    updated_user: string;
     stock_capital: string;
     deposite_amount: string;
 };
@@ -93,8 +91,6 @@ export default function AddWarehouse() {
         is_branch: '',
         invoice_sync: '',
         is_efris: '',
-        created_user: '',
-        updated_user: '',
         stock_capital: '',
         deposite_amount: '',
     };
@@ -132,9 +128,6 @@ export default function AddWarehouse() {
             .min(6, 'Password must be at least 6 characters'),
         status: Yup.string().required('Status is required'),
         is_efris: Yup.string().required('EFRIS Configuration is required'),
-        created_user: Yup.string().required('Created User is required'),
-        updated_user: Yup.string().required('Updated User is required'),
-        
         // Optional fields validation (for better UX)
         owner_name: Yup.string(),
         owner_number: Yup.string()
@@ -155,26 +148,15 @@ export default function AddWarehouse() {
     });
 
     const handleSubmit = async (values: FormValues, { setSubmitting, resetForm }: FormikHelpers<FormValues>) => {
-        try {
-            const payload = { ...values };
-            console.log('addWarehouse payload:', JSON.stringify(payload, null, 2));
-            await addWarehouse(payload);
-             showSnackbar("Route added successfully ", "success");
+        const payload = { ...values };
+        const res = await addWarehouse(payload);
+        if(res.error) showSnackbar(res.data.message || "Failed to submit form", "error");
+        else {
+            showSnackbar("Warehouse added successfully ", "success");
             router.push("/dashboard/master/warehouse");
             resetForm();
-        } catch (err: unknown) {
-            const error = err as unknown;
-            if (typeof error === 'object' && error !== null && 'response' in error) {
-                const response = (error as { response?: { status?: number } }).response;
-                if (response && typeof response.status === 'number') {
-                    showSnackbar(`Error adding warehouse - response.status: ${response.status}`, "error");
-                    console.error('Error adding warehouse - response.status:', response.status);
-                }
-            } else {
-                showSnackbar("Failed to submit form", "error");
-            }
-            setSubmitting(false);
         }
+        setSubmitting(false);
     };
 
     return (

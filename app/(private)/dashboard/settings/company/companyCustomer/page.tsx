@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import CustomDropdown from "@/app/components/customDropdown";
+import DismissibleDropdown from "@/app/components/dismissibleDropdown";
+import BorderIconButton from "@/app/components/borderIconButton";
+import { Icon } from "@iconify-icon/react";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Loading from "@/app/components/Loading";
@@ -28,7 +31,16 @@ interface CustomerItem {
   status: number; // 1 = Active, 0 = Inactive
 }
 
+const dropdownDataList = [
+  { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+  { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+  { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
+  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
+];
+
 export default function CompanyCustomers() {
+  const [showDropdown, setShowDropdown] = useState(false);
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
@@ -37,29 +49,48 @@ export default function CompanyCustomers() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
-  // Fetch customers
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const data = await getCompanyCustomers();
-        if (!Array.isArray(data)) {
-          showSnackbar("No customers found ❌", "error");
-          setCustomers([]);
-          return;
-        }
-        setCustomers(data);
-      } catch (error) {
-        console.error("Failed to fetch customers", error);
-        showSnackbar("Failed to fetch Customers ❌", "error");
-      } finally {
-        setLoading(false);
+  // ------------------ Fetch Customers ------------------
+  const fetchCustomers = async () => {
+    setLoading(true);
+    try {
+      const data = await getCompanyCustomers();
+      if (!Array.isArray(data)) {
+        showSnackbar("No customers found ❌", "error");
+        setCustomers([]);
+        return;
       }
-    };
+      setCustomers(data);
+    } catch (error) {
+      console.error("Failed to fetch customers", error);
+      showSnackbar("Failed to fetch Customers ❌", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCustomers();
-  }, [showSnackbar]);
+  }, []);
 
-  // Table data
+  // ------------------ Delete Customer ------------------
+  const handleConfirmDelete = async () => {
+    if (!selectedRow) return;
+    try {
+      const res = await deleteCompanyCustomer(selectedRow.id.toString());
+      console.log("Delete API response:", res);
+
+ setCustomers(prev => prev.filter(c => c.id !== Number(selectedRow.id)));
+      showSnackbar("Company Customer deleted successfully ✅", "success");
+    } catch (error) {
+      console.error("Delete failed ❌", error);
+      showSnackbar("Failed to delete Customer ❌", "error");
+    } finally {
+      setShowDeletePopup(false);
+      setSelectedRow(null);
+    }
+  };
+
+  // ------------------ Table Data ------------------
   const tableData: TableDataType[] = customers.map((c) => ({
     id: c.id.toString(),
     sap_code: c.sap_code,
@@ -72,35 +103,47 @@ export default function CompanyCustomers() {
     status: c.status === 1 ? "Active" : "Inactive",
   }));
 
-  // Delete handler
-  const handleConfirmDelete = async () => {
-    if (!selectedRow) return;
-    try {
-      await deleteCompanyCustomer(selectedRow.id.toString());
-      setCustomers(prev => prev.filter(c => c.id !== selectedRow.id));
-      showSnackbar("Customer deleted successfully ✅", "success");
-    } catch (error) {
-      console.error("Delete failed ❌", error);
-      showSnackbar("Failed to delete Customer ❌", "error");
-    } finally {
-      setShowDeletePopup(false);
-      setSelectedRow(null);
-    }
-  };
-
   if (loading) return <Loading />;
 
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center mb-5">
-        <h1 className="text-[20px] font-semibold text-[#181D27]">Company Customer</h1>
-        <SidebarBtn
-          href="/dashboard/settings/company/companyCustomer/add"
-          isActive
-          leadingIcon="lucide:plus"
-          label="Add Company Customer"
-        />
+      <div className="flex justify-between items-center mb-[20px]">
+        <h1 className="text-[20px] font-semibold text-[#181D27]">
+          Company Customer
+        </h1>
+
+        <div className="flex gap-[12px] relative">
+          <BorderIconButton icon="gala:file-document" label="Export CSV" />
+          <BorderIconButton icon="mage:upload" />
+
+          <DismissibleDropdown
+            isOpen={showDropdown}
+            setIsOpen={setShowDropdown}
+            button={<BorderIconButton icon="ic:sharp-more-vert" />}
+            dropdown={
+              <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                <CustomDropdown>
+                  {dropdownDataList.map((link, idx) => (
+                    <div
+                      key={idx}
+                      className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
+                    >
+                      <Icon
+                        icon={link.icon}
+                        width={link.iconWidth}
+                        className="text-[#717680]"
+                      />
+                      <span className="text-[#181D27] font-[500] text-[16px]">
+                        {link.label}
+                      </span>
+                    </div>
+                  ))}
+                </CustomDropdown>
+              </div>
+            }
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -108,7 +151,20 @@ export default function CompanyCustomers() {
         <Table
           data={tableData}
           config={{
-            header: { searchBar: true, columnFilter: true },
+            header: {
+              searchBar: true,
+              columnFilter: true,
+              actions: [
+                <SidebarBtn
+                  key="add-company-customer"
+                  href="/dashboard/settings/company/companyCustomer/adds"
+                  leadingIcon="lucide:plus"
+                  label="Add Company Customer"
+                  labelTw="hidden sm:block"
+                  isActive
+                />,
+              ],
+            },
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               { key: "sap_code", label: "SAP Code" },
@@ -124,7 +180,9 @@ export default function CompanyCustomers() {
                 render: (row: TableDataType) => (
                   <span
                     className={`text-sm p-1 px-4 rounded-xl text-[12px] font-[500] ${
-                      row.status === "Active" ? "text-[#027A48] bg-[#ECFDF3]" : "text-red-700 bg-red-200"
+                      row.status === "Active"
+                        ? "text-[#027A48] bg-[#ECFDF3]"
+                        : "text-red-700 bg-red-200"
                     }`}
                   >
                     {row.status}
@@ -136,12 +194,17 @@ export default function CompanyCustomers() {
             rowActions: [
               {
                 icon: "lucide:edit-2",
-                onClick: (row: TableDataType) => router.push(`/dashboard/settings/company/companyCustomer/update/${row.id}`),
+                onClick: (row: TableDataType) =>
+                  router.push(
+                    `/dashboard/settings/company/companyCustomer/update/${row.id}`
+                  ),
               },
               {
                 icon: "lucide:trash-2",
                 onClick: (row: TableDataType) => {
-                  const fullRow = customers.find(c => c.id.toString() === row.id);
+                  const fullRow = customers.find(
+                    (c) => c.id.toString() === row.id
+                  );
                   if (fullRow) {
                     setSelectedRow(fullRow);
                     setShowDeletePopup(true);
