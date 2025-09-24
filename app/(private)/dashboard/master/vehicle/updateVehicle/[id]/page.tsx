@@ -61,8 +61,6 @@ export default function UpdateVehicle() {
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams();
-  
-  // Ensure id is string, handle undefined
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const [initialValues, setInitialValues] = useState<VehicleFormValues>({
@@ -93,7 +91,7 @@ export default function UpdateVehicle() {
     fetchWarehouses();
   }, [showSnackbar]);
 
-  // Fetch vehicle data by ID
+  // Fetch vehicle by ID
   useEffect(() => {
     if (!id) {
       setLoading(false);
@@ -105,20 +103,23 @@ export default function UpdateVehicle() {
       try {
         const res = await getVehicleById(id);
         if (res?.data) {
-          const vehicle = res.data;
+          const v = res.data;
+          console.log("dghbdfg", v)
           setInitialValues({
-            vehicleBrand: vehicle.description || "",
-            numberPlate: vehicle.number_plat || "",
-            chassisNumber: vehicle.vehicle_chesis_no || "",
-            vehicleType: vehicle.vehicle_type || "",
-            ownerType: vehicle.owner_type || "",
-            warehouseId: String(vehicle.warehouse_id) || "",
-            odoMeter: vehicle.opening_odometer || "",
-            capacity: vehicle.capacity || "",
-            status: vehicle.status === 1 ? "active" : "inactive",
-            validFrom: vehicle.valid_from || "",
-            validTo: vehicle.valid_to || "",
+            vehicleBrand: v.description || "",
+            numberPlate: v.number_plat || "",
+            chassisNumber: v.vehicle_chesis_no || "",
+            vehicleType: v.vehicle_type ? String(v.vehicle_type) : "",
+            ownerType: v.owner_type ? String(v.owner_type) : "",
+            warehouseId: v.warehouse_id ? String(v.warehouse_id) : "",
+            odoMeter: v.opening_odometer || "",
+            capacity: v.capacity || "",
+            status: v.status === 1 ? "active" : "inactive",
+            validFrom: v.valid_from || "",
+            validTo: v.valid_to || "",
           });
+        } else {
+          showSnackbar("Vehicle data not found ❌", "error");
         }
       } catch (err) {
         console.error("Failed to fetch vehicle ❌", err);
@@ -135,7 +136,6 @@ export default function UpdateVehicle() {
     if (!id) return;
 
     try {
-      // All values as strings to satisfy API
       const payload: Record<string, string> = {
         number_plat: values.numberPlate,
         vehicle_chesis_no: values.chassisNumber,
@@ -143,9 +143,9 @@ export default function UpdateVehicle() {
         capacity: values.capacity,
         vehicle_type: values.vehicleType,
         owner_type: values.ownerType,
-        warehouse_id: String(values.warehouseId),
+        warehouse_id: values.warehouseId,
         opening_odometer: values.odoMeter,
-        status: String(values.status === "active" ? 1 : 0),
+        status: values.status === "active" ? "1" : "0",
         valid_from: values.validFrom,
         valid_to: values.validTo,
       };
@@ -164,7 +164,7 @@ export default function UpdateVehicle() {
     }
   };
 
-  if (loading) return <div><Loading /></div>;
+  if (loading) return <Loading />;
 
   return (
     <>

@@ -74,7 +74,7 @@ export default function CustomerCategoryPage() {
           outlet_channel_code: outletChannels[c.outlet_channel_id] || c.outlet_channel_id,
           customer_category_code: c.customer_category_code,
           customer_category_name: c.customer_category_name,
-          status:  c.status === 1 ? "Active" : "In Active", // normalize to "1"/"0"
+          status: c.status, // keep as number (1 or 0) instead of converting to string
         }));
 
         console.log("Fetched Categories ✅", formatted);
@@ -112,7 +112,7 @@ export default function CustomerCategoryPage() {
     outlet_channel_code: c.outlet_channel_code,
     customer_category_code: c.customer_category_code,
     customer_category_name: c.customer_category_name,
-    status: c.status === 1 ? "Active" : "Inactive",
+    status: c.status === 1 ? "Active" : "Inactive", // convert to string but with correct comparison
   }));
 
   const columns = [
@@ -124,7 +124,7 @@ export default function CustomerCategoryPage() {
         label: "Status",
         render: (row: TableDataType) => (
             <div className="flex items-center">
-                {row.status ? (
+                {row.status === "Active" ? (
                     <span className="text-sm text-[#027A48] bg-[#ECFDF3] font-[500] p-1 px-4 rounded-xl text-[12px]">
                         Active
                     </span>
@@ -134,8 +134,8 @@ export default function CustomerCategoryPage() {
                     </span>
                 )}
             </div>
-        ),
-    },
+ ),
+},
   ];
 
   if (loading) return <Loading />;

@@ -28,10 +28,6 @@ const columns = [
         key: "discount_status",
         label: "Status",
         render: (row: TableDataType) => {
-            // Debug log to see actual values
-            console.log('discount_status value:', row.discount_status, 'type:', typeof row.discount_status);
-            
-            // Check if status is active (handles both string and number types)
             const statusValue = String(row.discount_status);
             const isActive = statusValue === "1";
             

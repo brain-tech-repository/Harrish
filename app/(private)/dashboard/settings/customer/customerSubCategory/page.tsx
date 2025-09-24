@@ -56,7 +56,7 @@ export default function CustomerSubCategoryPage() {
             customer_category_name:s.customer_category?.customer_category_name || "N/A",
             customer_sub_category_code: s.customer_sub_category_code,
             customer_sub_category_name: s.customer_sub_category_name,
-            status: s.status === 1 ? "Active" : "Inactive",
+            status: s.status,
           })
         );
         setSubCategories(formatted);
@@ -95,7 +95,7 @@ export default function CustomerSubCategoryPage() {
     customer_category_name: c.customer_category_name,
     customer_sub_category_code: c.customer_sub_category_code,
     customer_sub_category_name: c.customer_sub_category_name,
-    status: c.status !== undefined ? String(c.status) : "0", // already "Active" | "Inactive"
+    status: c.status === 1 ? "Active" : "Inactive", // Convert to proper string based on number value
   }));
 
   const columns = [
@@ -107,13 +107,13 @@ export default function CustomerSubCategoryPage() {
         label: "Status",
         render: (row: TableDataType) => (
             <div className="flex items-center">
-                {row.status ? (
+                {row.status === "Active" ? (
                     <span className="text-sm text-[#027A48] bg-[#ECFDF3] font-[500] p-1 px-4 rounded-xl text-[12px]">
                         Active
                     </span>
                 ) : (
                     <span className="text-sm text-red-700 bg-red-200 p-1 px-4 rounded-xl text-[12px]">
-                        Inactive
+                        In Active
                     </span>
                 )}
             </div>

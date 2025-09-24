@@ -185,7 +185,6 @@ export default function CustomerInfo() {
                                 {
                                     icon: "lucide:edit-2",
                                     onClick: (data) => {
-                                        console.log(data);
                                     },
                                 },
                                 {

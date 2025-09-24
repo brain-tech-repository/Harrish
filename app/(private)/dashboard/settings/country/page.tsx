@@ -77,19 +77,18 @@ useEffect(()  => {
 },[]);
   const handleConfirmDelete = async () => {
     if (!selectedRow) return;
-    try {
+    
                 if (!selectedRow?.id) throw new Error('Missing id');
-                await deleteCountry(String(selectedRow.id)); // call API
-                showSnackbar("Country deleted successfully ", "success");
+                 const res = await deleteCountry(String(selectedRow.id)); 
+                if (res.error) return showSnackbar(res.data.message|| "Failed to delete country","error");
+                else{
+                  showSnackbar("Country deleted successfully ", "success");
                 await countryList({});
                 setCountries((prev) => prev.filter((c) => String(c.id) !== String(selectedRow.id)));
-            } catch (error) {
-                console.error("Delete failed ❌:", error);
-                showSnackbar("Failed to delete country", "error"); 
-            } finally {
-                setShowDeletePopup(false);
+                }
+                 setShowDeletePopup(false);
                 setSelectedRow(null);
-            }
+           
           };
   
 

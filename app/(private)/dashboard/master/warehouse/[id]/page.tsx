@@ -9,7 +9,7 @@ import Link from "next/link";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { Formik, Form, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { addWarehouse, getWarehouseById, updateWarehouse } from '@/app/services/allApi';
+import {  getWarehouseById, updateWarehouse } from '@/app/services/allApi';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useState } from 'react';
@@ -111,45 +111,45 @@ export default function EditWarehouse() {
                 const data = res?.data ?? res;
                 console.log('API Response for warehouse edit:', JSON.stringify(data, null, 2)); // Debug log
                 if (!mounted) return;
-                // map API fields to form keys used in this page
+                // map API fields to form keys used in this page - updated to match your exact API response
                 const mappedData = {
-                    registation_no: data?.registration_no || data?.registation_no || data?.reg_no || '',
-                    password: data?.password || '', // password should be empty for security - user needs to enter new one
-                    warehouse_type: String(data?.warehouse_type || data?.type || ''),
-                    warehouse_name: data?.warehouse_name || data?.name || '',
-                    warehouse_code: data?.warehouse_code || data?.code || '',
-                    agent_id: String(data?.agent_id || data?.agentId || ''),
-                    owner_name: data?.owner_name || data?.ownerName || '',
-                    business_type: String(data?.business_type || data?.businessType || ''),
+                    registation_no: data?.registation_no || '',
+                    password: data?.password || '', // Keep existing password or empty for new entry
+                    warehouse_type: String(data?.warehouse_type || ''),
+                    warehouse_name: data?.warehouse_name || '',
+                    warehouse_code: data?.warehouse_code || '',
+                    agent_id: String(data?.agent_id || ''),
+                    owner_name: data?.owner_name || '',
+                    business_type: String(data?.business_type || ''),
                     status: String(data?.status || ''),
-                    ownerContactCountry: data?.ownerContactCountry || data?.owner_contact_country || data?.contact_country || '',
-                    tinCode: data?.tinCode || data?.tin_code || data?.tin_country || '',
-                    tin_no: data?.tin_no || data?.tinNo || data?.tin_number || '',
-                    owner_number: data?.owner_number || data?.ownerNumber || data?.contact_number || '',
-                    owner_email: data?.owner_email || data?.ownerEmail || data?.email || '',
-                    company_customer_id: String(data?.company_customer_id || data?.companyCustomerId || data?.customer_id || ''),
-                    warehouse_manager: data?.warehouse_manager || data?.warehouseManager || data?.manager || '',
-                    warehouse_manager_contact: data?.warehouse_manager_contact || data?.warehouseManagerContact || data?.manager_contact || '',
-                    region_id: String(data?.region_id || data?.regionId || data?.region || ''),
-                    area_id: String(data?.area_id || data?.areaId || data?.area || ''),
+                    ownerContactCountry: data?.ownerContactCountry || '',
+                    tinCode: data?.tinCode || '',
+                    tin_no: data?.tin_no || '',
+                    owner_number: data?.owner_number || '',
+                    owner_email: data?.owner_email || '',
+                    company_customer_id: String(data?.company_customer_id || ''),
+                    warehouse_manager: data?.warehouse_manager || '',
+                    warehouse_manager_contact: data?.warehouse_manager_contact || '',
+                    region_id: String(data?.region_id || ''),
+                    area_id: String(data?.area_id || ''),
                     city: data?.city || '',
                     location: data?.location || '',
                     address: data?.address || '',
                     district: data?.district || '',
-                    town_village: data?.town_village || data?.townVillage || data?.town || '',
+                    town_village: data?.town_village || '',
                     street: data?.street || '',
                     landmark: data?.landmark || '',
-                    latitude: String(data?.latitude || data?.lat || ''),
-                    longitude: String(data?.longitude || data?.lng || data?.long || ''),
-                    threshold_radius: String(data?.threshold_radius || data?.thresholdRadius || data?.radius || ''),
-                    device_no: String(data?.device_no || data?.deviceNo || data?.device_number || ''),
-                    p12_file: data?.p12_file || data?.p12File || data?.p12_file_name || data?.certificate_file || '',
-                    branch_id: String(data?.branch_id || data?.branchId || ''),
-                    is_branch: String(data?.is_branch || data?.isBranch || ''),
-                    invoice_sync: String(data?.invoice_sync || data?.invoiceSync || ''),
-                    is_efris: String(data?.is_efris || data?.isEfris || data?.efris || ''),
-                    stock_capital: String(data?.stock_capital || data?.stockCapital || ''),
-                    deposite_amount: String(data?.deposite_amount || data?.depositeAmount || data?.deposit_amount || ''),
+                    latitude: String(data?.latitude || ''),
+                    longitude: String(data?.longitude || ''),
+                    threshold_radius: String(data?.threshold_radius || ''),
+                    device_no: data?.device_no || '',
+                    p12_file: data?.p12_file || '',
+                    branch_id: String(data?.branch_id || ''),
+                    is_branch: String(data?.is_branch || ''),
+                    invoice_sync: String(data?.invoice_sync || ''),
+                    is_efris: String(data?.is_efris || ''),
+                    stock_capital: String(data?.stock_capital || ''),
+                    deposite_amount: String(data?.deposite_amount || ''),
                 };
                 
                 setFetched(mappedData);
@@ -239,11 +239,7 @@ export default function EditWarehouse() {
                 await updateWarehouse(String(routeId), payload);
                 showSnackbar('Warehouse updated successfully!', 'success');
                 router.push('/dashboard/master/warehouse');
-            } else {
-                await addWarehouse(payload);
-                showSnackbar('Warehouse added successfully!', 'success');
-                resetForm();
-            }
+            } 
         } catch (err: unknown) {
             console.error('Error saving warehouse:', err);
             showSnackbar('Failed to save warehouse. Please try again.', 'error');
