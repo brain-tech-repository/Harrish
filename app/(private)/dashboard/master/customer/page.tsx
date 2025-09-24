@@ -190,7 +190,6 @@ export default function Customer() {
               {
                 icon: "lucide:edit-2",
                 onClick: (data) => {
-                  console.log(data);
                 },
               },
               {

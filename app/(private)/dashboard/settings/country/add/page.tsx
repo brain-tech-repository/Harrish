@@ -42,20 +42,24 @@ export default function AddCountry() {
     values: CountryFormValues,
     { setSubmitting }: FormikHelpers<CountryFormValues>
   ) => {
-    try {
+    
       const payload = {
         ...values,
         status: 1,
       };
+
       const res = await addCountry(payload);
-      showSnackbar("Country added successfully ", "success");
-      router.push("/dashboard/settings/country");
-    } catch (error) {
-      console.error("Error submitting country ❌:", error);
-      showSnackbar("Failed to submit form", "error");
-    } finally {
+      if (res.error) return showSnackbar(res.data.message|| "Failed to submit form","error");
+      
+      else {
+        showSnackbar(
+          res.message || "Country Created Successfully",
+          "success"
+        );
+        router.push("/dashboard/settings/country");
+      }
       setSubmitting(false);
-    }
+   
   }; 
 
   return (

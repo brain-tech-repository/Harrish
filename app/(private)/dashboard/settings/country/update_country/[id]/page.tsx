@@ -77,14 +77,16 @@ export default function EditCountry() {
   const handleSubmit = async (values: CountryFormValues) => {
     if (!queryId) return;
 
-    try {
-  await editCountry(String(queryId), { ...values, status: 1 });
-      showSnackbar("Country updated successfully", "success");
+   
+   const res = await editCountry(String(queryId), { ...values, status: 1 });
+   if (res.error) return showSnackbar(res.data.message|| "Failed to submit form","error");
+   else{
+      showSnackbar(
+        res.message || "Country updated Successfully",
+        "success"
+      );
       router.push("/dashboard/settings/country");
-    } catch (error) {
-      console.error("Failed to edit country:", error);
-      showSnackbar("Failed to update country", "error");
-    }
+   }
   };
 
   return (
