@@ -125,6 +125,8 @@ export default function UpdateVehicleWithStepper() {
             validFrom: vehicle.valid_from || "",
             validTo: vehicle.valid_to || "",
           });
+        } else {
+          showSnackbar("Vehicle data not found ❌", "error");
         }
       } catch (err) {
         showSnackbar("Failed to fetch vehicle ❌", "error");
@@ -334,4 +336,3 @@ export default function UpdateVehicleWithStepper() {
     </>
   );
 }
-

@@ -43,10 +43,10 @@ const columns = [
   { key: "area_code", label: "SubRegion Code" },
   { key: "area_name", label: "SubRegion Name" },
   {
-  label: 'Region',
-  key: 'region_name',
-  render: (row: any) => row.region_name || '',
-},
+    label: 'Region',
+    key: 'region_name',
+  render: (row: SubRegionItem) => row.region?.region_name || '',
+  },
   
   {
     key: "status",
@@ -94,7 +94,6 @@ export default function SubRegion() {
       try {
         const listRes = await getArea();
         setSubRegions(listRes.data);
-        console.log("API Response:", subRegions)
       } catch (error: unknown) {
         console.error("API Error:", error);
       } finally {
@@ -103,6 +102,7 @@ export default function SubRegion() {
     };
 
     fetchSubRegions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConfirmDelete = async () => {

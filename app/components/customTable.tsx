@@ -4,13 +4,18 @@ import SearchBar from "./searchBar";
 import { Icon } from "@iconify-icon/react";
 import CustomDropdown from "./customDropdown";
 import BorderIconButton from "./borderIconButton";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import FilterDropdown from "./filterDropdown";
 import CustomCheckbox from "./customCheckbox";
 import DismissibleDropdown from "./dismissibleDropdown";
 import { naturalSort } from "../(private)/utils/naturalSort";
 
-export type listReturnType = { data: TableDataType[]; currentPage: number; pageSize: number; total: number }
+export type listReturnType = {
+    data: TableDataType[];
+    currentPage: number;
+    pageSize: number;
+    total: number;
+};
 
 type configType = {
     api?: {
@@ -21,9 +26,14 @@ type configType = {
             total: number;
         };
         filter?: () => TableDataType[];
-        list: (pageNo: number, pageSize: number) => Promise<listReturnType> | listReturnType;
+        list: (
+            pageNo: number,
+            pageSize: number
+        ) => Promise<listReturnType> | listReturnType;
     };
     header?: {
+        title?: string;
+        wholeTableActions?: React.ReactNode[];
         searchBar?:
             | boolean
             | {
@@ -69,6 +79,16 @@ const ColumnFilterConfig = createContext<columnFilterConfigType>({
     setSelectedColumns: () => {},
 });
 
+type SelectedRowType = {
+    selectedRow: number[];
+    setSelectedRow: React.Dispatch<React.SetStateAction<number[]>>;
+};
+
+const SelectedRow = createContext<SelectedRowType>({
+    selectedRow: [],
+    setSelectedRow: () => {},
+});
+
 type configContextType = {
     config: configType;
     setConfig: React.Dispatch<React.SetStateAction<configType>>;
@@ -83,21 +103,20 @@ export type TableDataType = {
     [key: string]: string;
 };
 
-const TableData = createContext<{
-    tableData: TableDataType[];
-    setTableData: React.Dispatch<React.SetStateAction<TableDataType[]>>;
-}>({ tableData: [], setTableData: () => {} });
-
-type CurrentPageType = {
-    currentPage: number;
-    setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+type tableDetailsContextType = {
+    tableDetails: listReturnType;
+    setTableDetails: React.Dispatch<React.SetStateAction<listReturnType>>;
 };
-const CurrentPage = createContext<CurrentPageType>({} as CurrentPageType);
+const TableDetails = createContext<tableDetailsContextType>(
+    {} as tableDetailsContextType
+);
 
 interface TableProps {
-    data: TableDataType[];
+    data?: TableDataType[];
     config: configType;
 }
+
+const defaultPageSize = 10;
 
 export default function Table({ data, config }: TableProps) {
     return (
@@ -109,8 +128,8 @@ export default function Table({ data, config }: TableProps) {
 
 function ContextProvider({ children }: { children: React.ReactNode }) {
     const [selectedColumns, setSelectedColumns] = useState([] as number[]);
-    const [tableData, setTableData] = useState([] as TableDataType[]);
-    const [currentPage, setCurrentPage] = useState(0);
+    const [selectedRow, setSelectedRow] = useState([] as number[]);
+    const [tableDetails, setTableDetails] = useState({} as listReturnType);
     const [config, setConfig] = useState({} as configType);
 
     return (
@@ -118,32 +137,80 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
             <ColumnFilterConfig.Provider
                 value={{ selectedColumns, setSelectedColumns }}
             >
-                <TableData.Provider value={{ tableData, setTableData }}>
-                    <CurrentPage.Provider
-                        value={{ currentPage, setCurrentPage }}
+                <SelectedRow.Provider value={{ selectedRow, setSelectedRow }}>
+                    <TableDetails.Provider
+                        value={{ tableDetails, setTableDetails }}
                     >
                         {children}
-                    </CurrentPage.Provider>
-                </TableData.Provider>
+                    </TableDetails.Provider>
+                </SelectedRow.Provider>
             </ColumnFilterConfig.Provider>
         </Config.Provider>
     );
 }
 
 function TableContainer({ data, config }: TableProps) {
-    const { setTableData } = useContext(TableData);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
+    const { setTableDetails } = useContext(TableDetails);
+    const { selectedRow } = useContext(SelectedRow);
+
+    async function checkForData() {
+        // if data is passed, use default values
+        if (data) {
+            setTableDetails({
+                data,
+                total: Math.ceil(
+                    data.length / (config.pageSize || defaultPageSize)
+                ),
+                currentPage: 0,
+                pageSize: config.pageSize || defaultPageSize,
+            });
+        }
+
+        // if api is passed, use default values
+        else if (config.api?.list) {
+            const result = await config.api.list(
+                0,
+                config.pageSize || defaultPageSize
+            );
+            const resolvedResult =
+                result instanceof Promise ? await result : result;
+            const { data, total, currentPage } = resolvedResult;
+            setTableDetails({
+                data,
+                total,
+                currentPage: currentPage - 1,
+                pageSize: config.pageSize || defaultPageSize,
+            });
+        }
+
+        // nothing is passed
+        else {
+            throw new Error(
+                "Either pass data or list API function in Table config prop"
+            );
+        }
+    }
 
     useEffect(() => {
-        setTableData(data);
+        checkForData();
         setSelectedColumns(config.columns.map((_, index) => index)); // select all in the filter dropdown
         setConfig(config);
     }, [data]);
 
     return (
         <>
-            <div className="flex flex-col bg-white w-full h-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
+            {(config.header?.title || config.header?.wholeTableActions) && <div className="flex justify-between items-center mb-[20px] h-[34px]">
+                {config.header?.title && (
+                    <h1 className="text-[18px] font-semibold text-[#181D27]">
+                        {config.header.title}
+                    </h1>
+                )}
+
+                {selectedRow.length > 0 && config.header?.wholeTableActions?.map((action) => action)}
+            </div>}
+            <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
                 <TableHeader />
                 <TableBody />
                 <TableFooter />
@@ -157,35 +224,37 @@ function TableHeader() {
     const [searchBarValue, setSearchBarValue] = useState("");
 
     return (
-        config.header && (
-            <>
-                <div className="px-[24px] py-[20px] w-full flex justify-between items-center gap-1 sm:gap-0">
-                    <div className="w-[320px] invisible sm:visible">
-                        {config.header?.searchBar && (
-                            <SearchBar
-                                value={searchBarValue}
-                                onChange={(
-                                    e: React.ChangeEvent<HTMLInputElement>
-                                ) => setSearchBarValue(e.target.value)}
-                            />
-                        )}
-                    </div>
+        <>
+            <div className="px-[24px] py-[20px] w-full flex justify-between items-center gap-[8px]">
+                {config.header && (
+                    <>
+                        <div className="w-[320px] invisible sm:visible">
+                            {config.header?.searchBar && (
+                                <SearchBar
+                                    value={searchBarValue}
+                                    onChange={(
+                                        e: React.ChangeEvent<HTMLInputElement>
+                                    ) => setSearchBarValue(e.target.value)}
+                                />
+                            )}
+                        </div>
 
-                    {/* actions */}
-                    <div className="flex justify-right w-fit gap-[8px]">
-                        {config.header?.actions?.map((action) => action)}
+                        {/* actions */}
+                        <div className="flex justify-right w-fit gap-[8px]">
+                            {config.header?.actions?.map((action) => action)}
 
-                        {config.header?.columnFilter && <ColumnFilter />}
-                    </div>
-                </div>
-            </>
-        )
+                            {config.header?.columnFilter && <ColumnFilter />}
+                        </div>
+                    </>
+                )}
+            </div>
+        </>
     );
 }
 
 function ColumnFilter() {
     const { config } = useContext(Config);
-    const {columns} = config
+    const { columns } = config;
     const { selectedColumns, setSelectedColumns } =
         useContext<columnFilterConfigType>(ColumnFilterConfig);
     const allItemsCount = columns.length;
@@ -229,7 +298,7 @@ function ColumnFilter() {
                     />
                 }
                 dropdown={
-                    <div className="w-[350px] min-h-[300px] h-full absolute right-0 top-[40px] z-50 overflow-hidden">
+                    <div className="min-w-[200px] max-w-[350px] w-fit min-h-[200px] max-h-1/2 h-fit fixed right-[50px] translate-y-[10px] z-50 overflow-auto scrollbar-none">
                         <CustomDropdown>
                             <div className="flex gap-[8px] p-[10px]">
                                 <CustomCheckbox
@@ -274,27 +343,28 @@ function TableBody() {
         columns,
         rowSelection,
         rowActions,
-        pageSize = 10,
+        pageSize = defaultPageSize,
     } = config;
-    const { currentPage } = useContext(CurrentPage);
-    const { tableData } = useContext(TableData);
+    const { tableDetails } = useContext(TableDetails);
+    const tableData = tableDetails.data || [];
+
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
     const [tableOrder, setTableOrder] = useState<{
         column: string;
         order: "asc" | "desc";
     }>({ column: "", order: "asc" });
 
-    const startIndex = currentPage * pageSize;
+    const startIndex = tableDetails.currentPage * pageSize;
     const endIndex = startIndex + pageSize;
 
     const { selectedColumns } =
         useContext<columnFilterConfigType>(ColumnFilterConfig);
-    const [selectedItems, setSelectedItems] = useState<Array<number>>([]);
+    const { selectedRow, setSelectedRow } = useContext(SelectedRow);
     if (!Array.isArray(tableData))
         throw new Error("Data must me in Array format");
     const allItemsCount: number = tableData.length || 0;
-    const isAllSelected = selectedItems.length === allItemsCount;
-    const isIndeterminate = selectedItems.length > 0 && !isAllSelected;
+    const isAllSelected = selectedRow.length === allItemsCount;
+    const isIndeterminate = selectedRow.length > 0 && !isAllSelected;
 
     useEffect(() => {
         if (!api?.list) {
@@ -302,18 +372,18 @@ function TableBody() {
         } else {
             setDisplayedData(tableData);
         }
-    }, [currentPage, tableData, startIndex, endIndex]);
+    }, [tableDetails]);
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            setSelectedItems(tableData.map((_, index) => index));
+            setSelectedRow(tableData.map((_, index) => index));
         } else {
-            setSelectedItems([]);
+            setSelectedRow([]);
         }
     };
 
     const handleSelectItem = (id: number) => {
-        setSelectedItems((prevSelected) =>
+        setSelectedRow((prevSelected) =>
             prevSelected.includes(id)
                 ? prevSelected.filter((item) => item !== id)
                 : [...prevSelected, id]
@@ -355,44 +425,46 @@ function TableBody() {
                             )}
 
                             {/* main data */}
-                            {columns && columns.map((col, index) => {
-                                return (
-                                    selectedColumns.includes(index) && (
-                                        <th
-                                            className={`w-[${col.width}px] px-[24px] py-[12px] font-[500] whitespace-nowrap`}
-                                            key={index}
-                                        >
-                                            <div className="flex items-center gap-[4px]">
-                                                {col.label}{" "}
-                                                {col.filter?.isFilterable && (
-                                                    <FilterTableHeader>
-                                                        {col.filter.render(
-                                                            tableData
-                                                        )}
-                                                    </FilterTableHeader>
-                                                )}
-                                                {col.isSortable && (
-                                                    <Icon
-                                                        className="cursor-pointer"
-                                                        icon={
-                                                            tableOrder.order ===
-                                                                "asc" &&
-                                                            tableOrder.column ===
-                                                                col.key
-                                                                ? "mdi-light:arrow-up"
-                                                                : "mdi-light:arrow-down"
-                                                        }
-                                                        width={16}
-                                                        onClick={() =>
-                                                            handleSort(col.key)
-                                                        }
-                                                    />
-                                                )}
-                                            </div>
-                                        </th>
-                                    )
-                                );
-                            })}
+                            {columns &&
+                                columns.map((col, index) => {
+                                    return (
+                                        selectedColumns.includes(index) && (
+                                            <th
+                                                className={`w-[${col.width}px] px-[24px] py-[12px] font-[500] whitespace-nowrap`}
+                                                key={index}
+                                            >
+                                                <div className="flex items-center gap-[4px]">
+                                                    {col.label}{" "}
+                                                    {col.filter
+                                                        ?.isFilterable && (
+                                                        <FilterTableHeader>
+                                                            {col.filter.render(tableData)}
+                                                        </FilterTableHeader>
+                                                    )}
+                                                    {col.isSortable && (
+                                                        <Icon
+                                                            className="cursor-pointer"
+                                                            icon={
+                                                                tableOrder.order ===
+                                                                    "asc" &&
+                                                                tableOrder.column ===
+                                                                    col.key
+                                                                    ? "mdi-light:arrow-up"
+                                                                    : "mdi-light:arrow-down"
+                                                            }
+                                                            width={16}
+                                                            onClick={() =>
+                                                                handleSort(
+                                                                    col.key
+                                                                )
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
+                                            </th>
+                                        )
+                                    );
+                                })}
 
                             {/* actions */}
                             {rowActions && selectedColumns.length > 0 && (
@@ -405,7 +477,7 @@ function TableBody() {
                         </tr>
                     </thead>
                     <tbody className="text-[14px] bg-white text-[#535862]">
-                        {
+                        {displayedData.length > 0 &&
                             // repeat row 10 times
                             displayedData.map((row, index) => (
                                 <tr
@@ -419,7 +491,7 @@ function TableBody() {
                                                     <CustomCheckbox
                                                         id={"check" + index}
                                                         label=""
-                                                        checked={selectedItems.includes(
+                                                        checked={selectedRow.includes(
                                                             index
                                                         )}
                                                         onChange={() =>
@@ -438,9 +510,7 @@ function TableBody() {
                                             index
                                         ) => {
                                             return (
-                                                selectedColumns.includes(
-                                                    index
-                                                ) && (
+                                                selectedColumns.includes(index) && (
                                                     <td
                                                         key={index}
                                                         width={col.width}
@@ -487,8 +557,16 @@ function TableBody() {
                                             </td>
                                         )}
                                 </tr>
-                            ))
-                        }
+                            ))}
+                        {displayedData.length <= 0 && (
+                            <tr>
+                                <td colSpan={columns?.length + 2 || 1}>
+                                    <div className="content-center text-center py-[12px] text-[24px] max-h-full min-h-[200px]">
+                                        No data to display
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -515,11 +593,11 @@ function FilterTableHeader({ children }: { children: React.ReactNode }) {
 }
 
 function TableFooter() {
-    const {config} = useContext(Config);
-    const { api, footer, pageSize = 10 } = config;
-    const { tableData, setTableData } = useContext(TableData);
-    const { currentPage, setCurrentPage } = useContext(CurrentPage);
-    const [totalPages, setTotalPages] = useState(0);
+    const { config } = useContext(Config);
+    const { api, footer, pageSize = defaultPageSize } = config;
+    const { tableDetails, setTableDetails } = useContext(TableDetails);
+    const cPage = tableDetails.currentPage || 0;
+    const totalPages = tableDetails.total || 1;
 
     // Determine the start and end page indices
     const firstThreePageIndices = [0, 1, 2];
@@ -528,21 +606,22 @@ function TableFooter() {
     const lastThreePageIndices =
         totalPages > 3 ? [totalPages - 3, totalPages - 2, totalPages - 1] : [];
 
-    useEffect(() => {
-        if (!api?.list)
-            setTotalPages(Math.ceil(tableData.length / pageSize));
-    }, []);
-
     async function handlePageChange(pageNo: number) {
+        if (pageNo < 0 || pageNo > totalPages - 1) return;
         if (api?.list) {
-            const result = await api.list(pageNo, pageSize);
-            const resolvedResult = result instanceof Promise ? await result : result;
+            const result = await api.list(pageNo + 1, pageSize);
+            const resolvedResult =
+                result instanceof Promise ? await result : result;
             const { data, total, currentPage } = resolvedResult;
-            setTableData(data);
-            setTotalPages(total);
-            setCurrentPage(currentPage);
-        } else if (pageNo >= 0 && pageNo < totalPages) {
-            setCurrentPage(pageNo);
+            setTableDetails({
+                ...tableDetails,
+                data,
+                currentPage: currentPage - 1,
+                total,
+                pageSize,
+            });
+        } else {
+            setTableDetails({ ...tableDetails, currentPage: pageNo });
         }
     }
 
@@ -556,7 +635,8 @@ function TableFooter() {
                             iconWidth={20}
                             label="Previous"
                             labelTw="text-[14px] font-semibold hidden sm:block select-none"
-                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={cPage === 0}
+                            onClick={() => handlePageChange(cPage - 1)}
                         />
                     )}
                 </div>
@@ -573,9 +653,7 @@ function TableFooter() {
                                                     label={(
                                                         pageNo + 1
                                                     ).toString()}
-                                                    isActive={
-                                                        pageNo === currentPage
-                                                    }
+                                                    isActive={pageNo === cPage}
                                                     onClick={() =>
                                                         handlePageChange(pageNo)
                                                     }
@@ -595,9 +673,7 @@ function TableFooter() {
                                                     label={(
                                                         pageNo + 1
                                                     ).toString()}
-                                                    isActive={
-                                                        pageNo === currentPage
-                                                    }
+                                                    isActive={pageNo === cPage}
                                                     onClick={() =>
                                                         handlePageChange(pageNo)
                                                     }
@@ -612,7 +688,7 @@ function TableFooter() {
                                         <PaginationBtn
                                             key={index}
                                             label={(index + 1).toString()}
-                                            isActive={index === currentPage}
+                                            isActive={index === cPage}
                                             onClick={() =>
                                                 handlePageChange(index)
                                             }
@@ -630,7 +706,8 @@ function TableFooter() {
                             iconWidth={20}
                             label="Next"
                             labelTw="text-[14px] font-semibold hidden sm:block select-none"
-                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={cPage === totalPages - 1}
+                            onClick={() => handlePageChange(cPage + 1)}
                         />
                     )}
                 </div>

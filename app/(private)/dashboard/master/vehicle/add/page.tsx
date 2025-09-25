@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
 import * as Yup from "yup";
+import SearchableDropdown from "@/app/components/SearchableDropdown";
 
 interface Warehouse {
   id: number;
@@ -99,6 +100,11 @@ export default function AddVehicleWithStepper() {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const setFieldValue = (field: string, value: string) => {
+      setForm(prev => ({ ...prev, [field]: value }));
+      setTouched(prev => ({ ...prev, [field]: true }));
   };
 
   const validateCurrentStep = async (step: number) => {
