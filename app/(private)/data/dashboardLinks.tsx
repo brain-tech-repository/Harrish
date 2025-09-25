@@ -106,7 +106,33 @@ export const initialLinkData: SidebarDataType[] = [
             },
                 ],
             },
+                {
+                isActive: false,
+                href: "#",
+                label: "Merchandisers",
+                leadingIcon: "hugeicons:workflow-square-06",
+                trailingIcon: "mdi-light:chevron-right",
+                iconColor: "text-yellow-400",
+                children: [ 
+                   
+                    {
+                        isActive: false,
+                        href: "/dashboard/merchandiser/planogram",
+                        label: "Planogram",
+                        leadingIcon: "lucide:user",
+                        iconColor: "text-green-500"
+                    },
+                    {
+                isActive: false,
+                href: "/dashboard/merchandiser/shelfDisplay",
+                label: "Shelf Display",
+                leadingIcon: "mdi:map",
+                iconColor: "text-yellow-400"
+            },
             
+         
+                ],
+            },
             // {
             //     isActive: false,
             //     href: "/dashboard/report",
