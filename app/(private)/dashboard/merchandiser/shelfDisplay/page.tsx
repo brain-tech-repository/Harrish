@@ -129,7 +129,7 @@ export default function ShelfDisplay() {
               columnFilter: true,
               actions: [
                 <SidebarBtn
-                  key="add-region"
+                  key="name"
                   href="/dashboard/merchandiser/shelfDisplay/add"
                   leadingIcon="lucide:plus"
                   label="Add Shelf Display"
