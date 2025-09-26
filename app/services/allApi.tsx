@@ -315,7 +315,7 @@ export const deleteRegion = async (id:string) => {
   try {
               const res = await API.delete(`/api/master/region/${id}`);
     return res.data;
-  } catch (error: unknown) {
+  } catch (error: unknown) {  
     return handleError(error);
   }
 };
@@ -527,7 +527,8 @@ export const updateCompanyCustomer = async (id:string,body:object) => {
 
 export const deleteCompanyCustomer = async (id: string, body?: object) => {
   try {
-    const res = await API.delete(`/api/master/companycustomer/delete/${id}`, { data: body ?? {} });
+const res = await API.delete(`/api/master/companycustomer/${id}/delete`);
+
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
