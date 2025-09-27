@@ -250,7 +250,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     try {
       const res = await Promise.all([
         companyList(),
-        countryList({}),
+        countryList(),
         regionList(),
         routeList({}),
         warehouseType(1),

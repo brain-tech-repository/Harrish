@@ -337,9 +337,9 @@ export default function EditCompany() {
               <InputFields name="town" label="Town/Village" value={values.town} onChange={formik.handleChange} />
               <InputFields name="street" label="Street" value={values.street} onChange={formik.handleChange} />
               <InputFields name="landmark" label="Landmark" value={values.landmark} onChange={formik.handleChange} />
-              <InputFields name="region" label="Region" value={values.region.toString()} onChange={formik.handleChange} options={regionOptions} />
-              <InputFields name="subRegion" label="Sub Region" value={values.subRegion.toString()} onChange={formik.handleChange} options={areaOptions} />
-              <InputFields name="country" label="Country" value={values.country.toString()} onChange={formik.handleChange} options={onlyCountryOptions} />
+              <InputFields name="region" label="Region" value={String(values.region)} onChange={formik.handleChange} options={regionOptions} />
+              <InputFields name="subRegion" label="Sub Region" value={values.subRegion} onChange={formik.handleChange} options={areaOptions} />
+              <InputFields name="country" label="Country" value={values.country} onChange={formik.handleChange} options={onlyCountryOptions} />
               <InputFields name="tinNumber" label="TIN Number" value={values.tinNumber} onChange={formik.handleChange} />
             </div>
           </ContainerCard>

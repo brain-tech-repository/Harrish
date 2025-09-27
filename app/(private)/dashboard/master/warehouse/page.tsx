@@ -5,38 +5,119 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
-import Table, { TableDataType, searchReturnType, listReturnType } from "@/app/components/customTable";
+import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { getWarehouse, deleteWarehouse, warehouseList, warehouseListGlobalSearch } from "@/app/services/allApi";
-import Loading from "@/app/components/Loading";
-import DismissibleDropdown from "@/app/components/dismissibleDropdown";
+import { getWarehouse, deleteWarehouse, warehouseListGlobalSearch } from "@/app/services/allApi";
+import { useLoading } from "@/app/services/loadingContext";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 
 const dropdownDataList = [
-  { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-  { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-  { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+  // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+  // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+  // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
+// Move WarehouseRow type above columns so it is in scope
+type WarehouseRow = TableDataType & {
+  id?:string;
+  code?: string;
+  warehouseName?: string;
+  tin_no?: string;
+  ownerName?: string;
+  owner_email?: string;
+  ownerContact?: string;
+  warehouse_type?: string;
+  business_type?: string;
+  warehouse_manager?: string;
+  warehouse_manager_contact?: string;
+  district?: string;
+  street?: string;
+  branch_id?: string;
+  town_village?: string;
+  region?: {region_name?:string;}
+  get_company_customer?: {owner_name?:string};
+  city?: string;
+  location?: string;
+  landmark?: string;
+  latitude?: string;
+  longitude?: string;
+  threshold_radius?: string;
+  device_no?: string;
+  is_branch?: string;
+  p12_file?: string;
+  is_efris?: string;
+  stock_capital?: string;
+  deposite_amount?: string;
+  phoneNumber?: string;
+  address?: string;
+  status?: string | boolean | number;
+  company_customer_id?:{customer_name: string};
+  region_id?:{ region_name:string};
+  area?: {area_name:string};
+};
+
 const columns = [
-  { key: "registation_no", label: "Registration No." },
-  { key: "code", label: "Warehouse Code" },
-  { key: "warehouseName", label: "Warehouse Name" },
-  { key: "tin_no", label: "TIN No" },
-  { key: "ownerName", label: "Owner Name" },
+  { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
+  { key: "warehouse_code", label: "Warehouse Code", render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
+  { key: "warehouse_name", label: "Warehouse Name", render: (row: WarehouseRow) => row.warehouse_name || "-" },
+  { key: "tin_no", label: "TIN No", render: (row: WarehouseRow) => row.tin_no || "-" },
+  { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
+  { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
+  { key: "owner_email", label: "Owner Email", render: (row: WarehouseRow) => row.owner_email || "-" },
   // { key: "depotName", label: "Depot Name" },
-  { key: "depotLocation", label: "Warehouse Location" },
-  { key: "company_customer_id", label: "Customer" },
-  { key: "warehouse_manager", label: "Warehouse Manager" },
-  { key: "warehouse_manager_contact", label: "Warehouse Manager Contact" },
-  { key: "region_id", label: "Region" },
-  { key: "sub_region_id", label: "Sub Region" },
-  { key: "phoneNumber", label: "Phone Number" },
-  { key: "address", label: "Address" },
-  { key: "district", label: "District" },
+  { key: "location", label: "Warehouse Location", render: (row: WarehouseRow) => row.location || "-" },
+  { key: "company_customer_id", label: "Customer", render: (row: WarehouseRow) => row.get_company_customer?.owner_name || "-" },
+  { key: "warehouse_manager", label: "Warehouse Manager", render: (row: WarehouseRow) => row.warehouse_manager || "-" },
+  { key: "warehouse_manager_contact", label: "Warehouse Manager Contact", render: (row: WarehouseRow) => row.warehouse_manager_contact || "-" },
+  {
+    key: "warehouse_type",
+    label: "Warehouse Type",
+    render: (row: WarehouseRow) => {
+      const value = row.warehouse_type;
+      const strValue = value != null ? String(value) : "";
+      if (strValue === "0") return "Agent";
+      if (strValue === "1") return "Hariss";
+      if (strValue === "2") return "Outlet";
+      return strValue || "-";
+    },
+  },
+  { key: "business_type", label: "Business Type", render: (row: WarehouseRow) => {
+      const value = row.business_type;
+      const strValue = value != null ? String(value) : "";
+      if (strValue === "1") return "B2B";
+      return strValue || "-";
+    }, },
+  // { key: "region_id", label: "Region"},
+  {
+    label: 'Region',
+    key: 'region_id',
+    render: (row: WarehouseRow) => row.region?.region_name || '-',
+  },
+  {
+    label: 'Sub Region',
+    key: 'area_name',
+    render: (row: WarehouseRow) => row.area?.area_name || '-',
+  },
+  // { key: "sub_region_id", label: "Sub Region"},
+  { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-" },
+  { key: "district", label: "District", render: (row: WarehouseRow) => row.district || "-" },
+  { key: "location", label: "Location", render: (row: WarehouseRow) => row.location || "-" },
+  { key: "address", label: "Address", render: (row: WarehouseRow) => row.address || "-" },
+  { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
+  { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
+  { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
+  { key: "latitude", label: "Latitude", render: (row: WarehouseRow) => row.latitude || "-" },
+  { key: "longitude", label: "Longitude", render: (row: WarehouseRow) => row.longitude || "-" },
+  { key: "threshold_radius", label: "Threshold Radius", render: (row: WarehouseRow) => row.threshold_radius || "-" },
+  { key: "stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.stock_capital || "-" },
+  { key: "deposite_amount", label: "Deposit Amount", render: (row: WarehouseRow) => row.deposite_amount || "-" },
+  { key: "device_no", label: "Device No.", render: (row: WarehouseRow) => row.device_no || "-" },
+  { key: "p12_file", label: "P12 File", render: (row: WarehouseRow) => row.p12_file || "-" },
+  { key: "branch_id", label: "Branch", render: (row: WarehouseRow) => row.branch_id || "-" },
+  { key: "is_efris", label: "EFRIS", render: (row: WarehouseRow) => row.is_efris || "-" },
   {
     key: "status",
     label: "Status",
@@ -57,208 +138,185 @@ const columns = [
 ];
 
 export default function Warehouse() {
-  const [warehouses, setWarehouses] = useState<TableDataType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {setLoading} = useLoading();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   type TableRow = TableDataType & { id?: string };
-  // typed row for warehouse table
-  type WarehouseRow = TableDataType & {
-    id?: string;
-    code?: string;
-    warehouseName?: string;
-    tin_no?: string;
-    ownerName?: string;
-    // depotName?: string;
-    warehouse_manager?: string;
-    warehouse_manager_contact?: string;
-    // depotLocation?: string;
-    // depotLocation?: string;
-    phoneNumber?: string;
-    address?: string;
-    district?: string;
-    status?: string | boolean | number;
-  };
+    // typed row for warehouse table
+    type WarehouseRow = TableDataType & {
+      id?:string;
+      code?: string;
+      warehouseName?: string;
+      tin_no?: string;
+      ownerName?: string;
+      owner_email?: string;
+      ownerContact?: string;
+      warehouse_type?: string;
+      business_type?: string;
+      // depotName?: string;
+      warehouse_manager?: string;
+      warehouse_manager_contact?: string;
+      district?: string;
+      street?: string;
+      branch_id?: string;
+      town_village?: string;
+      region?: {region_name?:string;}
+      get_company_customer?: {owner_name?:string};
+      city?: string;
+      location?: string;
+      landmark?: string;
+      latitude?: string;
+      longitude?: string;
+      threshold_radius?: string;
+      device_no?: string;
+      is_branch?: string;
+      p12_file?: string;
+      is_efris?: string;
+      stock_capital?: string;
+      deposite_amount?: string;
+      // depotLocation?: string;
+      // depotLocation?: string;
+      phoneNumber?: string;
+      address?: string;
+      
+      status?: string | boolean | number;
+    };
 
-  const [selectedRow, setSelectedRow] = useState<WarehouseRow | null>(null);
-  const router = useRouter();
-  const { showSnackbar } = useSnackbar();
+    const [selectedRow, setSelectedRow] = useState<WarehouseRow | null>(null);
+    const router = useRouter();
+    const { showSnackbar } = useSnackbar();
+         const fetchWarehouse = useCallback(
+             async (
+                 page: number = 1,
+                 pageSize: number = 5
+             ): Promise<listReturnType> => {
+                 try {
+                   setLoading(true);
+                     const listRes = await getWarehouse({
+                         limit: pageSize.toString(),
+                         page: page.toString(),
+                     });
+                     setLoading(false);
+                     return {
+                         data: listRes.data || [],
+                         total: listRes.pagination.totalPages ,
+                         currentPage: listRes.pagination.page ,
+                         pageSize: listRes.pagination.limit ,
+                     };
+                 } catch (error: unknown) {
+                     console.error("API Error:", error);
+                     setLoading(false);
+                     throw error;
+                 }
+             },
+             []
+         );
 
-  const fetchWarehouses = async () => {
-    try {
-      const res = await getWarehouse();
-      interface ApiWarehouse {
-        id?: number | string;
-        registation_no?: string;
-        warehouse_code?: string;
-        tin_no?: string;
-        warehouse_manager?: string;
-        warehouse_manager_contact?: string;
-        area: {
-          id?: number | string;
-          area_name?: string;
-        }
-        region: {
-          id?: number | string;
-          region_name?: string;
-        }
-        warehouse_name?: string;
-        company_customer_id?: string;
-        owner_name?: string;
-        branch_id?: string | number;
-        location?: string;
-        owner_number?: string;
-        address?: string;
-        city?: string;
-        status?: number;
-      }
+         const searchWarehouse = useCallback(
+             async (
+                 query: string,
+                 pageSize: number = 5
+             ): Promise<listReturnType> => {
+                 try {
+                   setLoading(true);
+                     const listRes = await warehouseListGlobalSearch({
+                         query,
+                         per_page: pageSize.toString()
+                     });
+                     setLoading(false);
+                     return {
+                         data: listRes.data || [],
+                         total: listRes.pagination.totalPages ,
+                         currentPage: listRes.pagination.page ,
+                         pageSize: listRes.pagination.limit ,
+                     };
+                 } catch (error: unknown) {
+                     console.error("API Error:", error);
+                     setLoading(false);
+                     throw error;
+                 }
+             },
+             []
+         );
+ 
 
-      const mapped = (res.data || []).map((item: ApiWarehouse) => ({
-        id: item.id,
-        registation_no: item.registation_no ?? "",
-        code: item.warehouse_code ?? "",
-        warehouseName: item.warehouse_name ?? "",
-        tin_no: item.tin_no ?? "",
-        ownerName: item.owner_name ?? "",
-        // depotName: item.branch_id?.toString() ?? "",
-        depotLocation: item.location ?? "",
-        company_customer_id: item.company_customer_id ?? "",
-        region_id: item.region.region_name ?? "",
-        sub_region_id: item.area.area_name ?? "",
-        warehouse_manager: item.warehouse_manager ?? "",
-        warehouse_manager_contact: item.warehouse_manager_contact ?? "",
-        phoneNumber: item.owner_number ?? "",
-        address: item.address ?? "",
-        district: item.city ?? "",
-        status: item.status === 1 ? "Active" : "Inactive",
-      } as WarehouseRow));
-      setWarehouses(mapped);
-    } catch (e) {
-      // ignore error details here but ensure warehouses cleared
-      setWarehouses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    fetchWarehouses();
-  }, []);
 
-  const handleConfirmDelete = async () => {
-    if (!selectedRow) return;
-
-    try {
-      if (!selectedRow?.id) throw new Error('Missing id');
-      await deleteWarehouse(String(selectedRow.id)); // call API
-
-      showSnackbar("Warehouse deleted successfully ", "success");
-      await fetchWarehouses();
-      setWarehouses((prev) => prev.filter((c) => String(c.id) !== String(selectedRow.id)));
-    } catch (error) {
-      console.error("Delete failed :", error);
-      showSnackbar("Failed to delete Warehouse", "error");
-    } finally {
-      setShowDeletePopup(false);
-      setSelectedRow(null);
-    }
-  };
-
-  const fetchWarehouse = useCallback(
-    async (
-      page: number = 1,
-      pageSize: number = 10
-    ): Promise<listReturnType> => {
+    const handleConfirmDelete = async () => {
+      if (!selectedRow) return;
+  
       try {
-        const listRes = await warehouseList({
-          current_page: page.toString(),
-          per_page: pageSize.toString(),
-        });
-        setLoading(false);
-        return {
-          data: listRes.data || [],
-          total: listRes.pagination.pagination.last_page,
-          currentPage: listRes.pagination.pagination.current_page,
-          pageSize: listRes.pagination.pagination.per_page,
-        };
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
+        if (!selectedRow?.id) throw new Error('Missing id');
+        await deleteWarehouse(String(selectedRow.id)); // call API
+        
+        showSnackbar("Warehouse deleted successfully ", "success"); 
+        setLoading(true);
+        // await fetchWarehouses();
+        //  setWarehouses((prev) => prev.filter((c) => String(c.id) !== String(selectedRow.id)));
+      } catch (error) {
+        console.error("Delete failed :", error);
+        showSnackbar("Failed to delete Warehouse", "error"); 
+      } finally {
+        setShowDeletePopup(false);
+        setSelectedRow(null);
       }
-    },
-    []
-  );
-
-  const searchCountries = useCallback(
-    async (
-      searchQuery: string,
-      pageSize: number
-    ): Promise<searchReturnType> => {
+    };
+    useEffect(() => {
       setLoading(true);
-      const result = await warehouseListGlobalSearch({
-        query: searchQuery,
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (result.error) throw new Error(result.data.message);
-      else {
-        return {
-          data: result.data || [],
-          total: result.pagination.pagination.totalPages || 0,
-          currentPage: result.pagination.pagination.current_page || 0,
-          pageSize: result.pagination.pagination.limit || pageSize,
-        };
-      }
-    },
-    []
-  );
-
-  return loading ? <Loading /> : (
+    }, []);
+  return (
     <>
-      <div className="flex justify-between items-center mb-[20px]">
-        <h1 className="text-[20px] font-semibold text-[#181D27] h-[30px] flex items-center leading-[30px] mb-[1px]">
-          Warehouse
-        </h1>
-        <div className="flex gap-[12px] relative">
-          <BorderIconButton icon="gala:file-document" label="Export CSV" />
-          <BorderIconButton icon="mage:upload" />
-          <DismissibleDropdown
-            isOpen={showDropdown}
-            setIsOpen={setShowDropdown}
-            button={<BorderIconButton icon="ic:sharp-more-vert" />}
-            dropdown={
-              <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                <CustomDropdown>
-                  {dropdownDataList.map((link, idx) => (
-                    <div
-                      key={idx}
-                      className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                    >
-                      <Icon
-                        icon={link.icon}
-                        width={link.iconWidth}
-                        className="text-[#717680]"
-                      />
-                      <span className="text-[#181D27] font-[500] text-[16px]">
-                        {link.label}
-                      </span>
-                    </div>
-                  ))}
-                </CustomDropdown>
-              </div>
-            }
-          />
-        </div>
-      </div>
+      
       <div className="h-[calc(100%-60px)]">
         <Table
           // data={warehouses}
           config={{
-            api: {
-              search: searchCountries,
+            api:{
               list: fetchWarehouse,
+              search: searchWarehouse
             },
             header: {
+              title: "Warehouse",
+               wholeTableActions: [
+                              <div key={0} className="flex gap-[12px] relative">
+                                <BorderIconButton
+                                  icon="ic:sharp-more-vert"
+                                  onClick={() =>
+                                    setShowDropdown(!showDropdown)
+                                  }
+                                />
+              
+                                {showDropdown && (
+                                  <div className="w-[226px] absolute top-[40px] right-0 z-30">
+                                    <CustomDropdown>
+                                      {dropdownDataList.map(
+                                        (
+                                          link,
+                                          index: number
+                                        ) => (
+                                          <div
+                                            key={index}
+                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
+                                          >
+                                            <Icon
+                                              icon={
+                                                link.icon
+                                              }
+                                              width={
+                                                link.iconWidth
+                                              }
+                                              className="text-[#717680]"
+                                            />
+                                            <span className="text-[#181D27] font-[500] text-[16px]">
+                                              {link.label}
+                                            </span>
+                                          </div>
+                                        )
+                                      )}
+                                    </CustomDropdown>
+                                  </div>
+                                )}
+                              </div>
+                            ],
               searchBar: true,
               columnFilter: true,
               actions: [
@@ -296,7 +354,7 @@ export default function Warehouse() {
                 },
               },
             ],
-            pageSize: 2,
+            pageSize: 5,
           }}
         />
       </div>

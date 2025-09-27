@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
-
+import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
@@ -17,7 +17,6 @@ import {
     countryListGlobalSearch,
     deleteCountry,
 } from "@/app/services/allApi";
-import Loading from "@/app/components/Loading";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext"; // ✅ import snackbar
@@ -41,6 +40,13 @@ const columns = [
     { key: "country_code", label: "Country Code" },
     { key: "country_name", label: "Country Name" },
     { key: "currency", label: "Currency" },
+    {
+            key: "status",
+            label: "Status",
+            render: (row: TableDataType) => (
+                <StatusBtn isActive={row.status === "Active" ? true : false} />
+            ),
+        },
 ];
 
 export default function Country() {
@@ -63,19 +69,20 @@ export default function Country() {
     const fetchCountries = useCallback(
         async (
             page: number = 1,
-            pageSize: number = 10
+            pageSize: number = 5
         ): Promise<listReturnType> => {
             try {
+              setLoading(true);
                 const listRes = await countryList({
-                    per_page: pageSize.toString(),
+                    limit: pageSize.toString(),
                     page: page.toString(),
                 });
                 setLoading(false);
                 return {
                     data: listRes.data || [],
-                    total: listRes.pagination.totalPages || 1,
-                    currentPage: listRes.pagination.page || page,
-                    pageSize: listRes.pagination.limit || pageSize,
+                    total: listRes.pagination.totalPages ,
+                    currentPage: listRes.pagination.page ,
+                    pageSize: listRes.pagination.limit ,
                 };
             } catch (error: unknown) {
                 console.error("API Error:", error);
@@ -220,7 +227,7 @@ export default function Country() {
                                 },
                             },
                         ],
-                        pageSize: 10,
+                        pageSize: 5,
                     }}
                 />
             </div>

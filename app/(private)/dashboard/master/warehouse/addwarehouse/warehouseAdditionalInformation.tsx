@@ -85,8 +85,8 @@ export default function WarehouseAdditionalInformation({ values, errors, touched
                 value={values.invoice_sync}
                 onChange={handleChange}
                 options={[
-                    { value: "enabled", label: "Enabled" },
-                    { value: "disabled", label: "Disabled" },
+                    { value: "1", label: "Enabled" },
+                    { value: "0", label: "Disabled" },
                 ]}
                 error={errors?.invoice_sync && touched?.invoice_sync ? errors.invoice_sync : false}
             />

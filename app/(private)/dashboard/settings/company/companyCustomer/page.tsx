@@ -60,9 +60,9 @@ interface CustomerItem {
 
 /* ---------- Dropdown Menu ---------- */
 const dropdownDataList = [
-  { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-  { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-  { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+  // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+  // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+  // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
@@ -78,13 +78,12 @@ export default function CompanyCustomers() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
-  /* ---------- Fetch Customers ---------- */
+  // Fetch customers
   useEffect(() => {
     const fetchCompanyCustomers = async () => {
       try {
         const data = await getCompanyCustomers();
-        // API might return a single object or array
-        const customersData = Array.isArray(data) ? data : [data];
+        const customersData = Array.isArray(data) ? data : [data]; // Wrap single object
         setCustomers(customersData);
       } catch (error) {
         console.error(error);
@@ -93,15 +92,17 @@ export default function CompanyCustomers() {
       }
     };
     fetchCompanyCustomers();
-  }, []);
+  }, []); // 🔴 Use empty dependency array, NOT showSnackbar
 
   /* ---------- Map to TableData ---------- */
   const tableData: TableDataType[] = customers.map((c) => ({
     sap_code: c.sap_code,
     customer_code: c.customer_code,
     business_name: c.business_name,
+
     owner_name: c.owner_name,
     owner_no: c.owner_no,
+
     whatsapp_no: c.whatsapp_no,
     email: c.email,
     language: c.language,
@@ -112,12 +113,11 @@ export default function CompanyCustomers() {
     totalcreditlimit: c.totalcreditlimit.toString(),
     status: c.status === 1 ? "Active" : "Inactive",
   }));
-
-  /* ---------- Delete Handler ---------- */
+  // Delete handler
   const handleConfirmDelete = async () => {
     if (!selectedRow) return;
 
-    // Optimistic removal
+    // Optimistically remove row first
     setCustomers((prev) => prev.filter((c) => c.id !== selectedRow.id));
     setShowDeletePopup(false);
 
@@ -169,44 +169,7 @@ export default function CompanyCustomers() {
   /* ---------- Render ---------- */
   return (
     <>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-[20px]">
-        <h1 className="text-[20px] font-semibold text-[#181D27]">
-          Company Customer
-        </h1>
 
-        <div className="flex gap-[12px] relative">
-          <BorderIconButton icon="gala:file-document" label="Export CSV" />
-          <BorderIconButton icon="mage:upload" />
-
-          <DismissibleDropdown
-            isOpen={showDropdown}
-            setIsOpen={setShowDropdown}
-            button={<BorderIconButton icon="ic:sharp-more-vert" />}
-            dropdown={
-              <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                <CustomDropdown>
-                  {dropdownDataList.map((link, idx) => (
-                    <div
-                      key={idx}
-                      className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                    >
-                      <Icon
-                        icon={link.icon}
-                        width={link.iconWidth}
-                        className="text-[#717680]"
-                      />
-                      <span className="text-[#181D27] font-[500] text-[16px]">
-                        {link.label}
-                      </span>
-                    </div>
-                  ))}
-                </CustomDropdown>
-              </div>
-            }
-          />
-        </div>
-      </div>
 
       {/* Table */}
       <div className="h-[calc(100%-60px)]">
@@ -214,6 +177,48 @@ export default function CompanyCustomers() {
           data={tableData}
           config={{
             header: {
+              title: "Company Customer",
+              wholeTableActions: [
+                <div key={0} className="flex gap-[12px] relative">
+                  <BorderIconButton
+                    icon="ic:sharp-more-vert"
+                    onClick={() =>
+                      setShowDropdown(!showDropdown)
+                    }
+                  />
+
+                  {showDropdown && (
+                    <div className="w-[226px] absolute top-[40px] right-0 z-30">
+                      <CustomDropdown>
+                        {dropdownDataList.map(
+                          (
+                            link,
+                            index: number
+                          ) => (
+                            <div
+                              key={index}
+                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
+                            >
+                              <Icon
+                                icon={
+                                  link.icon
+                                }
+                                width={
+                                  link.iconWidth
+                                }
+                                className="text-[#717680]"
+                              />
+                              <span className="text-[#181D27] font-[500] text-[16px]">
+                                {link.label}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </CustomDropdown>
+                    </div>
+                  )}
+                </div>
+              ],
               searchBar: true,
               columnFilter: true,
               actions: [

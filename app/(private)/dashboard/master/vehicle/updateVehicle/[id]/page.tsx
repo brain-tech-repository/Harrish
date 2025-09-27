@@ -222,16 +222,31 @@ export default function UpdateVehicleWithStepper() {
           <ContainerCard>
             <h2 className="text-lg font-semibold mb-6">Vehicle Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputFields label="Vehicle Brand" value={form.vehicleBrand} onChange={handleChange} name="vehicleBrand" error={touched.vehicleBrand && errors.vehicleBrand} />
-              <InputFields label="Number Plate" value={form.numberPlate} onChange={handleChange} name="numberPlate" error={touched.numberPlate && errors.numberPlate} />
-              <InputFields label="Chassis Number" value={form.chassisNumber} onChange={handleChange} name="chassisNumber" error={touched.chassisNumber && errors.chassisNumber} />
-              <InputFields label="Description" value={form.description} onChange={handleChange} name="description" error={touched.description && errors.description} />
-              <InputFields label="Vehicle Type" value={form.vehicleType} onChange={handleChange} name="vehicleType" error={touched.vehicleType && errors.vehicleType} options={[
-                { value: "1", label: "Truck" },
-                { value: "2", label: "Van" },
-                { value: "3", label: "Bike" },
-                { value: "4", label: "Tuktuk" },
-              ]} />
+              <div>
+                <InputFields label="Vehicle Brand" value={form.vehicleBrand} onChange={handleChange} name="vehicleBrand" error={touched.vehicleBrand && errors.vehicleBrand} />
+                {touched.vehicleBrand && errors.vehicleBrand && <div className="text-red-500 text-xs mt-1">{errors.vehicleBrand}</div>}
+              </div>
+              <div>
+                <InputFields label="Number Plate" value={form.numberPlate} onChange={handleChange} name="numberPlate" error={touched.numberPlate && errors.numberPlate} />
+                {touched.numberPlate && errors.numberPlate && <div className="text-red-500 text-xs mt-1">{errors.numberPlate}</div>}
+              </div>
+              <div>
+                <InputFields label="Chassis Number" value={form.chassisNumber} onChange={handleChange} name="chassisNumber" error={touched.chassisNumber && errors.chassisNumber} />
+                {touched.chassisNumber && errors.chassisNumber && <div className="text-red-500 text-xs mt-1">{errors.chassisNumber}</div>}
+              </div>
+              <div>
+                <InputFields label="Description" value={form.description} onChange={handleChange} name="description" error={touched.description && errors.description} />
+                {touched.description && errors.description && <div className="text-red-500 text-xs mt-1">{errors.description}</div>}
+              </div>
+              <div>
+                <InputFields label="Vehicle Type" value={form.vehicleType} onChange={handleChange} name="vehicleType" error={touched.vehicleType && errors.vehicleType} options={[
+                  { value: "1", label: "Truck" },
+                  { value: "2", label: "Van" },
+                  { value: "3", label: "Bike" },
+                  { value: "4", label: "Tuktuk" },
+                ]} />
+                {touched.vehicleType && errors.vehicleType && <div className="text-red-500 text-xs mt-1">{errors.vehicleType}</div>}
+              </div>
             </div>
           </ContainerCard>
         );
@@ -240,11 +255,17 @@ export default function UpdateVehicleWithStepper() {
           <ContainerCard>
             <h2 className="text-lg font-semibold mb-6">Location Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputFields label="Owner Type" value={form.ownerType} onChange={handleChange} name="ownerType" error={touched.ownerType && errors.ownerType} options={[
-                { value: "0", label: "Company Owned" },
-                { value: "1", label: "Contractor" },
-              ]} />
-              <InputFields label="Warehouse" value={form.warehouseId} onChange={handleChange} name="warehouseId" error={touched.warehouseId && errors.warehouseId} options={warehouses.map((w) => ({ value: String(w.id), label: w.warehouse_name }))} />
+              <div>
+                <InputFields label="Owner Type" value={form.ownerType} onChange={handleChange} name="ownerType" error={touched.ownerType && errors.ownerType} options={[
+                  { value: "0", label: "Company Owned" },
+                  { value: "1", label: "Contractor" },
+                ]} />
+                {touched.ownerType && errors.ownerType && <div className="text-red-500 text-xs mt-1">{errors.ownerType}</div>}
+              </div>
+              <div>
+                <InputFields label="Warehouse" value={form.warehouseId} onChange={handleChange} name="warehouseId" error={touched.warehouseId && errors.warehouseId} options={warehouses.map((w) => ({ value: String(w.id), label: w.warehouse_name }))} />
+                {touched.warehouseId && errors.warehouseId && <div className="text-red-500 text-xs mt-1">{errors.warehouseId}</div>}
+              </div>
             </div>
           </ContainerCard>
         );
@@ -253,14 +274,29 @@ export default function UpdateVehicleWithStepper() {
           <ContainerCard>
             <h2 className="text-lg font-semibold mb-6">Additional Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputFields label="Odo Meter" value={form.odoMeter} onChange={handleChange} name="odoMeter" error={touched.odoMeter && errors.odoMeter} />
-              <InputFields label="Capacity" value={form.capacity} onChange={handleChange} name="capacity" error={touched.capacity && errors.capacity} />
-              <InputFields label="Status" value={form.status} onChange={handleChange} name="status" error={touched.status && errors.status} options={[
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]} />
-              <InputFields label="Valid From" type="date" value={form.validFrom} onChange={handleChange} name="validFrom" error={touched.validFrom && errors.validFrom} />
-              <InputFields label="Valid To" type="date" value={form.validTo} onChange={handleChange} name="validTo" error={touched.validTo && errors.validTo} />
+              <div>
+                <InputFields label="Odo Meter" value={form.odoMeter} onChange={handleChange} name="odoMeter" error={touched.odoMeter && errors.odoMeter} />
+                {touched.odoMeter && errors.odoMeter && <div className="text-red-500 text-xs mt-1">{errors.odoMeter}</div>}
+              </div>
+              <div>
+                <InputFields label="Capacity" value={form.capacity} onChange={handleChange} name="capacity" error={touched.capacity && errors.capacity} />
+                {touched.capacity && errors.capacity && <div className="text-red-500 text-xs mt-1">{errors.capacity}</div>}
+              </div>
+              <div>
+                <InputFields label="Status" value={form.status} onChange={handleChange} name="status" error={touched.status && errors.status} options={[
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]} />
+                {touched.status && errors.status && <div className="text-red-500 text-xs mt-1">{errors.status}</div>}
+              </div>
+              <div>
+                <InputFields label="Valid From" type="date" value={form.validFrom} onChange={handleChange} name="validFrom" error={touched.validFrom && errors.validFrom} />
+                {touched.validFrom && errors.validFrom && <div className="text-red-500 text-xs mt-1">{errors.validFrom}</div>}
+              </div>
+              <div>
+                <InputFields label="Valid To" type="date" value={form.validTo} onChange={handleChange} name="validTo" error={touched.validTo && errors.validTo} />
+                {touched.validTo && errors.validTo && <div className="text-red-500 text-xs mt-1">{errors.validTo}</div>}
+              </div>
             </div>
           </ContainerCard>
         );

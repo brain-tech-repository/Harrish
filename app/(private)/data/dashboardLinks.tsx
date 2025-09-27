@@ -45,37 +45,22 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "hugeicons:workflow-square-06",
                 trailingIcon: "mdi-light:chevron-right",
                 iconColor: "text-yellow-400",
-                children: [
-
-                    
-                    {
-                        isActive: false,
-                        href: "/dashboard/master/company",
-                        label: "Company",
-                        leadingIcon: "mdi:company",
-                        iconColor: "text-[#79e3f8]"
-                    },
-                    {
-                        isActive: false,
-                        href: "/dashboard/master/salesman",
-                        label: "Salesman",
-                        leadingIcon: "carbon:sales-ops",
-                        iconColor: "text-green-500"
-                    },
-                    {
-                        isActive: false,
-                        href: "/dashboard/master/customer",
-                        label: "Customer",
-                        leadingIcon: "lucide:user",
-                        iconColor: "text-green-500"
-                    },
-                    //         {
+                children: [ 
+                   
+                    // {
                     //     isActive: false,
-                    //     href: "/dashboard/master/item",
-                    //     label: "Items",
-                    //     leadingIcon: "mdi:package-variant",
-                    //     iconColor: "text-cyan-500"
+                    //     href: "/dashboard/master/customer",
+                    //     label: "Customer",
+                    //     leadingIcon: "lucide:user",
+                    //     iconColor: "text-green-500"
                     // },
+            //         {
+            //     isActive: false,
+            //     href: "/dashboard/master/item",
+            //     label: "Items",
+            //     leadingIcon: "mdi:package-variant",
+            //     iconColor: "text-cyan-500"
+            // },
                     {
                         isActive: false,
                         href: "/dashboard/master/route",

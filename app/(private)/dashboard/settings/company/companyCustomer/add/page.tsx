@@ -299,7 +299,7 @@ export default function AddCompanyCustomer() {
         region_id: Number(values.region),
         area_id: Number(values.area),
         balance: Number(values.balance),
-        payment_type: (values.paymentType),
+        payment_type: values.paymentType,
         bank_name: values.bankName,
         bank_account_number: values.bankAccountNumber,
         creditday: String(values.creditDay),
