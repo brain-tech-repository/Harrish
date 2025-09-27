@@ -31,9 +31,6 @@ export type categoryType = {
 };
 
 export default function Category() {
-    const [categoryData, setCategoryData] = useState<TableDataType[]>(
-        [] as TableDataType[]
-    );
     const { setLoading} = useLoading();
     const { showSnackbar } = useSnackbar();
     const [showDeletePopup, setShowDeletePopup] = useState<boolean>(false);
@@ -128,7 +125,6 @@ export default function Category() {
             )}
 
             <div className="h-[calc(100%-60px)]">
-                {categoryData && (
                     <Table
                         refreshKey={refreshKey}
                         config={{
@@ -179,7 +175,6 @@ export default function Category() {
                             ],
                         }}
                     />
-                )}
             </div>
         </>
     );

@@ -311,7 +311,7 @@ export const deleteRegion = async (id:string) => {
 };
 
 
-export const routeList = async (params: Params) => {
+export const routeList = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/route/list_routes", { params });
     return res.data;
@@ -1004,6 +1004,16 @@ export const createUserType = async (body:object) => {
 export const customerCategoryList = async (params?: Record<string, string>) => {
   try {
     const res = await API.get("/api/settings/customer-category/list", { params }); 
+    return res.data;
+  } catch (error) {
+    console.error("Customer Category List failed ❌", error);
+    throw error;
+  } 
+};
+
+export const customerCategoryListGlobalSearch = async (params?: Record<string, string>) => {
+  try {
+    const res = await API.get("/api/settings/customer-category/global_search", { params }); 
     return res.data;
   } catch (error) {
     console.error("Customer Category List failed ❌", error);

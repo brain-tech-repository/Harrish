@@ -29,7 +29,7 @@ const columns = [
     {
         key: "route_Type",
         label: "Route Type",
-        render: (data: TableDataType) => JSON.parse(JSON.stringify(data.route_Type))?.route_type_name,
+        render: (data: TableDataType) => (typeof data.route_Type === "object" && data.route_Type !== null) ? (data.route_Type as { route_type_name?: string }).route_type_name : "-",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) => (
@@ -40,7 +40,7 @@ const columns = [
                             className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                         >
                             <span className="font-[500] text-[#181D27]">
-                                {JSON.parse(JSON.stringify(row.route_Type))?.route_type_name}
+                                { (typeof row.route_Type === "object" && row.route_Type !== null) ? (row.route_Type as { route_type_name?: string }).route_type_name : "-"}
                             </span>
                         </div>
                     ))}
@@ -53,7 +53,7 @@ const columns = [
         key: "warehouse",
         label: "Warehouse",
         width: 218,
-        render: (data: TableDataType) => JSON.parse(JSON.stringify(data.warehouse))?.warehouse_name,
+        render: (data: TableDataType) =>  (typeof data.warehouse === "object" && data.warehouse !== null) ? (data.warehouse as { warehouse_name?: string }).warehouse_name : "-",
         filter: {
             isFilterable: true,
             render: (data: TableDataType[]) => (
@@ -64,7 +64,7 @@ const columns = [
                             className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
                         >
                             <span className="font-[500] text-[#181D27]">
-                                {JSON.parse(JSON.stringify(row.warehouse))?.warehouse_name}
+                                {(typeof row.warehouse === "object" && row.warehouse !== null) ? (row.warehouse as { warehouse_name?: string }).warehouse_name : "-"}
                             </span>
                         </div>
                     ))}
