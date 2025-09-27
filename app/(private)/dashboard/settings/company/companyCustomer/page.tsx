@@ -164,8 +164,6 @@ export default function CompanyCustomers() {
         </span>
       ),
     },
-    { key: "created_at", label: "Created At" },
-    { key: "updated_at", label: "Updated At" },
   ];
 
   /* ---------- Render ---------- */

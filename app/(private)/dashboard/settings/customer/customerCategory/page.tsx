@@ -116,8 +116,8 @@ export default function CustomerCategoryPage() {
   }));
 
   const columns = [
-    { key: "outlet_channel_code", label: "Outlet Channel Code" },
     { key: "customer_category_code", label: "Code" },
+    { key: "outlet_channel_code", label: "Outlet Channel Code" },
     { key: "customer_category_name", label: "Name" },
     {
         key: "status",
