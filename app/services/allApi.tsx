@@ -1249,7 +1249,7 @@ export const deleteSalesmanType = async (id:string) => {
     return res.data;
 };
 
-export const vehicleList = async (params?: Params) => {
+export const vehicleListData = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/vehicle/list", { params: params });
     return res.data;
@@ -1469,3 +1469,126 @@ export const vehicleGlobalSearch = async (params?:Params) => {
     return handleError(error);
   }
 };
+
+export const routeGlobalSearch = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/master/route/global_search`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const agentCustomerList = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/agent_customers/list",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const addAgentCustomer = async (payload:object) => {
+  try {
+         const res = await API.post("/api/master/agent_customers/add", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentCustomerById = async (uuid: string) => {
+  try {
+       const res = await API.get(`/api/master/agent_customers/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editAgentCustomer = async (uuid:string,payload:object) => {
+  try {
+           const res = await API.put(`/api/master/agent_customers/update/${uuid}`,payload);
+
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deleteAgentCustomer = async (uuid:string) => {
+  try {
+           const res = await API.delete(`/api/master/agent_customers/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentCustomerGenerateCode = async () => {
+  try {
+           const res = await API.get(`/api/master/agent_customers/generate-code`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const itemList = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/items/list",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const addItem = async (payload:object) => {
+  try {
+         const res = await API.post("/api/master/items/add", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemById = async (id: string) => {
+  try {
+       const res = await API.get(`/api/master/items/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editItem = async (id:string,payload:object) => {
+  try {
+           const res = await API.put(`/api/master/items/update/${id}`,payload);
+
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteItem = async (id:string) => {
+  try {
+           const res = await API.delete(`/api/master/items/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+

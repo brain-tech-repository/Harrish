@@ -69,13 +69,20 @@ export const initialLinkData: SidebarDataType[] = [
                     //     leadingIcon: "lucide:user",
                     //     iconColor: "text-green-500"
                     // },
-            //         {
-            //     isActive: false,
-            //     href: "/dashboard/master/item",
-            //     label: "Items",
-            //     leadingIcon: "mdi:package-variant",
-            //     iconColor: "text-cyan-500"
-            // },
+                    {
+                isActive: false,
+                href: "/dashboard/master/agentCustomer",
+                label: "Agent Customer",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
+                    {
+                isActive: false,
+                href: "/dashboard/master/item",
+                label: "Items",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
                     {
                 isActive: false,
                 href: "/dashboard/master/route",
