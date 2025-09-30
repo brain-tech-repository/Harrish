@@ -105,9 +105,6 @@ const columns = [
   { key: "buyertype", label: "Buyer Type" },
   { key: "payment_type", label: "Payment Type" },
   { key: "creditday", label: "Credit Day" },
-  { key: "longitude", label: "Longitude" },
-  { key: "latitude", label: "Latitude" },
-  { key: "accuracy", label: "Accuracy" },
   { key: "threshold_radius", label: "Threshold Radius" },
   { key: "language", label: "Language" },
   {
