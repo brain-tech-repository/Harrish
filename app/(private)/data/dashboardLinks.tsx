@@ -12,7 +12,7 @@ export type LinkDataType = {
     leadingIcon: IconifyIcon | string;
     trailingIcon?: IconifyIcon | string;
     iconColor?: string;
-    children?: LinkDataType[]; 
+    children?: LinkDataType[];
 };
 
 export const initialLinkData: SidebarDataType[] = [
@@ -26,21 +26,6 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "hugeicons:home-01",
                 iconColor: "text-blue-500"
             },
-            
-             {
-                isActive: false,
-                href: "/dashboard/company",
-                label: "Company",
-                leadingIcon: "mdi:company",
-                iconColor: "text-[#79e3f8]"
-            },
-            // {
-            //     isActive: false,
-            //     href: "/dashboard/salesman",
-            //     label: "Salesman",
-            //     leadingIcon: "carbon:sales-ops",
-            //     iconColor: "text-green-500"
-            // },
             // {
             //     isActive: false,
             //     href: "/dashboard/promotion",
@@ -53,7 +38,7 @@ export const initialLinkData: SidebarDataType[] = [
     {
         name: "CRM",
         data: [
-             {
+            {
                 isActive: false,
                 href: "#",
                 label: "Masters",
@@ -69,7 +54,42 @@ export const initialLinkData: SidebarDataType[] = [
                     //     leadingIcon: "lucide:user",
                     //     iconColor: "text-green-500"
                     // },
-            //         {
+                    {
+                isActive: false,
+                href: "/dashboard/master/agentCustomer",
+                label: "Agent Customer",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
+                    {
+                isActive: false,
+                href: "/dashboard/master/item",
+                label: "Items",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
+                    {
+                        isActive: false,
+                        href: "/dashboard/master/company",
+                        label: "Company",
+                        leadingIcon: "lucide:user",
+                        iconColor: "text-green-500"
+                    },
+                    {
+                isActive: false,
+                href: "/dashboard/master/salesman",
+                label: "Salesman",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
+            {
+                isActive: false,
+                href: "/dashboard/master/discount",
+                label: "Discount",
+                leadingIcon: "mdi:package-variant",
+                iconColor: "text-cyan-500"
+            },
+            // {
             //     isActive: false,
             //     href: "/dashboard/master/item",
             //     label: "Items",
@@ -77,44 +97,44 @@ export const initialLinkData: SidebarDataType[] = [
             //     iconColor: "text-cyan-500"
             // },
                     {
-                isActive: false,
-                href: "/dashboard/master/route",
-                label: "Route",
-                leadingIcon: "mdi:map",
-                iconColor: "text-yellow-400"
-            },
-            //         {
-            //     isActive: false,
-            //     href: "/dashboard/master/pricing",
-            //     label: "Pricing",
-            //     leadingIcon: "mdi:currency-usd",
-            //     iconColor: "text-yellow-400"
-            // },
-            {
-                isActive: false,
-                href: "/dashboard/master/vehicle",
-                label: "Vehicle",
-                leadingIcon: "mdi:car",
-                iconColor: "text-yellow-400"
-            },
-             {
-                isActive: false,
-                href: "/dashboard/master/warehouse",
-                label: "Warehouse",
-                leadingIcon: "tabler:building-warehouse",
-                iconColor: "text-violet-500"
-            },
+                        isActive: false,
+                        href: "/dashboard/master/route",
+                        label: "Route",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400"
+                    },
+                    //         {
+                    //     isActive: false,
+                    //     href: "/dashboard/master/pricing",
+                    //     label: "Pricing",
+                    //     leadingIcon: "mdi:currency-usd",
+                    //     iconColor: "text-yellow-400"
+                    // },
+                    {
+                        isActive: false,
+                        href: "/dashboard/master/vehicle",
+                        label: "Vehicle",
+                        leadingIcon: "mdi:car",
+                        iconColor: "text-yellow-400"
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/master/warehouse",
+                        label: "Warehouse",
+                        leadingIcon: "tabler:building-warehouse",
+                        iconColor: "text-violet-500"
+                    },
                 ],
             },
-                {
+            {
                 isActive: false,
                 href: "#",
                 label: "Merchandisers",
-                leadingIcon: "hugeicons:workflow-square-06",
+                leadingIcon: "picon:business",
                 trailingIcon: "mdi-light:chevron-right",
                 iconColor: "text-yellow-400",
-                children: [ 
-                   
+                children: [
+
                     {
                         isActive: false,
                         href: "/dashboard/merchandiser/planogram",
@@ -122,30 +142,69 @@ export const initialLinkData: SidebarDataType[] = [
                         leadingIcon: "lucide:user",
                         iconColor: "text-green-500"
                     },
-                     {
-                isActive: false,
-                href: "/dashboard/merchandiser/planogramImage",
-                label: "Planogram Image",
-                leadingIcon: "mdi:map",
-                iconColor: "text-yellow-400"
-            },
+            //          {
+            //     isActive: false,
+            //     href: "/dashboard/merchandiser/planogramImage",
+            //     label: "Planogram Image",
+            //     leadingIcon: "mdi:map",
+            //     iconColor: "text-yellow-400"
+            // },
                     {
-                isActive: false,
-                href: "/dashboard/merchandiser/shelfDisplay",
-                label: "Shelf Display",
-                leadingIcon: "mdi:map",
-                iconColor: "text-yellow-400"
-            },
-                {
-                isActive: false,
-                href: "/dashboard/merchandiser/survey",
-                label: "Survey",
-                leadingIcon: "mdi:map",
-                iconColor: "text-yellow-400"
-            },
-            
-         
+                        isActive: false,
+                        href: "/dashboard/merchandiser/planogramImage",
+                        label: "Planogram Image",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400"
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/merchandiser/shelfDisplay",
+                        label: "Shelf Display",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400"
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/merchandiser/survey",
+                        label: "Survey",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400"
+                    },
+
+
                 ],
+            },
+
+            {
+                isActive: false,
+                href: "#",
+                label: "Assets",
+                leadingIcon: "streamline-freehand:money-bag",
+                iconColor: "text-green-500",
+                trailingIcon: "mdi-light:chevron-right",
+                children: [ 
+                    {
+                        isActive: false,
+                        href: "/dashboard/assets/types",
+                        label: "Service Types",
+                        leadingIcon: "mdi:package-variant",
+                        iconColor: "text-cyan-500"
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/assets/chiller",
+                        label: "Chiller",
+                        leadingIcon: "mdi:package-variant",
+                        iconColor: "text-cyan-500"
+                    },
+                    {
+                        isActive: false,
+                        href: "/dashboard/assets/vendor",
+                        label: "Vendor",
+                        leadingIcon: "mdi:package-variant",
+                        iconColor: "text-cyan-500"
+                    }
+                ]
             },
             // {
             //     isActive: false,
@@ -162,7 +221,7 @@ export const initialLinkData: SidebarDataType[] = [
             //     leadingIcon: "mdi:account-cash-outline",
             //     iconColor: "text-violet-500"
             // },
-           
+
             // {
             //     isActive: false,
             //     href: "/dashboard/harissTransaction",
@@ -170,8 +229,8 @@ export const initialLinkData: SidebarDataType[] = [
             //     leadingIcon: "hugeicons:transaction",
             //     iconColor: "text-fuchsia-500"
             // },
-            
-               
+
+
         ],
     },
 ];

@@ -107,10 +107,10 @@ export default function CompanyCustomers() {
     email: c.email,
     language: c.language,
     district: c.district,
-    balance: c.balance.toString(),
+    // balance: c.balance.toString(),
     payment_type: c.payment_type,
-    creditlimit: c.creditlimit.toString(),
-    totalcreditlimit: c.totalcreditlimit.toString(),
+    // creditlimit: c.creditlimit.toString(),
+    // totalcreditlimit: c.totalcreditlimit.toString(),
     status: c.status === 1 ? "Active" : "Inactive",
   }));
   // Delete handler

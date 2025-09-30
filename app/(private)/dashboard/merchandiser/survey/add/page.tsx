@@ -6,37 +6,37 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Formik, Form, ErrorMessage, type FormikHelpers } from "formik";
 import * as Yup from "yup";
+
 import ContainerCard from "@/app/components/containerCard";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { start } from "repl";
+import { addSurvey } from "@/app/services/allApi";
 import SettingPopUp from "@/app/components/settingPopUp";
 import IconButton from "@/app/components/iconButton";
+
 const SurveySchema = Yup.object().shape({
   surveyName: Yup.string().required("Survey Name is required."),
   surveyCode: Yup.string().required("Survey Code is required."),
-  start: Yup.date()
+  startDate: Yup.date()
     .required("Field is required.")
     .typeError("Please enter a valid date"),
-  validTo: Yup.date()
+  endDate: Yup.date()
     .required("Field is required.")
     .typeError("Please enter a valid date")
     .min(
-      Yup.ref("start"),
+      Yup.ref("startDate"),
       "Valid To date cannot be before Valid From date"
     ),
-  image: Yup.string().required("Image is required."),
-
   status: Yup.string().required("Please select a status."),
 });
 
 type SurveyFormValues = {
-    surveyCode: string;
+  surveyCode: string;
   surveyName: string;
   startDate: string;
   endDate: string;
-  status: string;
+  status: string; // "active" | "inactive"
 };
 
 export default function AddSurvey() {
@@ -45,40 +45,55 @@ export default function AddSurvey() {
   const router = useRouter();
 
   const initialValues: SurveyFormValues = {
-      surveyCode: "",
+    surveyCode: "",
     surveyName: "",
     startDate: "",
     endDate: "",
     status: "",
-  
-    
   };
 
-  // ✅ Local submit handler (no API)
-  const handleSubmit = (
+  const handleSubmit = async (
     values: SurveyFormValues,
     { setSubmitting }: FormikHelpers<SurveyFormValues>
   ) => {
-    const localPayload = {
+    try {
+      // ✅ send backend-friendly keys
+      const payload = {
+        survey_code: values.surveyCode.trim(),
+        survey_name: values.surveyName.trim(),
+        start_date: values.startDate,
+        end_date: values.endDate,
+        status: values.status, // <-- directly "active" or "inactive"
+      };
 
-      surveyCode: values.surveyCode.trim(),
-      surveyName: values.surveyName.trim(),
-      startDate: values.startDate.trim(),
-      endDate: values.endDate.trim(),
-      status: values.status,
-    };
+      console.log("Payload ->", payload);
+      const res = await addSurvey(payload);
 
-    console.log("Form submitted (local) ->", localPayload);
-    showSnackbar("Survey added locally ✅", "success");
+      if (res?.errors) {
+        const errs: string[] = [];
+        for (const key in res.errors) errs.push(...res.errors[key]);
+        showSnackbar(errs.join(" | "), "error");
+        setSubmitting(false);
+        return;
+      }
 
-    setSubmitting(false);
-    router.push("/dashboard/merchandiser/survey"); // navigate back
+      showSnackbar("Survey added successfully ✅", "success");
+      router.push("/dashboard/merchandiser/survey");
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to add Survey ❌", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/dashboard/merchandiser/survey" className="text-gray-600 hover:text-gray-800">
+        <Link
+          href="/dashboard/merchandiser/survey"
+          className="text-gray-600 hover:text-gray-800"
+        >
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">Add New Survey</h1>
@@ -92,32 +107,41 @@ export default function AddSurvey() {
         {({ values, setFieldValue, isSubmitting }) => (
           <Form>
             <ContainerCard>
-              <h2 className="text-lg font-semibold mb-6">
-                Survey Details
-              </h2>
+              <h2 className="text-lg font-semibold mb-6">Survey Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                   <div className="flex items-end gap-2 max-w-[406px]">
-                  <InputFields
-                    label="Survey Code"
-                    name="surveyCode"
-                    value={values.surveyCode}
-                    onChange={(e) => setFieldValue("surveyCode", e.target.value)}
-                  />
-                  <ErrorMessage
-                    name="surveyCode"
-                    component="span"
-                    className="text-xs text-red-500"
-                  />
-                    <IconButton
-                                    bgClass="white"
-                                    className="mb-2 cursor-pointer text-[#252B37]"
-                                    icon="mi:settings"
-                                    onClick={() => setIsOpen(true)}
-                                />
-                                    <SettingPopUp isOpen={isOpen} onClose={() => setIsOpen(false)} title="Survey Code" />
-                </div>
-                
-                              
+                {/* Survey Code */}
+              {/* Survey Code */}
+<div className="flex flex-col gap-1 max-w-[406px]">
+  <div className="flex items-end gap-2">
+    <InputFields
+      label="Survey Code"
+      name="surveyCode"
+      value={values.surveyCode}
+      onChange={(e) => setFieldValue("surveyCode", e.target.value)}
+    />
+    <IconButton
+      bgClass="white"
+      className="mb-2 cursor-pointer text-[#252B37]"
+      icon="mi:settings"
+      onClick={() => setIsOpen(true)}
+    />
+    <SettingPopUp
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+      title="Survey Code"
+    />
+  </div>
+
+  {/* Error message below the input */}
+  <ErrorMessage
+    name="surveyCode"
+    component="span"
+    className="text-xs text-red-500"
+  />
+</div>
+
+
+                {/* Survey Name */}
                 <div>
                   <InputFields
                     label="Survey Name"
@@ -131,14 +155,15 @@ export default function AddSurvey() {
                     className="text-xs text-red-500"
                   />
                 </div>
-               
 
+                {/* Dates */}
                 <div>
                   <InputFields
                     label="Start Date"
                     name="startDate"
                     value={values.startDate}
                     onChange={(e) => setFieldValue("startDate", e.target.value)}
+                    type="date"
                   />
                   <ErrorMessage
                     name="startDate"
@@ -152,23 +177,25 @@ export default function AddSurvey() {
                     name="endDate"
                     value={values.endDate}
                     onChange={(e) => setFieldValue("endDate", e.target.value)}
+                    type="date"
                   />
                   <ErrorMessage
                     name="endDate"
                     component="span"
                     className="text-xs text-red-500"
-                  />    
+                  />
                 </div>
-                  <div>
+
+                {/* Status */}
+                <div>
                   <InputFields
                     label="Status"
                     name="status"
                     value={values.status}
                     onChange={(e) => setFieldValue("status", e.target.value)}
                     options={[
-                      { value: "1", label: "Active" },
-                      { value: "2", label: "Inactive" },
-               
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
                     ]}
                   />
                   <ErrorMessage
@@ -177,7 +204,6 @@ export default function AddSurvey() {
                     className="text-xs text-red-500"
                   />
                 </div>
-                    
               </div>
             </ContainerCard>
 

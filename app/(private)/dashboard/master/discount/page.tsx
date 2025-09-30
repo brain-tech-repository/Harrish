@@ -9,13 +9,11 @@ import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
     listReturnType,
     TableDataType,
-    searchReturnType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
-    companyList,
-    companyListGlobalSearch,
-    deleteCompany,
+    discountList,
+    deleteDiscount,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -24,38 +22,28 @@ import { useLoading } from "@/app/services/loadingContext";
 import StatusBtn from "@/app/components/statusBtn2";
 
 // 🔹 API response type
-interface Company {
+interface Discount {
+    uuid?: string;
     id?: string | number;
-    company_code?: string;
-    company_name?: string;
-    company_type?: string;
-    email?: string;
-    tin_number?: string;
-    vat?: string;
-    country?: {
+    osa_code?: string;
+    item?: {
         id?: number;
-        country_name?: string;
-        country_code?: string;
-        selling_currency?: string;
-        purchase_currency?: string;
+        code?: string;
+        name?: string;
     };
-    region?: { id?: number; region_name?: string; region_code?: string };
-    sub_region?: {
+    item_category?: { id?: number; category_name?: string; category_code?: string };
+    customer_id?: string;
+    customer_channel_id?: string;
+    discount_type?: {
         id?: number;
-        subregion_name?: string;
-        subregion_code?: string;
+        discount_code?: string;
+        discount_name?: string;
     };
-    selling_currency?: string;
-    purchase_currency?: string;
-    toll_free_no?: string;
-    primary_contact?: string;
-    website?: string;
-    module_access?: string;
-    district?: string;
-    town?: string;
-    street?: string;
-    landmark?: string;
-    service_type?: string;
+    discount_value?: string;
+    min_quantity?: string;
+    min_order_value?: string;
+    start_date?: string;
+    end_date?: string;
     status?: string | number;
 }
 
@@ -67,148 +55,108 @@ const dropdownDataList = [
 
 // 🔹 Table columns
 const columns = [
-    { key: "company_code", label: "Company Code" },
-    { key: "company_name", label: "Company Name" },
-    { key: "company_type", label: "Company Type" },
-    { key: "email", label: "Email" },
-    { key: "website", label: "Website" },
-    { key: "toll_free_no", label: "Toll Free No" },
-    { key: "primary_contact", label: "Primary Contact" },
+    { key: "osa_code", label: "Discount Code" },
     {
-        key: 'region_name',
-        label: 'Region',
+        key: "item",
+        label: "Item",
         render: (data: TableDataType) => {
-                const warehouseObj = typeof data.region === "string"
-                    ? JSON.parse(data.region)
-                    : data.region;
-                return warehouseObj?.region_name || "-";
-            },
-    },
-    {
-        key: 'subregion_name',
-        label: 'Sub Region',
-        render: (row: TableDataType) => {
-                const warehouseObj = typeof row.sub_region === "string"
-                    ? JSON.parse(row.sub_region)
-                    : row.sub_region;
-                return warehouseObj?.subregion_name || "-";
-            } ,
-    },
-    { key: "street", label: "Street" },
-    { key: "landmark", label: "Landmark" },
-    { key: "town", label: "Town" },
-    { key: "district", label: "District" },
-    {
-        key: 'country_name',
-        label: 'Country',
-        render: (row: TableDataType) => {
-        if (
-            row.country &&
-            typeof row.country === "object" &&
-            "country_name" in row.country &&
-            typeof (row.country as { country_name?: string }).country_name === "string"
-        ) {
-            return (row.country as { country_name?: string }).country_name || "-";
-        }
-        if (typeof row.country_name === "string") {
-            return row.country_name || "-";
-        }
-        return "-";
+            const discountObj =
+                typeof data.item === "string"
+                    ? JSON.parse(data.item)
+                    : data.item;
+            return discountObj?.name || "-";
         },
     },
-    { key: "tin_number", label: "TIN Number" },
-    { key: "purchase_currency", label: "Purchase Currency" },
-    { key: "selling_currency", label: "Selling Currency" },
-    { key: "vat", label: "VAT" },
-    { key: "module_access", label: "Module Access" },
-    { key: "service_type", label: "Service Type" },
+    {
+        key: "item_category",
+        label: "Item Category",
+        render: (data: TableDataType) => {
+            const discountObj =
+                typeof data.item_category === "string"
+                    ? JSON.parse(data.item_category)
+                    : data.item_category;
+            return discountObj?.category_name || "-";
+        },
+    },
+    { key: "customer_id", label: "Customer" },
+    { key: "customer_channel_id", label: "Customer Channel" },
+    { key: "discount_value", label: "Discount Value" },
+    {
+        key: "discount_type",
+        label: "Discount Type",
+        render: (data: TableDataType) => {
+            const discountObj =
+                typeof data.discount_type === "string"
+                    ? JSON.parse(data.discount_type)
+                    : data.discount_type;
+            return discountObj?.discount_name || "-";
+        },
+    },
+    { key: "min_quantity", label: "Min Quantity" },
+    { key: "min_order_value", label: "Min Order Value" },
+    { key: "start_date", label: "Start Date" },
+    { key: "end_date", label: "End Date" },
     {
         key: "status",
         label: "Status",
-        render: (row: TableDataType) => (
-            <StatusBtn isActive={row.status === "1" ? true : false} />
-        ),
+        render: (row: TableDataType) => {
+            const statusValue = String(row.status); // normalize to string
+            return <StatusBtn isActive={statusValue === "1"} />;
+        },
     },
 ];
 
-const CompanyPage = () => {
+const DiscountPage = () => {
     const { setLoading } = useLoading();
     const [showDropdown, setShowDropdown] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
-    const [selectedRow, setSelectedRow] = useState<Company | null>(null);
+    const [selectedRow, setSelectedRow] = useState<Discount | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
 
-    const fetchCompanies = useCallback(
+    // 🔹 Fetch Discounts
+    const fetchDiscounts = useCallback(
         async (
             pageNo: number = 1,
             pageSize: number = 5
         ): Promise<listReturnType> => {
             setLoading(true);
-            const result = await companyList({
+            const result = await discountList({
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
             });
-            console.log(result);
             setLoading(false);
+
             if (result.error) {
-                showSnackbar(result.data.message, "error");
+                showSnackbar(result.data?.message || "Failed to load discounts ❌", "error");
                 throw new Error("Error fetching data");
             } else {
                 return {
                     data: result.data as TableDataType[],
                     currentPage: result.pagination?.current_page || 1,
                     pageSize: result.pagination?.per_page || 5,
-                    total: result.pagination?.last_page || 0,
+                    total: result.pagination?.total || 0,
                 };
             }
         },
         [showSnackbar, setLoading]
     );
 
-    const searchCompanies = useCallback(
-        async (
-            searchQuery: string,
-            pageSize: number = 5
-        ): Promise<searchReturnType> => {
-            setLoading(true);
-
-            const result = await companyListGlobalSearch({
-                query: searchQuery,
-                per_page: pageSize.toString(),
-            });
-
-            setLoading(false);
-
-            if (result.error) {
-                throw new Error(result.data?.message || "Search failed");
-            }
-
-            return {
-                data: result.data || [],
-                currentPage: result.pagination.pagination.current_page || 0,
-                pageSize: result.pagination.pagination.per_page || pageSize,
-                total:
-                    result.pagination.pagination.total ||
-                    result.data?.length ||
-                    0, // safe fallback
-            };
-        },
-        [setLoading]
-    );
-
-    // ✅ Handle Delete
+    // 🔹 Handle Delete
     const handleConfirmDelete = async () => {
-        if (!selectedRow?.id) return;
+        if (!selectedRow?.uuid) return;
 
-        const res = await deleteCompany(String(selectedRow.id));
+        const res = await deleteDiscount(String(selectedRow.uuid));
         if (res.error) {
-            showSnackbar(res.message || "Failed to delete company ❌", "error");
+            showSnackbar(res.message || "Failed to delete discount ❌", "error");
         } else {
-            showSnackbar("Company deleted successfully ✅", "success");
-            fetchCompanies();
+            showSnackbar("Discount deleted successfully ✅", "success");
+            setRefreshKey(refreshKey + 1);
         }
+
+        fetchDiscounts();
         setShowDeletePopup(false);
         setSelectedRow(null);
     };
@@ -218,14 +166,13 @@ const CompanyPage = () => {
             {/* Table */}
             <div className="h-[calc(100%-60px)]">
                 <Table
-                    // data={tableData}
+                refreshKey={refreshKey}
                     config={{
                         api: {
-                            list: fetchCompanies,
-                            search: searchCompanies,
+                            list: fetchDiscounts,
                         },
                         header: {
-                            title: "Company",
+                            title: "Discount",
                             wholeTableActions: [
                                 <div key={0} className="flex gap-[12px] relative">
                                     <DismissibleDropdown
@@ -244,12 +191,8 @@ const CompanyPage = () => {
                                                                 className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
                                                             >
                                                                 <Icon
-                                                                    icon={
-                                                                        link.icon
-                                                                    }
-                                                                    width={
-                                                                        link.iconWidth
-                                                                    }
+                                                                    icon={link.icon}
+                                                                    width={link.iconWidth}
                                                                     className="text-[#717680]"
                                                                 />
                                                                 <span className="text-[#181D27] font-[500] text-[16px]">
@@ -269,10 +212,10 @@ const CompanyPage = () => {
                             actions: [
                                 <SidebarBtn
                                     key={0}
-                                    href="/dashboard/company/add"
+                                    href="/dashboard/master/discount/add"
                                     isActive
                                     leadingIcon="lucide:plus"
-                                    label="Add Company"
+                                    label="Add Discount"
                                     labelTw="hidden sm:block"
                                 />,
                             ],
@@ -286,7 +229,7 @@ const CompanyPage = () => {
                                 onClick: (row: object) => {
                                     const r = row as TableDataType;
                                     router.push(
-                                        `/dashboard/company/updateCompany/${r.id}`
+                                        `/dashboard/master/discount/updateDiscount/${r.uuid}`
                                     );
                                 },
                             },
@@ -294,7 +237,7 @@ const CompanyPage = () => {
                                 icon: "lucide:trash-2",
                                 onClick: (row: object) => {
                                     const r = row as TableDataType;
-                                    setSelectedRow({ id: r.id });
+                                    setSelectedRow({ uuid: r.uuid });
                                     setShowDeletePopup(true);
                                 },
                             },
@@ -308,7 +251,7 @@ const CompanyPage = () => {
             {showDeletePopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
                     <DeleteConfirmPopup
-                        title="Delete Company"
+                        title="Delete Discount"
                         onClose={() => setShowDeletePopup(false)}
                         onConfirm={handleConfirmDelete}
                     />
@@ -318,4 +261,4 @@ const CompanyPage = () => {
     );
 };
 
-export default CompanyPage;
+export default DiscountPage;

@@ -2,7 +2,7 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 
-const API = axios.create({
+export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL, 
   headers: {
     "Content-Type": "application/json",
@@ -22,7 +22,7 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-function handleError(error: unknown) {
+export function handleError(error: unknown) {
   if (axios.isAxiosError(error) && error.response) {
     console.error('API Error:', error.response.data);
     return { error: true, data: error.response.data };
@@ -137,6 +137,16 @@ export const companyListGlobalSearch = async (params: Params) => {
 export const countryList = async (params?: Params) => {
   try {
      const res = await API.get("/api/master/country/list_country",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const countryListGlobalSearch = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/country/global_search",{ params: params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -305,6 +315,16 @@ export const getRegionById = async (id:string) => {
   } catch (error: unknown) {
     return handleError(error);
   }
+};
+
+export const regionGlobalSearch = async (params: Params) => {
+  try {
+     const res = await API.get("/api/settings/region/global_search", {params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
 };
 
 export const deleteRegion = async (id:string) => {
@@ -1249,7 +1269,7 @@ export const deleteSalesmanType = async (id:string) => {
     return res.data;
 };
 
-export const vehicleList = async (params?: Params) => {
+export const vehicleListData = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/vehicle/list", { params: params });
     return res.data;
@@ -1434,9 +1454,70 @@ export const addCustomerSubCategory = async (body:object) => {
   }
 };
 
-export const countryListGlobalSearch = async (params?:Params) => {
+export const getSalesmanById = async (uuid: string) => {
   try {
-    const res = await API.get(`/api/master/country/global_search`, { params: params });
+    const res = await API.get(`/api/master/salesmen/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSalesman = async (uuid: string,body:object) => {
+  try {
+    const res = await API.put(`/api/master/salesmen/master/${uuid}`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const salesmanList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/salesmen/list`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteSalesman = async (uuid:string) => {
+  try {
+    const res = await API.delete(`/api/master/salesmen/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const addSalesman = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/salesmen/create/add`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const discountList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/discount/list`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteDiscount = async (uuid:string) => {
+  try {
+    const res = await API.delete(`/api/master/discount/delete/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const addDiscount = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/discount/create`,body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1452,20 +1533,264 @@ export const customerCategoryGlobalSearch = async (params?:Params) => {
   }
 };
 
-export const regionGlobalSearch = async (params?:Params) => {
+export const vehicleGlobalSearch = async (params?:Params) => {
   try {
-    const res = await API.get(`/api/master/region/global_search`, { params: params });
+    const res = await API.get(`/api/master/vehicle/global_search`, { params: params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const vehicleGlobalSearch = async (params?:Params) => {
+export const routeGlobalSearch = async (params?:Params) => {
   try {
-    const res = await API.get(`/api/master/vehicle/global_search`, { params: params });
+    const res = await API.get(`/api/master/route/global_search`, { params: params });
     return res.data;
   } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const agentCustomerList = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/agent_customers/list",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const addAgentCustomer = async (payload:object) => {
+  try {
+         const res = await API.post("/api/master/agent_customers/add", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentCustomerById = async (uuid: string) => {
+  try {
+       const res = await API.get(`/api/master/agent_customers/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editAgentCustomer = async (uuid:string,payload:object) => {
+  try {
+           const res = await API.put(`/api/master/agent_customers/update/${uuid}`,payload);
+
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deleteAgentCustomer = async (uuid:string) => {
+  try {
+           const res = await API.delete(`/api/master/agent_customers/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentCustomerGenerateCode = async () => {
+  try {
+           const res = await API.get(`/api/master/agent_customers/generate-code`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const itemList = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/items/list",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const addItem = async (payload:object) => {
+  try {
+         const res = await API.post("/api/master/items/add", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemById = async (id: string) => {
+  try {
+       const res = await API.get(`/api/master/items/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editItem = async (id:string,payload:object) => {
+  try {
+           const res = await API.put(`/api/master/items/update/${id}`,payload);
+
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteItem = async (id:string) => {
+  try {
+           const res = await API.delete(`/api/master/items/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const planogramList = async () => {
+  try {
+              const res = await API.get("/api/merchendisher/planogram/list");
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deletePlanogram = async (id:string) => {
+  try {
+              const res = await API.delete(`/api/merchendisher/planogram/delete/${id}`);
+    return res.data;
+  } catch (error: unknown) {  
+    return handleError(error);
+  }
+};
+
+type Payloadplanogram = {
+  name: string;
+  valid_from: string;
+  valid_to: string;
+  status: number;
+};
+export const addPlanogram = async (payload: Payloadplanogram) => {
+  try {
+    const res = await API.post("/api/merchendisher/planogram/create", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+type updatePayload = {
+  name: string;
+  valid_from: string;
+  valid_to: string;
+  status: number;
+};
+
+export const updatePlanogram = async (id: string, payload: updatePayload) => {
+  try {
+    // ✅ Send payload directly
+    const res = await API.put(`/api/merchendisher/planogram/update/${id}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const getPlanogramById = async (id:string) => {
+  try {
+              const res = await API.get(`/api/merchendisher/planogram/show/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const SurveyList = async () => {
+  try {
+              const res = await API.get("/api/merchendisher/survey/list");
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteSurvey = async (id:string) => {
+  try {
+              const res = await API.delete(`/api/merchendisher/survey/${id}`);  
+    return res.data;
+  } catch (error: unknown) {  
+    return handleError(error);
+  }
+};
+type PayloadSurvey= {
+  survey_code: string;
+  survey_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+};
+export const addSurvey = async (payload: PayloadSurvey) => {
+  try {
+    const res = await API.post("/api/merchendisher/survey/add", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
+type updateSurvey = {
+
+  survey_name: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+};
+
+export const updateSurvey = async (id: string, payload: updateSurvey) => {
+  try {
+    // ✅ Send payload directly
+    const res = await API.put(`/api/merchendisher/survey/${id}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const getSurveyById = async (id:string) => {
+  try {
+              const res = await API.get(`/api/merchendisher/survey/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const SurveyQuestionList = async () => {
+  try {
+              const res = await API.get("/api/merchendisher/survey-questions/list");
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deleteSurveyQuestion = async (id:string) => {
+  try {
+              const res = await API.delete(`/api/merchendisher/survey-questions/${id}`);  
+    return res.data;
+  } catch (error: unknown) {  
     return handleError(error);
   }
 };

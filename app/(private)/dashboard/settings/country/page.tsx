@@ -29,9 +29,9 @@ interface DropdownItem {
 }
 
 const dropdownDataList: DropdownItem[] = [
-    { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-    { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-    { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+    // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+    // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+    // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
     { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];

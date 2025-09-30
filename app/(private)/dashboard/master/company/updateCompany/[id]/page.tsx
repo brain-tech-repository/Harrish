@@ -12,7 +12,6 @@ import FormInputField from "@/app/components/formInputField";
 import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
-import Loading from "@/app/components/Loading";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 import {
@@ -185,7 +184,7 @@ export default function EditCompany() {
           showSnackbar(res?.data?.message || "Failed to update company ❌", "error");
         } else {
           showSnackbar("Company updated successfully ✅", "success");
-          router.push("/dashboard/company");
+          router.push("/dashboard/master/company");
         }
       } catch (err) {
         console.error(err);

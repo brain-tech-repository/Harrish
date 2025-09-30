@@ -10,7 +10,7 @@ import ContainerCard from "@/app/components/containerCard";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
-
+import { addPlanogram } from "@/app/services/allApi";
 const PlanogramSchema = Yup.object().shape({
   name: Yup.string().required("Name is required."),
   validFrom: Yup.date()
@@ -19,21 +19,15 @@ const PlanogramSchema = Yup.object().shape({
   validTo: Yup.date()
     .required("Field is required.")
     .typeError("Please enter a valid date")
-    .min(
-      Yup.ref("validFrom"),
-      "Valid To date cannot be before Valid From date"
-    ),
-  image: Yup.string().required("Image is required."),
-
-  customer: Yup.string().required("Please select a customer."),
+    .min(Yup.ref("validFrom"), "Valid To date cannot be before Valid From date"),
+  status: Yup.string().required("Please select a status."),
 });
 
 type PlanoFormValues = {
   name: string;
   validFrom: string;
   validTo: string;
-  image: string;
-  customer: string;
+  status: string;
 };
 
 export default function Planogram() {
@@ -41,33 +35,44 @@ export default function Planogram() {
   const router = useRouter();
 
   const initialValues: PlanoFormValues = {
-    name: "",
-    validFrom: "",
-    validTo: "",
-    customer: "",
-        image: "",
-  };
-
+  name: "",
+  validFrom: "",
+  validTo: "",
+  status: "",
+};
   // ✅ Local submit handler (no API)
-  const handleSubmit = (
+const handleSubmit = async (
     values: PlanoFormValues,
     { setSubmitting }: FormikHelpers<PlanoFormValues>
   ) => {
-    const localPayload = {
-      name: values.name.trim(),
-      validFrom: values.validFrom.trim(),
-      validTo: values.validTo.trim(),
-        image: values.image.trim(),
-      customer: values.customer,
-    };
+    try {
+      const payload = {
+        name: values.name.trim(),
+        valid_from: values.validFrom,
+        valid_to: values.validTo,
+        status: Number(values.status), // send as number
+      };
 
-    console.log("Form submitted (local) ->", localPayload);
-    showSnackbar("Planogram added locally ✅", "success");
+      console.log("Payload ->", payload);
+      const res = await addPlanogram(payload);
 
-    setSubmitting(false);
-    router.push("/dashboard/merchandiser/planogram"); // navigate back
+      if (res?.errors) {
+        const errs: string[] = [];
+        for (const key in res.errors) errs.push(...res.errors[key]);
+        showSnackbar(errs.join(" | "), "error");
+        setSubmitting(false);
+        return;
+      }
+
+      showSnackbar("Planogram added successfully ✅", "success");
+      router.push("/dashboard/merchandiser/planogram");
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to add Planogram ❌", "error");
+    } finally {
+      setSubmitting(false);
+    }
   };
-
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
@@ -76,7 +81,6 @@ export default function Planogram() {
         </Link>
         <h1 className="text-xl font-semibold">Add New Planogram</h1>
       </div>
-
       <Formik
         initialValues={initialValues}
         validationSchema={PlanogramSchema}
@@ -104,30 +108,11 @@ export default function Planogram() {
                 </div>
                 <div>
                   <InputFields
-                    label="Customer"
-                    name="customer"
-                    value={values.customer}
-                    onChange={(e) => setFieldValue("customer", e.target.value)}
-                    options={[
-                      { value: "1", label: "Customer A" },
-                      { value: "2", label: "Customer B" },
-                      { value: "3", label: "Customer C" },
-                      { value: "4", label: "Customer D" },
-                    ]}
-                  />
-                  <ErrorMessage
-                    name="customer"
-                    component="span"
-                    className="text-xs text-red-500"
-                  />
-                </div>
-
-                <div>
-                  <InputFields
                     label="Valid From"
                     name="validFrom"
                     value={values.validFrom}
                     onChange={(e) => setFieldValue("validFrom", e.target.value)}
+             type="date"
                   />
                   <ErrorMessage
                     name="validFrom"
@@ -141,31 +126,34 @@ export default function Planogram() {
                     name="validTo"
                     value={values.validTo}
                     onChange={(e) => setFieldValue("validTo", e.target.value)}
+                  type="date"
                   />
                   <ErrorMessage
                     name="validTo"
                     component="span"
                     className="text-xs text-red-500"
                   />    
-                </div>
-                  <div>
-                    <InputFields
-                                label="Add Image"
-                                name="image"
-                                type="file"
-                                value={values.image}
-                                onChange={(e) => setFieldValue("image", e.target.value)}
-                              />
-                  <ErrorMessage
-                    name="image"
-                    component="span"
-                    className="text-xs text-red-500"
-                  />    
-                </div>
-                    
+                </div> 
+                
+                                <div>
+                                  <InputFields
+                                    label="Status"
+                                    name="status"
+                                    value={values.status}
+                                    onChange={(e) => setFieldValue("status", e.target.value)}
+                                    options={[
+                                      { value: "1", label: "Active" },
+                                      { value: "0", label: "Inactive" },
+                                    ]}
+                                  />
+                                  <ErrorMessage
+                                    name="status"
+                                    component="span"
+                                    className="text-xs text-red-500"
+                                  />
+                                </div>                 
               </div>
             </ContainerCard>
-
             <div className="flex justify-end gap-4 mt-6">
               <button
                 type="reset"

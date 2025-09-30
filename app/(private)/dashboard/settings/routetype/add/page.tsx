@@ -70,7 +70,6 @@ export default function AddRouteType() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">Add New Route Type</h1>
-        <h1 className="text-xl font-semibold">Add New Route Type</h1>
       </div>
 
       {/* Form */}
