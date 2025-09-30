@@ -19,6 +19,7 @@ import {
   updateCompany,
 } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import { useLoading } from "@/app/services/loadingContext";
 
 /* ---------------- SCHEMAS ---------------- */
 const CompanySchema = Yup.object({
@@ -83,8 +84,8 @@ interface CompanyFormValues {
   tollFreeCode: string;
   tollFreeNumber: string;
   email: string;
-  region: {id: string};  
-  subRegion: {id: string};
+   region: string;
+  subRegion: string;
   district: string;
   town: string;
   street: string;
@@ -106,6 +107,7 @@ export default function EditCompany() {
   const { id: queryId } = useParams();
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
+  const {setLoading} = useLoading();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -134,8 +136,8 @@ export default function EditCompany() {
       tollFreeCode: "uae",
       tollFreeNumber: "",
       email: "",
-      region: {id: ""},
-      subRegion: {id: ""},
+      region: "",
+      subRegion: "",
       district: "",
       town: "",
       street: "",
@@ -168,8 +170,8 @@ export default function EditCompany() {
       district: values.district,
       town: values.town,
       street: values.street,
-      region: String(values.region?.id) || "",
-      sub_region: String(values.subRegion?.id)|| "",
+      region: values.region,
+      sub_region: values.subRegion,
       primary_contact: values.primaryContact,
       toll_free_no: values.tollFreeNumber,
       vat: values.vatNo,
@@ -178,8 +180,9 @@ export default function EditCompany() {
       logo: "logo.png", // optional if you want to send static
       address: `${values.street}, ${values.town}`, // optional if API wants a single address string
     };
-
+        setLoading(true);
         const res = await updateCompany(queryId as string, payload);
+        setLoading(false);
         if (res?.error) {
           showSnackbar(res?.data?.message || "Failed to update company ❌", "error");
         } else {
@@ -214,19 +217,11 @@ export default function EditCompany() {
         );
         actions.setErrors(
           err.inner.reduce(
-            (acc: FormikErrors<CompanyFormValues>, curr) => {
-              if (curr.path === "region" || curr.path === "subRegion") {
-                return {
-                  ...acc,
-                  [curr.path]: { id: curr.message }
-                };
-              }
-              return {
-                ...acc,
-                [curr.path as keyof CompanyFormValues]: curr.message
-              };
-            },
-            {} as FormikErrors<CompanyFormValues>
+            (acc: Partial<Record<keyof CompanyFormValues, string>>, curr) => ({
+              ...acc,
+              [curr.path as keyof CompanyFormValues]: curr.message,
+            }),
+            {}
           )
         );
       }
@@ -241,7 +236,7 @@ export default function EditCompany() {
           const res = await getCompanyById(queryId as string);
           const company = res?.data?.data || res?.data || res;
           console.log(company)
-          const Daya = {
+          const Company = {
             companyType: company.company_type,
             companyCode: company.company_code,
             companyName: company.company_name,
@@ -266,11 +261,13 @@ export default function EditCompany() {
             serviceType: company.service_type,
             status: company.status,
           };
-          formik.setValues(Daya)
-          console.log("sjdkfrbg",Daya)
+          formik.setValues(Company)
+        console.log("ghseiugsdj",Company)
        }
+       console.log(fetchCompany)
+          
     };
-    fetchCompany()
+ fetchCompany()
   }, [queryId]);
 
 
@@ -345,7 +342,7 @@ export default function EditCompany() {
               <InputFields name="region" label="Region" value={String(values.region)} onChange={formik.handleChange} options={regionOptions} />
               <InputFields name="subRegion" label="Sub Region" value={String(values.subRegion)} onChange={formik.handleChange} options={areaOptions} />
               <InputFields name="country" label="Country" value={String(values.country)} onChange={formik.handleChange} options={onlyCountryOptions} />
-              <InputFields name="tinNumber" label="TIN Number" value={String(values.tinNumber)} onChange={formik.handleChange} />
+              <InputFields name="tinNumber" label="TIN Number" value={values.tinNumber} onChange={formik.handleChange} />
             </div>
           </ContainerCard>
         );
@@ -391,7 +388,7 @@ export default function EditCompany() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/master/company">
+          <Link href="/dashboard/company">
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">Update Company</h1>
