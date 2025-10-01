@@ -144,6 +144,16 @@ export const countryList = async (params?: Params) => {
   
 };
 
+export const countryListGlobalSearch = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/country/global_search",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
 export const addCountry = async (payload:object) => {
   try {
          const res = await API.post("/api/master/country/add_country", payload);
@@ -305,6 +315,16 @@ export const getRegionById = async (id:string) => {
   } catch (error: unknown) {
     return handleError(error);
   }
+};
+
+export const regionGlobalSearch = async (params: Params) => {
+  try {
+     const res = await API.get("/api/master/region/global_search", {params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
 };
 
 export const deleteRegion = async (id:string) => {
@@ -1434,9 +1454,70 @@ export const addCustomerSubCategory = async (body:object) => {
   }
 };
 
-export const countryListGlobalSearch = async (params?:Params) => {
+export const getSalesmanById = async (uuid: string) => {
   try {
-    const res = await API.get(`/api/master/country/global_search`, { params: params });
+    const res = await API.get(`/api/master/salesmen/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSalesman = async (uuid: string,body:object) => {
+  try {
+    const res = await API.put(`/api/master/salesmen/master/${uuid}`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const salesmanList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/salesmen/list`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteSalesman = async (uuid:string) => {
+  try {
+    const res = await API.delete(`/api/master/salesmen/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const addSalesman = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/salesmen/add`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const discountList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/discount/list`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deleteDiscount = async (uuid:string) => {
+  try {
+    const res = await API.delete(`/api/master/discount/delete/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const addDiscount = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/discount/create`,body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1446,15 +1527,6 @@ export const countryListGlobalSearch = async (params?:Params) => {
 export const customerCategoryGlobalSearch = async (params?:Params) => {
   try {
     const res = await API.get(`/api/settings/customer-category/global_search`, { params: params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const regionGlobalSearch = async (params?:Params) => {
-  try {
-    const res = await API.get(`/api/master/region/global_search`, { params: params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

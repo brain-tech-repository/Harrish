@@ -53,7 +53,7 @@ interface CompanyCustomerPayload {
   latitude: string;
   threshold_radius: number;
   dchannel_id: number;
-  merchendiser_ids: number;
+  merchendiser_ids: string;
   status: number;
 }
 
@@ -317,7 +317,9 @@ export default function AddCompanyCustomer() {
         latitude: values.latitude,
         threshold_radius: Number(values.thresholdRadius),
         dchannel_id: Number(values.dChannelId),
-       merchendiser_ids: Number(values.merchendiser_ids),
+       merchendiser_ids: Array.isArray(values.merchendiser_ids)
+  ? values.merchendiser_ids.map((id) => id.replace(/"/g, "")).join(",")
+  : String(values.merchendiser_ids).replace(/"/g, ""),
         status: Number(values.status),
       };
 

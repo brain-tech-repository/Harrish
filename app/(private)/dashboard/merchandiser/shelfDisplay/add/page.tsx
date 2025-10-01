@@ -10,6 +10,9 @@ import ContainerCard from "@/app/components/containerCard";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import { useLoading } from "@/app/services/loadingContext";
+import { addShelves } from "@/app/services/merchandiserApi";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 const ShelfDisplaySchema = Yup.object().shape({
   name: Yup.string().required("Name is required."),
@@ -24,59 +27,72 @@ const ShelfDisplaySchema = Yup.object().shape({
       "Valid To date cannot be before Valid From date"
     ),
 
-  height: Yup.string().required("Height is required."),
-  width: Yup.string().required("Width is required."),
-  depth: Yup.string().required("Width is required."),
-  status: Yup.string().required("Status is required."),
-  customer: Yup.string().required("Please select a customer."),
+  height: Yup.number().required("Height is required."),
+  width: Yup.number().required("Width is required."),
+  depth: Yup.number().required("Depth is required."),
+  customerIds: Yup.array()
+    .of(Yup.number().required())
+    .min(1, "Please select at least one customer.")
+    .required("Please select at least one customer."),
 });
 
-type ShelfDisplayFormValues = {
+type shelvesType = {
   name: string;
   validFrom: string;
   validTo: string;
   height: string;
   width: string;
   depth: string;
-  customer: string;
+  customerIds: Array<string>;
 };
 
 export default function AddShelfDisplay() {
+  const { companyCustomersOptions } = useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
+  const {setLoading} = useLoading();
 
-  const initialValues: ShelfDisplayFormValues = {
+  const initialValues: shelvesType = {
     name: "",
     validFrom: "",
     validTo: "",
     height: "",
     width: "",
     depth: "",
-    customer: "",
+    customerIds: [],
   };
 
   // ✅ Local submit handler (no API)
-  const handleSubmit = (
-    values: ShelfDisplayFormValues,
-    { setSubmitting }: FormikHelpers<ShelfDisplayFormValues>
+  const handleSubmit = async (
+    values: shelvesType,
+    { setSubmitting }: FormikHelpers<shelvesType>
   ) => {
     const localPayload = {
-      name: values.name.trim(),
-      validFrom: values.validFrom.trim(),
-      validTo: values.validTo.trim(),
-      height: values.height.trim(),
-      width: values.width.trim(),
-      depth: values.width.trim(),
-      customer: values.customer,
+      shelf_name: values.name.trim(),
+      valid_from: values.validFrom.trim(),
+      valid_to: values.validTo.trim(),
+      height: Number(values.height.trim()),
+      width: Number(values.width.trim()),
+      depth: Number(values.depth.trim()),
+      customer_ids: values.customerIds.map(Number),
     };
 
-    console.log("Form submitted (local) ->", localPayload);
-    showSnackbar("Shelf Display added locally ✅", "success");
+    setLoading(true);
+    const res = await addShelves(localPayload);
+    if(res.error) {
+      showSnackbar(res.data.message, "error");
+      setLoading(false);
+      setSubmitting(false);
+      throw new Error("Unable to add Shelf Display");
+    } else {
+      showSnackbar(res.message || "Shelf Display added locally", "success");
+      setLoading(false);
+      setSubmitting(false);
+      router.push("/dashboard/merchandiser/shelfDisplay");
+    }
 
-    setSubmitting(false);
-    router.push("/dashboard/merchandiser/shelfDisplay"); // navigate back
   };
-
+  
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
@@ -91,7 +107,7 @@ export default function AddShelfDisplay() {
         validationSchema={ShelfDisplaySchema}
         onSubmit={handleSubmit}
       >
-        {({ values, setFieldValue, isSubmitting }) => (
+        {({ values, setFieldValue, isSubmitting, touched, errors }) => (
           <Form>
             <ContainerCard>
               <h2 className="text-lg font-semibold mb-6">
@@ -100,10 +116,12 @@ export default function AddShelfDisplay() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                   <InputFields
+                    required
                     label="Name"
                     name="name"
                     value={values.name}
                     onChange={(e) => setFieldValue("name", e.target.value)}
+                    error={touched.name && errors.name}
                   />
                   <ErrorMessage
                     name="name"
@@ -113,17 +131,15 @@ export default function AddShelfDisplay() {
                 </div>
                 <div>
                   <InputFields
+                    required
                     label="Customer"
-                    name="customer"
-                    value={values.customer}
-                    onChange={(e) => setFieldValue("customer", e.target.value)}
+                    name="customerIds"
+                    value={values.customerIds}
                     isSingle={false}
-                    options={[
-                      { value: "1", label: "Customer A" },
-                      { value: "2", label: "Customer B" },
-                      { value: "3", label: "Customer C" },
-                      { value: "4", label: "Customer D" },
-                    ]}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+                        setFieldValue("customerIds", e.target.value);
+                    }}
+                    options={companyCustomersOptions}
                   />
                   <ErrorMessage
                     name="customer"
@@ -134,7 +150,9 @@ export default function AddShelfDisplay() {
 
                 <div>
                   <InputFields
+                    required
                     label="Valid From"
+                    type="date"
                     name="validFrom"
                     value={values.validFrom}
                     onChange={(e) => setFieldValue("validFrom", e.target.value)}
@@ -147,7 +165,9 @@ export default function AddShelfDisplay() {
                 </div>
                 <div>
                   <InputFields
+                    required
                     label="Valid To"
+                    type="date"
                     name="validTo"
                     value={values.validTo}
                     onChange={(e) => setFieldValue("validTo", e.target.value)}
@@ -160,6 +180,7 @@ export default function AddShelfDisplay() {
                 </div>
                 <div>
                   <InputFields
+                    required
                     label="Height(CM)"
                     name="height"
                     value={values.height}
@@ -173,6 +194,7 @@ export default function AddShelfDisplay() {
                 </div>
                 <div>
                   <InputFields
+                    required
                     label=" Width(CM)"
                     name="width"
                     value={values.width}
@@ -186,7 +208,8 @@ export default function AddShelfDisplay() {
                 </div>
                 <div>
                   <InputFields
-                    label=" Depth(CM)"
+                    required
+                    label="Depth(CM)"
                     name="depth"
                     value={values.depth}
                     onChange={(e) => setFieldValue("depth", e.target.value)}
@@ -208,10 +231,11 @@ export default function AddShelfDisplay() {
                 Cancel
               </button>
               <SidebarBtn
-                label={isSubmitting ? "Submitting..." : "Submit"}
-                isActive={!isSubmitting}
-                leadingIcon="mdi:check"
                 type="submit"
+                label={isSubmitting ? "Submitting..." : "Submit"}
+                isActive
+                leadingIcon="mdi:check"
+                disabled={isSubmitting}
               />
             </div>
           </Form>

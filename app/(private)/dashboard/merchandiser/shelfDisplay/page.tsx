@@ -10,7 +10,7 @@ import Table, { listReturnType, TableDataType } from "@/app/components/customTab
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { shelvesList } from "@/app/services/merchandiserApi";
+import { deleteShelves, shelvesList } from "@/app/services/merchandiserApi";
 import { useLoading } from "@/app/services/loadingContext";
 
 interface ShelfDisplayItem {
@@ -33,13 +33,22 @@ export default function ShelfDisplay() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedRow, setSelectedRow] = useState<ShelfDisplayItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedRow) {
-      showSnackbar(`Deleted row with ID: ${selectedRow.id}`, "success");
+      setLoading(true);
+      const res = await deleteShelves(String(selectedRow.id));
+      setLoading(false);
+      if (res.error) {
+        showSnackbar(res.data.message || "Failed to delete row", "error");
+      } else {
+        setRefreshKey(refreshKey + 1);
+        showSnackbar(res.message || `Deleted Shelf Display successfully`, "success");
+      }
       setShowDeletePopup(false);
     }
   };
@@ -58,9 +67,9 @@ export default function ShelfDisplay() {
       } else {
         return {
           data: res.data || [],
-          currentPage: res?.pagination?.page || 0,
-          pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.totalPages || 0,
+          currentPage: res?.pagination?.current_page || 1,
+          pageSize: res?.pagination?.per_page || pageSize,
+          total: res?.pagination?.last_page || 0,
         };
       }
     }, []
@@ -75,6 +84,7 @@ export default function ShelfDisplay() {
       {/* Table */}
       <div className="h-[calc(100%-60px)]">
         <Table
+          refreshKey={refreshKey}
           config={{
             api: {
               list: fetchShelfDisplay
@@ -83,8 +93,6 @@ export default function ShelfDisplay() {
               title: "Shelf Display",
               wholeTableActions: [
                 <div key={0} className="flex gap-[12px] relative">
-                  <BorderIconButton icon="gala:file-document" label="Export CSV" />
-                  <BorderIconButton icon="mage:upload" />
                   <DismissibleDropdown
                     isOpen={showDropdown}
                     setIsOpen={setShowDropdown}
@@ -122,19 +130,29 @@ export default function ShelfDisplay() {
             },
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
-              { key: "shelf_name", label: "Name" },
-              { key: "height", label: "Name" },
-              { key: "width", label: "Customer Code" },
-              { key: "depth", label: "Customer Name" },
-              { key: "valid_from", label: "Valid From" },
-              { key: "valid_to", label: "Valid To" },
-              { key: "customer_details", label: "Customer Name", render: (data: TableDataType) => {
+              { key: "shelf_name", label: "Shelf Name" },
+              { key: "height", label: "Height" },
+              { key: "width", label: "Width" },
+              { key: "depth", label: "Depth" },
+              { key: "valid_from", label: "Valid From", render: (row: TableDataType) => {
+                  const dateStr = row.valid_from;
+                  if (!dateStr) return "";
+                  const [y, m, d] = dateStr.split("T")[0].split("-");
+                  return `${d}-${m}-${y}`;
+              }},
+              { key: "valid_to", label: "Valid To", render: (row: TableDataType) => {
+                  const dateStr = row.valid_to;
+                  if (!dateStr) return "";
+                  const [y, m, d] = dateStr.split("T")[0].split("-");
+                  return `${d}-${m}-${y}`;
+              } },
+              { key: "customer_details", label: "Customers", render: (data: TableDataType) => {
                 if (Array.isArray(data.customer_details) && data.customer_details.length > 0) {
                   return data.customer_details
                     .map((customer) => `${customer.customer_code} - ${customer.owner_name}`)
                     .join(", ");
                 }
-                return "No customer details available";
+                return "-";
                }},
           
             ],

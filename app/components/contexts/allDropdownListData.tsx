@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import SalesmanType from '../../(private)/dashboard/settings/salesman-type/add/page';
 import {
   companyList,
   countryList,
@@ -15,6 +16,7 @@ import {
   channelList,
   userTypes,
   getCustomerType,
+  salesmanTypeList,
   vehicleListData,
   customerCategoryList,
   customerSubCategoryList
@@ -35,6 +37,7 @@ interface DropdownDataContextType {
   channelList: ChannelItem[];
   customerType: CustomerType[];
   userTypes: UserTypeItem[];
+  salesmanType: SalesmanType[];
   vehicleList: VehicleListItem[];
   customerCategory: CustomerCategory[];
   customerSubCategory: CustomerSubCategory[];
@@ -55,6 +58,7 @@ interface DropdownDataContextType {
   channelOptions: { value: string; label: string }[];
   customerTypeOptions: { value: string; label: string }[];
   userTypeOptions: { value: string; label: string }[];
+  salesmanTypeOptions: { value: string; label: string }[];
   vehicleListOptions: { value: string; label: string }[];
   customerCategoryOptions: { value: string; label: string }[];
   customerSubCategoryOptions: { value: string; label: string }[];
@@ -147,6 +151,12 @@ interface UserTypeItem {
   name?: string;
 }
 
+interface SalesmanType {
+  id?: number | string;
+  salesman_type_code?: string;
+  salesman_type_name?: string;
+}
+
 interface VehicleListItem {
   id?: number | string;
   vehicle_code?: string;
@@ -188,6 +198,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [channelListData, setChannelListData] = useState<ChannelItem[]>([]);
   const [customerTypeData, setCustomerTypeData] = useState<CustomerType[]>([]);
   const [userTypesData, setUserTypesData] = useState<UserTypeItem[]>([]);
+  const [salesmanTypesData, setSalesmanTypesData] = useState<SalesmanType[]>([]);
   const [VehicleList, setVehicleList] = useState<VehicleListItem[]>([]);
   const [customerCategory, setCustomerCategory] = useState<VehicleListItem[]>([]);
   const [customerSubCategory, setCustomerSubCategory] = useState<VehicleListItem[]>([]);
@@ -272,6 +283,12 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     label: c.code && c.name ? `${c.code} - ${c.name}` : (c.name ?? '')
   }));
   
+  const salesmanTypeOptions = (Array.isArray(salesmanTypesData) ? salesmanTypesData : []).map((c: SalesmanType) => ({
+    value: String(c.id ?? ''),
+    label: c.salesman_type_code && c.salesman_type_name ? `${c.salesman_type_code} - ${c.salesman_type_name}` : (c.salesman_type_name ?? '')
+  }));
+  console.log("jfghdbsidflghsndiflgsf",salesmanTypeOptions)
+
   const vehicleListOptions = (Array.isArray(VehicleList) ? VehicleList : []).map((c: VehicleListItem) => ({
     value: String(c.id ?? ''),
     label: c.vehicle_code ? c.vehicle_code : '-',
@@ -305,6 +322,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         channelList(),
         getCustomerType(),
         userTypes(),
+        salesmanTypeList({}),
         vehicleListData(),
         customerCategoryList(),
         customerSubCategoryList(),
@@ -334,9 +352,10 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setChannelListData(normalize(res[11]) as ChannelItem[]);
       setCustomerTypeData(normalize(res[12]) as CustomerType[]);
   setUserTypesData(normalize(res[13]) as UserTypeItem[]);
-  setVehicleList(normalize(res[14]) as VehicleListItem[]);
-  setCustomerCategory(normalize(res[15]) as CustomerCategory[]);
-  setCustomerSubCategory(normalize(res[16]) as CustomerSubCategory[]);
+      setSalesmanTypesData(normalize(res[14]) as SalesmanType[]);
+  setVehicleList(normalize(res[15]) as VehicleListItem[]);
+  setCustomerCategory(normalize(res[16]) as CustomerCategory[]);
+  setCustomerSubCategory(normalize(res[17]) as CustomerSubCategory[]);
     } catch (error) {
       console.error('Error loading dropdown data:', error);
       // on error clear to empty arrays
@@ -354,6 +373,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setChannelListData([]);
       setCustomerTypeData([]);
       setUserTypesData([]);
+      setSalesmanTypesData([]);
       setVehicleList([]);
       setCustomerCategory([]);
       setCustomerSubCategory([]);
@@ -385,6 +405,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         channelList: Array.isArray(channelListData) ? channelListData : [],
         customerType: customerTypeData,
         userTypes: userTypesData,
+        salesmanType: salesmanTypesData,
         vehicleList: VehicleList,
         customerCategory: customerCategory,
         customerSubCategory: customerSubCategory,
@@ -404,6 +425,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         channelOptions,
         customerTypeOptions,
         userTypeOptions,
+        salesmanTypeOptions,
         vehicleListOptions,
         customerCategoryOptions,
         customerSubCategoryOptions,
