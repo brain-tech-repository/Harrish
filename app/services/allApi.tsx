@@ -1812,3 +1812,53 @@ export const deleteSurveyQuestion = async (id:string) => {
     return handleError(error);
   }
 };
+
+
+export const companyTypeList = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/settings/company-types/list",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
+export const updateCompanyType = async (uuid:string,payload:object) => {
+  try {
+           const res = await API.put(`/api/settings/company-types/update/${uuid}`,payload);
+
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const deletecompanyType = async (uuid:string) => {
+  try {
+           const res = await API.delete(`/api/settings/company-types/delete/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const addCompanyType = async (payload:object) => {
+  try {
+         const res = await API.post("/api/settings/company-types/", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getComponyTypeById = async (id: string) => {
+  try {
+       const res = await API.get(`/api/settings/company-types/show/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
