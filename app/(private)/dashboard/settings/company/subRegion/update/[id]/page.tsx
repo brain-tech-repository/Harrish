@@ -6,10 +6,13 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { Formik, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
+
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
 import InputFields from "@/app/components/inputFields";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import ContainerCard from "@/app/components/containerCard";
+
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { getAreaById, updateAreaById } from "@/app/services/allApi";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
@@ -22,7 +25,6 @@ const SubRegionSchema = Yup.object().shape({
   region_id: Yup.string().required("Please select a region."),
 });
 
-// ✅ Types
 type SubRegionFormValues = {
   area_code: string;
   area_name: string;
@@ -89,17 +91,14 @@ export default function EditSubRegion() {
     if (!queryId) return;
 
     try {
-      // 👇 Make sure area_code is always passed
       const payload = {
-        area_code: values.area_code?.trim() ?? "", // ✅ FIX
+        area_code: values.area_code?.trim() ?? "",
         area_name: values.area_name?.trim() ?? "",
         status: Number(values.status),
         region_id: Number(values.region_id),
       };
 
-      console.log("🚀 Payload sending:", payload);
-
-       await updateAreaById(String(queryId), payload);
+      await updateAreaById(String(queryId), payload);
       showSnackbar("SubRegion updated successfully ✅", "success");
       router.push("/dashboard/settings/company/subRegion");
     } catch (error: unknown) {
@@ -143,100 +142,93 @@ export default function EditSubRegion() {
       >
         {({ handleSubmit, values, setFieldValue }) => (
           <Form onSubmit={handleSubmit}>
-            <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
-              <div className="p-6">
-                <h2 className="text-lg font-medium text-gray-800 mb-4">
-                  SubRegion Details
-                </h2>
+            <ContainerCard>
+              <h2 className="text-lg font-semibold mb-6">SubRegion Details</h2>
 
-                <div className="flex items-end gap-2 max-w-4xl flex-wrap">
-                  {/* SubRegion Code */}
+              {/* ✅ 2 inputs per row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* SubRegion Code */}
+                <div className="flex items-end gap-2 max-w-[406px]">
                   <div className="w-full">
                     <InputFields
                       label="SubRegion Code"
                       name="area_code"
                       value={values.area_code}
-                      onChange={(e) =>
-                        setFieldValue("area_code", e.target.value)
-                      }
+                      onChange={(e) => setFieldValue("area_code", e.target.value)}
                     />
                     <ErrorMessage
                       name="area_code"
                       component="span"
                       className="text-xs text-red-500"
                     />
-                     <IconButton
-                                          bgClass="white"
-                                          className="mb-2 cursor-pointer text-[#252B37]"
-                                          icon="mi:settings"
-                                          onClick={() => setIsOpen(true)}
-                                        />
-                                        <SettingPopUp
-                                          isOpen={isOpen}
-                                          onClose={() => setIsOpen(false)}
-                                          title="Country Code"
-                                        />
                   </div>
+                  <IconButton
+                    bgClass="white"
+                    className="mb-2 cursor-pointer text-[#252B37]"
+                    icon="mi:settings"
+                    onClick={() => setIsOpen(true)}
+                  />
+                  <SettingPopUp
+                    isOpen={isOpen}
+                    onClose={() => setIsOpen(false)}
+                    title="SubRegion Code"
+                  />
+                </div>
 
-                  {/* SubRegion Name */}
-                  <div>
-                    <InputFields
-                      label="SubRegion Name"
-                      name="area_name"
-                      value={values.area_name}
-                      onChange={(e) =>
-                        setFieldValue("area_name", e.target.value)
-                      }
-                    />
-                    <ErrorMessage
-                      name="area_name"
-                      component="span"
-                      className="text-xs text-red-500"
-                    />
-                  </div>
+                {/* SubRegion Name */}
+                <div>
+                  <InputFields
+                    label="SubRegion Name"
+                    name="area_name"
+                    value={values.area_name}
+                    onChange={(e) => setFieldValue("area_name", e.target.value)}
+                  />
+                  <ErrorMessage
+                    name="area_name"
+                    component="span"
+                    className="text-xs text-red-500"
+                  />
+                </div>
 
-                  {/* Status */}
-                  <div>
-                    <InputFields
-                      label="Status"
-                      name="status"
-                      value={values.status}
-                      onChange={(e) => setFieldValue("status", e.target.value)}
-                      options={[
-                        { value: "1", label: "Active" },
-                        { value: "0", label: "Inactive" },
-                      ]}
-                    />
-                    <ErrorMessage
-                      name="status"
-                      component="span"
-                      className="text-xs text-red-500"
-                    />
-                  </div>
+                {/* Status */}
+                <div>
+                  <InputFields
+                    label="Status"
+                    name="status"
+                    value={values.status}
+                    onChange={(e) => setFieldValue("status", e.target.value)}
+                    options={[
+                      { value: "1", label: "Active" },
+                      { value: "0", label: "Inactive" },
+                    ]}
+                  />
+                  <ErrorMessage
+                    name="status"
+                    component="span"
+                    className="text-xs text-red-500"
+                  />
+                </div>
 
-                  {/* Region */}
-                  <div>
-                    <InputFields
-                      label="Region"
-                      name="region_id"
-                      value={values.region_id}
-                      onChange={(e) =>
-                        setFieldValue("region_id", e.target.value)
-                      }
-                      options={regionOptions}
-                    />
-                    <ErrorMessage
-                      name="region_id"
-                      component="span"
-                      className="text-xs text-red-500"
-                    />
-                  </div>
+                {/* Region */}
+                <div>
+                  <InputFields
+                    label="Region"
+                    name="region_id"
+                    value={values.region_id}
+                    onChange={(e) => setFieldValue("region_id", e.target.value)}
+                    options={regionOptions}
+                  />
+                  <ErrorMessage
+                    name="region_id"
+                    component="span"
+                    className="text-xs text-red-500"
+                  />
                 </div>
               </div>
-            </div>
+            </ContainerCard>
 
             {/* Buttons */}
-            <div className="flex justify-end gap-4 mt-6 pr-0">
+            <div className="flex justify-end gap-4 mt-6">
               <button
                 type="reset"
                 className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
