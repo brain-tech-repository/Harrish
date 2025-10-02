@@ -1775,6 +1775,14 @@ export const getSurveyById = async (id:string) => {
   }
 };
 
+export const SurveyListGlobalSearch = async (params?: Params) => {
+  try{
+    const res = await API.get(`/api/merchendisher/survey/global-search`, {params: params})
+    return res.data;
+  }catch (error: unknown){
+    return handleError(error)
+  }
+}
 export const SurveyQuestionList = async () => {
   try {
               const res = await API.get("/api/merchendisher/survey-questions/list");
@@ -1792,6 +1800,22 @@ export const deleteSurveyQuestion = async (id:string) => {
     return handleError(error);
   }
 };
+
+
+ type PayloadSurveyQuestion = {
+  survey_id: number;                    // ID of the survey this question belongs to
+  question: string;                     // The question text
+  question_type: "checkbox" | "radio" | "textbox" | "selectbox" | "commentbox"; // Type of question
+  question_based_selected?: string;     // Comma-separated options for types that require multiple choices
+};
+export const addSurveyQuestion = async (payload: PayloadSurveyQuestion) => {
+  try {
+    const res = await API.post("/api/merchendisher/survey-questions/add", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
 
 
 
