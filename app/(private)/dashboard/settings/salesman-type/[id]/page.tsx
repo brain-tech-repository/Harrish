@@ -20,7 +20,6 @@ import {
 import { useSnackbar } from "@/app/services/snackbarContext";
 
 type SalesmanTypeForm = {
-  salesman_type_code: string;
   salesman_type_name: string;
   salesman_type_status: string;
 };
@@ -35,10 +34,6 @@ const validationSchema = Yup.object({
   salesman_type_status: Yup.string()
     .oneOf(["active", "inactive"], "Invalid status selected")
     .required("Status is required"),
-
-  salesman_type_code: Yup.string()
-    .trim()
-    .required("Salesman Type Code is required"),
 });
 
 export default function AddOrEditSalesmanType() {
@@ -52,7 +47,6 @@ export default function AddOrEditSalesmanType() {
   // ✅ Formik setup
   const formik = useFormik<SalesmanTypeForm>({
     initialValues: {
-      salesman_type_code: "",
       salesman_type_name: "",
       salesman_type_status: "",
     },
@@ -64,7 +58,6 @@ export default function AddOrEditSalesmanType() {
           salesman_type_name: values.salesman_type_name,
           salesman_type_status:
             values.salesman_type_status === "active" ? 1 : 0,
-          salesman_type_code: values.salesman_type_code,
         };
 
         console.log("Payload to submit:", payload);
@@ -110,7 +103,6 @@ export default function AddOrEditSalesmanType() {
               salesman_type_name: res.data.salesman_type_name || "",
               salesman_type_status:
                 res.data.salesman_type_status === 1 ? "active" : "inactive",
-              salesman_type_code: res.data.salesman_type_code || "",
             });
           }
         } catch (error) {
@@ -147,20 +139,6 @@ export default function AddOrEditSalesmanType() {
               Salesman type Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Code */}
-              <InputFields
-                type="text"
-                name="salesman_type_code"
-                label="Salesman Type Code"
-                value={formik.values.salesman_type_code}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.salesman_type_code &&
-                  formik.errors.salesman_type_code
-                }
-              />
-
               {/* Name */}
               <InputFields
                 type="text"
@@ -177,7 +155,7 @@ export default function AddOrEditSalesmanType() {
 
               {/* Status */}
               <InputFields
-                type="select"
+                type="radio"
                 name="salesman_type_status"
                 label="Status"
                 value={formik.values.salesman_type_status}
