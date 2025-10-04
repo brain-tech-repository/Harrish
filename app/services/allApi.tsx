@@ -831,6 +831,16 @@ export const deleteRouteTypeById = async (id: string) => {
   }
 };
 
+export const subRegionListGlobalSearch = async (params?: Params) => {
+  try {
+     const res = await API.get("/api/master/area/global_search",{ params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+
 export const getArea = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/area/list_area`, { params: params });
@@ -1866,7 +1876,7 @@ export const deletecompanyType = async (uuid:string) => {
 
 export const addCompanyType = async (payload:object) => {
   try {
-         const res = await API.post("/api/settings/company-types/", payload);
+         const res = await API.post("/api/settings/company-types/add", payload);
 
     return res.data;
   } catch (error: unknown) {

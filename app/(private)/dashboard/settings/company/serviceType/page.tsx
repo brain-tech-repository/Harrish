@@ -11,7 +11,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { deleteVendor, vendorList } from "@/app/services/assetsApi";
+import { deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 
 const dropdownDataList = [
@@ -32,31 +32,29 @@ export default function ShelfDisplay() {
   const handleConfirmDelete = async () => {
     if (deleteSelectedRow) {
       // Call the API to delete the row
-      setLoading(true);
-      const res = await deleteVendor(deleteSelectedRow.toString());
-      setLoading(false);
+      const res = await deleteServiceTypes(deleteSelectedRow.toString());
       if(res.error) {
-        showSnackbar(res.data.message || "failed to delete the Vendor", "error");
-        throw new Error("Unable to delete the Vendor");
+        showSnackbar(res.data.message || "failed to delete the Service Type", "error");
+        throw new Error("Unable to delete the Service Type");
       } else {
-          showSnackbar( res.message || `Deleted Vendor with ID: ${deleteSelectedRow}`, "success");
+          showSnackbar( res.message || `Deleted Service Type with ID: ${deleteSelectedRow}`, "success");
           setShowDeletePopup(false);
           setRefreshKey(prev => prev +1);
       }
     }
   };
 
-  const fetchVendor = useCallback(
+  const fetchServiceTypes = useCallback(
     async ( pageNo: number = 1, pageSize: number = 10) : Promise<listReturnType> => {
       setLoading(true);
-      const res = await vendorList({
+      const res = await serviceTypesList({
         page: pageNo.toString(),
         per_page: pageSize.toString(),
       });
       setLoading(false);
       if(res.error) {
-        showSnackbar(res.data.message || "failed to fetch the Vendor List", "error");
-        throw new Error("Unable to fetch the Vendor List");
+        showSnackbar(res.data.message || "failed to fetch the Service Types", "error");
+        throw new Error("Unable to fetch the Service Types");
       } else {
         return {
           data: res.data || [],
@@ -80,10 +78,10 @@ export default function ShelfDisplay() {
         refreshKey={refreshKey}
           config={{
             api: {
-              list: fetchVendor
+              list: fetchServiceTypes
             },
             header: {
-              title: "Vendor",
+              title: "Service Types",
               wholeTableActions: [
                 <div key={0} className="flex gap-[12px] relative">
                   {/* <BorderIconButton icon="gala:file-document" label="Export CSV" /> */}
@@ -114,9 +112,9 @@ export default function ShelfDisplay() {
               actions: [
                 <SidebarBtn
                   key="name"
-                  href="/dashboard/assets/vendor/add"
+                  href="/dashboard/settings/company/serviceType/add"
                   leadingIcon="lucide:plus"
-                  label="Add Vendor"
+                  label="Add Service Type"
                   labelTw="hidden lg:block"
                   isActive
                 />,
@@ -124,10 +122,8 @@ export default function ShelfDisplay() {
             },
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
+              { key: "code", label: "Code" },
               { key: "name", label: "Name" },
-              { key: "address", label: "Address" },
-              { key: "contact", label: "Contact" },
-              { key: "email", label: "Email" },
               { key: "status", label: "Status", render: (data: TableDataType) => (
                   <StatusBtn isActive={data.status && data.status.toString() === "1" ? true : false} />
               )},
@@ -136,15 +132,9 @@ export default function ShelfDisplay() {
             rowSelection: true,
             rowActions: [
               {
-                icon: "lucide:eye",
-                onClick: (data: TableDataType) => {
-                  router.push(`/dashboard/assets/vendor/view/${data.uuid}`);
-                },
-              },
-              {
                 icon: "lucide:edit-2",
                 onClick: (data: TableDataType) => {
-                  router.push(`/dashboard/assets/vendor/update/${data.uuid}`);
+                  router.push(`/dashboard/settings/company/serviceType/${data.uuid}`);
                 },
               },
               {
@@ -155,7 +145,7 @@ export default function ShelfDisplay() {
                 },
               },
             ],
-            pageSize: 5,
+            pageSize: 10,
           }}
         />
       </div>
@@ -164,7 +154,7 @@ export default function ShelfDisplay() {
       {showDeletePopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <DeleteConfirmPopup
-            title="Vendor"
+            title="Service Type"
             onClose={() => setShowDeletePopup(false)}
             onConfirm={handleConfirmDelete}
           />
