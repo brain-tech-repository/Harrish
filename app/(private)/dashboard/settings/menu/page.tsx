@@ -10,11 +10,12 @@ import Table, {
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { permissionList, deletePermissions } from "@/app/services/allApi";
+import { deleteMenu, menuList, menuGlobalSearch } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
+import StatusBtn from "@/app/components/statusBtn2";
 
 interface DropdownItem {
     icon: string;
@@ -27,34 +28,43 @@ const dropdownDataList: DropdownItem[] = [
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
+interface menuType {
+  name: string,
+  icon: string,
+  url: string,
+  display_order: number,
+  is_visible: number,
+  status: number
+}
+
 const columns = [
     { key: "name", label: "Name" },
+    { key: "icon", label: "Icon" },
+    { key: "url", label: "URL" },
+    { key: "display_order", label: "Display Order", sortable: true },
+    { key: "is_visible", label: "Is Visible", render: (data: TableDataType) => (data.is_visible ? "Yes" : "No") },
+    { key: "status", label: "Status", render: (data: TableDataType) => (<StatusBtn isActive={data.status ? true : false} />) },
 ];
 
-export default function Permissions() {
-    interface permissionsType {
-        id: number;
-        name: string;
-    }
-
+export default function Page() {
     const { setLoading } = useLoading();
     const [showDropdown, setShowDropdown] = useState<boolean>(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
-    const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+    const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
 
     const handleConfirmDelete = async () => {
         if (!selectedRowId) throw new Error("Missing id");
-        const res = await deletePermissions(String(selectedRowId));
+        const res = await deleteMenu(String(selectedRowId));
         if (res.error)
             return showSnackbar(
-                res.data.message || "Failed to delete Permission",
+                res.data.message || "Failed to delete Menu",
                 "error"
             );
         else {
-            showSnackbar("Permission deleted successfully ", "success");
+            showSnackbar("Menu deleted successfully ", "success");
             setRefreshKey(refreshKey + 1);
         }
         setLoading(false);
@@ -68,10 +78,7 @@ export default function Permissions() {
             pageSize: number = 5
         ): Promise<listReturnType> => {
             setLoading(true);
-            const listRes = await permissionList({
-                limit: pageSize.toString(),
-                page: page.toString(),
-            });
+            const listRes = await menuList();
             setLoading(false);
             if (listRes.error) {
                 showSnackbar(
@@ -82,17 +89,49 @@ export default function Permissions() {
             } else {
                 return {
                     data: listRes.data || [],
-                    total: listRes.pagination.totalPages,
-                    currentPage: listRes.pagination.page,
-                    pageSize: listRes.pagination.limit,
+                    total: listRes.pagination.totalPages || 1,
+                    currentPage: listRes.pagination.page || 1,
+                    pageSize: listRes.pagination.limit || pageSize,
                 };
             }
         },
         []
     );
+
+    const searchList = useCallback(
+        async (
+            search: string,
+            pageSize: number = 5
+        ): Promise<listReturnType> => {
+            setLoading(true);
+            const listRes = await menuGlobalSearch({
+                search,
+                per_page: pageSize.toString(),
+            });
+            setLoading(false);
+            if (listRes.error) {
+                showSnackbar(
+                    listRes.data.message || "Failed to Search",
+                    "error"
+                );
+                throw new Error("Failed to Search");
+            } else {
+                return {
+                    data: listRes.data || [],
+                    total: listRes.pagination.totalPages || 1,
+                    currentPage: listRes.pagination.page || 1,
+                    pageSize: listRes.pagination.limit || pageSize,
+                };
+            }
+        },
+        []
+    );
+
     useEffect(() => {
         setLoading(true);
     }, []);
+
+
 
     return (
         <>
@@ -100,9 +139,9 @@ export default function Permissions() {
                 <Table
                     refreshKey={refreshKey}
                     config={{
-                        api: { list: fetchData },
+                        api: { list: fetchData, search: searchList },
                         header: {
-                            title: "Permissions",
+                            title: "Menus",
                             wholeTableActions: [
                                 <div
                                     key={0}
@@ -144,15 +183,15 @@ export default function Permissions() {
                                     />
                                 </div>,
                             ],
-                            searchBar: false,
+                            searchBar: true,
                             columnFilter: true,
                             actions: [
                                 <SidebarBtn
                                     key={0}
-                                    href="/dashboard/settings/permission/add"
+                                    href="/dashboard/settings/menu/add"
                                     isActive
                                     leadingIcon="lucide:plus"
-                                    label="Add Permission"
+                                    label="Add Menu"
                                     labelTw="hidden lg:block"
                                 />,
                             ],
@@ -165,19 +204,19 @@ export default function Permissions() {
                                 icon: "lucide:edit-2",
                                 onClick: (data: TableDataType) => {
                                     router.push(
-                                        `/dashboard/settings/permission/${data.id}`
+                                        `/dashboard/settings/menu/${data.uuid}`
                                     );
                                 },
                             },
                             {
                                 icon: "lucide:trash-2",
                                 onClick: (data: TableDataType) => {
-                                    setSelectedRowId(Number(data.id));
+                                    setSelectedRowId(data.uuid);
                                     setShowDeletePopup(true);
                                 },
                             },
                         ],
-                        pageSize: 5,
+                        pageSize: 5
                     }}
                 />
             </div>
@@ -185,7 +224,7 @@ export default function Permissions() {
             {showDeletePopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
                     <DeleteConfirmPopup
-                        title="Permission"
+                        title="Menus"
                         onClose={() => setShowDeletePopup(false)}
                         onConfirm={handleConfirmDelete}
                     />

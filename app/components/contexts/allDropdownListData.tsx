@@ -22,9 +22,10 @@ import {
   customerSubCategoryList,
   itemList,
   getDiscountTypeList,
-  getMenuList,
+  menuList as getMenuList,
   salesmanList,
-  agentCustomerList
+  agentCustomerList,
+  submenuList
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
@@ -79,6 +80,7 @@ interface DropdownDataContextType {
   salesmanOptions: { value: string; label: string }[];
   agentCustomerOptions: { value: string; label: string }[];
   shelvesOptions: { value: string; label: string }[];
+  submenuOptions: { value: string; label: string }[];
   refreshDropdowns: () => Promise<void>;
   loading: boolean;
 }
@@ -237,6 +239,11 @@ interface ShelvesList {
     shelf_name: string;
 }
 
+interface submenuList {
+    id: number;
+    name: string;
+}
+
 const AllDropdownListDataContext = createContext<DropdownDataContextType | undefined>(undefined);
 
 export const useAllDropdownListData = () => {
@@ -274,6 +281,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [agentCustomer, setAgentCustomer] = useState<AgentCustomerList[]>([]);
   const [shelves, setShelves] = useState<ShelvesList[]>([]);
   const [vendor, setVendor] = useState<VendorList[]>([]);
+  const [submenu, setSubmenu] = useState<submenuList[]>([]);
   const [loading, setLoading] = useState(false);
 
   // mapped dropdown options (explicit typed mappings)
@@ -410,6 +418,11 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
     label: c.shelf_name ?? ''
   }));
 
+  const submenuOptions = (Array.isArray(submenu) ? submenu : []).map((c: submenuList) => ({
+    value: String(c.id ?? ''),
+    label: c.name ?? ''
+  }));
+
   const refreshDropdowns = async () => {
     setLoading(true);
     try {
@@ -439,6 +452,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         salesmanList(),
         agentCustomerList(),
         shelvesList(),
+        submenuList(),
       ]);
 
       // normalize: accept unknown response and extract array of items from `.data` when present
@@ -464,18 +478,19 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setItemSubCategoryData(normalize(res[10]) as ItemSubCategoryItem[]);
       setChannelListData(normalize(res[11]) as ChannelItem[]);
       setCustomerTypeData(normalize(res[12]) as CustomerType[]);
-  setUserTypesData(normalize(res[13]) as UserTypeItem[]);
+      setUserTypesData(normalize(res[13]) as UserTypeItem[]);
       setSalesmanTypesData(normalize(res[14]) as SalesmanType[]);
-  setVehicleList(normalize(res[15]) as VehicleListItem[]);
-  setCustomerCategory(normalize(res[16]) as CustomerCategory[]);
-  setCustomerSubCategory(normalize(res[17]) as CustomerSubCategory[]);
-  setItem(normalize(res[18]) as Item[]);
-  setDiscountType(normalize(res[19]) as DiscountType[]);
-  setMenuList(normalize(res[20]) as MenuList[]);
-  setVendor(normalize(res[21]) as VendorList[]);
-  setSalesman(normalize(res[22]) as SalesmanList[]);
-  setAgentCustomer(normalize(res[23]) as AgentCustomerList[]);
-  setShelves(normalize(res[24]) as ShelvesList[]);
+      setVehicleList(normalize(res[15]) as VehicleListItem[]);
+      setCustomerCategory(normalize(res[16]) as CustomerCategory[]);
+      setCustomerSubCategory(normalize(res[17]) as CustomerSubCategory[]);
+      setItem(normalize(res[18]) as Item[]);
+      setDiscountType(normalize(res[19]) as DiscountType[]);
+      setMenuList(normalize(res[20]) as MenuList[]);
+      setVendor(normalize(res[21]) as VendorList[]);
+      setSalesman(normalize(res[22]) as SalesmanList[]);
+      setAgentCustomer(normalize(res[23]) as AgentCustomerList[]);
+      setShelves(normalize(res[24]) as ShelvesList[]);
+      setSubmenu(normalize(res[25]) as submenuList[]);
   
     } catch (error) {
       console.error('Error loading dropdown data:', error);
@@ -505,6 +520,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setSalesman([]);
       setAgentCustomer([]);
       setShelves([]);
+      setSubmenu([]);
     } finally {
       setLoading(false);
     }
@@ -567,6 +583,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         salesmanOptions,
         agentCustomerOptions,
         shelvesOptions,
+        submenuOptions,
         refreshDropdowns,
         loading
       }}

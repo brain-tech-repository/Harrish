@@ -10,7 +10,7 @@ import Table, {
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { permissionList, deletePermissions } from "@/app/services/allApi";
+import { submenuGlobalSearch, submenuList, deleteSubmenu } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -29,32 +29,57 @@ const dropdownDataList: DropdownItem[] = [
 
 const columns = [
     { key: "name", label: "Name" },
+    { 
+        key: "menu", 
+        label: "Menu", 
+        render: (data: TableDataType) => {
+            const menu = data.menu;
+            if (
+                typeof menu === "object" &&
+                menu !== null &&
+                "name" in menu
+            ) {
+                return (menu as { name: string }).name;
+            }
+            return "-";
+        }
+    },
+    { key: "parent", label: "Parent", render: (data: TableDataType) => {
+            const parent = data.parent;
+            if (
+                typeof parent === "object" &&
+                parent !== null &&
+                "name" in parent
+            ) {
+                return (parent as { name: string }).name;
+            }
+            return "-";
+        } },
+    { key: "url", label: "URL" },
+    { key: "display_order", label: "Display Order", sortable: true },
+    { key: "action_type", label: "Action Type", sortable: true },
+    { key: "is_visible", label: "Is Visible", render: (data: TableDataType) => (data.is_visible ? "Yes" : "No") },
 ];
 
-export default function Permissions() {
-    interface permissionsType {
-        id: number;
-        name: string;
-    }
-
+export default function Page() {
     const { setLoading } = useLoading();
     const [showDropdown, setShowDropdown] = useState<boolean>(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
-    const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+    const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
 
     const handleConfirmDelete = async () => {
         if (!selectedRowId) throw new Error("Missing id");
-        const res = await deletePermissions(String(selectedRowId));
+        const res = await deleteSubmenu(String(selectedRowId));
         if (res.error)
             return showSnackbar(
-                res.data.message || "Failed to delete Permission",
+                res.data.message || "Failed to delete Submenu",
                 "error"
             );
         else {
-            showSnackbar("Permission deleted successfully ", "success");
+            showSnackbar("Submenu deleted successfully ", "success");
             setRefreshKey(refreshKey + 1);
         }
         setLoading(false);
@@ -68,9 +93,9 @@ export default function Permissions() {
             pageSize: number = 5
         ): Promise<listReturnType> => {
             setLoading(true);
-            const listRes = await permissionList({
-                limit: pageSize.toString(),
+            const listRes = await submenuList({
                 page: page.toString(),
+                per_page: pageSize.toString()
             });
             setLoading(false);
             if (listRes.error) {
@@ -82,17 +107,49 @@ export default function Permissions() {
             } else {
                 return {
                     data: listRes.data || [],
-                    total: listRes.pagination.totalPages,
-                    currentPage: listRes.pagination.page,
-                    pageSize: listRes.pagination.limit,
+                    total: listRes.pagination.totalPages || 1,
+                    currentPage: listRes.pagination.page || 1,
+                    pageSize: listRes.pagination.limit || pageSize,
                 };
             }
         },
         []
     );
+
+    const searchList = useCallback(
+        async (
+            search: string,
+            pageSize: number = 5
+        ): Promise<listReturnType> => {
+            setLoading(true);
+            const listRes = await submenuGlobalSearch({
+                search,
+                limit: pageSize.toString(),
+            });
+            setLoading(false);
+            if (listRes.error) {
+                showSnackbar(
+                    listRes.data.message || "Failed to Search",
+                    "error"
+                );
+                throw new Error("Failed to Search");
+            } else {
+                return {
+                    data: listRes.data || [],
+                    total: listRes.pagination.totalPages || 1,
+                    currentPage: listRes.pagination.page || 1,
+                    pageSize: listRes.pagination.limit || pageSize,
+                };
+            }
+        },
+        []
+    );
+
     useEffect(() => {
         setLoading(true);
     }, []);
+
+
 
     return (
         <>
@@ -100,9 +157,9 @@ export default function Permissions() {
                 <Table
                     refreshKey={refreshKey}
                     config={{
-                        api: { list: fetchData },
+                        api: { list: fetchData, search: searchList },
                         header: {
-                            title: "Permissions",
+                            title: "Sub Menus",
                             wholeTableActions: [
                                 <div
                                     key={0}
@@ -144,15 +201,15 @@ export default function Permissions() {
                                     />
                                 </div>,
                             ],
-                            searchBar: false,
+                            searchBar: true,
                             columnFilter: true,
                             actions: [
                                 <SidebarBtn
                                     key={0}
-                                    href="/dashboard/settings/permission/add"
+                                    href="/dashboard/settings/submenu/add"
                                     isActive
                                     leadingIcon="lucide:plus"
-                                    label="Add Permission"
+                                    label="Add Submenu"
                                     labelTw="hidden lg:block"
                                 />,
                             ],
@@ -165,19 +222,19 @@ export default function Permissions() {
                                 icon: "lucide:edit-2",
                                 onClick: (data: TableDataType) => {
                                     router.push(
-                                        `/dashboard/settings/permission/${data.id}`
+                                        `/dashboard/settings/submenu/${data.uuid}`
                                     );
                                 },
                             },
                             {
                                 icon: "lucide:trash-2",
                                 onClick: (data: TableDataType) => {
-                                    setSelectedRowId(Number(data.id));
+                                    setSelectedRowId(data.uuid);
                                     setShowDeletePopup(true);
                                 },
                             },
                         ],
-                        pageSize: 5,
+                        pageSize: 5
                     }}
                 />
             </div>
@@ -185,7 +242,7 @@ export default function Permissions() {
             {showDeletePopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
                     <DeleteConfirmPopup
-                        title="Permission"
+                        title="Sub Menu"
                         onClose={() => setShowDeletePopup(false)}
                         onConfirm={handleConfirmDelete}
                     />

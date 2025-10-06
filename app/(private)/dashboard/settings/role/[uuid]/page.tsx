@@ -87,9 +87,9 @@ export default function AddEditRole() {
     };
     let res;
     if (isEditMode && params?.uuid !== "add") {
-      res = await editRoles(String(params.uuid), payload);
+      res = await editRoles(String(params.uuid), { ...payload  });
     } else {
-      res = await addRoles(payload);
+      res = await addRoles({ ...payload  });
     }
     if (res.error) {
       showSnackbar(res.data?.message || "Failed to submit form", "error");

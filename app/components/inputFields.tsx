@@ -15,7 +15,7 @@ type Props = {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
   options?: Option[];
-  type?: "text" | "select" | "file" | "date" | "radio";
+  type?: "text" | "select" | "file" | "date" | "radio" | "number";
   id?: string;
   width?: string;
   error?: string | false;
@@ -305,6 +305,18 @@ useEffect(() => {
           id={id ?? name}
           name={name}
           type="date"
+          value={value ?? ""}
+          onChange={safeOnChange}
+          disabled={disabled}
+          onBlur={onBlur}
+          className={`border h-[44px] w-full rounded-md px-3 mt-[6px] text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${error ? "border-red-500" : "border-gray-300"}`}
+          placeholder={`Enter ${label}`}
+        />
+      ): type === "number" ? (
+        <input
+          id={id ?? name}
+          name={name}
+          type="number"
           value={value ?? ""}
           onChange={safeOnChange}
           disabled={disabled}
