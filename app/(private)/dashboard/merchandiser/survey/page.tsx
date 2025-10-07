@@ -179,6 +179,7 @@ useEffect(() => {
       router.push(`/dashboard/merchandiser/survey/view/${data.id}`);
     },
   },
+  
     
       {
         icon: "lucide:edit-2",
@@ -187,6 +188,7 @@ useEffect(() => {
           router.push(`/dashboard/merchandiser/survey/update/${row.id}`);
         },
       },
+      
       {
         icon: "lucide:trash-2",
         onClick: (data: object) => {
@@ -195,6 +197,7 @@ useEffect(() => {
           setShowDeletePopup(true);
         },
       },
+        
     ],
     pageSize: 10,
   }}

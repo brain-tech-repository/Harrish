@@ -15,7 +15,7 @@ import { addSurvey, addSurveyQuestion } from "@/app/services/allApi";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 // Question types
-const typesWithOptions = ["checkbox", "radio", "selectbox"];
+const typesWithOptions = ["check box", "radio", "selectbox"];
 const questionTypes = ["comment box", "check box", "radio", "textbox", "selectbox"];
 
 // Step-wise validation
@@ -392,7 +392,7 @@ export default function AddSurveyTabs() {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-2 ${
-                      activeTab === tab.id ? "border-b-2 border-blue-600 font-semibold" : "text-gray-500"
+                      activeTab === tab.id ? "border-b-2 border-red-600 font-semibold" : "text-gray-500"
                     }`}
                   >
                     {tab.label}

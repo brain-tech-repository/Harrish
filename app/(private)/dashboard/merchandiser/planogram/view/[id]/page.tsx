@@ -73,7 +73,7 @@ const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
       {/* Planogram Details */}
       <div className="flex flex-wrap gap-x-[20px]">
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full ]">
           <KeyValueData
             data={[
               { value: planogram?.name, key: "Name" },

@@ -74,7 +74,7 @@ const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
       {/* Region Details */}
       <div className="flex flex-wrap gap-x-[20px]">
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full">
           <KeyValueData
             data={[
               { value: region?.region_code, key: "Region Code" },

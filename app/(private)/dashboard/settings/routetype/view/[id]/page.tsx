@@ -72,7 +72,7 @@ useEffect(() => {
 
       {/* Route Type Details */}
       <div className="flex flex-wrap gap-x-[20px]">
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full">
           <KeyValueData
             data={[
               { value: routeType?.route_type_code, key: "Route Type Code" },
