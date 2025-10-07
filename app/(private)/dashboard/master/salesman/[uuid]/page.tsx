@@ -2,22 +2,23 @@
 
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
+import * as Yup from "yup";
+
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import CustomPasswordInput from "@/app/components/customPasswordInput";
 import CustomSecurityCode from "@/app/components/customSecurityCode";
 import StepperForm, { useStepperForm, StepperStep } from "@/app/components/stepperForm";
-import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
-import * as Yup from "yup";
+import Loading from "@/app/components/Loading";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { addSalesman, genearateCode, saveFinalCode } from "@/app/services/allApi";
-import { useEffect, useRef } from "react";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData copy";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import { addSalesman, genearateCode, saveFinalCode, updateSalesman, getSalesmanById } from "@/app/services/allApi";
 
 interface SalesmanFormValues {
+  osa_code: string;
   name: string;
   type: string;
   sub_type: string;
@@ -37,9 +38,9 @@ interface SalesmanFormValues {
   email: string;
 }
 
+// ✅ Validation Schema
 const SalesmanSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
-  sap_id: Yup.string().required("SAP ID is required"),
   type: Yup.string().required("Type is required"),
   sub_type: Yup.string().required("Sub Type is required"),
   designation: Yup.string().required("Designation is required"),
@@ -51,10 +52,10 @@ const SalesmanSchema = Yup.object().shape({
   warehouse_id: Yup.string().required("Warehouse is required"),
 });
 
+// ✅ Step-wise validation
 const stepSchemas = [
   Yup.object({
     name: Yup.string().required("Name is required"),
-    sap_id: Yup.string().required("SAP ID is required"),
     type: Yup.string().required("Type is required"),
     sub_type: Yup.string().required("Sub Type is required"),
     designation: Yup.string().required("Designation is required"),
@@ -71,34 +72,26 @@ const stepSchemas = [
   }),
   Yup.object({
     security_code: Yup.string().required("Security code is required"),
-    block_date_from: Yup.string(),
-    block_date_to: Yup.string(),
     salesman_role: Yup.string(),
     status: Yup.string().required("Status is required"),
     is_login: Yup.string(),
   }),
 ];
 
-export default function AddCustomerStepper() {
-  const codeGeneratedRef = useRef(false);
-  const [generatedSapId, setGeneratedSapId] = useState("");
-
+export default function AddEditSalesman() {
+  const [prefix, setPrefix] = useState("");
+  const [loading, setLoading] = useState(true);
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
+  const params = useParams<{ uuid?: string | string[] }>();
+  const salesmanId = params?.uuid as string | undefined;
+  const isEditMode = salesmanId && salesmanId !== "add";
+  const codeGeneratedRef = useRef(false);
 
   const { salesmanTypeOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
 
-
-  const steps: StepperStep[] = [
-    { id: 1, label: "Salesman Details" },
-    { id: 2, label: "Contact & Login" },
-    { id: 3, label: "Additional Info" },
-  ];
-
-  const { currentStep, nextStep, prevStep, markStepCompleted, isStepCompleted, isLastStep } =
-    useStepperForm(steps.length);
-
-  const initialValues: SalesmanFormValues = {
+  const [initialValues, setInitialValues] = useState<SalesmanFormValues>({
+    osa_code: "",
     name: "",
     type: "",
     sub_type: "",
@@ -112,29 +105,73 @@ export default function AddCustomerStepper() {
     contact_no: "",
     warehouse_id: "",
     token_no: "",
-    sap_id: generatedSapId,
+    sap_id: "",
     is_login: "0",
     status: "1",
     email: "",
-  };
+  });
 
-    useEffect(() => {
-    if (!codeGeneratedRef.current) {
-      codeGeneratedRef.current = true;
-      (async () => {
-        try {
-          const res = await genearateCode({ model_name: "salesman" });
-          if (res?.code) {
-            setGeneratedSapId(res.code);
-          }
-        } catch (e) {
-          // Optionally handle error
+  const steps: StepperStep[] = [
+    { id: 1, label: "Salesman Details" },
+    { id: 2, label: "Contact & Login" },
+    { id: 3, label: "Additional Info" },
+  ];
+
+  const { currentStep, nextStep, prevStep, markStepCompleted, isStepCompleted, isLastStep } =
+    useStepperForm(steps.length);
+
+  // ✅ Fetch data
+ useEffect(() => {
+  (async () => {
+    if (isEditMode) {
+      try {
+        const res = await getSalesmanById(salesmanId as string);
+        if (res && !res.error && res.data) {
+          const d = res.data;
+          setInitialValues({
+            osa_code: d.osa_code || "",
+            name: d.name || "",
+            type: d.salesman_type?.id?.toString() || "",   // flatten nested object
+            sub_type: d.sub_type?.toString() || "",
+            designation: d.designation || "",
+            security_code: d.security_code, // security code won’t usually come from API
+            device_no: d.device_no || "",
+            route_id: d.route?.id?.toString() || "",
+            salesman_role: d.salesman_role?.toString() || "",
+            username: d.username || "",
+            password: d.password, // password is not returned from API → leave empty
+            contact_no: d.contact_no || "",
+            warehouse_id: d.warehouse?.id?.toString() || "",
+            token_no: d.token_no || "",
+            sap_id: d.sap_id || "",
+            is_login: d.is_login?.toString() || "0",
+            status: d.status?.toString() || "1",
+            email: d.email || "",
+          });
         }
-      })();
+      } catch (e) {
+        console.error("Failed to fetch salesman:", e);
+      }
+      setLoading(false);
+    } else if (!codeGeneratedRef.current) {
+      codeGeneratedRef.current = true;
+      try {
+        const res = await genearateCode({ model_name: "salesman" });
+        if (res?.code) {
+          setInitialValues((prev) => ({ ...prev, osa_code: res.code }));
+        }
+        if (res?.prefix) {
+          setPrefix(res.prefix);
+        }
+      } catch (e) {
+        console.error("Code generation failed:", e);
+      }
+      setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  })();
+}, [isEditMode, salesmanId]);
 
+  // ✅ Step validation
   const handleNext = async (
     values: SalesmanFormValues,
     actions: FormikHelpers<SalesmanFormValues>
@@ -145,56 +182,55 @@ export default function AddCustomerStepper() {
       markStepCompleted(currentStep);
       nextStep();
     } catch (err: unknown) {
-     if (err instanceof Yup.ValidationError) {
-             // Only touch fields in the current step
-             const fields = err.inner.map((e) => e.path);
-             actions.setTouched(
-               fields.reduce(
-                 (acc, key) => ({ ...acc, [key!]: true }),
-                 {} as Record<string, boolean>
-               )
-             );
-             actions.setErrors(
-               err.inner.reduce(
-                 (acc: Partial<Record<keyof SalesmanFormValues, string>>, curr) => ({
-                   ...acc,
-                   [curr.path as keyof SalesmanFormValues]: curr.message,
-                 }),
-                 {}
-               )
-             );
-           }
-           showSnackbar("Please fix validation errors before proceeding", "error");
-         }
-       };
+      if (err instanceof Yup.ValidationError) {
+        actions.setTouched(
+          err.inner.reduce((acc, curr) => ({ ...acc, [curr.path!]: true }), {})
+        );
+        actions.setErrors(
+          err.inner.reduce(
+            (acc, curr) => ({ ...acc, [curr.path as keyof SalesmanFormValues]: curr.message }),
+            {}
+          )
+        );
+      }
+      showSnackbar("Please fix validation errors before proceeding", "error");
+    }
+  };
 
-  const handleSubmit = async (values: SalesmanFormValues) => {
+  // ✅ Submit handler
+  const handleSubmit = async (values: SalesmanFormValues, { setSubmitting }: FormikHelpers<SalesmanFormValues>) => {
     try {
       await SalesmanSchema.validate(values, { abortEarly: false });
 
-      // Convert to FormData for API
       const formData = new FormData();
       (Object.keys(values) as (keyof SalesmanFormValues)[]).forEach((key) => {
         formData.append(key, values[key] ?? "");
       });
 
-      const res = await addSalesman(formData);
-      if (res.error) {
-        showSnackbar(res.data?.message || "Failed to add salesman ❌", "error");
+      let res;
+      if (isEditMode) {
+        res = await updateSalesman(salesmanId as string, formData);
       } else {
-        showSnackbar("Salesman added successfully ✅", "success");
+        res = await addSalesman(formData);
+      }
+
+      if (res.error) {
+        showSnackbar(res.data?.message || "Failed to submit form", "error");
+      } else {
+        showSnackbar(isEditMode ? "Salesman Updated Successfully" : "Salesman Created Successfully", "success");
         router.push("/dashboard/master/salesman");
         try {
-          await saveFinalCode({ reserved_code: values.sap_id, model_name: "salesman" });
-        } catch (e) {
-          // Optionally handle error, but don't block success
-        }
+          await saveFinalCode({ reserved_code: values.osa_code, model_name: "salesman" });
+        } catch { }
       }
     } catch {
-      showSnackbar("Add salesman failed ❌", "error");
+      showSnackbar("Validation failed, please check your inputs", "error");
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  // ✅ Step content renderer
   const renderStepContent = (
     values: SalesmanFormValues,
     setFieldValue: (field: keyof SalesmanFormValues, value: string, shouldValidate?: boolean) => void,
@@ -206,8 +242,9 @@ export default function AddCustomerStepper() {
         return (
           <ContainerCard>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputFields label="Name" name="name" value={values.name} onChange={(e) => setFieldValue("name", e.target.value)} error={touched.name && errors.name} />
-              <InputFields label="SAP ID" name="sap_id" value={values.sap_id} onChange={(e) => setFieldValue("sap_id", e.target.value)} error={touched.sap_id && errors.sap_id} disabled />
+              <InputFields required label="OSA Code" name="osa_code" value={values.osa_code} onChange={(e) => setFieldValue("osa_code", e.target.value)} error={touched.osa_code && errors.osa_code} />
+              <InputFields required label="Name" name="name" value={values.name} onChange={(e) => setFieldValue("name", e.target.value)} error={touched.name && errors.name} />
+              <InputFields label="SAP ID" name="sap_id" value={values.sap_id} disabled onChange={(e) => setFieldValue("sap_id", e.target.value)} />
               <InputFields label="Salesman Type" name="type" value={values.type} onChange={(e) => setFieldValue("type", e.target.value)} options={salesmanTypeOptions} />
               <InputFields label="Sub Type" name="sub_type" value={values.sub_type} onChange={(e) => setFieldValue("sub_type", e.target.value)} options={[{ value: "0", label: "None" }, { value: "1", label: "Merchandiser" }]} />
               <InputFields label="Designation" name="designation" value={values.designation} onChange={(e) => setFieldValue("designation", e.target.value)} />
@@ -245,6 +282,8 @@ export default function AddCustomerStepper() {
     }
   };
 
+  if (loading) return <Loading />;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -252,35 +291,35 @@ export default function AddCustomerStepper() {
           <Link href="/dashboard/master/salesman">
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
-          <h1 className="text-xl font-semibold text-gray-900">Add New Salesman</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{isEditMode ? "Edit Salesman" : "Add New Salesman"}</h1>
         </div>
       </div>
 
-     <Formik
-  initialValues={initialValues}
-  validationSchema={SalesmanSchema}
-  onSubmit={handleSubmit}
->
-  {({ values, setFieldValue, errors, touched, handleSubmit: formikSubmit, setErrors, setTouched }) => (
-    <Form>
-      <StepperForm
-        steps={steps.map((step) => ({ ...step, isCompleted: isStepCompleted(step.id) }))}
-        currentStep={currentStep}
-        onStepClick={() => {}}
-        onBack={prevStep}
-        onNext={() => handleNext(values, { setErrors, setTouched } as FormikHelpers<SalesmanFormValues>)} 
-        onSubmit={() => formikSubmit()}
-        showSubmitButton={isLastStep}
-        showNextButton={!isLastStep}
-        nextButtonText="Save & Next"
-        submitButtonText="Submit"
+      <Formik
+        initialValues={initialValues}
+        enableReinitialize
+        validationSchema={SalesmanSchema}
+        onSubmit={handleSubmit}
       >
-        {renderStepContent(values, setFieldValue, errors, touched)}
-      </StepperForm>
-    </Form>
-  )}
-</Formik>
-
+        {({ values, setFieldValue, errors, touched, handleSubmit: formikSubmit, setErrors, setTouched }) => (
+          <Form>
+            <StepperForm
+              steps={steps.map((step) => ({ ...step, isCompleted: isStepCompleted(step.id) }))}
+              currentStep={currentStep}
+              onStepClick={() => { }}
+              onBack={prevStep}
+              onNext={() => handleNext(values, { setErrors, setTouched } as FormikHelpers<SalesmanFormValues>)}
+              onSubmit={() => formikSubmit()}
+              showSubmitButton={isLastStep}
+              showNextButton={!isLastStep}
+              nextButtonText="Save & Next"
+              submitButtonText={isEditMode ? "Update" : "Submit"}
+            >
+              {renderStepContent(values, setFieldValue, errors, touched)}
+            </StepperForm>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 }

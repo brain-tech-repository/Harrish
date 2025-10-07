@@ -12,7 +12,7 @@ import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { addShelves, shelvesListById, updateShelves } from "@/app/services/merchandiserApi";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData copy";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 const ShelfDisplaySchema = Yup.object().shape({
   shelf_name: Yup.string().required("Name is required."),

@@ -136,6 +136,7 @@ const CompanyPage = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [selectedRow, setSelectedRow] = useState<Company | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
@@ -207,7 +208,8 @@ const CompanyPage = () => {
             showSnackbar(res.message || "Failed to delete company ❌", "error");
         } else {
             showSnackbar("Company deleted successfully ✅", "success");
-            fetchCompanies();
+            setRefreshKey((prev) => prev + 1);
+            // fetchCompanies();
         }
         setShowDeletePopup(false);
         setSelectedRow(null);
@@ -218,8 +220,9 @@ const CompanyPage = () => {
             {/* Table */}
             <div className="h-[calc(100%-60px)]">
                 <Table
-                    // data={tableData}
+                  refreshKey={refreshKey}
                     config={{
+                        
                         api: {
                             list: fetchCompanies,
                             search: searchCompanies,
@@ -281,6 +284,12 @@ const CompanyPage = () => {
                         columns,
                         rowSelection: true,
                         rowActions: [
+                            {
+                icon: "lucide:eye",
+                onClick: (data: TableDataType) => {
+                  router.push(`/dashboard/master/company/details/${data.id}`);
+                },
+              },
                             {
                                 icon: "lucide:edit-2",
                                 onClick: (row: object) => {

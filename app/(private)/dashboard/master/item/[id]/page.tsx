@@ -11,7 +11,7 @@ import StepperForm, { useStepperForm, StepperStep } from "@/app/components/stepp
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { itemById, addItem, editItem, genearateCode, saveFinalCode } from "@/app/services/allApi";
 import * as Yup from "yup";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData copy";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Loading from "@/app/components/Loading";
 
 interface ItemFormValues {
@@ -143,11 +143,6 @@ export default function AddEditItem() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name as keyof ItemFormValues]: value }));
     setTouched((prev) => ({ ...prev, [name as keyof ItemFormValues]: true }));
-  };
-
-  const setFieldValue = (field: keyof ItemFormValues, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const validateCurrentStep = async (step: number) => {
