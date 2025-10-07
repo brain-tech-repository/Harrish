@@ -138,7 +138,6 @@ export default function ShelfDisplay() {
               { key: "document_id", label: "Document Id" },
               { key: "document_type", label: "Document Type" },
               { key: "manufacturer", label: "Manufacturer" },
-              { key: "country_id", label: "Country Id" },
               { key: "type_name", label: "Type Name" },
               { key: "is_assign", label: "Is Assign", render: (data: TableDataType) => (data.is_assign && data.is_assign.toString() === "1" ? "Yes" : "No") },
               { key: "customer_id", label: "Country Id" },

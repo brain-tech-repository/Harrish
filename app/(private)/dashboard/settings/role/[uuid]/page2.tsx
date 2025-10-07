@@ -14,25 +14,38 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import Loading from "@/app/components/Loading";
 
 const RoleSchema = Yup.object().shape({
-  name: Yup.string().required("Role Name is required."),
-  permissions: Yup.array().min(1, "Permissions is required.").of(Yup.number().required()).required("Permissions is required."),
+  role_name: Yup.string().required("Role Name is required."),
+  role_activity: Yup.string().required("Role Activity is required."),
+  menu_id: Yup.string().required("Menu Id is required."),
+  agent_id: Yup.string().required("Agent Id is required."),
+  warehouse_id: Yup.string().required("Warehouse Id is required."),
+  status: Yup.string().required("Status is required."),
 });
 
 export default function AddEditRole() {
-  const { permissionsOptions }  = useAllDropdownListData();
+  const { warehouseOptions,menuOptions }  = useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams();
-  const [initialValues, setInitialValues] = useState<RoleFormValues>({
-    name: "",
-    permissions: []
+  const [isOpen, setIsOpen] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    role_name: "",
+    role_activity: "",
+    menu_id: "",
+    agent_id: "",
+    warehouse_id: "",
+    status: "1",
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
 
   type RoleFormValues = {
-    name: string;
-    permissions: Array<number>;
+    role_name: string;
+    role_activity: string;
+    menu_id: string;
+    agent_id: string;
+    warehouse_id: string;
+    status: string;
   };
 
   useEffect(() => {
@@ -44,12 +57,16 @@ export default function AddEditRole() {
           const res = await getRoleById(String(params.uuid));
           if (res?.data) {
             setInitialValues({
-              name: res.data.name || "",
-              permissions: res.data.permissions || [],
+              role_name: res.data.role_name || "",
+              role_activity: String(res.data.role_activity ?? ""),
+              menu_id: res.data.menu_id ? String(res.data.menu_id) : "",
+              agent_id: res.data.agent_id ? String(res.data.agent_id) : "",
+              warehouse_id: res.data.warehouse_id ? String(res.data.warehouse_id) : "",
+              status: String(res.data.status ?? ""),
             });
           }
         } catch (error) {
-          console.error("Failed to fetch roles", error);
+          console.error("Failed to fetch role", error);
         } finally {
           setLoading(false);
         }
@@ -63,8 +80,10 @@ export default function AddEditRole() {
   ) => {
     const payload = {
       ...values,
-      guard_name: "api",
-      permissions: values.permissions.map(Number)
+      status: Number(values.status),
+      role_activity: Number(values.role_activity),
+      agent_id: Number(values.agent_id),
+      warehouse_id: Number(values.warehouse_id),
     };
     let res;
     if (isEditMode && params?.uuid !== "add") {
@@ -122,12 +141,11 @@ export default function AddEditRole() {
                     <InputFields
                       required
                       label="Role Name"
-                      value={values.name}
-                      onChange={(e) => setFieldValue("name", e.target.value)}
-                      error={touched.name && errors.name}
+                      value={values.role_name}
+                      onChange={(e) => setFieldValue("role_name", e.target.value)}
                     />
                     <ErrorMessage
-                      name="name"
+                      name="role_name"
                       component="span"
                       className="text-xs text-red-500"
                     />
@@ -135,15 +153,71 @@ export default function AddEditRole() {
                   <div>
                     <InputFields
                       required
-                      label="Permissions"
-                      value={values.permissions.map(String)}
-                      isSingle={false}
-                      options={permissionsOptions}
-                      onChange={(e) => setFieldValue("permissions", Array.isArray(e.target.value) ? e.target.value.map(Number) : [Number(e.target.value)])}
-                      error={touched.permissions && typeof errors.permissions === "string" ? errors.permissions : undefined}
+                      label="Role Activity"
+                      value={values.role_activity}
+                      onChange={(e) => setFieldValue("role_activity", e.target.value)}
                     />
                     <ErrorMessage
-                      name="permissions"
+                      name="role_activity"
+                      component="span"
+                      className="text-xs text-red-500"
+                    />
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Menu"
+                      value={values.menu_id}
+                      options={menuOptions}
+                      onChange={(e) => setFieldValue("menu_id", e.target.value)}
+                    />
+                    <ErrorMessage
+                      name="menu_id"
+                      component="span"
+                      className="text-xs text-red-500"
+                    />
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Agent"
+                      value={values.agent_id}
+                      onChange={(e) => setFieldValue("agent_id", e.target.value)}
+                    />
+                    <ErrorMessage
+                      name="agent_id"
+                      component="span"
+                      className="text-xs text-red-500"
+                    />
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Warehouse"
+                      value={String(values.warehouse_id)}
+                      options={warehouseOptions}
+                      onChange={(e) => setFieldValue("warehouse_id", e.target.value)}
+                    />
+                    <ErrorMessage
+                      name="warehouse_id"
+                      component="span"
+                      className="text-xs text-red-500"
+                    />
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Status"
+                      value={values.status}
+                      onChange={(e) => setFieldValue("status", e.target.value)}
+                      type="radio"
+                      options={[
+                        { value: "1", label: "Active" },
+                        { value: "0", label: "Inactive" },
+                      ]}
+                    />
+                    <ErrorMessage
+                      name="status"
                       component="span"
                       className="text-xs text-red-500"
                     />

@@ -1927,7 +1927,7 @@ export const getComponyTypeById = async (id: string) => {
 // Roles 
 export const roleList = async (params?: Params) => {
   try {
-     const res = await API.get("/web/settings/roles/list", { params });
+     const res = await API.get("/api/settings/roles/list", { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1944,13 +1944,10 @@ export const getRoleById = async (id: string, params?: Params) => {
 };
 
 type roletype = {
-    role_name: string;
-    role_activity: number;
-    menu_id: string;
-    agent_id: number;
-    warehouse_id: number;
-    status: number;
-  };
+  name: string;
+  guard_name: string;
+  permissions: number[];
+};
 
 export const addRoles = async (payload: roletype) => {
   try {
@@ -1963,7 +1960,7 @@ export const addRoles = async (payload: roletype) => {
 
 export const editRoles = async (id: string, payload: roletype) => {
   try {
-    const res = await API.put(`/api/setting/roles/${id}`,payload);
+    const res = await API.put(`/api/settings/roles/${id}`,payload);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1971,7 +1968,7 @@ export const editRoles = async (id: string, payload: roletype) => {
 };
 export const deleteRole = async (id:string) => {
   try {
-    const res = await API.delete(`/api/setting/roles/${id}`);
+    const res = await API.delete(`/api/settings/roles/${id}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

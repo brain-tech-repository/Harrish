@@ -25,7 +25,8 @@ import {
   menuList as getMenuList,
   salesmanList,
   agentCustomerList,
-  submenuList
+  submenuList,
+  permissionList
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
@@ -81,6 +82,7 @@ interface DropdownDataContextType {
   agentCustomerOptions: { value: string; label: string }[];
   shelvesOptions: { value: string; label: string }[];
   submenuOptions: { value: string; label: string }[];
+  permissionsOptions: { value: string; label: string }[];
   refreshDropdowns: () => Promise<void>;
   loading: boolean;
 }
@@ -243,6 +245,10 @@ interface submenuList {
     id: number;
     name: string;
 }
+interface permissionsList {
+    id: number;
+    name: string;
+}
 
 const AllDropdownListDataContext = createContext<DropdownDataContextType | undefined>(undefined);
 
@@ -282,6 +288,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [shelves, setShelves] = useState<ShelvesList[]>([]);
   const [vendor, setVendor] = useState<VendorList[]>([]);
   const [submenu, setSubmenu] = useState<submenuList[]>([]);
+  const [permissions, setPermissions] = useState<permissionsList[]>([]);
   const [loading, setLoading] = useState(false);
 
   // mapped dropdown options (explicit typed mappings)
@@ -423,6 +430,11 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
     label: c.name ?? ''
   }));
 
+  const permissionsOptions = (Array.isArray(permissions) ? permissions : []).map((c: permissionsList) => ({
+    value: String(c.id ?? ''),
+    label: c.name ?? ''
+  }));
+
   const refreshDropdowns = async () => {
     setLoading(true);
     try {
@@ -453,6 +465,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         agentCustomerList(),
         shelvesList(),
         submenuList(),
+        permissionList(),
       ]);
 
       // normalize: accept unknown response and extract array of items from `.data` when present
@@ -491,6 +504,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setAgentCustomer(normalize(res[23]) as AgentCustomerList[]);
       setShelves(normalize(res[24]) as ShelvesList[]);
       setSubmenu(normalize(res[25]) as submenuList[]);
+      setPermissions(normalize(res[26]) as permissionsList[]);
   
     } catch (error) {
       console.error('Error loading dropdown data:', error);
@@ -521,6 +535,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
       setAgentCustomer([]);
       setShelves([]);
       setSubmenu([]);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -584,6 +599,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         agentCustomerOptions,
         shelvesOptions,
         submenuOptions,
+        permissionsOptions,
         refreshDropdowns,
         loading
       }}

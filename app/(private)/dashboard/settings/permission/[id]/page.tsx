@@ -97,7 +97,7 @@ export default function AddShelfDisplay() {
         <Link href="/dashboard/settings/permission">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold">{isEditMode ? "Edit Shelf Display" : "Add New Shelf Display"}</h1>
+        <h1 className="text-xl font-semibold">{isEditMode ? "Edit Permission" : "Add New Permission"}</h1>
       </div>
 
       <Formik
@@ -109,9 +109,9 @@ export default function AddShelfDisplay() {
         {({ values, setFieldValue, isSubmitting, touched, errors }) => (
           <Form>
             <ContainerCard>
-              <h2 className="text-lg font-semibold mb-6">
+              {/* <h2 className="text-lg font-semibold mb-6">
                 Permission Details
-              </h2>
+              </h2> */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                   <InputFields

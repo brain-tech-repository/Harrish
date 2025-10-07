@@ -160,7 +160,7 @@ export default function Roles() {
                                     />
                                 </div>
                             ],
-                            searchBar: true,
+                            searchBar: false,
                             columnFilter: true,
                             actions: [
                                 <SidebarBtn
