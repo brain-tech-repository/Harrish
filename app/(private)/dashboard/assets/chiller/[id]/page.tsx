@@ -206,7 +206,13 @@ export default function AddOrEditCompanyWithStepper() {
           showSnackbar(res.data.message || "Failed to fetch chiller", "error");
           throw new Error("Unable to fetch chiller");
         } else {
-          setChiller(res.data);
+          setChiller({
+            ...res.data,
+            vender_details: res.data.vender_details.map((v: { id: number }) => String(v.id)),
+            customer_id: res.data.customer_id || companyCustomersOptions[0]?.value || 0,
+            agreement_id: res.data.agreement_id || 1,
+            document_id: res.data.document_id || 1,
+          } as chiller);
         } 
       } else if(!isEditMode && !codeGeneratedRef[0].current){
         codeGeneratedRef[0].current = true;
@@ -290,7 +296,7 @@ export default function AddOrEditCompanyWithStepper() {
         document_id: values.document_id,
       };
 
-      console.log("payload", payload);
+      // console.log("payload", payload);
 
       let res;
       if (params?.id && params.id !== "add") {
