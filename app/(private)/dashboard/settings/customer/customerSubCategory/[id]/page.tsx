@@ -102,7 +102,7 @@ export default function AddEditCustomerSubCategory() {
 
       (async () => {
         try {
-          const res = await getCustomerSubCategoryById(String(params.id));
+          const res = await getCustomerSubCategoryById(id);
           if (res?.data) {
             setInitialValues({
               customer_category_id: String(res.data.customer_category_id ?? ""),

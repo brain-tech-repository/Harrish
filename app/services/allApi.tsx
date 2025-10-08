@@ -1440,7 +1440,7 @@ export const deletePromotionType = async (id: number) => {
     return handleError(error);
   }
 };
-export const getCustomerSubCategoryById = async (id: number) => {
+export const getCustomerSubCategoryById = async (id: string) => {
   try {
     const res = await API.get(`/api/settings/customer-sub-category/${id}`);
     return res.data;
