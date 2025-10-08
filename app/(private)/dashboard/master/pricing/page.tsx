@@ -226,6 +226,7 @@ export default function Pricing() {
                                 />,
                             ],
                         },
+                        localStorageKey: "pricing-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

@@ -333,6 +333,7 @@ export default function Warehouse() {
                 />,
               ],
             },
+            localStorageKey: "master-warehouse-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

@@ -196,6 +196,7 @@ export default function CustomerCategoryPage() {
                 />,
               ],
             },
+            localStorageKey: "customer-category-table",
             pageSize: 2,
             footer: { nextPrevBtn: true, pagination: true },
             columns,

@@ -29,7 +29,7 @@ const dropdownDataList: DropdownItem[] = [
 ];
 
 const columns = [
-    { key: "id", label: "Promtion Id" },
+    // { key: "id", label: "Promtion Id" },
     { key: "code", label: "Code" },
     { key: "name", label: "Name" },
     {
@@ -194,6 +194,7 @@ export default function Category() {
                                 ],
                             },
                             pageSize: 5,
+                            localStorageKey: "promotionTypeTable",
                             footer: { nextPrevBtn: true, pagination: true },
                             columns,
                             rowSelection: true,

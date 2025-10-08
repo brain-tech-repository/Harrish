@@ -185,6 +185,7 @@ export default function CustomerSubCategoryPage() {
               ],
             },
             pageSize: 5,
+            localStorageKey: "customer-sub-category-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,
@@ -194,7 +195,7 @@ export default function CustomerSubCategoryPage() {
                 onClick: (row: object) => {
                   const r = row as TableDataType;
                   router.push(
-                    `/dashboard/settings/customer/customerSubCategory/updateCustomerSubCategory/${r.id}`
+                    `/dashboard/settings/customer/customerSubCategory/${r.id}`
                   );
                 },
               },

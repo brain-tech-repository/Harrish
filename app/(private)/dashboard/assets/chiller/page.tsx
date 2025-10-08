@@ -65,6 +65,31 @@ export default function ShelfDisplay() {
       }
     }, []
   )
+  const searchChiller = useCallback(
+    async ( query: string, pageSize: number = 10, columnName?: string) : Promise<listReturnType> => {
+      setLoading(true);
+      let res;
+      if (columnName && columnName !== "") {
+        res = await chillerList({
+          query: query,
+          per_page: pageSize.toString(),
+          [columnName]: query
+        });
+      }
+      setLoading(false);
+      if(res.error) {
+        showSnackbar(res.data.message || "failed to search the Chillers", "error");
+        throw new Error("Unable to search the Chillers");
+      } else {
+        return {
+          data: res.data || [],
+          currentPage: res?.pagination?.page || 0,
+          pageSize: res?.pagination?.limit || 10,
+          total: res?.pagination?.totalPages || 0,
+        };
+      }
+    }, []
+  )
 
   useEffect(() => {
     setLoading(true);
@@ -78,7 +103,8 @@ export default function ShelfDisplay() {
         refreshKey={refreshKey}
           config={{
             api: {
-              list: fetchServiceTypes
+              list: fetchServiceTypes,
+              search: searchChiller
             },
             header: {
               title: "Chillers",
@@ -120,6 +146,7 @@ export default function ShelfDisplay() {
                 />,
               ],
             },
+            localStorageKey: "chiller",
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               { key: "serial_number", label: "Serial Number" },

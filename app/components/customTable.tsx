@@ -27,9 +27,9 @@ type configType = {
     api?: {
         search?: (
             search: string,
-            pageSize: number
+            pageSize: number,
+            columnName?: string
         ) => Promise<searchReturnType> | searchReturnType;
-        filter?: () => TableDataType[];
         list: (
             pageNo: number,
             pageSize: number
@@ -55,16 +55,18 @@ type configType = {
         nextPrevBtn?: boolean;
         pagination?: boolean;
     };
+    localStorageKey?: string;
     pageSize?: number;
     pageSizeOptions?: number[]; // yet to implement
     rowSelection?: boolean;
     dragableColumn?: boolean; // yet to implement
     columns: {
         key: string;
-        label: string;
+        label: string | React.ReactNode;
         width?: number;
         render?: (row: TableDataType) => React.ReactNode;
         align?: "left" | "center" | "right"; // yet to implement
+        sticky?: string; // yet to implement
         isSortable?: boolean;
         filter?: {
             isFilterable?: boolean;
@@ -200,8 +202,20 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
 
     useEffect(() => {
         checkForData();
-        setSelectedColumns(config.columns.map((_, index) => index)); // select all in the filter dropdown
         setConfig(config);
+
+        // Only initialize "select all" when there is no saved selection in localStorage.
+        // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
+        try {
+            const key = config?.localStorageKey;
+            const saved = key ? localStorage.getItem(key) : null;
+            if (!saved) {
+                setSelectedColumns(config.columns.map((_, index) => index));
+            }
+        } catch (err) {
+            // If reading localStorage fails, fall back to select all
+            setSelectedColumns(config.columns.map((_, index) => index));
+        }
     }, [data, refreshKey]);
 
     return (
@@ -285,6 +299,43 @@ function ColumnFilter() {
     const isIndeterminate = selectedColumns.length > 0 && !isAllSelected;
     const [showDropdown, setShowDropdown] = useState(false);
 
+    useEffect(() => {
+        // Load saved selected columns from localStorage when component mounts or config/columns change
+        if (!config?.localStorageKey) return;
+        try {
+            const raw = localStorage.getItem(config.localStorageKey);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                // Keep only valid numeric indices within columns range
+                const valid = (parsed as unknown[]).filter(
+                    (n: unknown): n is number =>
+                        typeof n === "number" && n >= 0 && n < columns.length
+                );
+                if (valid.length) {
+                    setSelectedColumns(valid);
+                }
+            }
+        } catch (err) {
+            // ignore parse errors
+            console.warn("Failed to read selected columns from localStorage", err);
+        }
+    }, [config?.localStorageKey, columns, setSelectedColumns]);
+
+    useEffect(() => {
+        // Persist selected columns to localStorage whenever it changes
+        if (!config?.localStorageKey) return;
+        try {
+            localStorage.setItem(
+                config.localStorageKey,
+                JSON.stringify(selectedColumns)
+            );
+        } catch (err) {
+            // ignore write errors
+            console.warn("Failed to save selected columns to localStorage", err);
+        }
+    }, [selectedColumns, config?.localStorageKey]);
+
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
             setSelectedColumns(
@@ -339,7 +390,7 @@ function ColumnFilter() {
                                         className="flex gap-[8px] p-[10px]"
                                     >
                                         <CustomCheckbox
-                                            id={col.label + index}
+                                            id={index.toString()}
                                             checked={selectedColumns.includes(
                                                 index
                                             )}
@@ -453,14 +504,14 @@ function TableBody() {
                                     return (
                                         selectedColumns.includes(index) && (
                                             <th
-                                                className={`w-[${col.width}px] px-[24px] py-[12px] font-[500] whitespace-nowrap`}
+                                                className={`w-[${col.width}px] ${col.sticky === "left" ? 'sticky left-0' : ''} ${col.sticky === "right" ? 'sticky right-0' : ''} ${col.sticky === "center" ? 'sticky' : ''} px-[24px] py-[12px] bg-[#FAFAFA] font-[500] whitespace-nowrap`}
                                                 key={index}
                                             >
                                                 <div className="flex items-center gap-[4px] capitalize">
                                                     {col.label}{" "}
                                                     {col.filter
                                                         ?.isFilterable && (
-                                                        <FilterTableHeader>
+                                                        <FilterTableHeader column={col.key}>
                                                             {col.filter.render(tableData)}
                                                         </FilterTableHeader>
                                                     )}
@@ -537,7 +588,7 @@ function TableBody() {
                                                     <td
                                                         key={index}
                                                         width={col.width}
-                                                        className={`px-[24px] py-[12px]`}
+                                                        className={`px-[24px] py-[12px] ${col.sticky === "left" ? 'sticky left-0 bg-white' : ''} ${col.sticky === "right" ? 'sticky right-0 bg-white' : ''}`}
                                                     >
                                                         {col.render ? (
                                                             col.render(row)
@@ -593,8 +644,28 @@ function TableBody() {
     );
 }
 
-function FilterTableHeader({ children }: { children: React.ReactNode }) {
+function FilterTableHeader({ column, children }: { column: string; children: React.ReactNode }) {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+    const { config } = useContext(Config);
+    const { setTableDetails } = useContext(TableDetails);
+    const [searchBarValue, setSearchBarValue] = useState("");
+
+    async function handleSearch(){
+        if(!config.api?.search) return;
+        const result = await config.api.search(
+            searchBarValue,
+            config.pageSize || defaultPageSize,
+            column
+        );
+        const resolvedResult = result instanceof Promise ? await result : result;
+        const { data, pageSize } = resolvedResult;
+        setTableDetails({
+            data,
+            total: 0,
+            currentPage: 0,
+            pageSize: pageSize || defaultPageSize,
+        });
+    }
     return (
         <DismissibleDropdown
             isOpen={showFilterDropdown}
@@ -606,7 +677,7 @@ function FilterTableHeader({ children }: { children: React.ReactNode }) {
                     onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                 />
             }
-            dropdown={<FilterDropdown>{children}</FilterDropdown>}
+            dropdown={<FilterDropdown searchBarValue={searchBarValue} setSearchBarValue={setSearchBarValue} onEnterPress={handleSearch}>{children}</FilterDropdown>}
         />
     );
 }

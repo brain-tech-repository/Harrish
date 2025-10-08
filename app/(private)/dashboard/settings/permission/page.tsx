@@ -29,13 +29,10 @@ const dropdownDataList: DropdownItem[] = [
 
 const columns = [
     { key: "name", label: "Name" },
+    { key: "guard_name", label: "Guard Name" }
 ];
 
 export default function Permissions() {
-    interface permissionsType {
-        id: number;
-        name: string;
-    }
 
     const { setLoading } = useLoading();
     const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -157,6 +154,7 @@ export default function Permissions() {
                                 />,
                             ],
                         },
+                        localStorageKey: "permission-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

@@ -69,7 +69,12 @@ const dropdownDataList = [
 const columns = [
     { key: "company_code", label: "Company Code" },
     { key: "company_name", label: "Company Name" },
-    { key: "company_type", label: "Company Type" },
+    { key: "company_type", label: "Company Type", filter: {
+        isFilterable: true,
+        render: (data: TableDataType[]) => {
+            return data.map((item, index) => <div key={item.id+index} className="w-full text-left p-2">{item.company_type}</div>);
+        }
+    } },
     { key: "email", label: "Email" },
     { key: "website", label: "Website" },
     { key: "toll_free_no", label: "Toll Free No" },
@@ -169,35 +174,39 @@ const CompanyPage = () => {
     );
 
     const searchCompanies = useCallback(
-        async (
-            searchQuery: string,
-            pageSize: number = 5
-        ): Promise<searchReturnType> => {
-            setLoading(true);
-
-            const result = await companyListGlobalSearch({
-                query: searchQuery,
-                per_page: pageSize.toString(),
-            });
-
-            setLoading(false);
-
-            if (result.error) {
-                throw new Error(result.data?.message || "Search failed");
-            }
-
-            return {
-                data: result.data || [],
-                currentPage: result.pagination.pagination.current_page || 0,
-                pageSize: result.pagination.pagination.per_page || pageSize,
-                total:
-                    result.pagination.pagination.total ||
-                    result.data?.length ||
-                    0, // safe fallback
-            };
-        },
-        [setLoading]
-    );
+            async (
+                searchQuery: string,
+                pageSize: number = 5,
+                columnName?: string
+            ): Promise<searchReturnType> => {
+                setLoading(true);
+                let result;
+                if (columnName && columnName !== "") {
+                    result = await companyList({
+                        per_page: pageSize.toString(),
+                        [columnName]: searchQuery
+                    });
+                } else {
+                    result = await companyListGlobalSearch({
+                        query: searchQuery,
+                        per_page: pageSize.toString(),
+                    });
+                }
+                setLoading(false);
+    
+                if (result.error) {
+                    throw new Error(result.data?.message || "Search failed");
+                }
+    
+                return {
+                    data: result.data || [],
+                    currentPage: result?.pagination?.current_page || 1,
+                    pageSize: result?.pagination?.per_page || pageSize,
+                    total: result?.pagination?.last_page || 1,
+                };
+            },
+            [setLoading]
+        );
 
     // ✅ Handle Delete
     const handleConfirmDelete = async () => {
@@ -280,16 +289,17 @@ const CompanyPage = () => {
                                 />,
                             ],
                         },
+                        localStorageKey: "company-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,
                         rowActions: [
                             {
-                icon: "lucide:eye",
-                onClick: (data: TableDataType) => {
-                  router.push(`/dashboard/master/company/details/${data.id}`);
-                },
-              },
+                                icon: "lucide:eye",
+                                onClick: (data: TableDataType) => {
+                                router.push(`/dashboard/master/company/details/${data.id}`);
+                                },
+                            },
                             {
                                 icon: "lucide:edit-2",
                                 onClick: (row: object) => {

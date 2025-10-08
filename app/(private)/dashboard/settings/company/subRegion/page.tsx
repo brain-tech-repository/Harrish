@@ -214,6 +214,7 @@ export default function SubRegion() {
                 />,
               ],
             },
+            localStorageKey: "subRegion",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

@@ -212,6 +212,7 @@ const tableData: TableDataType[] = routeType.map((s) => ({
                 />,
               ],
             },
+            localStorageKey: "routeTypeTable",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

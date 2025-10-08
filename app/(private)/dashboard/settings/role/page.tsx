@@ -3,13 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
-import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
-import Link from "next/link";
 import Table, {
     listReturnType,
-    searchReturnType,
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -30,9 +27,6 @@ interface DropdownItem {
 }
 
 const dropdownDataList: DropdownItem[] = [
-    // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-    // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-    // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
     { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
@@ -56,7 +50,6 @@ export default function Roles() {
     const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
     const { showSnackbar } = useSnackbar(); 
-    type TableRow = TableDataType & { id?: string };
 
     const fetchCountries = useCallback(
         async (
@@ -72,9 +65,9 @@ export default function Roles() {
                 setLoading(false);
                 return {
                     data: listRes.data || [],
-                    total: listRes.pagination.totalPages ,
-                    currentPage: listRes.pagination.page ,
-                    pageSize: listRes.pagination.limit ,
+                    total: listRes.pagination.last_page || 1,
+                    currentPage: listRes.pagination.current_page || page,
+                    pageSize: listRes.pagination.per_page || pageSize,
                 };
             } catch (error: unknown) {
                 console.error("API Error:", error);
@@ -173,6 +166,7 @@ export default function Roles() {
                                 />,
                             ],
                         },
+                        localStorageKey: "role-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,
@@ -180,7 +174,7 @@ export default function Roles() {
                             {
                                 icon: "lucide:edit-2",
                                 onClick: (data: TableDataType) => {
-                                    router.push(`/dashboard/settings/role/detail/${data.id}`);
+                                    router.push(`/dashboard/settings/role/${data.id}`);
 
                                 },
                             },

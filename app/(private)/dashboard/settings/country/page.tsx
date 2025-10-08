@@ -205,6 +205,7 @@ export default function Country() {
                                 />,
                             ],
                         },
+                        localStorageKey: "country",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

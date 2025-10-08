@@ -11,7 +11,6 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { addPermission, permissionListById, updatePermission } from "@/app/services/allApi";
 
 const permissionSchema = Yup.object().shape({

@@ -120,6 +120,7 @@ export default function ShelfDisplay() {
                 />,
               ],
             },
+            localStorageKey: "serviceType",
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               { key: "code", label: "Code" },

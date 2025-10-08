@@ -125,6 +125,7 @@ export default function User() {
                                     />,
                                 ],
                             },
+                            localStorageKey: "userTable",
                             footer: {
                                 nextPrevBtn: true,
                                 pagination: true,

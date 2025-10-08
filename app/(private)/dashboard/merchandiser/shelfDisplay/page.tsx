@@ -128,6 +128,7 @@ export default function ShelfDisplay() {
                 />,
               ],
             },
+            localStorageKey: "shelf-display-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               { key: "shelf_name", label: "Shelf Name" },

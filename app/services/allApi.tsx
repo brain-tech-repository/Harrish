@@ -746,7 +746,8 @@ export const customerTypeList = async (params?: Record<string, string>) => {
 export const getCustomerType = async (params?: Params) => {
   try {
     const res = await API.get(`/api/settings/customer-type/list`, { params :params});
-    return res.data;
+    console.log(res)
+    return res.data.data;
   } catch (error) {
     console.error("Get Customer Type by ID failed ❌", error);
     throw error;
@@ -788,16 +789,6 @@ export const updateRegion = async (id: string, payload: ipdatePayload) => {
   }
 };
 
-
-export const listCountries = async () => {
-  try {
-    const res = await API.get("/api/master/country/list_country", { params: { page: "1", limit: "200" } });
-
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
 
 export const routeTypeList = async (params?: Params) => {
   try {
@@ -1449,7 +1440,7 @@ export const deletePromotionType = async (id: number) => {
     return handleError(error);
   }
 };
-export const getCustomerSubCategoryById = async (id: number) => {
+export const getCustomerSubCategoryById = async (id: string) => {
   try {
     const res = await API.get(`/api/settings/customer-sub-category/${id}`);
     return res.data;
@@ -1860,11 +1851,11 @@ export const getSurveyQuestions = async (surveyId: string) => {
   }
 };
 
-export const deleteSurveyQuestion = async (id:string) => {
+export const deleteSurveyQuestion = async (id: string | number) => {
   try {
-              const res = await API.delete(`/api/merchendisher/survey-questions/${id}`);  
+    const res = await API.delete(`/api/merchendisher/survey-questions/${id}`);
     return res.data;
-  } catch (error: unknown) {  
+  } catch (error: unknown) {
     return handleError(error);
   }
 };
@@ -1994,7 +1985,6 @@ export const getRoleById = async (id: string, params?: Params) => {
 
 type roletype = {
   name: string;
-  guard_name: string;
   permissions: number[];
 };
 
@@ -2353,4 +2343,3 @@ export const deleteSubmenu = async (uuid: string) => {
     return handleError(error);
   }
 };
-

@@ -11,7 +11,8 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { addRoles, getRoleById, editRoles } from "@/app/services/allApi";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import Loading from "@/app/components/Loading";
+import { useLoading } from "@/app/services/loadingContext";
+import RolesPermissionTable from "./table2";
 
 const RoleSchema = Yup.object().shape({
   name: Yup.string().required("Role Name is required."),
@@ -19,7 +20,7 @@ const RoleSchema = Yup.object().shape({
 });
 
 export default function AddEditRole() {
-  const { permissionsOptions }  = useAllDropdownListData();
+  const { permissions } = useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams();
@@ -28,7 +29,9 @@ export default function AddEditRole() {
     permissions: []
   });
   const [isEditMode, setIsEditMode] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { setLoading } = useLoading();
+  useEffect(() => setLoading(true), []);
+  const [guardName, setGuardName] = useState<"api" | "web">("api");
 
   type RoleFormValues = {
     name: string;
@@ -45,7 +48,15 @@ export default function AddEditRole() {
           if (res?.data) {
             setInitialValues({
               name: res.data.name || "",
-              permissions: res.data.permissions || [],
+              permissions: Array.isArray(res.data.permissions)
+              ? res.data.permissions.map((perm: string | number) => {
+                if (typeof perm === "string") {
+                  const found = permissions.find((p) => p.name === perm);
+                  return found ? found.id : perm;
+                }
+                return perm;
+                })
+              : [],
             });
           }
         } catch (error) {
@@ -54,7 +65,7 @@ export default function AddEditRole() {
           setLoading(false);
         }
       })();
-    }
+    } else setLoading(false);
   }, [params?.uuid]);
 
   const handleSubmit = async (
@@ -83,14 +94,6 @@ export default function AddEditRole() {
     }
     setSubmitting(false);
   };
-
-  if (isEditMode && loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <Loading />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full h-full overflow-x-hidden p-4">
@@ -132,13 +135,31 @@ export default function AddEditRole() {
                       className="text-xs text-red-500"
                     />
                   </div>
+                    <div>
+                    <InputFields
+                      required
+                      label="Guard Name"
+                      value={guardName}
+                      options={[
+                      { label: "API", value: "api" },
+                      { label: "Web", value: "web" }
+                      ]}
+                      onChange={(e) => setGuardName(e.target.value as "api" | "web")}
+                    />
+                    </div>
                   <div>
                     <InputFields
                       required
                       label="Permissions"
                       value={values.permissions.map(String)}
                       isSingle={false}
-                      options={permissionsOptions}
+                      options={permissions
+                        .filter((opt) => opt.guard_name === guardName)
+                        .map((opt) => ({
+                          value: String(opt.id),
+                          label: opt.name
+                        }))
+                      }
                       onChange={(e) => setFieldValue("permissions", Array.isArray(e.target.value) ? e.target.value.map(Number) : [Number(e.target.value)])}
                       error={touched.permissions && typeof errors.permissions === "string" ? errors.permissions : undefined}
                     />
@@ -150,6 +171,7 @@ export default function AddEditRole() {
                   </div>
                 </div>
               </div>
+              {/* <RolesPermissionTable /> */}
             </div>
             <div className="flex justify-end gap-4 mt-6 pr-0">
               <button

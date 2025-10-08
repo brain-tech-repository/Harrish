@@ -166,6 +166,7 @@ export default function UserType() {
                 />,
               ],
             },
+            localStorageKey: "user-type-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,
