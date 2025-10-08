@@ -379,6 +379,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.code && c.name ? `${c.code} - ${c.name}` : (c.name ?? '')
   }));
+  console.log("ghjfghjgh", customerTypeOptions)
 
   const userTypeOptions = (Array.isArray(userTypesData) ? userTypesData : []).map((c: UserTypeItem) => ({
     value: String(c.id ?? ''),
@@ -485,6 +486,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         permissionList(),
       ]);
 
+
       // normalize: accept unknown response and extract array of items from `.data` when present
       const normalize = (r: unknown): unknown[] => {
         if (r && typeof r === 'object') {
@@ -494,6 +496,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         if (Array.isArray(r)) return r as unknown[];
         return (r as unknown) ? [r as unknown] : [];
       };
+      console.log(res)
 
       setCompanyListData(normalize(res[0]) as CompanyItem[]);
       setCountryListData(normalize(res[1]) as CountryItem[]);
