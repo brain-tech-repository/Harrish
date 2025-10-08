@@ -78,29 +78,29 @@ export default function AddEditRole() {
     values: RoleFormValues,
     { setSubmitting }: FormikHelpers<RoleFormValues>
   ) => {
-    const payload = {
-      ...values,
-      status: Number(values.status),
-      role_activity: Number(values.role_activity),
-      agent_id: Number(values.agent_id),
-      warehouse_id: Number(values.warehouse_id),
-    };
-    let res;
-    if (isEditMode && params?.uuid !== "add") {
-      res = await editRoles(String(params.uuid), payload);
-    } else {
-      res = await addRoles(payload);
-    }
-    if (res.error) {
-      showSnackbar(res.data?.message || "Failed to submit form", "error");
-    } else {
-      showSnackbar(
-        res.message || (isEditMode ? "Role Updated Successfully" : "Role Created Successfully"),
-        "success"
-      );
-      router.push("/dashboard/settings/role");
-    }
-    setSubmitting(false);
+    // const payload = {
+    //   ...values,
+    //   status: Number(values.status),
+    //   role_activity: Number(values.role_activity),
+    //   agent_id: Number(values.agent_id),
+    //   warehouse_id: Number(values.warehouse_id),
+    // };
+    // let res;
+    // if (isEditMode && params?.uuid !== "add") {
+    //   // res = await editRoles(String(params.uuid), payload);
+    // } else {
+    //   // res = await addRoles(payload);
+    // }
+    // if (res.error) {
+    //   showSnackbar(res.data?.message || "Failed to submit form", "error");
+    // } else {
+    //   showSnackbar(
+    //     res.message || (isEditMode ? "Role Updated Successfully" : "Role Created Successfully"),
+    //     "success"
+    //   );
+    //   router.push("/dashboard/settings/role");
+    // }
+    // setSubmitting(false);
   };
 
   if (isEditMode && loading) {
