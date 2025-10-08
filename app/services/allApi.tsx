@@ -2342,4 +2342,3 @@ export const deleteSubmenu = async (uuid: string) => {
     return handleError(error);
   }
 };
-
