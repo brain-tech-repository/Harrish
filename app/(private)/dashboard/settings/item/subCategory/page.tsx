@@ -148,6 +148,7 @@ export default function SubCategory() {
                             ],
                         },
                         pageSize: 5,
+                        localStorageKey: "item-sub-category-list",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: columns,
                         rowSelection: true,

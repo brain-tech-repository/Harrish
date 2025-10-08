@@ -289,6 +289,7 @@ export default function Item() {
                                 />,
                             ],
                         },
+                        localStorageKey: "item-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

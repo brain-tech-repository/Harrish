@@ -205,6 +205,7 @@ const SalesmanPage = () => {
                 />,
               ],
             },
+            localStorageKey: "salesman-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

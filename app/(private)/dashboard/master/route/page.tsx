@@ -247,6 +247,7 @@ export default function Route() {
                                 />,
                             ],
                         },
+                        localStorageKey: "route-table",
                         footer: {
                             nextPrevBtn: true,
                             pagination: true,

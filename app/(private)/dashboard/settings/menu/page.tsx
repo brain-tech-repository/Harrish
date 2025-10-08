@@ -196,6 +196,7 @@ export default function Page() {
                                 />,
                             ],
                         },
+                        localStorageKey: "menu-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

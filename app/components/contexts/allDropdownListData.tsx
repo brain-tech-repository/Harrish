@@ -458,7 +458,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         companyList(),
         countryList(),
         regionList(),
-         SurveyList(),
+        SurveyList(),
         routeList({}),
         warehouseType(1),
         routeType(),

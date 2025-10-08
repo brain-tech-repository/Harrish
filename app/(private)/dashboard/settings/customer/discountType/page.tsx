@@ -227,6 +227,7 @@ export default function DiscountType() {
                                 />
                             ],
                         },
+                        localStorageKey: "discountTypeTable",
                         footer: {
                             nextPrevBtn: true,
                             pagination: true,

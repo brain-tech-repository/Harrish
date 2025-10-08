@@ -140,6 +140,7 @@ export default function PlanogramImage() {
                                 />,
                             ],
                         },
+                        localStorageKey: "merchandiser-planogram-image-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: [
                             { key: "customer_id", label: "Customer", render: (row: TableDataType) => row.customer && row.customer && typeof row.customer === "object" && "name" in row.customer

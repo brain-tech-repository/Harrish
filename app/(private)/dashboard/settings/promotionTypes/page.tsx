@@ -194,6 +194,7 @@ export default function Category() {
                                 ],
                             },
                             pageSize: 5,
+                            localStorageKey: "promotionTypeTable",
                             footer: { nextPrevBtn: true, pagination: true },
                             columns,
                             rowSelection: true,

@@ -212,6 +212,7 @@ const tableData: TableDataType[] = countries.map((c) => ({
                 />,
               ],
             },
+            localStorageKey: "expenseTypeTable",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

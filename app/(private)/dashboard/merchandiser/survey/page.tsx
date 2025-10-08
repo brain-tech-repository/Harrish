@@ -147,6 +147,7 @@ useEffect(() => {
         />,
       ],
     },
+    localStorageKey: "merchandiser-survey-table",
     footer: { nextPrevBtn: true, pagination: true },
     columns: [
       { key: "survey_code", label: "Survey code" },

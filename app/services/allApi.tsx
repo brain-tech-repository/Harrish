@@ -789,16 +789,6 @@ export const updateRegion = async (id: string, payload: ipdatePayload) => {
 };
 
 
-export const listCountries = async () => {
-  try {
-    const res = await API.get("/api/master/country/list_country", { params: { page: "1", limit: "200" } });
-
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
 export const routeTypeList = async (params?: Params) => {
   try {
     const res = await API.get("/api/settings/route-type/list", { params: params });

@@ -185,6 +185,7 @@ export default function CustomerSubCategoryPage() {
               ],
             },
             pageSize: 5,
+            localStorageKey: "customer-sub-category-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

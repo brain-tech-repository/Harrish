@@ -160,6 +160,7 @@ export default function CompanyPage() {
                 />,
               ],
             },
+            localStorageKey: "company-type-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

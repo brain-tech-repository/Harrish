@@ -141,6 +141,7 @@ const tableData: TableDataType[] = planograms.map((s) => ({
         />,
       ],
     },
+    localStorageKey: "merchandiser-planogram-table",
     footer: { nextPrevBtn: true, pagination: true },
     columns: [
       { key: "name", label: "Name" },

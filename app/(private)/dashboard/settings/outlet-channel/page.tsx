@@ -169,6 +169,7 @@ export default function ChannelList() {
                 />,
               ],
             },
+            localStorageKey: "outlet_channels",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

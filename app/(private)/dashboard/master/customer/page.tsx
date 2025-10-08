@@ -177,6 +177,7 @@ export default function Customer() {
                   />,
               ],
             },
+            localStorageKey: "customer-table",
             footer: {
               nextPrevBtn: true,
               pagination: true,

@@ -210,6 +210,7 @@ export default function SalesmanTypeList() {
                 />,
               ],
             },
+            localStorageKey: "salesmanType",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

@@ -150,6 +150,7 @@ export default function Category() {
                                 ],
                             },
                             pageSize: 10,
+                            localStorageKey: "item_category",
                             footer: { nextPrevBtn: true, pagination: true },
                             columns,
                             rowSelection: true,

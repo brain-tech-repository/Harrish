@@ -220,6 +220,7 @@ const DiscountPage = () => {
                                 />,
                             ],
                         },
+                        localStorageKey: "discount-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowSelection: true,

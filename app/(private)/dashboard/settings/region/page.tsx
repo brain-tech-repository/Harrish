@@ -203,6 +203,7 @@ const tableData: TableDataType[] = regions.map((s) => ({
                 />,
               ],
             },
+            localStorageKey: "region-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               { key: "region_code", label: "Region Code" },
