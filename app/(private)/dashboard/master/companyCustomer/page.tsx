@@ -275,7 +275,7 @@ export default function CompanyCustomers() {
                 },
               },
             ],
-            pageSize: 10,
+            pageSize: 50,
           }}
         />
       </div>
