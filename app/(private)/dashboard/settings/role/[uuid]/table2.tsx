@@ -18,9 +18,9 @@ export default function RolesPermissionTable() {
 
     useEffect(() => {
         if (!permissions || !Array.isArray(permissions)) return;
-        const permissionColumns = permissions.map((p: { name: string; }) => ({
-            key: p.name,
-            label: p.name
+        const permissionColumns = permissions.map((p) => ({
+            key: p.name ?? '',
+            label: p.name ?? ''
         }));
         setPermissionColumns(permissionColumns);
     }, [permissions]);

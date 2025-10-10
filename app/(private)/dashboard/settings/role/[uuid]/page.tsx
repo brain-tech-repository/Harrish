@@ -157,7 +157,7 @@ export default function AddEditRole() {
                         .filter((opt) => opt.guard_name === guardName)
                         .map((opt) => ({
                           value: String(opt.id),
-                          label: opt.name
+                          label: opt.name ?? ""
                         }))
                       }
                       onChange={(e) => setFieldValue("permissions", Array.isArray(e.target.value) ? e.target.value.map(Number) : [Number(e.target.value)])}

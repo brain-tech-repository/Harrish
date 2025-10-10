@@ -72,12 +72,13 @@ export default function CustomerPage() {
           per_page: pageSize.toString(),
           page: page.toString(),
         });
+        console.log(listRes)
         setLoading(false);
         return {
           data: listRes.data || [],
-          total: listRes.pagination.totalPages,
-          currentPage: listRes.pagination.page,
-          pageSize: listRes.pagination.limit,
+          total: listRes?.pagination?.totalPages || 1,
+          currentPage: listRes?.pagination?.page || 1, 
+          pageSize: listRes?.pagination?.limit || pageSize,
         };
       } catch (error: unknown) {
         console.error("API Error:", error);
