@@ -136,7 +136,7 @@ export default function CreateUpdate({
             >
 
                 {/* Item Sub Category Code (auto-generated, disabled, with settings icon/popup) */}
-                <div className="flex items-end gap-2 max-w-[406px]">
+                <div className="flex items-start gap-2 max-w-[406px]">
                     <InputFields
                         label="Item Sub Category Code"
                         name="item_sub_category_code"
@@ -147,7 +147,7 @@ export default function CreateUpdate({
                     />
                     <IconButton
                         bgClass="white"
-                        className="mb-2 cursor-pointer text-[#252B37]"
+                         className="  cursor-pointer text-[#252B37] pt-12"
                         icon="mi:settings"
                         onClick={() => setIsOpen(true)}
                     />

@@ -157,7 +157,7 @@ const [isOpen, setIsOpen] = useState(false);
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* User Type Code (pattern-matched UI) */}
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   label="User Type Code"
                   name="code"
@@ -171,7 +171,7 @@ const [isOpen, setIsOpen] = useState(false);
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                      className="cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

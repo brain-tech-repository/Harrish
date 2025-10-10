@@ -286,7 +286,7 @@ export default function AddEditAgentCustomer() {
 						<div className="p-6">
 							<h2 className="text-lg font-medium text-gray-800 mb-4">Agent Customer Details</h2>
 							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-												<div className="flex items-end gap-2 max-w-[406px]">
+												<div className="flex items-start gap-2 max-w-[406px]">
 																	<InputFields
 																					label="Agent Customer Code"
 																					name="osa_code"
@@ -300,7 +300,7 @@ export default function AddEditAgentCustomer() {
 																		<>
 																			<IconButton
 																							bgClass="white"
-																							className="mb-2 cursor-pointer text-[#252B37]"
+																							 className="  cursor-pointer text-[#252B37] pt-12"
 																							icon="mi:settings"
 																							onClick={() => setIsOpen(true)}
 																			/>

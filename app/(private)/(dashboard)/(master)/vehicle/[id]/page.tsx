@@ -13,6 +13,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
 import * as Yup from "yup";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Loading from "@/app/components/Loading";
 
 interface Warehouse {
@@ -76,7 +77,7 @@ export default function AddEditVehicleWithStepper() {
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const isEditMode = id !== undefined && id !== "add";
-
+  const { warehouseOptions } = useAllDropdownListData();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<VehicleFormValues>({
@@ -270,7 +271,7 @@ export default function AddEditVehicleWithStepper() {
           <ContainerCard>
             <h2 className="text-lg font-semibold mb-6">Vehicle Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   label="Vehicle Code"
                   name="vehicle_code"
@@ -282,7 +283,7 @@ export default function AddEditVehicleWithStepper() {
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                       className="  cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />
@@ -344,7 +345,7 @@ export default function AddEditVehicleWithStepper() {
                 {touched.ownerType && errors.ownerType && <div className="text-red-500 text-xs mt-1">{errors.ownerType}</div>}
               </div>
               <div>
-                <InputFields required label="Warehouse" value={form.warehouseId} onChange={handleChange} name="warehouseId" error={touched.warehouseId && errors.warehouseId} options={warehouses.map((w) => ({ value: String(w.id), label: w.warehouse_name }))} />
+                <InputFields required label="Warehouse" value={form.warehouseId} onChange={handleChange} name="warehouseId" error={touched.warehouseId && errors.warehouseId} options={warehouseOptions } />
                 {touched.warehouseId && errors.warehouseId && <div className="text-red-500 text-xs mt-1">{errors.warehouseId}</div>}
               </div>
             </div>

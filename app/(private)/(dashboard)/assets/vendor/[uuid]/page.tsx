@@ -202,7 +202,7 @@ export default function AddEditVendor() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Vendor Code */}
-                <div className="flex items-end gap-2 max-w-[406px]">
+                <div className="flex items-start gap-2 max-w-[406px]">
                   <InputFields
                     label="Vendor Code"
                     name="vendor_code"
@@ -217,7 +217,7 @@ export default function AddEditVendor() {
                     <>
                       <IconButton
                         bgClass="white"
-                        className="mb-2 cursor-pointer text-[#252B37]"
+                         className="  cursor-pointer text-[#252B37] pt-12"
                         icon="mi:settings"
                         onClick={() => setIsOpen(true)}
                       />

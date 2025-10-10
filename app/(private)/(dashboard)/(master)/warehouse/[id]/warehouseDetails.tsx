@@ -5,6 +5,7 @@ import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
 import CustomPasswordInput from '@/app/components/customPasswordInput';
+import CustomSecurityCode from "@/app/components/customSecurityCode";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 type Props = {
@@ -17,14 +18,14 @@ type Props = {
 };
 
 export default function WarehouseDetails({ values, errors, touched, handleChange, setFieldValue, isEditMode }: Props) {
-    const { companyCustomersOptions } = useAllDropdownListData();
+    const { companyOptions } = useAllDropdownListData();
     const [isOpen, setIsOpen] = React.useState(false);
     const [codeMode, setCodeMode] = React.useState<'auto'|'manual'>('auto');
     const [prefix, setPrefix] = React.useState('');
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="flex items-end gap-2 max-w-[406px]">
+            <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                     required
                     label="Warehouse Code"
@@ -34,11 +35,12 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     error={errors?.warehouse_code && touched?.warehouse_code ? errors.warehouse_code : false}
                     disabled={codeMode === 'auto'}
                 />
+                
                 {!isEditMode && (
                     <>
                         <IconButton
                             bgClass="white"
-                            className="mb-2 cursor-pointer text-[#252B37]"
+                            className="  cursor-pointer text-[#252B37] pt-12"
                             icon="mi:settings"
                             onClick={() => setIsOpen(true)}
                         />
@@ -59,124 +61,104 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                         />
                     </>
                 )}
-            </div>
-            <InputFields
-            required
-                label="Registration Number"
-                name="registation_no"
-                value={values.registation_no}
-                onChange={handleChange}
-                error={errors?.registation_no && touched?.registation_no ? errors.registation_no : false}
-            />
-        
-            
-
-            <InputFields
-            required
-                label="Warehouse Name"
-                name="warehouse_name"
-                value={values.warehouse_name}
-                onChange={handleChange}
-                error={errors?.warehouse_name && touched?.warehouse_name ? errors.warehouse_name : false}
-            />
-
-            <InputFields 
-                label="Warehouse Owner Name" 
-                name="owner_name" 
-                value={values.owner_name} 
-                onChange={handleChange} 
-                error={errors?.owner_name && touched?.owner_name ? errors.owner_name : false} 
-            />
-
-            <InputFields
-            required
-                label="Company Customer"
-                name="company_customer_id"
-                value={values.company_customer_id}
-                options={companyCustomersOptions}
-                onChange={handleChange}
-                error={errors?.company_customer_id && touched?.company_customer_id ? errors.company_customer_id : false}
-            />
-
-            <InputFields
-            required
-                label="Warehouse Manager"
-                name="warehouse_manager"
-                value={values.warehouse_manager}
-                onChange={handleChange}
-                error={errors?.warehouse_manager && touched?.warehouse_manager ? errors.warehouse_manager : false}
-            />
-
-            <InputFields
-            required
-                label="Warehouse Manager Contact"
-                name="warehouse_manager_contact"
-                value={values.warehouse_manager_contact}
-                onChange={handleChange}
-                error={errors?.warehouse_manager_contact && touched?.warehouse_manager_contact ? errors.warehouse_manager_contact : false}
-            />
-
-            <InputFields
-            required
-                label="Warehouse Type"
-                name="warehouse_type"
-                value={values.warehouse_type}
-                onChange={handleChange}
-                options={
-                   [{ value: "0", label: "Agent" },
-                     { value: "1", label: "Hariss" },
-                     { value: "2", label: "Outlet" },
-                   ]
-                }
-                error={errors?.warehouse_type && touched?.warehouse_type ? errors.warehouse_type : false}
-            />
-
-            <InputFields 
-                label="Agent ID" 
-                name="agent_id" 
-                value={values.agent_id} 
-                onChange={handleChange} 
-                error={errors?.agent_id && touched?.agent_id ? errors.agent_id : false} 
-            />
-
-            <InputFields
-                label="Business Type"
-                required
-                name="business_type"
-                type='radio'
-                value={values.business_type}
-                onChange={handleChange}
-                options={[{ value: "1", label: "B2B" },{ value: "2", label: "B2C" }]}
-                error={errors?.business_type && touched?.business_type ? errors.business_type : false}
-            />
-
-            <InputFields
-            required
-                label="Status"
-                name="status"
-                type='radio'
-                value={values.status}
-                onChange={handleChange}
-                options={[
-                    { value: "1", label: "Active" },
-                    { value: "0", label: "Inactive" },
-                ]}
-                error={errors?.status && touched?.status ? errors.status : false}
-            />
-            
-            <div>
-                <CustomPasswordInput
-                required
-                    label="Password"
-                    value={values.password}
-                    onChange={(e) => setFieldValue('password', e.target.value)}
-                />
-                {errors?.password && touched?.password && (
-                    <span className="text-xs text-red-500 mt-1">{errors.password}</span>
+                {errors?.warehouse_code && touched?.warehouse_code && (
+                    <div className="text-xs text-red-500 mt-1">{errors.warehouse_code}</div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                    Leave empty to keep current password, or enter new password to update
-                </p>
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    type='radio'
+                    label="Warehouse Type"
+                    name="warehouse_type"
+                    value={values.warehouse_type}
+                    onChange={handleChange}
+                    options={[
+                        { value: "0", label: "Agent" },
+                        { value: "1", label: "Outlet" },
+                    ]}
+                />
+                {errors?.warehouse_type && touched?.warehouse_type && (
+                    <div className="text-xs text-red-500 mt-1">{errors.warehouse_type}</div>
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    label="Warehouse Name"
+                    name="warehouse_name"
+                    value={values.warehouse_name}
+                    onChange={handleChange}
+                    error={errors?.warehouse_name && touched?.warehouse_name ? errors.warehouse_name : false}
+                />
+                {errors?.warehouse_name && touched?.warehouse_name && (
+                    <div className="text-xs text-red-500 mt-1">{errors.warehouse_name}</div>
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    label="Warehouse Owner Name"
+                    name="owner_name"
+                    value={values.owner_name}
+                    onChange={handleChange}
+                    error={errors?.owner_name && touched?.owner_name ? errors.owner_name : false}
+                />
+                {errors?.owner_name && touched?.owner_name && (
+                    <div className="text-xs text-red-500 mt-1">{errors.owner_name}</div>
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    label="Company"
+                    name="company_customer_id"
+                    value={values.company_customer_id}
+                    options={companyOptions}
+                    onChange={handleChange}
+                    error={errors?.company_customer_id && touched?.company_customer_id ? errors.company_customer_id : false}
+                />
+                {errors?.company_customer_id && touched?.company_customer_id && (
+                    <div className="text-xs text-red-500 mt-1">{errors.company_customer_id}</div>
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <CustomSecurityCode
+                    label="Stock Capital"
+                    value={values.stock_capital}
+                    onChange={(e) => setFieldValue('stock_capital', e.target.value)}
+                    placeholder="Enter Stock Capital"
+                />
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    type='radio'
+                    label="Agent Type"
+                    name="agent_type"
+                    value={values.agent_type}
+                    onChange={handleChange}
+                    options={[
+                        { value: "0", label: "Hariss" },
+                        { value: "1", label: "Customer" },
+                    ]}
+                />
+                {errors?.agent_type && touched?.agent_type && (
+                    <div className="text-xs text-red-500 mt-1">{errors.agent_type}</div>
+                )}
+            </div>
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    label="Warehouse Manager"
+                    name="warehouse_manager"
+                    value={values.warehouse_manager}
+                    onChange={handleChange}
+                    error={errors?.warehouse_manager && touched?.warehouse_manager ? errors.warehouse_manager : false}
+                />
+                {errors?.warehouse_manager && touched?.warehouse_manager && (
+                    <div className="text-xs text-red-500 mt-1">{errors.warehouse_manager}</div>
+                )}
             </div>
         </div>
     );

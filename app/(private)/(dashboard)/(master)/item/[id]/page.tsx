@@ -262,7 +262,7 @@ export default function AddEditItem() {
           <div className="bg-white rounded-2xl shadow p-6 mb-6">
             <h2 className="text-lg font-medium mb-4">Basic Details</h2>
             <div className="grid md:grid-cols-3 gap-4">
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   required
                   label="Item Code"
@@ -275,7 +275,7 @@ export default function AddEditItem() {
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                       className="  cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

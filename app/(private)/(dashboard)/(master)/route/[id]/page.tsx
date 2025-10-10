@@ -182,7 +182,7 @@ export default function AddEditRoute() {
               Route Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   required
                   label="Route Code"
@@ -192,7 +192,7 @@ export default function AddEditRoute() {
                 />
                 {!isEditMode && (
                   <>
-                    <IconButton bgClass="white" className="mb-2 cursor-pointer text-[#252B37]"
+                    <IconButton bgClass="white"  className="  cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

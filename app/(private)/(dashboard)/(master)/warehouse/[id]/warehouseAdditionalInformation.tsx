@@ -14,31 +14,35 @@ type Props = {
 export default function WarehouseAdditionalInformation({ values, errors, touched, handleChange, setFieldValue }: Props) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <InputFields
-            required
-                label="Device No."
-                name="device_no"
-                value={values.device_no}
-                onChange={handleChange}
-                error={errors?.device_no && touched?.device_no ? errors.device_no : false}
-            />
-            <InputFields
-            required
-            type='radio'
-                label="EFRIS Configuration"
-                name="is_efris"
-                value={values.is_efris}
-                onChange={handleChange}
-                options={[
-                    { value: "1", label: "Yes" },
-                    { value: "0", label: "No" },
-                ]}
-                error={errors?.is_efris && touched?.is_efris ? errors.is_efris : false}
-            />
-
             <div>
                 <InputFields
-                required
+                    required
+                    label="Latitude"
+                    name="latitude"
+                    value={values.latitude}
+                    onChange={handleChange}
+                    error={errors?.latitude && touched?.latitude ? errors.latitude : false}
+                />
+                {errors?.latitude && touched?.latitude && (
+                    <span className="text-xs text-red-500 mt-1">{errors.latitude}</span>
+                )}
+            </div>
+            <div>
+                <InputFields
+                    required
+                    label="Longitude"
+                    name="longitude"
+                    value={values.longitude}
+                    onChange={handleChange}
+                    error={errors?.longitude && touched?.longitude ? errors.longitude : false}
+                />
+                {errors?.longitude && touched?.longitude && (
+                    <span className="text-xs text-red-500 mt-1">{errors.longitude}</span>
+                )}
+            </div>
+            <div>
+                <InputFields
+                    required
                     label="P12 File"
                     name="p12_file"
                     type="file"
@@ -50,59 +54,48 @@ export default function WarehouseAdditionalInformation({ values, errors, touched
                     }}
                     error={errors?.p12_file && touched?.p12_file ? errors.p12_file : false}
                 />
+                {errors?.p12_file && touched?.p12_file && (
+                    <span className="text-xs text-red-500 mt-1">{errors.p12_file}</span>
+                )}
                 {values.p12_file && (
                     <p className="text-sm text-gray-600 mt-1">Current file: {values.p12_file}</p>
                 )}
             </div>
-
-            <CustomSecurityCode
-                label="Stock Capital"
-                value={values.stock_capital}
-                onChange={(e)=> setFieldValue('stock_capital', e.target.value)}
-                placeholder="Enter Stock Capital"
-            />
-            <CustomSecurityCode
-                label="Deposit Amount"
-                value={values.deposite_amount}
-                onChange={(e) => setFieldValue('deposite_amount', e.target.value)}
-                placeholder="Enter Deposit"
-            />
-
-            <InputFields
-                label="Branch ID"
-                name="branch_id"
-                value={values.branch_id}
-                onChange={handleChange}
-                error={errors?.branch_id && touched?.branch_id ? errors.branch_id : false}
-            />
-
-            <InputFields
-                label="Is Branch"
-                name="is_branch"
-                type='radio'
-                value={values.is_branch}
-                onChange={handleChange}
-                options={[
-                    { value: "1", label: "Yes" },
-                    { value: "0", label: "No" },
-                ]}
-                error={errors?.is_branch && touched?.is_branch ? errors.is_branch : false}
-            />
-
-            <InputFields
-                label="Invoice Sync"
-                name="invoice_sync"
-                type='radio'
-                value={values.invoice_sync}
-                onChange={handleChange}
-                options={[
-                    { value: "1", label: "Enabled" },
-                    { value: "0", label: "Disabled" },
-                ]}
-                error={errors?.invoice_sync && touched?.invoice_sync ? errors.invoice_sync : false}
-            />
-
-                      
+            <div>
+                <InputFields
+                    required
+                    type='radio'
+                    label="Is EFRIS?"
+                    name="is_efris"
+                    value={values.is_efris}
+                    onChange={handleChange}
+                    options={[
+                        { value: "1", label: "Enable" },
+                        { value: "0", label: "Disable" },
+                    ]}
+                    error={errors?.is_efris && touched?.is_efris ? errors.is_efris : false}
+                />
+                {errors?.is_efris && touched?.is_efris && (
+                    <span className="text-xs text-red-500 mt-1">{errors.is_efris}</span>
+                )}
+            </div>
+            <div>
+                <InputFields
+                    label="Is Branch"
+                    name="is_branch"
+                    type='radio'
+                    value={values.is_branch}
+                    onChange={handleChange}
+                    options={[
+                        { value: "1", label: "Yes" },
+                        { value: "0", label: "No" },
+                    ]}
+                    error={errors?.is_branch && touched?.is_branch ? errors.is_branch : false}
+                />
+                {errors?.is_branch && touched?.is_branch && (
+                    <span className="text-xs text-red-500 mt-1">{errors.is_branch}</span>
+                )}
+            </div>
         </div>
     );
 }

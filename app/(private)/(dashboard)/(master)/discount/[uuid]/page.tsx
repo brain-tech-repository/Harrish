@@ -191,7 +191,7 @@ export default function AddDiscountWithStepper() {
         return (
           <ContainerCard>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   label="Discount Code"
                   name="discount_code"
@@ -203,7 +203,7 @@ export default function AddDiscountWithStepper() {
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                       className="  cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

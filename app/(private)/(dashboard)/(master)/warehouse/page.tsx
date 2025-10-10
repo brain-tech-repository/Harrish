@@ -63,11 +63,9 @@ const columns = [
   { key: "warehouse_code", label: "Warehouse Code", render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
   { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
   { key: "warehouse_name", label: "Warehouse Name", render: (row: WarehouseRow) => row.warehouse_name || "-" },
-  { key: "tin_no", label: "TIN No", render: (row: WarehouseRow) => row.tin_no || "-" },
   { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
   { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
   { key: "owner_email", label: "Owner Email", render: (row: WarehouseRow) => row.owner_email || "-" },
-  // { key: "depotName", label: "Depot Name" },
   { key: "location", label: "Warehouse Location", render: (row: WarehouseRow) => row.location || "-" },
   { key: "company_customer_id", label: "Customer", render: (row: WarehouseRow) => row.get_company_customer?.owner_name || "-" },
   { key: "warehouse_manager", label: "Warehouse Manager", render: (row: WarehouseRow) => row.warehouse_manager || "-" },
@@ -79,8 +77,7 @@ const columns = [
       const value = row.warehouse_type;
       const strValue = value != null ? String(value) : "";
       if (strValue === "0") return "Agent";
-      if (strValue === "1") return "Hariss";
-      if (strValue === "2") return "Outlet";
+      if (strValue === "1") return "Outlet";
       return strValue || "-";
     },
   },
@@ -109,15 +106,16 @@ const columns = [
   { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
   { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
   { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
-  { key: "latitude", label: "Latitude", render: (row: WarehouseRow) => row.latitude || "-" },
-  { key: "longitude", label: "Longitude", render: (row: WarehouseRow) => row.longitude || "-" },
-  { key: "threshold_radius", label: "Threshold Radius", render: (row: WarehouseRow) => row.threshold_radius || "-" },
   { key: "stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.stock_capital || "-" },
-  { key: "deposite_amount", label: "Deposit Amount", render: (row: WarehouseRow) => row.deposite_amount || "-" },
-  { key: "device_no", label: "Device No.", render: (row: WarehouseRow) => row.device_no || "-" },
-  { key: "p12_file", label: "P12 File", render: (row: WarehouseRow) => row.p12_file || "-" },
-  { key: "branch_id", label: "Branch", render: (row: WarehouseRow) => (row.branch_id !== null && row.branch_id !== undefined && row.branch_id !== "" ? row.branch_id : "-") },
-  { key: "is_efris", label: "EFRIS", render: (row: WarehouseRow) => row.is_efris || "-" },
+  { key: "is_efris", label: "EFRIS",
+     render: (row: WarehouseRow) => {
+      const value = row.is_efris;
+      const strValue = value != null ? String(value) : "";
+      if (strValue === "0") return "Disable";
+      if (strValue === "1") return "Enable";
+      return strValue || "-";
+    }, 
+  },
   {
     key: "status",
     label: "Status",

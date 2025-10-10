@@ -148,7 +148,7 @@ export default function AddCustomerTypePage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Customer Type Code (pattern-matched UI) */}
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   label="Customer Type Code"
                   name="customer_type_code"
@@ -161,7 +161,7 @@ export default function AddCustomerTypePage() {
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                       className="  cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

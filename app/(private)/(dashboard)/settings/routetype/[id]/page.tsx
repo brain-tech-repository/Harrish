@@ -166,7 +166,7 @@ const { showSnackbar } = useSnackbar();
             <h2 className="text-lg font-semibold mb-6">Route Type Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Route Type Code (pattern-matched UI) */}
-              <div className="flex items-end gap-2 max-w-[406px]">
+              <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                   label="Route Type Code"
                   name="route_type_code"
@@ -178,7 +178,7 @@ const { showSnackbar } = useSnackbar();
                   <>
                     <IconButton
                       bgClass="white"
-                      className="mb-2 cursor-pointer text-[#252B37]"
+                      className="cursor-pointer text-[#252B37] pt-12"
                       icon="mi:settings"
                       onClick={() => setIsOpen(true)}
                     />

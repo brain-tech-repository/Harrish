@@ -156,7 +156,7 @@ export default function AddCustomerWithStepper() {
                                 ]}
                             />
                             
-                            <div className="flex items-end gap-2 max-w-[406px]">
+                            <div className="flex items-start gap-2 max-w-[406px]">
                                 <InputFields
                                     label="Customer Code *"
                                     value={customerCode}
@@ -164,7 +164,7 @@ export default function AddCustomerWithStepper() {
                                 />
                                 <IconButton 
                                     bgClass="white" 
-                                    className="mb-2 cursor-pointer text-[#252B37]"
+                                     className="  cursor-pointer text-[#252B37] pt-12"
                                     icon="mi:settings"
                                     onClick={() => setIsOpen(true)}
                                 />

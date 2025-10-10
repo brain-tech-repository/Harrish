@@ -194,7 +194,7 @@ export default function AddSurveyTabs() {
             <h2 className="text-lg font-semibold mb-4">Survey Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="flex flex-col gap-1 max-w-[406px]">
-                <div className="flex items-end gap-2">
+                <div className="flex items-start gap-2">
                   <InputFields
                     label="Survey Code"
                     name="surveyCode"
@@ -203,7 +203,7 @@ export default function AddSurveyTabs() {
                   />
                   <IconButton
                     bgClass="white"
-                    className="mb-2 cursor-pointer text-[#252B37]"
+                     className="  cursor-pointer text-[#252B37] pt-12"
                     icon="mi:settings"
                     onClick={() => setIsOpen(true)}
                   />

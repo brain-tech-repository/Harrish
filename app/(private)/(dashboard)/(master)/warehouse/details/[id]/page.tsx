@@ -212,16 +212,9 @@ export default function ViewPage() {
                                 <KeyValueData
                                     title="Additional Information"
                                     data={[
-                                        { key: "Lattitude", value: item?.latitude || "-" },
-                                        {
-                                            key: "Longitude",
-                                            value: item?.longitude || "-",
-                                        },
+                                       
                                         { key: "Threshold Radius", value: item?.threshold_radius || "-" },
-                                        {
-                                            key: "P12 File",
-                                            value: item?.p12_file || "-",
-                                        },
+                                        
                                         { key: "Invoice Sync", value: item?.invoice_sync || "-" },
                                         { key: "Is Ifris", value: item?.is_efris || "-" },
                                         { key: "Is Branch", value: item?.is_branch || "-" },

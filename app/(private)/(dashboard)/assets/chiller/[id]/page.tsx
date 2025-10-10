@@ -337,7 +337,7 @@ export default function AddOrEditCompanyWithStepper() {
           <ContainerCard>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <div className="flex items-end gap-2 max-w-[406px]">
+                <div className="flex items-start gap-2 max-w-[406px]">
                   <InputFields
                     required
                     label="Serial Number"
@@ -348,7 +348,7 @@ export default function AddOrEditCompanyWithStepper() {
                   />
                   {!isEditMode && (
                     <>
-                      <IconButton bgClass="white" className="mb-2 cursor-pointer text-[#252B37]" icon="mi:settings" onClick={() => setIsOpen(true)} />
+                      <IconButton bgClass="white"  className="  cursor-pointer text-[#252B37] pt-12" icon="mi:settings" onClick={() => setIsOpen(true)} />
                       <SettingPopUp
                         isOpen={isOpen}
                         onClose={() => setIsOpen(false)}
