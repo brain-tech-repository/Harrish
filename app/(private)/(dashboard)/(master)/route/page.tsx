@@ -251,7 +251,7 @@ export default function Route() {
                                     href="/route/add"
                                     isActive={true}
                                     leadingIcon="lucide:plus"
-                                    label="Add Route"
+                                    label="Add"
                                     labelTw="hidden sm:block"
                                 />,
                             ],
