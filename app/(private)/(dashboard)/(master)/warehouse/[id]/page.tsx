@@ -21,7 +21,7 @@ type FormValues = {
     warehouse_type: string;
     warehouse_name: string;
     owner_name: string;
-    company_customer_id: string;
+    company_id: string;
     stock_capital: string;
     agent_type: string;
     warehouse_manager: string;
@@ -78,7 +78,7 @@ export default function AddEditWarehouse() {
         warehouse_type: Yup.string().required('Warehouse Type is required'),
         warehouse_name: Yup.string().required('Warehouse Name is required'),
         owner_name: Yup.string().required('Owner Name is required'),
-        company_customer_id: Yup.string().required('Company Customer ID is required'),
+        company_id: Yup.string().required('Company Customer ID is required'),
         stock_capital: Yup.string(),
         agent_type: Yup.string().required('Agent Type is required'),
         warehouse_manager: Yup.string().required('Warehouse Manager is required'),
@@ -117,7 +117,7 @@ export default function AddEditWarehouse() {
             warehouse_type: validationSchema.fields.warehouse_type,
             warehouse_name: validationSchema.fields.warehouse_name,
             owner_name: validationSchema.fields.owner_name,
-            company_customer_id: validationSchema.fields.company_customer_id,
+            company_id: validationSchema.fields.company_id,
             agent_type: validationSchema.fields.agent_type,
             warehouse_manager: validationSchema.fields.warehouse_manager,
         }),
@@ -148,7 +148,7 @@ export default function AddEditWarehouse() {
         warehouse_type: "",
         warehouse_name: "",
         owner_name: "",
-        company_customer_id: "",
+        company_id: "",
         stock_capital: "",
         agent_type: "",
         warehouse_manager: "",
@@ -187,7 +187,7 @@ export default function AddEditWarehouse() {
                         warehouse_type: String(data?.warehouse_type || ''),
                         warehouse_name: data?.warehouse_name || '',
                         owner_name: data?.owner_name || '',
-                        company_customer_id: String(data?.company_customer_id || ''),
+                        company_id: String(data?.company_id || ''),
                         stock_capital: String(data?.stock_capital || ''),
                         agent_type: data?.agent_type || '',
                         warehouse_manager: data?.warehouse_manager || '',

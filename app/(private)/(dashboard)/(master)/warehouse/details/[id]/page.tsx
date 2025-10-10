@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
-import WarehouseTabs from "./[tabName]/page";
 
 interface Item {
     id: string;
@@ -135,16 +134,24 @@ export default function ViewPage() {
                                 <KeyValueData
                                     title="Warehouse Info"
                                     data={[
-                                        { key: <span className="font-bold">Registration No.</span>, value: item?.tin_no || '-'},
-                                        { key: <span className="font-bold">TIN No.</span>, value: item?.registation_no || '-'},
-                                        { key: <span className="font-bold">Device No.</span>, value: item?.device_no || '-'},
+                                        // { key: <span className="font-bold">Registration No.</span>, value: item?.tin_no || '-'},
+                                        // { key: <span className="font-bold">TIN No.</span>, value: item?.registation_no || '-'},
+                                        // { key: <span className="font-bold">Device No.</span>, value: item?.device_no || '-'},
                                         {
                                             key: "Owner Name",
                                             value: item?.owner_name || "Customer Type",
                                         },
                                         { key: "Warehouse Manager Name", value:item?.warehouse_manager || '-' },
-                                        { key: "Warehouse Type", value: item?.warehouse_type || '-' },
-                                        { key: "Business Type", value: item?.business_type || '-' },
+                                        { 
+  key: "Warehouse Type", 
+  value: (() => {
+    const value = item?.warehouse_type;
+    const strValue = value != null ? String(value) : "";
+    if (strValue === "0") return "Agent";
+    if (strValue === "1") return "Outlet";
+    return strValue || "-";
+  })()
+},
                                     ]}
                                 />
                                 <hr className="text-[#D5D7DA] my-[25px]" />
@@ -213,12 +220,24 @@ export default function ViewPage() {
                                     title="Additional Information"
                                     data={[
                                        
-                                        { key: "Threshold Radius", value: item?.threshold_radius || "-" },
                                         
-                                        { key: "Invoice Sync", value: item?.invoice_sync || "-" },
-                                        { key: "Is Ifris", value: item?.is_efris || "-" },
-                                        { key: "Is Branch", value: item?.is_branch || "-" },
-                                        { key: "Branch Id", value: item?.branch_id || "-" },
+                                        // { key: "Invoice Sync", value: item?.invoice_sync || "-" },
+                                        { key: "Is Ifris", value: (() => {
+    const value = item?.is_efris;
+    const strValue = value != null ? String(value) : "";
+    if (strValue === "0") return "Disable";
+    if (strValue === "1") return "Enable";
+    return strValue || "-";
+  })()},
+                                                                                                                        { key: "Is Branch", value: (() => {
+                                                const value = item?.is_branch;
+                                                if (typeof value === "boolean") return value ? "Yes" : "No";
+                                                const strValue = String(value);
+                                                if (strValue === "1" || strValue === "true") return "Yes";
+                                                if (strValue === "0" || strValue === "false") return "No";
+                                                return value != null ? strValue : "-";
+                                            })()},
+                                        // { key: "Branch Id", value: item?.branch_id || "-" },
                                         
                                     ]}
                                 />

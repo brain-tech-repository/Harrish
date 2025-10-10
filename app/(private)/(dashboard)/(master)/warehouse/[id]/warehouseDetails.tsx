@@ -112,14 +112,14 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                 <InputFields
                     required
                     label="Company"
-                    name="company_customer_id"
-                    value={values.company_customer_id}
+                    name="company_id"
+                    value={values.company_id}
                     options={companyOptions}
                     onChange={handleChange}
-                    error={errors?.company_customer_id && touched?.company_customer_id ? errors.company_customer_id : false}
+                    error={errors?.company_id && touched?.company_id ? errors.company_id : false}
                 />
-                {errors?.company_customer_id && touched?.company_customer_id && (
-                    <div className="text-xs text-red-500 mt-1">{errors.company_customer_id}</div>
+                {errors?.company_id && touched?.company_id && (
+                    <div className="text-xs text-red-500 mt-1">{errors.company_id}</div>
                 )}
             </div>
             <div className="flex flex-col gap-2">

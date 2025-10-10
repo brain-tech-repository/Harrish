@@ -61,7 +61,7 @@ type WarehouseRow = TableDataType & {
 
 const columns = [
   { key: "warehouse_code", label: "Warehouse Code", render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
-  { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
+  // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
   { key: "warehouse_name", label: "Warehouse Name", render: (row: WarehouseRow) => row.warehouse_name || "-" },
   { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
   { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
@@ -81,12 +81,12 @@ const columns = [
       return strValue || "-";
     },
   },
-  { key: "business_type", label: "Business Type", render: (row: WarehouseRow) => {
-      const value = row.business_type;
-      const strValue = value != null ? String(value) : "";
-      if (strValue === "1") return "B2B";
-      return strValue || "-";
-    }, },
+  // { key: "business_type", label: "Business Type", render: (row: WarehouseRow) => {
+  //     const value = row.business_type;
+  //     const strValue = value != null ? String(value) : "";
+  //     if (strValue === "1") return "B2B";
+  //     return strValue || "-";
+  //   }, },
   // { key: "region_id", label: "Region"},
   {
     label: 'Region',
