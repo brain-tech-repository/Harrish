@@ -325,7 +325,7 @@ export default function Warehouse() {
                   href="/warehouse/add"
                   isActive
                   leadingIcon="lucide:plus"
-                  label="Add Warehouse"
+                  label="Add"
                   labelTw="hidden sm:block"
                 />,
               ],
