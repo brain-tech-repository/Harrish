@@ -788,9 +788,8 @@ export const customerTypeList = async (params?: Record<string, string>) => {
 
 export const getCustomerType = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/settings/customer-type/list`, {
-      params: params,
-    });
+    const res = await API.get(`/api/settings/customer-type/list`, { params :params});
+    console.log(res)
     return res.data;
   } catch (error) {
     console.error("Get Customer Type by ID failed ❌", error);
@@ -1667,9 +1666,8 @@ export const vehicleGlobalSearch = async (params?: Params) => {
 
 export const routeGlobalSearch = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/master/route/global_search`, {
-      params: params,
-    });
+    console.log(params)
+    const res = await API.get(`/api/master/route/global_search`, { params: params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -2358,6 +2356,44 @@ export const menuGlobalSearch = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const userTypeGlobalSearch = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/settings/user-type/global-search`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const roleGlobalSearch = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/settings/role/global-search`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const permissionGlobalSearch = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/settings/permission/global-search`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const companyTypeGlobalSearch = async (params?:Params) => {
+  try {
+    const res = await API.get(`//api/settings/company-types/list`, { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 
 type menuType = {
   name: string;

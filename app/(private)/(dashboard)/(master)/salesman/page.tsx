@@ -15,36 +15,10 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import StatusBtn from "@/app/components/statusBtn2";
 
-// 🔹 API response type
-interface Salesman {
-  id?: string | number;
-  uuid?: string; 
-  osa_code?: string;
-  name?: string;
-  salesman_type?: { id?: number; salesman_type_code?: string; salesman_type_name?: string };
-  sub_type?: string;
-  designation?: string;
-  security_code?: string;
-  route?: { id?: number; route_code?: string; route_name?: string };
-  warehouse?: { id?: number; warehouse_code?: string; warehouse_name?: string };
-  device_no?: string;
-  salesman_role?: string;
-  username?: string;
-  contact_no?: string;
-  sap_id?: string;
-  status?: string | number;
-}
-
-// 🔹 Dropdown menu data
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
-const subTypeMapping: Record<string | number, string> = {
-  0: "None",
-  1: "Merchandiser",
-};
-// 🔹 Table columns
 const columns = [
   { key: "osa_code", label: "Salesman Code",
     render: (row: TableDataType) => (
@@ -137,15 +111,11 @@ const SalesmanPage = () => {
   const router = useRouter();
 
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showDeletePopup, setShowDeletePopup] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<Salesman | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  // ✅ Fetch salesman list with correct pagination mapping
   const fetchSalesman = useCallback(
         async (
             page: number = 1,
-            pageSize: number = 5
+            pageSize: number = 50
         ): Promise<listReturnType> => {
             try {
               setLoading(true);
@@ -168,29 +138,11 @@ const SalesmanPage = () => {
         []
     );
 
- 
-  const handleConfirmDelete = async () => {
-    if (!selectedRow?.uuid) return;
-
-    const res = await deleteSalesman(String(selectedRow.uuid));
-    if (!res || res.status !== "success") {
-      showSnackbar(res.message || "Failed to delete salesman ❌", "error");
-    } else {
-      showSnackbar("Salesman deleted successfully ✅", "success");
-      setRefreshKey(refreshKey + 1);
-    }
-    fetchSalesman();
-
-    setShowDeletePopup(false);
-    setSelectedRow(null);
-  };
-
   return (
     <>
       {/* Table */}
       <div className="h-[calc(100%-60px)]">
         <Table
-        refreshKey={refreshKey}
           config={{
             api: { list: fetchSalesman },
             header: {
@@ -242,37 +194,19 @@ const SalesmanPage = () => {
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,
-            rowActions: [ 
-               {
-                icon: "lucide:eye",
-                onClick: (data: TableDataType) => {
-                  router.push(`/salesman/details/${data.uuid}`);
-                },
-              },
+            rowActions: [
               {
                 icon: "lucide:edit-2",
                 onClick: (row: object) => {
                   const r = row as TableDataType;
-                  router.push(`/salesman/${r.uuid}`);
+                  router.push(`/dashboard/master/salesman/${r.uuid}`);
                 },
               },
-          
             ],
-            pageSize: 5,
+            pageSize: 50,
           }}
         />
       </div>
-
-      {/* Delete Popup */}
-      {showDeletePopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <DeleteConfirmPopup
-            title="Delete Salesman"
-            onClose={() => setShowDeletePopup(false)}
-            onConfirm={handleConfirmDelete}
-          />
-        </div>
-      )}
     </>
   );
 };
