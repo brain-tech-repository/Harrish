@@ -49,7 +49,7 @@ type WarehouseRow = TableDataType & {
   is_branch?: string;
   p12_file?: string;
   is_efris?: string;
-  stock_capital?: string;
+  agreed_stock_capital?: string;
   deposite_amount?: string;
   phoneNumber?: string;
   address?: string;
@@ -105,7 +105,7 @@ const columns = [
   { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
   { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
   { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
-  { key: "stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.stock_capital || "-" },
+  { key: "agreed_stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.agreed_stock_capital || "-" },
   { key: "is_efris", label: "EFRIS",
      render: (row: WarehouseRow) => {
       const value = row.is_efris;
@@ -172,7 +172,7 @@ export default function Warehouse() {
       is_branch?: string;
       p12_file?: string;
       is_efris?: string;
-      stock_capital?: string;
+      agreed_stock_capital?: string;
       deposite_amount?: string;
       // depotLocation?: string;
       // depotLocation?: string;
