@@ -41,26 +41,33 @@ const columns = [
  {
   key: "sub_type",
   label: "Sub Type",
-  render: (row: TableDataType) => {
-    const value = row.sub_type;
+  render: (row: TableDataType) => typeof row.sub_type === "object" &&
+            row.sub_type !== null &&
+            "name" in row.sub_type
+                ? (row.sub_type as { name?: string })
+                      .name || "-"
+                : "-",
+    
+  //   {
+  //   const value = row.sub_type;
 
-    // Agar JSON string hai ("{id:1,name:'Merchandiser'}"), to parse karo
-    if (typeof value === "string" && value.startsWith("{")) {
-      try {
-        const obj = JSON.parse(value);
-        return obj.name || subTypeMapping[obj.id] || "-";
-      } catch {
-        return subTypeMapping[value] || "-";
-      }
-    }
+  //   // Agar JSON string hai ("{id:1,name:'Merchandiser'}"), to parse karo
+  //   if (typeof value === "string" && value.startsWith("{")) {
+  //     try {
+  //       const obj = JSON.parse(value);
+  //       return obj.name || subTypeMapping[obj.id] || "-";
+  //     } catch {
+  //       return subTypeMapping[value] || "-";
+  //     }
+  //   }
 
-    // Agar number ya string hai, to mapping se text lao
-    if (typeof value === "number" || typeof value === "string") {
-      return subTypeMapping[value] || "-";
-    }
+  //   // Agar number ya string hai, to mapping se text lao
+  //   if (typeof value === "number" || typeof value === "string") {
+  //     return subTypeMapping[value] || "-";
+  //   }
 
-    return "-";
-  },
+  //   return "-";
+  // },
 },
 
   { key: "designation", label: "Designation" },

@@ -1120,9 +1120,6 @@ export const createUserType = async (body: object) => {
 export const customerCategoryList = async (params?: Record<string, string>) => {
   try {
     const res = await API.get("/api/settings/customer-category/list", { params :params}); 
-    const res = await API.get("/api/settings/customer-category/list", {
-      params,
-    });
     return res.data;
   } catch (error) {
     console.error("Customer Category List failed ❌", error);
