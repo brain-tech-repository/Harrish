@@ -403,7 +403,8 @@ import {
   agentCustomerList,
   submenuList,
   permissionList,
-  SurveyList
+  SurveyList,
+  warehouseList
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
@@ -861,7 +862,7 @@ const customerCategoryOptions = (Array.isArray(customerCategory) ? customerCateg
         regionList(),
         SurveyList(),
         routeList({}),
-        warehouseType(1),
+        warehouseList(),
         routeType(),
         subRegionList(),
         getCompanyCustomers(),
