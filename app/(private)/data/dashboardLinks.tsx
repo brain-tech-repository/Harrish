@@ -230,6 +230,29 @@ export const initialLinkData: SidebarDataType[] = [
                         leadingIcon: "mdi:map",
                         iconColor: "text-yellow-400",
                     },
+                    {
+                        isActive: false,
+                        href: "/merchandiser/campaign",
+                        label: "Campaign Information",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400",
+                    },
+                    {
+                        isActive: false,
+                        href: "/merchandiser/competitor",
+                        label: "CompetitorInfo",
+                        leadingIcon: "mdi:map",
+                        iconColor: "text-yellow-400",
+                    },
+                    // {
+                    //     isActive: false,
+                    //     href: "dashboard/merchandiser/complaintFeedback",
+                    //     label: "Camplaint Feedback",
+                    //     leadingIcon: "mdi:map",
+                    //     iconColor: "text-yellow-400"
+                    // },
+
+
                 ],
             },
 
