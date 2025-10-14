@@ -28,7 +28,7 @@ type PhoneCountry = {
 };
 
 type Props = {
-  label: string;
+  label?: string;
   name?: string;
   value?: string | string[];
   onBlur?: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => void;
@@ -51,6 +51,7 @@ type Props = {
   textareaResize?: boolean;
   leadingElement?: React.ReactNode;
   trailingElement?: React.ReactNode;
+  showBorder?: boolean;
 };
 
 export default function InputFields({
@@ -74,7 +75,8 @@ export default function InputFields({
   textareaRows = 3,
   textareaResize = true,
   leadingElement,
-  trailingElement
+  trailingElement,
+  showBorder = true
 }: Props) {
 
   const [dropdownProperties, setDropdownProperties] = useState({
@@ -86,6 +88,7 @@ export default function InputFields({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pointerDownRef = useRef(false);
   const isMulti = (options && options.length > 0 && typeof isSingle !== 'undefined' && isSingle === false) || (loading && isSingle === false);
   const isSingleSelect = (options && options.length > 0 && isSingle !== false) || (loading && isSingle !== false);
   const selectedValues: string[] = Array.isArray(value) ? value : [];
@@ -199,9 +202,13 @@ useEffect(() => {
           {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
         </div>
       ) : isMulti ? (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative select-none" ref={dropdownRef}>
           <div
-            className={`border h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
+            tabIndex={0}
+            onMouseDown={() => { pointerDownRef.current = true; }}
+            onMouseUp={() => { pointerDownRef.current = false; }}
+            onFocus={() => { if (!pointerDownRef.current) setDropdownOpen(true); }}
+            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
             onClick={() => { if (!loading && !isSearchable) setDropdownOpen(v => !v); }}
           >
             {isSearchable ? (
@@ -270,7 +277,7 @@ useEffect(() => {
           </div>
           {dropdownOpen && !loading && (
             <>
-              <div style={dropdownProperties} className="fixed z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+              <div style={dropdownProperties} className="fixed z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
                 {!isSearchable && (
                   <div className="px-3 py-2 border-b flex items-center" style={{ borderBottomColor: '#9ca3af' }}>
                     <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
@@ -335,9 +342,13 @@ useEffect(() => {
           )}
         </div>
       ) : isSingleSelect ? (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative select-none" ref={dropdownRef}>
           <div
-            className={`border h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
+            tabIndex={0}
+            onMouseDown={() => { pointerDownRef.current = true; }}
+            onMouseUp={() => { pointerDownRef.current = false; }}
+            onFocus={() => { if (!pointerDownRef.current) setDropdownOpen(true); }}
+            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
             onClick={() => { if (!loading && !isSearchable) setDropdownOpen(v => !v); }}
           >
             {isSearchable ? (

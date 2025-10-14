@@ -2,7 +2,7 @@
 
 import InputFields from "@/app/components/inputFields";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import React, { useEffect ,useState} from "react";
+import React, { useEffect, useState } from "react";
 type Props = {
   values: Record<string, string>;
   errors?: Record<string, string>;

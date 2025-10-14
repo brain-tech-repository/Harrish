@@ -33,15 +33,15 @@ const dropdownDataList: DropdownItem[] = [
 const columns = [
     {
         key: "osa_code",
-        label: "Agent Customer Code",
+        label: "Outlet Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
                 {row.osa_code || "-"}
             </span>
         ),
     },
-    { key: "owner_name", label: "Name" },
-    // { key: "business_name", label: "Business Name" },
+    { key: "outlet_name", label: "OutletName" },
+    { key: "owner_name", label: "Owner Name" },
     {
         key: "customer_type",
         label: "Customer Type",
@@ -89,61 +89,19 @@ const columns = [
                       .outlet_channel || "-"
                 : "-",
     },
+    { key: "landmark", label: "Landmark" },
+    { key: "district", label: "District" },
+    { key: "street", label: "Street" },
+    { key: "town", label: "Town" },
     {
-        key: "region",
-        label: "Region",
+        key: "getWarehouse",
+        label: "Warehouse",
         render: (row: TableDataType) =>
-            typeof row.region === "object" &&
-            row.region !== null &&
-            "region_name" in row.region
-                ? (row.region as { region_name?: string }).region_name || "-"
-                : "-",
-    },
-    {
-        key: "customer_type",
-        label: "Customer Type",
-        render: (row: TableDataType) => {
-            if (
-                typeof row.customer_type === "object" &&
-                row.customer_type !== null &&
-                "name" in row.customer_type
-            ) {
-                return (row.customer_type as { name?: string }).name || "-";
-            }
-            return row.customer_type || "-";
-        },
-    },
-    {
-        key: "category",
-        label: "Customer Category",
-        render: (row: TableDataType) =>
-            typeof row.category === "object" &&
-            row.category !== null &&
-            "customer_category_name" in row.category
-                ? (row.category as { customer_category_name?: string })
-                      .customer_category_name || "-"
-                : "-",
-    },
-    {
-        key: "subcategory",
-        label: "Customer Sub Category",
-        render: (row: TableDataType) =>
-            typeof row.subcategory === "object" &&
-            row.subcategory !== null &&
-            "customer_sub_category_name" in row.subcategory
-                ? (row.subcategory as { customer_sub_category_name?: string })
-                      .customer_sub_category_name || "-"
-                : "-",
-    },
-    {
-        key: "outlet_channel",
-        label: "Outlet Channel",
-        render: (row: TableDataType) =>
-            typeof row.outlet_channel === "object" &&
-            row.outlet_channel !== null &&
-            "outlet_channel" in row.outlet_channel
-                ? (row.outlet_channel as { outlet_channel?: string })
-                      .outlet_channel || "-"
+            typeof row.getWarehouse === "object" &&
+            row.getWarehouse !== null &&
+            "warehouse_name" in row.getWarehouse
+                ? (row.getWarehouse as { warehouse_name?: string })
+                      .warehouse_name || "-"
                 : "-",
     },
     {
@@ -160,6 +118,7 @@ const columns = [
             return typeof row.route === 'string' ? row.route : "-";
         },
     },
+    { key: "contact_no", label: "Contact No." },
     { key: "whatsapp_no", label: "Whatsapp No." },
     { key: "buyertype", label: "Buyer Type", render: (row: TableDataType) => (row.buyertype === "0" ? "B2B" : "B2C") },
     { key: "payment_type", label: "Payment Type", render: (row: TableDataType) => (row.payment_type === "1" ? "Cash" : row.payment_type === "2" ? "Credit" : "B2B") },
@@ -351,7 +310,7 @@ export default function AgentCustomer() {
                                     href="/agentCustomer/new"
                                     isActive
                                     leadingIcon="lucide:plus"
-                                    label="Add Agent Customer"
+                                    label="Add"
                                     labelTw="hidden sm:block"
                                 />,
                             ],

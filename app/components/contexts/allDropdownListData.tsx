@@ -27,10 +27,10 @@ import {
   agentCustomerList,
   submenuList,
   permissionList,
-  SurveyList
+  SurveyList,
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
-import { shelvesList } from '@/app/services/merchandiserApi';
+import { shelvesList,merchandiserList} from '@/app/services/merchandiserApi';
 
 interface DropdownDataContextType {
   companyList: CompanyItem[];

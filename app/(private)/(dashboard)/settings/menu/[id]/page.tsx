@@ -12,7 +12,6 @@ import InputFields from "@/app/components/inputFields";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { addMenu, addPermission, menuByUUID, updateMenu } from "@/app/services/allApi";
-import CustomSecurityCode from "@/app/components/customSecurityCode";
 
 const menuSchema = Yup.object().shape({
   name: Yup.string().required("Name is required."),
@@ -225,6 +224,7 @@ export default function AddShelfDisplay() {
                 {/* status */}
                 <div>
                   <InputFields
+                    type="radio"
                     required
                     label="Status"
                     name="status"
