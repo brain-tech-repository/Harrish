@@ -17,6 +17,10 @@ export default function Overview({ data }: { data: AgentCustomerDetails | null }
                         key: "Owner Name",
                         value: data?.owner_name || "-",
                     },
+                    {
+                        key: "Customer Type",
+                        value: data?.customertype?.name || "-",
+                    },
                 ]}
             />
             <hr className="text-[#D5D7DA] my-[25px]" />

@@ -151,7 +151,7 @@ export default function AgentCustomer() {
     const [selectedRow, setSelectedRow] = useState<AgentCustomer | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
-    const { showSnackbar } = useSnackbar(); // ✅ snackbar hook
+    const { showSnackbar } = useSnackbar();
     type TableRow = TableDataType & { id?: string };
 
     const fetchAgentCustomers = useCallback(

@@ -15,20 +15,24 @@ export default function Additional({
                 title="Additional Information"
                 data={[
                     {
-                        key: "Payment Type",
-                        value: data?.payment_type || "-",
+                        key: "Route",
+                        value: data?.route?.route_name + " - " + data?.route?.route_code || "-",
                     },
                     {
-                        key: "Buyer Type",
-                        value: data?.buyertype == "0" ? "B2B" : "B2C",
+                        key: "Category",
+                        value: data?.category?.customer_category_name + " - " + data?.category?.customer_category_code || "-",
                     },
                     {
-                        key: "Credit Day",
-                        value: data?.creditday || "-",
+                        key: "Sub Category",
+                        value: data?.subcategory?.customer_sub_category_name + " - " + data?.subcategory?.customer_sub_category_code || "-",
                     },
                     {
-                        key: "Credit Limit",
-                        value: data?.credit_limit || "-",
+                        key: "Outlet Channel",
+                        value: data?.outlet_channel?.outlet_channel + " - " + data?.outlet_channel?.outlet_channel_code || "-",
+                    },
+                    {
+                        key: "Warehouse",
+                        value: data?.get_warehouse?.warehouse_name + " - " + data?.get_warehouse?.warehouse_code || "-",
                     },
                 ]}
             />
