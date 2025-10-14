@@ -1,7 +1,7 @@
 "use client";
 
 import ContainerCard from "@/app/components/containerCard";
-import StatusBtn from "@/app/components/statusBtn";
+import StatusBtn from "@/app/components/statusBtn2";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import Overview from "./overview";
@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { agentCustomerById } from "@/app/services/allApi";
+import Financial from "./financial";
 
 export interface AgentCustomerDetails {
     id: string;
@@ -23,7 +24,7 @@ export interface AgentCustomerDetails {
     whatsapp_no: string;
     is_whatsapp: string;
     vat_no: string;
-    warehouse: string;
+    get_warehouse: { warehouse_code: string; warehouse_name: string };
     district: string;
     street: string;
     landmark: string;
@@ -40,8 +41,8 @@ export interface AgentCustomerDetails {
         outlet_channel_code: string;
     };
     region: { region_code: string; region_name: string };
-    customer_type: { name: string; code: string };
-    route: { name: string; code: string };
+    customertype: { name: string; code: string };
+    route: { route_name: string; route_code: string };
     category: {
         customer_category_name: string;
         customer_category_code: string;
@@ -53,7 +54,7 @@ export interface AgentCustomerDetails {
     status: number | string;
 }
 
-const tabs = ["Overview", "Location", "Additional"];
+const tabs = ["Overview", "Location", "Financial", "Additional"];
 
 export default function CustomerDetails() {
     const router = useRouter();
@@ -147,12 +148,18 @@ export default function CustomerDetails() {
                             <span className="text-[#414651] text-[16px]">
                                 <span className="font-[600]">Owner:</span>{" "}
                                 <span className="font-[400]">{item?.owner_name || "Unknown"}</span>
-                                <span className="flex justify-center p-[10px] sm:p-0 sm:inline-block mt-[10px] sm:mt-0 sm:ml-[10px]">
+                                {/* <span className="flex justify-center p-[10px] sm:p-0 sm:inline-block mt-[10px] sm:mt-0 sm:ml-[10px]">
                                     <StatusBtn status="active" />
-                                </span>
+                                </span> */}
                             </span>
                         </span>
                     </div>
+                </div>
+                {/* action buttons */}
+                <div className="flex items-center gap-[10px]">
+                    <StatusBtn
+                        isActive={item?.status ? true : false}
+                    />
                 </div>
             </ContainerCard>
 
@@ -177,6 +184,8 @@ export default function CustomerDetails() {
                 <Overview data={item} />
             ) : activeTab === "Location" ? (
                 <Location data={item} />
+            ) : activeTab === "Financial" ? (
+                <Financial data={item} />
             ) : activeTab === "Additional" ? (
                 <Additional data={item} />
             ) : null}

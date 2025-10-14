@@ -27,7 +27,7 @@ export default function WarehouseLocationInfo({ values, errors, touched, handleC
         fetchAreaOptions(values.region_id);
       }
     } else {
-      if (values.region_id && (!areaOptions || areaOptions.length === 0)) {
+      if (values.region_id && (!areaOptions)) {
         fetchAreaOptions(values.region_id);
       }
     }

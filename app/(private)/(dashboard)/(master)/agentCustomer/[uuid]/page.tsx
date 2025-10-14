@@ -39,7 +39,6 @@ interface AgentCustomerFormValues {
     outlet_channel_id: number | string;
     customer_type: number | string;
     contact_no: string;
-    // country_code_contact_no: string;
     contact_no2: string;
     whatsapp_no: string;
     street: string;
@@ -118,24 +117,23 @@ export default function AddEditAgentCustomer() {
             outlet_channel_id: "",
             customer_type: "",
             contact_no: "",
-            // country_code_contact_no: "",
             contact_no2: "",
             whatsapp_no: "",
             street: "",
             landmark: "",
             town: "",
             district: "",
-            payment_type: "", // will be validated against allowed values
-            buyertype: "0", // "0" or "1"
+            payment_type: "",
+            buyertype: "0",
             warehouse: "",
             route_id: "",
             category_id: "",
             subcategory_id: "",
-            enable_promotion: "0", // "0" or "1"
+            enable_promotion: "0",
             creditday: "",
             credit_limit: "",
-            status: "1", // default active
-            is_cash: "1", // default cash
+            status: "1", 
+            is_cash: "1",
             vat_no: null,
             latitude: null,
             longitude: null,
@@ -210,21 +208,21 @@ export default function AddEditAgentCustomer() {
                         name: String(data.name ?? ""),
                         owner_name: String(data.owner_name ?? ""),
                         warehouse:
-                            data.warehouse != null
-                                ? String(data.warehouse)
+                            data.get_warehouse != null
+                                ? String(data.get_warehouse?.id)
                                 : "",
                         customer_type:
-                            data.customer_type != null
-                                ? String(data.customer_type)
+                            data.customertype != null
+                                ? String(data.customertype?.id)
                                 : "",
                         route_id:
-                            data.route_id != null
-                                ? String(data.route_id)
-                                : String(data.route?.id ?? ""),
+                            data.route?.route_id != null
+                                ? String(data.route?.route_id)
+                                : "",
                         outlet_channel_id:
-                            data.outlet_channel_id != null
-                                ? String(data.outlet_channel_id)
-                                : String(data.outlet_channel?.id ?? ""),
+                            data.outlet_channel.id != null
+                                ? String(data.outlet_channel?.id)
+                                : "",
                         buyertype:
                             data.buyertype != null
                                 ? String(data.buyertype)
@@ -266,12 +264,12 @@ export default function AddEditAgentCustomer() {
                                 : "",
                         // categories
                         category_id:
-                            data.category_id != null
-                                ? String(data.category_id)
+                            data.category.id != null
+                                ? String(data.category?.id)
                                 : String(data.category?.id ?? ""),
                         subcategory_id:
-                            data.subcategory_id != null
-                                ? String(data.subcategory_id)
+                            data.subcategory?.id != null
+                                ? String(data.subcategory?.id)
                                 : String(data.subcategory?.id ?? ""),
                         // extras
                         status: data.status != null ? String(data.status) : "1",
