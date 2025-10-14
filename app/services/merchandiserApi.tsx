@@ -257,3 +257,32 @@ export const addPlanogram = async (body: PlanogramType) => {
     return handleError(error);
   }
 };
+
+export const updateShelfById = async (uuid: string, data: {
+  shelf_name: string;
+  height: number;
+  width: number;
+  depth: number;
+  valid_from: string;
+  valid_to: string;
+  merchendiser_ids: number[];
+  customer_ids: number[];
+}) => {
+  try {
+    console.log(data)
+    const res = await API.put(`/api/merchendisher/shelves/update/${uuid}`, data);
+    console.log(res)
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getShelfById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/merchendisher/shelves/show/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
