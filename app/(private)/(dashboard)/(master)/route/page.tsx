@@ -94,48 +94,8 @@ export default function Route() {
             setSelectedRowId(undefined);
         }
     };
-    // const handleDownloadCSV = async () => {
-    //     // if (!formats:"csc") return;
-    //     try {
-    //         await exportRoutesCSV({format:"csv"});
-    //         showSnackbar("Route Export successfully ✅", "success");
-    //         await fetchRoutes();
-    //     } catch (error) {
-    //         console.error("Export failed ❌:", error);
-    //         showSnackbar("Failed to Export Route ❌", "error");
-    //     } finally {
-    //         setShowDeletePopup(false);
-    //         setSelectedRowId(undefined);
-    //     }
-    // };
 
-//     const handleDownloadCSV = async () => {
-//     try {
-//         const blob = await exportRoutesCSV({ format: "csv" });
-//         if (!blob) {
-//             showSnackbar("No file received ❌", "error");
-//             return;
-//         }
 
-//         // ✅ Create a download link from the blob
-//        const url = window.URL.createObjectURL(blob);
-//         const link = document.createElement("a");
-//         link.href = url;
-//         link.download = "routes.csv"; // The downloaded file name
-//         document.body.appendChild(link);
-//         link.click();
-//         document.body.removeChild(link);
-//         window.URL.revokeObjectURL(url);
-
-//         showSnackbar("Route exported successfully ✅", "success");
-//     } catch (error) {
-//         console.error("Export failed ❌:", error);
-//         showSnackbar("Failed to export Route ❌", "error");
-//     } finally {
-//         setShowDeletePopup(false);
-//         setSelectedRowId(undefined);
-//     }
-// };
 const handleDownloadCSV = async () => {
   try {
     const blob = await exportRoutesCSV({ format: "csv" });
@@ -164,14 +124,7 @@ const handleDownloadCSV = async () => {
 };
 
 
-//     const handleDownloadCSV = () => {
-// if
-//         // Implement CtSV download functionality here
-//         try{
-//             await exportRoutesCSV(format:"csv"); 
-//         }
-//         showSnackbar("Download CSV functionality is not implemented yet.", "info");
-//     }
+
 
    
 
@@ -190,6 +143,25 @@ const handleDownloadCSV = async () => {
                         },
                         header: {
                             title: "Routes",
+                               threeDot: [
+               {
+    icon: "gala:file-document",
+    label: "Export CSV",
+    labelTw: "text-[12px] hidden sm:block",
+    onClick: handleDownloadCSV, // ✅ Add this
+  },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Inactive",
+                  labelTw: "text-[12px] hidden sm:block",
+                //   showOnSelect: true
+                },
+              ],
                             wholeTableActions: [
                                 <div key={0} className="flex gap-[12px] relative">
                                     <BorderIconButton
