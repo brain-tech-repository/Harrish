@@ -77,7 +77,7 @@ export default function AddEditWarehouse() {
     // Validation schema (Yup)
     const validationSchema = Yup.object({
         warehouse_code: Yup.string().required('Warehouse Code is required'),
-        tin_no: Yup.string().required('VAT No. is required'),
+        tin_no: Yup.string().required('TIN No. is required'),
         warehouse_type: Yup.string().required('Warehouse Type is required'),
         warehouse_name: Yup.string().required('Warehouse Name is required'),
         owner_name: Yup.string().required('Owner Name is required'),

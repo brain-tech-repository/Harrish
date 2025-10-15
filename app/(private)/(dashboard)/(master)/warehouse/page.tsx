@@ -263,11 +263,8 @@ export default function Warehouse() {
          
          const statusUpdate = async () => {
          try {
-           if (!selectedRow || !selectedRow.id) {
-             showSnackbar("No row selected for status update", "error");
-             return;
-           }
-           await warehouseStatusUpdate({ warehouse_ids: selectedRow.id });
+          if (!selectedRow?.id) throw new Error('Missing id');
+           await warehouseStatusUpdate({ warehouse_ids: String(!selectedRow.id) });
            showSnackbar("Warehouse status updated successfully", "success");
          } catch (error) {
            showSnackbar("Failed to update warehouse status", "error");
@@ -308,72 +305,32 @@ export default function Warehouse() {
               list: fetchWarehouse,
               search: searchWarehouse
             },
+            
             header: {
+               threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: exportFile,
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                  // You can add onClick for Excel if needed
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Inactive",
+                  labelTw: "text-[12px] hidden sm:block",
+                  showOnSelect: true,
+                  onClick: statusUpdate,
+                },
+              ],
               title: "Warehouse",
-               wholeTableActions: [
-                              <div key={0} className="flex gap-[12px] relative">
-                                <BorderIconButton
-                                  icon="ic:sharp-more-vert"
-                                  onClick={() =>
-                                    setShowDropdown(!showDropdown)
-                                  }
-                                />
-              
-                                {showDropdown && (
-                                    <div className="w-[226px] absolute top-[40px] right-0 z-30">
-                                      <CustomDropdown>
-                                        {dropdownDataList.map((link, index: number) => {
-                                          if (link.label === "Inactive") {
-                                            return (
-                                              <div
-                                                key={index}
-                                                className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
-                                                onClick={() => {
-                                                  statusUpdate();
-                                                }}
-                                              >
-                                                <Icon
-                                                  icon={link.icon}
-                                                  width={link.iconWidth}
-                                                  className="text-[#717680]"
-                                                />
-                                                <span className="text-[#181D27] font-[500] text-[16px]">
-                                                  {link.label}
-                                                </span>
-                                              </div>
-                                            );
-                                          }
-                                          return (
-                                            <div
-                                              key={index}
-                                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                                            >
-                                              <Icon
-                                                icon={link.icon}
-                                                width={link.iconWidth}
-                                                className="text-[#717680]"
-                                              />
-                                              <span className="text-[#181D27] font-[500] text-[16px]">
-                                                {link.label}
-                                              </span>
-                                            </div>
-                                          );
-                                        })}
-                                      </CustomDropdown>
-                                    </div>
-                                )}
-                              </div>
-                            ],
-                             tableActions:[
-                              <>
-                              <BorderIconButton
-                  icon="gala:file-document"
-                  onClick={exportFile}
-                  label="Export CSV"
-                  labelTw="text-[12px] hidden sm:block"
-                /></>
-              
-            ],
+               
+                            
               searchBar: true,
               columnFilter: true,
               actions: [
@@ -391,7 +348,7 @@ export default function Warehouse() {
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,
-           
+          
             rowActions: [
                 {
                 icon: "lucide:eye",

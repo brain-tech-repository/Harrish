@@ -24,11 +24,7 @@ interface DropdownItem {
 }
 
 const dropdownDataList: DropdownItem[] = [
-    // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-    // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-    // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
     { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-    { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 const columns = [
     {
@@ -282,12 +278,8 @@ export default function AgentCustomer() {
                                                                 className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
                                                             >
                                                                 <Icon
-                                                                    icon={
-                                                                        link.icon
-                                                                    }
-                                                                    width={
-                                                                        link.iconWidth
-                                                                    }
+                                                                    icon={link.icon}
+                                                                    width={link.iconWidth}
                                                                     className="text-[#717680]"
                                                                 />
                                                                 <span className="text-[#181D27] font-[500] text-[16px]">
@@ -301,6 +293,15 @@ export default function AgentCustomer() {
                                         }
                                     />
                                 </div>,
+                            ],
+                            tableActions: [
+                                <>
+                                    <BorderIconButton
+                                        icon="gala:file-document"
+                                        label="Export CSV"
+                                        labelTw="text-[12px] hidden sm:block"
+                                    />
+                                </>
                             ],
                             searchBar: false,
                             columnFilter: true,

@@ -37,11 +37,14 @@ export type CompanyCustomerFormValues = {
   customerType: string;
   ownerName: string;
   ownerNumber: string;
+  ownerContactCountry?: string;        // <- added
   isWhatsapp: string;
   whatsappNo: string;
+  whatsappContactCountry?: string;     // <- added
   email: string;
   language: string;
   contactNo2: string;
+  contactNo2Country?: string;          // <- added
   buyerType: string;
   roadStreet: string;
   town: string;
@@ -243,11 +246,14 @@ export default function AddCompanyCustomer() {
       customerType: "",
       ownerName: "",
       ownerNumber: "",
+      ownerContactCountry: "+91",       // <- default country
       isWhatsapp: "",
       whatsappNo: "",
+      whatsappContactCountry: "+91",    // <- default country
       email: "",
       language: "",
       contactNo2: "",
+      contactNo2Country: "+91",         // <- default country
       buyerType: "",
       roadStreet: "",
       town: "",
@@ -283,7 +289,6 @@ export default function AddCompanyCustomer() {
     try {
       const id = params?.id as string;
       const data = await getCompanyCustomerById(id);
-      console.log(data);
       const mapped: CompanyCustomerFormValues = {
         sapCode: data.sap_code || "",
         // company_customer_code: data.company_customer_code || "",
@@ -292,11 +297,14 @@ export default function AddCompanyCustomer() {
         customerType: data.customer_type || "",
         ownerName: data.owner_name || "",
         ownerNumber: data.owner_no || "",
+        ownerContactCountry: data.owner_contact_country || "+91",
         isWhatsapp: String(data.is_whatsapp ?? "1"),
         whatsappNo: data.whatsapp_no || "",
+        whatsappContactCountry: data.whatsapp_contact_country || "+91",
         email: data.email || "",
         language: data.language || "",
         contactNo2: data.contact_no2 || "",
+        contactNo2Country: data.contact_no2_country || "+91",
         buyerType: String(data.buyer_type || "0"),
         roadStreet: data.road_street || "",
         town: data.town || "",
@@ -1146,7 +1154,7 @@ export default function AddCompanyCustomer() {
 
   return (
     <>
-      <div className="flex align-middle items-center gap-3 text-gray-600 mb-6">
+      <div className="flex align-middle items-center gap-3 text-gray-900 mb-6">
         <Link
           href="/companyCustomer"
           className="hover:underline"

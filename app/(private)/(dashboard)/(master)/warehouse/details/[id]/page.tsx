@@ -162,8 +162,22 @@ export default function ViewPage() {
                                 <KeyValueData
                                     title="Warehouse Info"
                                     data={[
+                                        {
+                                                                                        key: "Warehouse Type",
+                                                                                        value: (() => {
+                                                                                                const value = item?.warehouse_type;
+                                                                                                const strValue = value != null ? String(value).toLowerCase() : "";
+                                                                                                // prefer semantic values if present
+                                                                                                if (strValue === "agent_customer") return "Hariss";
+                                                                                                if (strValue === "company_outlet") return "Outlet";
+                                                                                                // fallback to numeric codes for backward compatibility
+                                                                                                if (strValue === "0") return "Hariss";
+                                                                                                if (strValue === "1") return "Outlet";
+                                                                                                return strValue || "-";
+                                                                                        })(),
+                                                                                },
                                         // { key: <span className="font-bold">Registration No.</span>, value: item?.tin_no || '-'},
-                                        // { key: <span className="font-bold">TIN No.</span>, value: item?.registation_no || '-'},
+                                        { key: <span className="font-bold">TIN No.</span>, value: item?.registation_no || '-'},
                                         // { key: <span className="font-bold">Device No.</span>, value: item?.device_no || '-'},
                                         {
                                             key: "Owner Name",
@@ -178,20 +192,7 @@ export default function ViewPage() {
                                             value: item?.get_company?.company_name || "-",
                                         },
                                         { key: "Warehouse Manager Name", value:item?.warehouse_manager || '-' },
-                                                                                {
-                                                                                        key: "Warehouse Type",
-                                                                                        value: (() => {
-                                                                                                const value = item?.warehouse_type;
-                                                                                                const strValue = value != null ? String(value).toLowerCase() : "";
-                                                                                                // prefer semantic values if present
-                                                                                                if (strValue === "agent_customer") return "Hariss";
-                                                                                                if (strValue === "company_outlet") return "Outlet";
-                                                                                                // fallback to numeric codes for backward compatibility
-                                                                                                if (strValue === "0") return "Hariss";
-                                                                                                if (strValue === "1") return "Outlet";
-                                                                                                return strValue || "-";
-                                                                                        })(),
-                                                                                },
+                                                                                
                                     ]}
                                 />
                                 <hr className="text-[#D5D7DA] my-[25px]" />
