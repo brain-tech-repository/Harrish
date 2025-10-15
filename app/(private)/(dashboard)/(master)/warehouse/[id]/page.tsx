@@ -24,6 +24,7 @@ type FormValues = {
     owner_number: string;
     owner_email: string;
     vat_no: string;
+    p12_password:string;
     agreed_stock_capital: string;
     company: string;
     agent_customer: string;
@@ -57,7 +58,7 @@ export default function AddEditWarehouse() {
         { id: 1, label: "Warehouse Details" },
         { id: 2, label: "Warehouse Contact" },
         { id: 3, label: "Location Information" },
-        { id: 4, label: "Additional Information" }
+        { id: 4, label: "EFRIS Information" }
     ];
     const {
         currentStep,
@@ -136,11 +137,12 @@ export default function AddEditWarehouse() {
             city: validationSchema.fields.city,
             region_id: validationSchema.fields.region_id,
             area_id: validationSchema.fields.area_id,
+            latitude: validationSchema.fields.latitude,
+            longitude: validationSchema.fields.longitude,
             // address: validationSchema.fields.address,
         }),
         Yup.object().shape({
-            latitude: validationSchema.fields.latitude,
-            longitude: validationSchema.fields.longitude,
+            
             // p12_file: validationSchema.fields.p12_file,
             is_efris: validationSchema.fields.is_efris,
             is_branch: validationSchema.fields.is_branch,
@@ -155,6 +157,7 @@ export default function AddEditWarehouse() {
         owner_name: "",
         company: "",
         agreed_stock_capital: "",
+        p12_password:"",
         vat_no: "",
         agent_customer: "",
         warehouse_manager: "",
@@ -215,6 +218,7 @@ export default function AddEditWarehouse() {
                         latitude: String(data?.latitude || ''),
                         longitude: String(data?.longitude || ''),
                         p12_file: data?.p12_file || '',
+                        p12_password: data?.p12_password || '',
                         is_efris: String(data?.is_efris || ''),
                         is_branch: String(data?.is_branch || ''),
                         status:"1"

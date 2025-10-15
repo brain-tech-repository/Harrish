@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
+import TabBtn from "@/app/components/tabBtn";
 import Map from "@/app/components/map";
 
 interface Item {
@@ -73,6 +74,15 @@ export default function ViewPage() {
     const { setLoading } = useLoading();
     const [item, setItem] = useState<Item | null>(null);
 
+      const [activeTab, setActiveTab] = useState("overview");
+  const tabList = [
+    { key: "overview", label: "Overview" },
+    { key: "address", label: "Location Info" },
+    { key: "financial", label: "Financial Info" },
+    { key: "guarantee", label: "Guarantee Info" },
+    { key: "additional", label: "Additional Info" },
+  ];
+
     useEffect(() => {
         const fetchPlanogramImageDetails = async () => {
             setLoading(true);
@@ -90,6 +100,13 @@ export default function ViewPage() {
         };
         fetchPlanogramImageDetails();
     }, []);
+
+      const onTabClick = (idx: number) => {
+    if (typeof idx !== "number") return;
+    if (typeof tabList === "undefined" || idx < 0 || idx >= tabList.length) return;
+    setActiveTab(tabList[idx].key);
+  };
+
 
     return (
         <>
@@ -114,14 +131,16 @@ export default function ViewPage() {
                             </div>
                             <div className="text-center sm:text-left">
                                 <h2 className="text-[20px] font-semibold text-[#181D27] mb-[10px]">
-                                    {item?.warehouse_name}
+                                    {item?.warehouse_code || "-"} - {item?.warehouse_name} 
                                 </h2>
                                 <span className="flex items-center">
                                     <span className="text-[#414651] text-[16px]">
-                                        <span className="font-[600]">Warehouse Code:</span>{" "}
-                                        <span className="font-[400]">
-                                            {item?.warehouse_code || "-"}
-                                        </span>
+                                         <Icon
+                                                icon="lucide:map-pin"
+                                                width={16}
+                                                className="text-[#EA0A2A]"
+                                            />
+                                            <span className="ml-2">{item?.location}</span>
                                     </span>
                                 </span>
                             </div>
@@ -130,6 +149,17 @@ export default function ViewPage() {
                             <StatusBtn isActive={item?.status === 1 || item?.status === '1'} />
                         </span>
                     </ContainerCard>
+                     <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+                                            {tabList.map((tab, index) => (
+                                              <div key={index}>
+                                                <TabBtn
+                                                  label={tab.label}
+                                                  isActive={activeTab === tab.key}
+                                                  onClick={() => onTabClick(index)}
+                                                />
+                                              </div>
+                                            ))}
+                                          </ContainerCard>
                      <div className="mb-4">
                 {/* <WarehouseTabs /> */}
             </div>

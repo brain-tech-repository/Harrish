@@ -68,7 +68,6 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    type='radio'
                     label="Warehouse Type"
                     name="warehouse_type"
                     value={values.warehouse_type}

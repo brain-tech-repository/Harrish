@@ -25,11 +25,11 @@ export default function WarehouseContactDetails({ values, errors, touched, handl
             type="contact"
             label="Owner Contact Number"
             name="owner_number"
-            value={`${values.ownerContactCountry ?? '+91'}|${values.owner_number ?? ''}`}
+            value={`${values.ownerContactCountry ?? '+256'}|${values.owner_number ?? ''}`}
             onChange={(e) => {
                 const combined = (e.target as HTMLInputElement).value || '';
                 if (combined.includes('|')) {
-                  const [code = '+91', num = ''] = combined.split('|');
+                  const [code = '+256', num = ''] = combined.split('|');
                   const numDigits = num.replace(/\D/g, '');
                   const codeDigits = String(code).replace(/\D/g, '');
                   const localNumber = codeDigits && numDigits.startsWith(codeDigits) ? numDigits.slice(codeDigits.length) : numDigits;
@@ -37,7 +37,7 @@ export default function WarehouseContactDetails({ values, errors, touched, handl
                   setFieldValue('owner_number', localNumber);
                 } else {
                   const digits = combined.replace(/\D/g, '');
-                  const currentCountry = (values.ownerContactCountry || '+91').replace(/\D/g, '');
+                  const currentCountry = (values.ownerContactCountry || '+256').replace(/\D/g, '');
                   if (currentCountry && digits.startsWith(currentCountry)) {
                     setFieldValue('ownerContactCountry', `+${currentCountry}`);
                     setFieldValue('owner_number', digits.slice(currentCountry.length));
@@ -58,11 +58,11 @@ export default function WarehouseContactDetails({ values, errors, touched, handl
             type="contact"
             label="Manager Contact Number"
             name="warehouse_manager_contact"
-            value={`${values.managerContactCountry ?? '+91'}|${values.warehouse_manager_contact ?? ''}`}
+            value={`${values.managerContactCountry ?? '+256'}|${values.warehouse_manager_contact ?? ''}`}
             onChange={(e) => {
               const combined = (e.target as HTMLInputElement).value || '';
                 if (combined.includes('|')) {
-                const [code = '+91', num = ''] = combined.split('|');
+                const [code = '+256', num = ''] = combined.split('|');
                 const numDigits = num.replace(/\D/g, '');
                 const codeDigits = String(code).replace(/\D/g, '');
                 const localNumber = codeDigits && numDigits.startsWith(codeDigits) ? numDigits.slice(codeDigits.length) : numDigits;
@@ -70,7 +70,7 @@ export default function WarehouseContactDetails({ values, errors, touched, handl
                 setFieldValue('warehouse_manager_contact', localNumber);
               } else {
                 const digits = combined.replace(/\D/g, '');
-                const currentCountry = (values.managerContactCountry || '+91').replace(/\D/g, '');
+                const currentCountry = (values.managerContactCountry || '+256').replace(/\D/g, '');
                 if (currentCountry && digits.startsWith(currentCountry)) {
                   setFieldValue('managerContactCountry', `+${currentCountry}`);
                   setFieldValue('warehouse_manager_contact', digits.slice(currentCountry.length));
