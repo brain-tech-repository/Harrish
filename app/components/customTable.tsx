@@ -38,6 +38,7 @@ type configType = {
     header?: {
         title?: string;
         wholeTableActions?: React.ReactNode[];
+        tableActions?: React.ReactNode[];
         searchBar?:
             | boolean
             | {
@@ -241,18 +242,24 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
 
     return (
         <>
-            {(config.header?.title || config.header?.wholeTableActions) && (
+            {(config.header?.title || config.header?.wholeTableActions || config.header?.tableActions) && (
                 <div className="flex justify-between items-center mb-[20px] h-[34px]">
                     {config.header?.title && (
                         <h1 className="text-[18px] font-semibold text-[#181D27]">
                             {config.header.title}
                         </h1>
                     )}
+                    
+                    <div className="flex gap-[8px]">
+                        {config.header?.tableActions && config.header?.tableActions?.map((action) => action)}
 
-                    {selectedRow.length > 0 &&
-                        config.header?.wholeTableActions?.map(
-                            (action) => action
-                        )}
+                        {selectedRow.length > 0 &&
+                            config.header?.wholeTableActions?.map(
+                                (action) => action
+                            )}
+                    </div>
+
+                    
                 </div>
             )}
             <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">

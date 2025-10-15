@@ -197,8 +197,8 @@ useEffect(() => {
             onMouseDown={() => { pointerDownRef.current = true; }}
             onMouseUp={() => { pointerDownRef.current = false; }}
             onFocus={() => { if (!pointerDownRef.current) setDropdownOpen(true); }}
-            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
-            onClick={() => { if (!loading && !isSearchable) setDropdownOpen(v => !v); }}
+            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer ${error ? "border-red-500" : "border-gray-300"} ${disabled ? "bg-gray-200" : "bg-white"}`}
+            onClick={() => { if (!loading && !isSearchable && !disabled) setDropdownOpen(v => !v); }}
           >
             {isSearchable ? (
               (() => {
@@ -331,14 +331,14 @@ useEffect(() => {
           )}
         </div>
       ) : isSingleSelect ? (
-        <div className="relative select-none" ref={dropdownRef}>
+        <div className={`relative select-none`} ref={dropdownRef}>
           <div
             tabIndex={0}
             onMouseDown={() => { pointerDownRef.current = true; }}
             onMouseUp={() => { pointerDownRef.current = false; }}
             onFocus={() => { if (!pointerDownRef.current) setDropdownOpen(true); }}
-            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer bg-white ${error ? "border-red-500" : "border-gray-300"}`}
-            onClick={() => { if (!loading && !isSearchable) setDropdownOpen(v => !v); }}
+            className={`${showBorder === true && "border"} h-[44px] w-full rounded-md px-3 mt-[6px] flex items-center cursor-pointer ${error ? "border-red-500" : "border-gray-300"} ${disabled ? "bg-gray-200" : "bg-white"}`}
+            onClick={() => { if (!loading && !isSearchable && !disabled) setDropdownOpen(v => !v); }}
           >
             {isSearchable ? (
               (() => {
@@ -351,6 +351,7 @@ useEffect(() => {
                     placeholder={!value ? `Search ${label}` : undefined}
                     value={displayValue}
                     onChange={e => {
+                      if(disabled) return;
                       const v = (e.target as HTMLInputElement).value;
                       setSearch(v);
                       if (!dropdownOpen) setDropdownOpen(true);

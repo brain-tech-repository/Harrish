@@ -37,11 +37,14 @@ export type CompanyCustomerFormValues = {
   customerType: string;
   ownerName: string;
   ownerNumber: string;
+  ownerContactCountry?: string;        // <- added
   isWhatsapp: string;
   whatsappNo: string;
+  whatsappContactCountry?: string;     // <- added
   email: string;
   language: string;
   contactNo2: string;
+  contactNo2Country?: string;          // <- added
   buyerType: string;
   roadStreet: string;
   town: string;
@@ -244,11 +247,14 @@ export default function AddCompanyCustomer() {
       customerType: "",
       ownerName: "",
       ownerNumber: "",
+      ownerContactCountry: "+91",       // <- default country
       isWhatsapp: "",
       whatsappNo: "",
+      whatsappContactCountry: "+91",    // <- default country
       email: "",
       language: "",
       contactNo2: "",
+      contactNo2Country: "+91",         // <- default country
       buyerType: "",
       roadStreet: "",
       town: "",
@@ -284,7 +290,6 @@ export default function AddCompanyCustomer() {
     try {
       const id = params?.id as string;
       const data = await getCompanyCustomerById(id);
-      console.log(data);
       const mapped: CompanyCustomerFormValues = {
         sapCode: data.sap_code || "",
         // company_customer_code: data.company_customer_code || "",
@@ -293,11 +298,14 @@ export default function AddCompanyCustomer() {
         customerType: data.customer_type || "",
         ownerName: data.owner_name || "",
         ownerNumber: data.owner_no || "",
+        ownerContactCountry: data.owner_contact_country || "+91",
         isWhatsapp: String(data.is_whatsapp ?? "1"),
         whatsappNo: data.whatsapp_no || "",
+        whatsappContactCountry: data.whatsapp_contact_country || "+91",
         email: data.email || "",
         language: data.language || "",
         contactNo2: data.contact_no2 || "",
+        contactNo2Country: data.contact_no2_country || "+91",
         buyerType: String(data.buyer_type || "0"),
         roadStreet: data.road_street || "",
         town: data.town || "",
@@ -686,7 +694,26 @@ export default function AddCompanyCustomer() {
                   name="ownerNumber"
                   type="contact"
                   value={values.ownerNumber}
-                  onChange={(e) => setFieldValue("ownerNumber", e.target.value)}
+                  onChange={(e) => {
+                      const combined = (e.target as HTMLInputElement).value || '';
+                      if (combined.includes('|')) {
+                        const [code = '+91', num = ''] = combined.split('|');
+                        const numDigits = num.replace(/\D/g, '');
+                        const codeDigits = String(code).replace(/\D/g, '');
+                        const localNumber = codeDigits && numDigits.startsWith(codeDigits) ? numDigits.slice(codeDigits.length) : numDigits;
+                        setFieldValue('ownerContactCountry', code);
+                        setFieldValue('ownerNumber', localNumber);
+                      } else {
+                        const digits = combined.replace(/\D/g, '');
+                        const currentCountry = (values.ownerContactCountry || '+91').replace(/\D/g, '');
+                        if (currentCountry && digits.startsWith(currentCountry)) {
+                          setFieldValue('ownerContactCountry', `+${currentCountry}`);
+                          setFieldValue('ownerNumber', digits.slice(currentCountry.length));
+                        } else {
+                          setFieldValue('ownerNumber', digits);
+                        }
+                      }
+                  }}
                   error={touched.ownerNumber && errors.ownerNumber}
                 />
                 {errors?.ownerNumber && touched?.ownerNumber && (
@@ -1122,7 +1149,7 @@ export default function AddCompanyCustomer() {
 
   return (
     <>
-      <div className="flex align-middle items-center gap-3 text-gray-600 mb-6">
+      <div className="flex align-middle items-center gap-3 text-gray-900 mb-6">
         <Link
           href="/companyCustomer"
           className="hover:underline"

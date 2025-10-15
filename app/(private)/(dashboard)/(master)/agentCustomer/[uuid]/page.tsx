@@ -124,7 +124,7 @@ export default function AddEditAgentCustomer() {
             town: "",
             district: "",
             payment_type: "",
-            buyertype: "0",
+            buyertype: "1",
             warehouse: "",
             route_id: "",
             category_id: "",
@@ -226,7 +226,7 @@ export default function AddEditAgentCustomer() {
                         buyertype:
                             data.buyertype != null
                                 ? String(data.buyertype)
-                                : "0",
+                                : "1",
                         enable_promotion:
                             data.enable_promotion != null
                                 ? String(data.enable_promotion)
@@ -1275,20 +1275,7 @@ export default function AddEditAgentCustomer() {
                                     <InputFields
                                         label="Add QR Code"
                                         name="qr_code"
-                                        type="file"
-                                        onChange={(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                                            // For file inputs, target has 'files'; ensure the property exists before accessing it
-                                            if ("files" in e.target) {
-                                                const file = e.target.files?.[0] ?? null;
-                                                // store the selected file's name in the qr_code field
-                                                setFieldValue("qr_code", file ? file.name : "");
-                                                // if you need the actual File object as well, store it in a separate field:
-                                                // setFieldValue("qr_file", file);
-                                            } else {
-                                                // fallback for other element types (selects etc.)
-                                                setFieldValue("qr_code", "");
-                                            }
-                                        }}
+                                        onChange={(e) => setFieldValue("qr_code", e.target.value)}
                                     />
                                     {touched.qr_code && errors.qr_code && (
                                         <div className="text-red-500 text-xs mt-1">
