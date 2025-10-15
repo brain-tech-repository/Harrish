@@ -199,13 +199,13 @@ const handleDownloadCSV = async () => {
                                     label="Add"
                                     labelTw="hidden sm:block"
                                 />,
-                                <SidebarBtn
-                                    key={1}
-                                    leadingIcon="lucide:download"
-                                    onClick={handleDownloadCSV}
-                                    label="Download CSV"
-                                    labelTw="hidden sm:block"
-                                />
+                                // <SidebarBtn
+                                //     key={1}
+                                //     leadingIcon="lucide:download"
+                                //     onClick={handleDownloadCSV}
+                                //     label="Download CSV"
+                                //     labelTw="hidden sm:block"
+                                // />
                             ],
                         },
                         localStorageKey: "route-table",
