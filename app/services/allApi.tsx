@@ -2531,6 +2531,24 @@ export const warehouseStatusUpdate = async (body:object) => {
   }
 };
 
+export const exportAgentCustomerData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/agent_customers/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCompanyCustomerData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/companycustomer/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const exportVehicleData = async (body:object) => {
   try {
     const res = await API.post(`/api/master/vehicle/export`,body);
@@ -2542,7 +2560,7 @@ export const exportVehicleData = async (body:object) => {
 
 export const vehicleStatusUpdate = async (body:object) => {
   try {
-    const res = await API.post(`/api/master/vehicle/multiple_status_update`,body);
+    const res = await API.post(`/api/master/vehicle/multiple_status_updat`,body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
