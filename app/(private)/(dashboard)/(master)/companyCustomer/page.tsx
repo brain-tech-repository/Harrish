@@ -15,7 +15,9 @@ import {
   getCompanyCustomers,
   deleteCompanyCustomer,
   exportCompanyCustomerData,
+  companyCustomerStatusUpdate,
 } from "@/app/services/allApi";
+import { useLoading } from "@/app/services/loadingContext";
 
 /* ---------- Types ---------- */
 interface CustomerItem {
@@ -66,9 +68,9 @@ const dropdownDataList = [
 
 /* ========================================================= */
 export default function CompanyCustomers() {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { setLoading } = useLoading();
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedRow, setSelectedRow] = useState<CustomerItem | null>(null);
 
@@ -136,7 +138,6 @@ export default function CompanyCustomers() {
     setLoading(false);
   };
 
-  if (loading) return <Loading />;
 
   /* ---------- Column Configuration ---------- */
   const columns = [
@@ -144,13 +145,13 @@ export default function CompanyCustomers() {
             <span className="font-semibold text-[#181D27] text-[14px]">
                 {row.customer_code}
             </span>
-        ), },
-    { key: "sap_code", label: "SAP Code" ,render: (row: TableDataType) => (
+        ), showByDefault: true },
+    { key: "sap_code", label: "SAP Code", render: (row: TableDataType) => (
         <span className="font-semibold text-[#181D27] text-[14px]">
             {row.sap_code}
         </span>
     ),},
-    { key: "owner_name", label: "Owner Name" },
+    { key: "owner_name", label: "Owner Name", showByDefault: true },
     { key: "owner_no", label: "Owner Number" },
     { key: "business_name", label: "Business Name" },
     { key: "whatsapp_no", label: "WhatsApp No" },
@@ -164,6 +165,7 @@ export default function CompanyCustomers() {
     {
       key: "status",
       label: "Status",
+      showByDefault: true,
       render: (row: TableDataType) => (
         <span
           className={`text-sm p-1 px-4 rounded-xl text-[12px] font-[500] ${
@@ -203,6 +205,22 @@ export default function CompanyCustomers() {
     }
   }
 
+  const handleStatusChange = async (ids: (string | number)[] | undefined, status: number) => {
+      if (!ids || ids.length === 0) return;
+      const res = await companyCustomerStatusUpdate({
+          ids: ids,
+          status: Number(status)
+      });
+
+      if (res.error) {
+          showSnackbar(res.data.message || "Failed to update status", "error");
+          throw new Error(res.data.message);
+      }
+      setRefreshKey(refreshKey + 1);
+      showSnackbar("Status updated successfully", "success");
+      return res;
+  }
+
   /* ---------- Render ---------- */
   return (
     <>
@@ -211,7 +229,7 @@ export default function CompanyCustomers() {
       {/* Table */}
       <div className="flex flex-col h-full">
         <Table
-          data={tableData}
+          refreshKey={refreshKey}
           config={{
             header: {
               title: "Company Customer",
@@ -239,9 +257,47 @@ export default function CompanyCustomers() {
                 {
                   icon: "lucide:radio",
                   label: "Inactive",
-                  labelTw: "text-[12px] hidden sm:block",
-                  showOnSelect: true
-                },
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                      if(!selectedRow || selectedRow.length === 0) return false;
+                      const status = selectedRow?.map((id) => data[id].status).map(String);
+                      console.log(status, "status");
+                      return status?.includes("1") || false;
+                  },
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                      const status: string[] = [];
+                      const ids = selectedRow?.map((id) => {
+                          const currentStatus = data[id].status;
+                          if(!status.includes(currentStatus)){
+                              status.push(currentStatus);
+                          }
+                          return data[id].id;
+                      })
+                      handleStatusChange(ids, Number(0));
+                  },
+              },
+              {
+                  icon: "lucide:radio",
+                  label: "Active",
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                      if(!selectedRow || selectedRow.length === 0) return false;
+                      const status = selectedRow?.map((id) => data[id].status).map(String);
+                      console.log(status, "status");
+                      return status?.includes("0") || false;
+                  },
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                      const status: string[] = [];
+                      const ids = selectedRow?.map((id) => {
+                          const currentStatus = data[id].status;
+                          if(!status.includes(currentStatus)){
+                              status.push(currentStatus);
+                          }
+                          return data[id].id;
+                      })
+                      handleStatusChange(ids, Number(1));
+                  },
+              },
               ],
               searchBar: true,
               columnFilter: true,

@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import InputFields from "@/app/components/inputFields";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 type Props = {
   values: Record<string, string>;
