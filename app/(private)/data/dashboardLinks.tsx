@@ -91,7 +91,7 @@ export const initialLinkData: SidebarDataType[] = [
                     {
                         isActive: false,
                         href: "/item",
-                        label: "Products",
+                        label: "Item",
                         leadingIcon: "mdi:package-variant",
                         iconColor: "text-cyan-500",
                     },
@@ -143,13 +143,13 @@ export const initialLinkData: SidebarDataType[] = [
                 trailingIcon: "mdi-light:chevron-right",
                 iconColor: "text-yellow-400",
                 children: [
-                    //    {
-                    //     isActive: false,
-                    //     href: "/pricing",
-                    //     label: "Pricing",
-                    //     leadingIcon: "mdi:currency-usd",
-                    //     iconColor: "text-yellow-400"
-                    // },
+                       {
+                        isActive: false,
+                        href: "/pricing",
+                        label: "Pricing",
+                        leadingIcon: "mdi:currency-usd",
+                        iconColor: "text-yellow-400"
+                    },
                        // {
     //             isActive: false,
     //             href: "/promotion",
