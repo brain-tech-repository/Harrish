@@ -2589,9 +2589,27 @@ export const exportAgentCustomerData = async (body:object) => {
   }
 };
 
+export const agentCustomerStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/agent_customers/bulk-update-status`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const exportCompanyCustomerData = async (body:object) => {
   try {
     const res = await API.post(`/api/master/companycustomer/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const companyCustomerStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/companycustomer/bulk-update-status`,body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
