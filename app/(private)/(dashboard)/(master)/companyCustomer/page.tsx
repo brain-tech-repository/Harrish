@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import CustomDropdown from "@/app/components/customDropdown";
-import DismissibleDropdown from "@/app/components/dismissibleDropdown";
-import BorderIconButton from "@/app/components/borderIconButton";
-import { Icon } from "@iconify-icon/react";
-import Table, { TableDataType } from "@/app/components/customTable";
+import Table, { listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import Loading from "@/app/components/Loading";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import {
@@ -18,8 +13,8 @@ import {
   companyCustomerStatusUpdate,
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
+import StatusBtn from "@/app/components/statusBtn2";
 
-/* ---------- Types ---------- */
 interface CustomerItem {
   id: number;
   sap_code: string;
@@ -61,12 +56,6 @@ interface CustomerItem {
   updated_at: string;
 }
 
-/* ---------- Dropdown Menu ---------- */
-const dropdownDataList = [
-  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-];
-
-/* ========================================================= */
 export default function CompanyCustomers() {
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -77,47 +66,39 @@ export default function CompanyCustomers() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
-  // Fetch customers
-  useEffect(() => {
-    const fetchCompanyCustomers = async () => {
-      try {
-        setLoading(true);
-        const data = await getCompanyCustomers();
-
-        const customersData = data.data // Wrap single object
-        console.log("Fetched Customers:", data);
-
-        setCustomers(customersData);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+  const fetchCompanyCustomers = async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
+      setLoading(true);
+      const res = await getCompanyCustomers({ page: pageNo.toString(), pageSize: pageSize.toString() });
+      setLoading(false);
+      if(res.error) {
+        showSnackbar(res.data.message || "Failed to fetch Company Customers", "error");
+        throw new Error(res.data.message);
       }
-    };
-    fetchCompanyCustomers();
-  }, []); // 🔴 Use empty dependency array, NOT showSnackbar
+      return {
+        data: res.data || [],
+        pageSize: res.data?.pagination?.per_page || pageSize,
+        total: res.data?.pagination?.last_page || 1,
+        currentPage: res.data?.pagination?.current_page || 1,
+      }
+  };
 
-  /* ---------- Map to TableData ---------- */
-  const tableData: TableDataType[] = customers.map((c) => ({
-    id: c.id.toString(),
-    sap_code: c.sap_code,
-    customer_code: c.customer_code,
-    business_name: c.business_name,
+  const search = async ( searchQuery: string, pageSize: number, columnName?: string ): Promise<searchReturnType> => {
+    if (!columnName) throw new Error("Column name is required for search");
+    setLoading(true);
+    const res = await getCompanyCustomers({ search: searchQuery, pageSize: pageSize.toString() });
+    setLoading(false);
+    if(res.error) {
+      showSnackbar(res.data.message || "Failed to fetch search results", "error");
+      throw new Error(res.data.message);
+    }
+    return {
+      data: res.data || [],
+      pageSize: res.data?.pagination?.per_page || pageSize,
+      total: res.data?.pagination?.last_page || 1,
+      currentPage: res.data?.pagination?.current_page || 1,
+    }
+  };
 
-    owner_name: c.owner_name,
-    owner_no: c.owner_no,
-
-    whatsapp_no: c.whatsapp_no,
-    email: c.email,
-    language: c.language,
-    district: c.district,
-    balance: c.balance.toString(),
-  payment_type: (String(c.payment_type) === '1') ? 'Cash' : (String(c.payment_type) === '2') ? 'Credit' : String(c.payment_type),
-    creditlimit: c.creditlimit.toString(),
-    totalcreditlimit: c.totalcreditlimit.toString(),
-    status: c.status === 1 ? "Active" : "Inactive",
-  }));
-  // Delete handler
   const handleConfirmDelete = async () => {
     if (!selectedRow) return;
 
@@ -141,12 +122,12 @@ export default function CompanyCustomers() {
 
   /* ---------- Column Configuration ---------- */
   const columns = [
-    { key: "customer_code", label: "Customer Code",render: (row: TableDataType) => (
+    { key: "customer_code", label: "Customer Code", showByDefault: true, render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
                 {row.customer_code}
             </span>
-        ), showByDefault: true },
-    { key: "sap_code", label: "SAP Code", render: (row: TableDataType) => (
+        ) },
+    { key: "sap_code", label: "SAP Code", showByDefault: true, render: (row: TableDataType) => (
         <span className="font-semibold text-[#181D27] text-[14px]">
             {row.sap_code}
         </span>
@@ -156,27 +137,32 @@ export default function CompanyCustomers() {
     { key: "business_name", label: "Business Name" },
     { key: "whatsapp_no", label: "WhatsApp No" },
     { key: "email", label: "Email" },
-    { key: "district", label: "District" },
+    { key: "district", label: "District", showByDefault: true },
     { key: "balance", label: "Balance" },
     { key: "creditlimit", label: "Credit Limit" },
     { key: "totalcreditlimit", label: "Total Credit Limit" },
-    { key: "payment_type", label: "Payment Type" },
+    { key: "payment_type", label: "Payment Type",
+       render: (row: TableDataType) => {
+      const value = (row as unknown as CustomerItem).payment_type;
+      const strValue = value != null ? String(value) : "";
+      if (strValue === "0") return "Cash";
+      if (strValue === "1") return "Credit";
+      if (strValue === "2") return "Bill to Bill";
+      return strValue || "-";
+    }, 
+     },
     { key: "language", label: "Language" },
     {
-      key: "status",
-      label: "Status",
-      showByDefault: true,
-      render: (row: TableDataType) => (
-        <span
-          className={`text-sm p-1 px-4 rounded-xl text-[12px] font-[500] ${
-            row.status === "Active"
-              ? "text-[#027A48] bg-[#ECFDF3]"
-              : "text-red-700 bg-red-200"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
+        key: "status",
+        label: "Status",
+        render: (row: TableDataType) => {
+            const isActive =
+                String(row.status) === "1" ||
+                (typeof row.status === "string" &&
+                    row.status.toLowerCase() === "active");
+            return <StatusBtn isActive={isActive} />;
+        },
+        showByDefault: true,
     },
   ];
 
@@ -221,16 +207,17 @@ export default function CompanyCustomers() {
       return res;
   }
 
-  /* ---------- Render ---------- */
   return (
     <>
-
-
       {/* Table */}
       <div className="flex flex-col h-full">
         <Table
           refreshKey={refreshKey}
           config={{
+            api: {
+              list: fetchCompanyCustomers,
+              search: search,
+            },
             header: {
               title: "Company Customer",
               threeDot: [

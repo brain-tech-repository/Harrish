@@ -165,19 +165,6 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "mdi:package-variant",
                 iconColor: "text-cyan-500"
             },
-            {
-                isActive: false,
-                href: "/invoice",
-                label: "Invoice",
-                leadingIcon: "mdi:package-variant",
-                iconColor: "text-cyan-500"
-            },
-            
-                   
-                          
-                   
-                   
-                   
                 ],
             },
             {
@@ -319,14 +306,20 @@ export const initialLinkData: SidebarDataType[] = [
                         leadingIcon: "mdi:package-variant",
                         iconColor: "text-cyan-500"
                     },
+                    // {
+                    //     isActive: false,
+                    //     href: "/agentTransaction/agentCustomerInvoice",
+                    //     label: "Agent Invoice",
+                    //     leadingIcon: "mdi:package-variant",
+                    //     iconColor: "text-cyan-500"
+                    // },
                     {
                         isActive: false,
-                        href: "/agentTransaction/agentCustomerInvoice",
-                        label: "Agent Invoice",
+                        href: "/invoice",
+                        label: "Invoice",
                         leadingIcon: "mdi:package-variant",
                         iconColor: "text-cyan-500"
                     },
-                   
                 ]
             },
             // {
