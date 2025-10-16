@@ -90,14 +90,14 @@ export const OverviewTab = () => {
     <div className="flex gap-4 flex-wrap">
       {compititorData?.image?.image1 && (
         <img
-          src={`https://api.coreexl.com/osa_productionV2${compititorData.image.image1}`}
+          src={`https://api.coreexl.com/osa_productionV2/public${compititorData.image.image1}`}
           alt="Competitor Image 1"
           className="w-48 h-48 object-cover rounded-lg border border-gray-300"
         />
       )}
       {compititorData?.image?.image2 && (
         <img
-          src={`https://api.coreexl.com/osa_productionV2${compititorData.image.image2}`}
+          src={`https://api.coreexl.com/osa_productionV2/public${compititorData.image.image2}`}
           alt="Competitor Image 2"
           className="w-48 h-48 object-cover rounded-lg border border-gray-300"
         />
