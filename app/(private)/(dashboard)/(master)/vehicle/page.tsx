@@ -1,16 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
-
-import BorderIconButton from "@/app/components/borderIconButton";
-import CustomDropdown from "@/app/components/customDropdown";
 import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { vehicleListData, deleteVehicle, vehicleGlobalSearch } from "@/app/services/allApi";
+import { vehicleListData, deleteVehicle, vehicleGlobalSearch ,exportVehicleData,vehicleStatusUpdate} from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
-import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
@@ -189,7 +184,51 @@ export default function VehiclePage() {
     []
   );
 
+           const exportFile = async () => {
+           try {
+             const response = await exportVehicleData({ format: "xlsx"}); 
+             let fileUrl = response;
+             if (response && typeof response === 'object' && response.url) {
+               fileUrl = response.url;
+             }
+             if (fileUrl) {
+               const link = document.createElement('a');
+               link.href = fileUrl;
+               link.download = '';
+               document.body.appendChild(link);
+               link.click();
+               document.body.removeChild(link);
+               showSnackbar("File downloaded successfully ", "success");
+             } else {
+               showSnackbar("Failed to get download URL", "error");
+             }
+           } catch (error) {
+             showSnackbar("Failed to download warehouse data", "error");
+           } finally {
+           }
+         };
 
+                const statusUpdate = async (data: Vehicle[], selectedRow?: number[]) => {
+                        try {
+                          if (!selectedRow || selectedRow.length === 0) {
+                            showSnackbar("No warehouses selected", "error");
+                            return;
+                          }
+                          const selectedRowsData: number[] = data.filter((row:Vehicle,index) => selectedRow.includes(index)).map((row:Vehicle) => Number(row.id));
+                          console.log("selectedRowsData",selectedRowsData);
+                          if (selectedRowsData.length === 0) {
+                            showSnackbar("No warehouses selected", "error");
+                            return;
+                          }
+                          await vehicleStatusUpdate({ warehouse_ids: selectedRowsData, status: 0 });
+                          setRefreshKey((k) => k + 1);
+                          showSnackbar("Warehouse status updated successfully", "success");
+                        } catch (error) {
+                          showSnackbar("Failed to update warehouse status", "error");
+                        } finally {
+                        }
+                      };
+                
   const handleConfirmDelete = async () => {
     if (!selectedRow?.id) return;
 
@@ -210,45 +249,7 @@ export default function VehiclePage() {
 
   return (
     <>
-      {/* Header */}
-      {/* <div className="flex justify-between items-center mb-[20px]">
-        <h1 className="text-[20px] font-semibold text-[#181D27]">
-          Vehicle
-        </h1>
-
-        <div className="flex gap-[12px] relative">
-          
-
-          <DismissibleDropdown
-            isOpen={showDropdown}
-            setIsOpen={setShowDropdown}
-            button={<BorderIconButton icon="ic:sharp-more-vert" />}
-            dropdown={
-              <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                <CustomDropdown>
-                  {dropdownDataList.map((link, idx) => (
-                    <div
-                      key={idx}
-                      className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                    >
-                      <Icon
-                        icon={link.icon}
-                        width={link.iconWidth}
-                        className="text-[#717680]"
-                      />
-                      <span className="text-[#181D27] font-[500] text-[16px]">
-                        {link.label}
-                      </span>
-                    </div>
-                  ))}
-                </CustomDropdown>
-              </div>
-            }
-          />
-        </div>
-      </div> */}
-
-      {/* Table */}
+    
       <div className="h-[calc(100%-60px)]">
         <Table
           refreshKey={refreshKey}
@@ -258,48 +259,32 @@ export default function VehiclePage() {
               search: searchVehicle,
             },
             header: {
-              title: "Vehicle",
-              wholeTableActions: [
-                <div key={0} className="flex gap-[12px] relative">
-                  <BorderIconButton
-                    icon="ic:sharp-more-vert"
-                    onClick={() =>
-                      setShowDropdown(!showDropdown)
-                    }
-                  />
-
-                  {showDropdown && (
-                    <div className="w-[226px] absolute top-[40px] right-0 z-30">
-                      <CustomDropdown>
-                        {dropdownDataList.map(
-                          (
-                            link,
-                            index: number
-                          ) => (
-                            <div
-                              key={index}
-                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                            >
-                              <Icon
-                                icon={
-                                  link.icon
-                                }
-                                width={
-                                  link.iconWidth
-                                }
-                                className="text-[#717680]"
-                              />
-                              <span className="text-[#181D27] font-[500] text-[16px]">
-                                {link.label}
-                              </span>
-                            </div>
-                          )
-                        )}
-                      </CustomDropdown>
-                    </div>
-                  )}
-                </div>
+               threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: exportFile,
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                  // You can add onClick for Excel if needed
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Inactive",
+                  labelTw: "text-[12px] hidden sm:block",
+                  showOnSelect: true,
+                  onClick: (data: Vehicle[], selectedRow?: number[]) => {
+                    statusUpdate(data, selectedRow);
+                },
+                },
               ],
+              title: "Vehicle",
+              
+             
               searchBar: true,
               columnFilter: true,
               actions: [

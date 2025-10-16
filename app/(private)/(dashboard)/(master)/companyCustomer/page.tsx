@@ -14,6 +14,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import {
   getCompanyCustomers,
   deleteCompanyCustomer,
+  exportCompanyCustomerData,
 } from "@/app/services/allApi";
 
 /* ---------- Types ---------- */
@@ -60,11 +61,7 @@ interface CustomerItem {
 
 /* ---------- Dropdown Menu ---------- */
 const dropdownDataList = [
-  // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-  // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-  // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
 /* ========================================================= */
@@ -82,6 +79,7 @@ export default function CompanyCustomers() {
   useEffect(() => {
     const fetchCompanyCustomers = async () => {
       try {
+        setLoading(true);
         const data = await getCompanyCustomers();
 
         const customersData = data.data // Wrap single object
@@ -125,6 +123,7 @@ export default function CompanyCustomers() {
     setCustomers((prev) => prev.filter((c) => c.id !== selectedRow.id));
     setShowDeletePopup(false);
 
+    setLoading(true);
     try {
       await deleteCompanyCustomer(selectedRow.id.toString());
       showSnackbar("Company Customer deleted successfully ✅", "success");
@@ -134,6 +133,7 @@ export default function CompanyCustomers() {
     } finally {
       setSelectedRow(null);
     }
+    setLoading(false);
   };
 
   if (loading) return <Loading />;
@@ -146,12 +146,12 @@ export default function CompanyCustomers() {
             </span>
         ), },
     { key: "sap_code", label: "SAP Code" ,render: (row: TableDataType) => (
-            <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.sap_code}
-            </span>
-        ),},
-        { key: "owner_name", label: "Owner Name" },
-        { key: "owner_no", label: "Owner Number" },
+        <span className="font-semibold text-[#181D27] text-[14px]">
+            {row.sap_code}
+        </span>
+    ),},
+    { key: "owner_name", label: "Owner Name" },
+    { key: "owner_no", label: "Owner Number" },
     { key: "business_name", label: "Business Name" },
     { key: "whatsapp_no", label: "WhatsApp No" },
     { key: "email", label: "Email" },
@@ -178,7 +178,30 @@ export default function CompanyCustomers() {
     },
   ];
 
-  console.log(customers);
+  const exportFile = async (ids: string[] | undefined) => {
+    if(!ids) return;
+    try {
+      const response = await exportCompanyCustomerData({ids}); 
+      let fileUrl = response;
+      if (response && typeof response === 'object' && response.url) {
+        fileUrl = response.url;
+      }
+      if (fileUrl) {
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      showSnackbar("Failed to download warehouse data", "error");
+    } finally {
+    }
+  }
 
   /* ---------- Render ---------- */
   return (
@@ -186,52 +209,39 @@ export default function CompanyCustomers() {
 
 
       {/* Table */}
-      <div className="h-[calc(100%-60px)]">
+      <div className="flex flex-col h-full">
         <Table
           data={tableData}
           config={{
             header: {
               title: "Company Customer",
-              wholeTableActions: [
-                <div key={0} className="flex gap-[12px] relative">
-                  <BorderIconButton
-                    icon="ic:sharp-more-vert"
-                    onClick={() =>
-                      setShowDropdown(!showDropdown)
-                    }
-                  />
-
-                  {showDropdown && (
-                    <div className="w-[226px] absolute top-[40px] right-0 z-30">
-                      <CustomDropdown>
-                        {dropdownDataList.map(
-                          (
-                            link,
-                            index: number
-                          ) => (
-                            <div
-                              key={index}
-                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                            >
-                              <Icon
-                                icon={
-                                  link.icon
-                                }
-                                width={
-                                  link.iconWidth
-                                }
-                                className="text-[#717680]"
-                              />
-                              <span className="text-[#181D27] font-[500] text-[16px]">
-                                {link.label}
-                              </span>
-                            </div>
-                          )
-                        )}
-                      </CustomDropdown>
-                    </div>
-                  )}
-                </div>
+              threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                        return data[id].id;
+                    })
+                    exportFile(ids || [])
+                  },
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                        return data[id].id;
+                    })
+                    exportFile(ids || [])
+                  },
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Inactive",
+                  labelTw: "text-[12px] hidden sm:block",
+                  showOnSelect: true
+                },
               ],
               searchBar: true,
               columnFilter: true,

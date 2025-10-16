@@ -24,7 +24,7 @@ API.interceptors.request.use(
 
 export function handleError(error: unknown) {
   if (axios.isAxiosError(error) && error.response) {
-    console.error("API Error:", error.response.data);
+    console?.error("API Error:", error?.response.data);
     return { error: true, data: error.response.data };
   } else if (error instanceof Error) {
     console.error("Request Error:", error.message);
@@ -2487,6 +2487,23 @@ export const submenuGenerateCode = async (params?: Params) => {
   }
 };
 
+export const exportRoutesCSV = async (params?: Params): Promise<Blob | null> => {
+  try {
+    const res = await API.post(
+      `/api/master/route/export`,
+      { params }, // 👈 send your params inside a body object
+      { responseType: "blob" } // 👈 ensures file is returned as Blob
+    );
+    return res.data; // this will be a Blob
+  } catch (error: unknown) {
+    handleError(error);
+    return null;
+  }
+};
+
+
+
+
 export const submenuGlobalSearch = async (params?: Params) => {
   try {
     const res = await API.get(`/api/settings/submenu/global_search`, {
@@ -2534,3 +2551,59 @@ export const deleteSubmenu = async (uuid: string) => {
     return handleError(error);
   }
 };
+
+export const exportWarehouseData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/warehouse/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const warehouseStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/warehouse/multiple_status_update`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportAgentCustomerData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/agent_customers/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCompanyCustomerData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/companycustomer/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportVehicleData = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/vehicle/export`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const vehicleStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/vehicle/multiple_status_updat`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+

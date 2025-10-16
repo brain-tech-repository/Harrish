@@ -11,7 +11,7 @@ import Table, {
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { agentCustomerList, deleteAgentCustomer } from "@/app/services/allApi";
+import { agentCustomerList, deleteAgentCustomer, exportAgentCustomerData } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext"; // ✅ import snackbar
@@ -24,11 +24,7 @@ interface DropdownItem {
 }
 
 const dropdownDataList: DropdownItem[] = [
-    // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-    // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-    // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
     { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-    { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 const columns = [
     {
@@ -146,7 +142,6 @@ export default function AgentCustomer() {
     }
 
     const { setLoading } = useLoading();
-    const [showDropdown, setShowDropdown] = useState<boolean>(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
     const [selectedRow, setSelectedRow] = useState<AgentCustomer | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -180,6 +175,33 @@ export default function AgentCustomer() {
         },
         []
     );
+
+    const exportfile = async (ids: string[] | undefined) => {
+        if(!ids) return;
+        try {
+            const response = await exportAgentCustomerData({
+                ids: ids
+            }); 
+            let fileUrl = response;
+            if (response && typeof response === 'object' && response.url) {
+                fileUrl = response.url;
+            }
+            if (fileUrl) {
+                const link = document.createElement('a');
+                link.href = fileUrl;
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showSnackbar("File downloaded successfully ", "success");
+            } else {
+                showSnackbar("Failed to get download URL", "error");
+            }
+        } catch (error) {
+            showSnackbar("Failed to download warehouse data", "error");
+        } finally {
+        }
+    }
     // const searchCountries = useCallback(
     //     async (
     //         searchQuery: string,
@@ -261,46 +283,32 @@ export default function AgentCustomer() {
                         },
                         header: {
                             title: "Agent Customer",
-                            wholeTableActions: [
-                                <div
-                                    key={0}
-                                    className="flex gap-[12px] relative"
-                                >
-                                    <DismissibleDropdown
-                                        isOpen={showDropdown}
-                                        setIsOpen={setShowDropdown}
-                                        button={
-                                            <BorderIconButton icon="ic:sharp-more-vert" />
-                                        }
-                                        dropdown={
-                                            <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                                                <CustomDropdown>
-                                                    {dropdownDataList.map(
-                                                        (link, idx) => (
-                                                            <div
-                                                                key={idx}
-                                                                className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                                                            >
-                                                                <Icon
-                                                                    icon={
-                                                                        link.icon
-                                                                    }
-                                                                    width={
-                                                                        link.iconWidth
-                                                                    }
-                                                                    className="text-[#717680]"
-                                                                />
-                                                                <span className="text-[#181D27] font-[500] text-[16px]">
-                                                                    {link.label}
-                                                                </span>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </CustomDropdown>
-                                            </div>
-                                        }
-                                    />
-                                </div>,
+                            threeDot: [
+                                {
+                                    icon: "gala:file-document",
+                                    label: "Export CSV",
+                                    onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                                        const ids = selectedRow?.map((id) => {
+                                            return data[id].id;
+                                        })
+                                        exportfile(ids);
+                                    }
+                                },
+                                {
+                                    icon: "gala:file-document",
+                                    label: "Export Excel",
+                                    onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                                        const ids = selectedRow?.map((id) => {
+                                            return data[id].id;
+                                        })
+                                        exportfile(ids);
+                                    }
+                                },
+                                {
+                                    icon: "lucide:radio",
+                                    label: "Inactive",
+                                    showOnSelect: true
+                                },
                             ],
                             searchBar: false,
                             columnFilter: true,

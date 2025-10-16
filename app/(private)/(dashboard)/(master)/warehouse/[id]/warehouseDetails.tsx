@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React,{useState} from 'react';
 import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
@@ -18,6 +18,10 @@ type Props = {
 };
 
 export default function WarehouseDetails({ values, errors, touched, handleChange, setFieldValue, isEditMode }: Props) {
+    const [skeleton, setSkeleton] = useState({
+            region_id: false,
+            area_id: false,
+        });
     const { companyOptions, agentCustomerOptions, companyCustomersOptions, fetchAreaOptions } = useAllDropdownListData();
     const [isOpen, setIsOpen] = React.useState(false);
     const [codeMode, setCodeMode] = React.useState<'auto'|'manual'>('auto');
@@ -36,7 +40,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     disabled={codeMode === 'auto'}
                 />
                 
-                {!isEditMode && (
+                {/* {!isEditMode && (
                     <>
                         <IconButton
                             bgClass="white"
@@ -63,12 +67,11 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                 )}
                 {errors?.warehouse_code && touched?.warehouse_code && (
                     <div className="text-xs text-red-500 mt-1">{errors.warehouse_code}</div>
-                )}
+                )} */}
             </div>
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    type='radio'
                     label="Warehouse Type"
                     name="warehouse_type"
                     value={values.warehouse_type}
@@ -126,14 +129,14 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                 <InputFields
                     required
                     name="owner_number"
-                    label="VAT NO."
-                    value={values.vat_no}
-                    onChange={(e) => setFieldValue('vat_no', e.target.value)}
-                    placeholder="Enter Vat No."
-                    error={errors?.vat_no && touched?.vat_no ? errors.vat_no : false}
+                    label="TIN NO."
+                    value={values.tin_no}
+                    onChange={(e) => setFieldValue('tin_no', e.target.value)}
+                    placeholder="Enter TIN No."
+                    error={errors?.tin_no && touched?.tin_no ? errors.tin_no : false}
                 />
-                {errors?.vat_no && touched?.vat_no && (
-                    <div className="text-xs text-red-500 mt-1">{errors.vat_no}</div>
+                {errors?.tin_no && touched?.tin_no && (
+                    <div className="text-xs text-red-500 mt-1">{errors.tin_no}</div>
                 )}
             </div>
             
@@ -149,10 +152,12 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                         setFieldValue('agent_customer', val);
                         const selected = companyCustomersOptions?.find((c) => c.value === String(val));
                         if (selected && selected.region_id) {
+                            setSkeleton({ ...skeleton, region_id: true });
                             const regionId = String(selected.region_id);
                             setFieldValue('region_id', regionId);
                             try { fetchAreaOptions(regionId); } catch (err) {}
                             if (selected.area_id) {
+                                setSkeleton({ ...skeleton, area_id: true });
                                 setFieldValue('area_id', String(selected.area_id));
                             }
                         }
