@@ -51,13 +51,12 @@ export default function WarehouseContactDetails({
       {/* Manager Contact Number */}
       <div className="flex flex-col gap-2">
         <InputFields
-          required
           type="contact"
           label="Manager Contact Number"
-          name="manager_number"
+          name="warehouse_manager_contact"
           setSelectedCountry={setManagerCountry}
           selectedCountry={managerCountry}
-          value={`${values.manager_number ?? ""}`}
+          value={`${values.warehouse_manager_contact ?? ""}`}
           onChange={handleChange}
         />
       </div>

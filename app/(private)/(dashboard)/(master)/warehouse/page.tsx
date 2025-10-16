@@ -71,6 +71,7 @@ const columns = [
   {
     key: "warehouse_type",
     label: "Warehouse Type",
+    showByDefault: true,
     render: (row: WarehouseRow) => {
       const value = row.warehouse_type;
       const strValue = value != null ? String(value) : "";
@@ -88,11 +89,13 @@ const columns = [
   // { key: "region_id", label: "Region"},
   {
     label: 'Region',
+    showByDefault: true,
     key: 'region',
     render: (row: WarehouseRow) => row.region?.name || '-',
   },
   {
     label: 'Area',
+    showByDefault: true,
     key: 'area',
     render: (row: WarehouseRow) => row.area?.name || '-',
   },
@@ -104,6 +107,7 @@ const columns = [
   { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
   { key: "agreed_stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.agreed_stock_capital || "-" },
   { key: "is_efris", label: "EFRIS",
+    showByDefault: true,
      render: (row: WarehouseRow) => {
       const value = row.is_efris;
       const strValue = value != null ? String(value) : "";
