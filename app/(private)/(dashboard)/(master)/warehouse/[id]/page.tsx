@@ -110,9 +110,9 @@ export default function AddEditWarehouse() {
             .matches(/^[-+]?\d{1,3}(?:\.\d+)?$/, 'Longitude must be a valid decimal number'),
         // p12_file: Yup.string().required('P12 File is required'),
         // p12_file: isEditMode ? Yup.string() : Yup.string().required('P12 File is required'),
-                is_efris: Yup.string()
-                    .oneOf(['0', '1'], 'EFRIS Configuration is required')
-                    .required('EFRIS Configuration is required'),
+        is_efris: Yup.string()
+            .oneOf(['0', '1'], 'EFRIS Configuration is required')
+            .required('EFRIS Configuration is required'),
         is_branch: Yup.string(),
     });
 
@@ -177,7 +177,7 @@ export default function AddEditWarehouse() {
         latitude: "",
         longitude: "",
         p12_file: "",
-        is_efris: "",
+        is_efris: "0", // Default to 'Disable' (0)
         is_branch: "",
         status: "1",
     });
