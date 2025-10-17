@@ -91,6 +91,25 @@ export const shelvesDropdown = async (params?: Params) => {
   }
 };
 
+export const shelfList = async (body: {}) => {
+  try {
+    console.log(body);
+    const res = await API.post("/api/merchendisher/planogram/getshelf", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deletePlanogram = async (uuid: string) => {
+  try {
+    const res = await API.delete(`/api/merchendisher/planogram/delete/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const shelvesList = async (params?: Params) => {
   try {
     const res = await API.get("/api/merchendisher/shelves/list", { params });
@@ -176,15 +195,13 @@ export const deleteShelves = async (id: string) => {
   }
 };
 
-export const complaintFeedbackByUUID = async (
-  uuid: string,
-  params?: Params
-) => {
+export const complaintFeedbackByUUID = async (uuid: string) => {
   try {
     const res = await API.get(
-      `/api/merchendisher/complaint-feedback/show/${uuid}`,
-      { params }
+      `/api/merchendisher/complaint-feedback/show/${uuid}`
     );
+
+    console.log(res.data)
     return { data: res.data, error: false };
   } catch (error: unknown) {
     const handledError = handleError(error);
@@ -229,7 +246,9 @@ export const getShelfById = async (uuid: string) => {
 
 export const getCompititorById = async (uuid: string) => {
   try {
-    const res = await API.get(`/api/merchendisher/competitor-info/show/${uuid}`);
+    const res = await API.get(
+      `/api/merchendisher/competitor-info/show/${uuid}`
+    );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -250,7 +269,7 @@ export const complaintFeedbackList = async (params?: Params) => {
 export const exportShelveData = async (params?: Params) => {
   try {
     console.log(params);
-    const res = await API.get("/web/merchendisher_web/shelve/export", {
+    const res = await API.get("/api/merchendisher/shelves/export", {
       params,
     });
     console.log(res);
@@ -351,7 +370,7 @@ export const exportCmplaintFeedback = async (params: { format: string }) => {
       "/api/merchendisher/complaint-feedback/exportfile",
       {
         params,
-        responseType: "blob", 
+        responseType: "blob",
       }
     );
     return res.data;
@@ -359,7 +378,9 @@ export const exportCmplaintFeedback = async (params: { format: string }) => {
     return handleError(error);
   }
 };
-export const exportCompetitorFile = async (params: { format: "csv" | "xlsx" }) => {
+export const exportCompetitorFile = async (params: {
+  format: "csv" | "xlsx";
+}) => {
   try {
     const res = await API.get("/api/merchendisher/competitor-info/exportfile", {
       params,

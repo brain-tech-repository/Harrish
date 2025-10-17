@@ -3,7 +3,11 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
-import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
+import Table, {
+  TableDataType,
+  listReturnType,
+  searchReturnType,
+} from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
@@ -12,6 +16,7 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { planogramList } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
+import { deletePlanogram } from "@/app/services/allApi";
 
 interface PlanogramItem {
   id: number | string;
@@ -20,7 +25,6 @@ interface PlanogramItem {
   valid_from: string;
   valid_to: string;
 }
-
 
 interface DropdownItem {
   icon: string;
@@ -39,27 +43,36 @@ export default function Planogram() {
   const { showSnackbar } = useSnackbar();
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(null);
 
   type TableRow = TableDataType & { id?: string };
 
   // Fetch planogram list
   const fetchPlanogram = useCallback(
-    async (page: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+    async (
+      page: number = 1,
+      pageSize: number = 10
+    ): Promise<listReturnType> => {
       setLoading(true);
-    
+
       try {
-        const res = await planogramList({ page: page.toString(), limit: pageSize.toString() });
+        const res = await planogramList({
+          page: page.toString(),
+          limit: pageSize.toString(),
+        });
         setLoading(false);
-        if (res.error) throw new Error(res.message || "Failed to fetch planograms");
+        if (res.error)
+          throw new Error(res.message || "Failed to fetch planograms");
 
         // Normalize status
-      const data: TableDataType[] = res.data.map((item: PlanogramItem) => ({
-  id: item.id.toString(),
-  uuid: item.uuid, // <--- add this
-  name: item.name,
-  valid_from: item.valid_from,
-  valid_to: item.valid_to,
-}));
+        const data: TableDataType[] = res.data.map((item: PlanogramItem) => ({
+          id: item.id.toString(),
+          uuid: item.uuid, // <--- add this
+          name: item.name,
+          valid_from: item.valid_from,
+          valid_to: item.valid_to,
+        }));
 
         return {
           data,
@@ -76,52 +89,68 @@ export default function Planogram() {
     [setLoading, showSnackbar]
   );
 
-
   // Global search
-const searchPlanogram = useCallback(
-  async (searchQuery: string): Promise<searchReturnType> => {
-    setLoading(true);
-    try {
-      console.log(searchQuery)
-      // always start from page 1 for a new search
-      const res = await planogramList({
-        search: searchQuery,
-     
-      });
+  const searchPlanogram = useCallback(
+    async (searchQuery: string): Promise<searchReturnType> => {
+      setLoading(true);
+      try {
+        console.log(searchQuery);
+        // always start from page 1 for a new search
+        const res = await planogramList({
+          search: searchQuery,
+        });
 
-      setLoading(false);
-      if (res.error) throw new Error(res.message || "Search failed");
+        setLoading(false);
+        if (res.error) throw new Error(res.message || "Search failed");
 
-      const data: TableDataType[] = res.data.map((item: PlanogramItem) => ({
-        id: item.id.toString(),
-        name: item.name,
-        valid_from: item.valid_from,
-        valid_to: item.valid_to,
-      
-      }));
-      return {
-        data,
-        total: res.pagination?.total || data.length,
-        currentPage: res.pagination?.current_page || 1,
-        pageSize: res.pagination?.per_page ,
-      };
-    } catch (err) {
-      setLoading(false);
-      showSnackbar((err as Error).message, "error");
-      return { data: [], total: 0, currentPage: 1, pageSize: 10 };
-    }
-  },
-  [setLoading, showSnackbar]
-);
-
+        const data: TableDataType[] = res.data.map((item: PlanogramItem) => ({
+          id: item.id.toString(),
+          name: item.name,
+          valid_from: item.valid_from,
+          valid_to: item.valid_to,
+        }));
+        return {
+          data,
+          total: res.pagination?.total || data.length,
+          currentPage: res.pagination?.current_page || 1,
+          pageSize: res.pagination?.per_page,
+        };
+      } catch (err) {
+        setLoading(false);
+        showSnackbar((err as Error).message, "error");
+        return { data: [], total: 0, currentPage: 1, pageSize: 10 };
+      }
+    },
+    [setLoading, showSnackbar]
+  );
 
   // Table columns
   const columns = [
     { key: "name", label: "Name" },
     { key: "valid_from", label: "Valid From" },
     { key: "valid_to", label: "Valid To" },
- 
   ];
+
+  const handleConfirmDelete = async () => {
+    if (deleteSelectedRow) {
+      // Call the API to delete the row
+      const res = await deletePlanogram(deleteSelectedRow.toString());
+      if (res.error) {
+        showSnackbar(
+          res.data.message || "failed to delete the chiller",
+          "error"
+        );
+        throw new Error("Unable to delete the chiller");
+      } else {
+        showSnackbar(
+          res.message || `Deleted chiller with ID: ${deleteSelectedRow}`,
+          "success"
+        );
+        setShowDeletePopup(false);
+        setRefreshKey((prev) => prev + 1);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -150,8 +179,14 @@ const searchPlanogram = useCallback(
                             key={idx}
                             className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
                           >
-                            <Icon icon={link.icon} width={link.iconWidth} className="text-[#717680]" />
-                            <span className="text-[#181D27] font-[500] text-[16px]">{link.label}</span>
+                            <Icon
+                              icon={link.icon}
+                              width={link.iconWidth}
+                              className="text-[#717680]"
+                            />
+                            <span className="text-[#181D27] font-[500] text-[16px]">
+                              {link.label}
+                            </span>
                           </div>
                         ))}
                       </CustomDropdown>
@@ -175,16 +210,25 @@ const searchPlanogram = useCallback(
           columns,
           rowSelection: true,
           rowActions: [
-         {
-  icon: "lucide:eye",
-  onClick: (data: TableDataType) =>
-    router.push(`/merchandiser/planogram/view/${data.uuid}`)
-},
-         {
-  icon: "lucide:edit-2",
-  onClick: (data: TableDataType) =>
-    router.push(`/merchandiser/planogram/${data.uuid}`),
-}
+            {
+              icon: "lucide:eye",
+              onClick: (data: TableDataType) =>
+                router.push(`/merchandiser/planogram/view/${data.uuid}`),
+            },
+            {
+              icon: "lucide:edit-2",
+              onClick: (data: TableDataType) =>
+                router.push(`/merchandiser/planogram/${data.uuid}`),
+            },
+            {
+              icon: "lucide:trash-2",
+              onClick: (data: TableDataType) => {
+                setDeleteSelectedRow(
+                  data?.uuid ? String(data.uuid) : data.uuid
+                );
+                setShowDeletePopup(true);
+              },
+            },
           ],
           pageSize: 10,
         }}
