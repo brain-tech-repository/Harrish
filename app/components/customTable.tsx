@@ -91,7 +91,11 @@ export type configType = {
             height?: number | string;
             maxHeight?: number | string;
             maxWidth?: number | string;
-            render: (
+            options?: Array<{ value: string; label: string }>; // dropdown options
+            onSearch?: (search: string) => Promise<Array<{ value: string; label: string }>> | Array<{ value: string; label: string }>; // search handler
+            onSelect?: (selected: string | string[]) => void; // selection handler, now supports array for multi-select
+            isSingle?: boolean; // new prop, default true
+            render?: (
                 data: TableDataType[],
                 search?: (
                     search: string,
@@ -634,15 +638,17 @@ function TableBody() {
                                             >
                                                 <div className="flex items-center gap-[4px] capitalize">
                                                     {col.label}{" "}
-                                                    { col.filter && <FilterTableHeader
-                                                        column={col.key}
-                                                        dimensions={col.filter}
-                                                    >
-                                                        {col.filter?.render(
-                                                            tableData,
-                                                            api?.search
-                                                        )}
-                                                    </FilterTableHeader>}
+                                                    {col.filter && (
+                                                        <FilterTableHeader
+                                                            column={col.key}
+                                                            dimensions={col.filter}
+                                                            filterConfig={col.filter}
+                                                        >
+                                                            {col.filter.render
+                                                                ? col.filter.render(tableData, api?.search)
+                                                                : null}
+                                                        </FilterTableHeader>
+                                                    )}
                                                     {col.isSortable && (
                                                         <Icon
                                                             className="cursor-pointer"
@@ -808,6 +814,7 @@ function TableBody() {
 function FilterTableHeader({
     column,
     dimensions,
+    filterConfig,
     children,
 }: {
     column: string;
@@ -817,30 +824,77 @@ function FilterTableHeader({
         maxWidth?: number | string;
         maxHeight?: number | string;
     };
-    children: React.ReactNode;
+    filterConfig?: {
+        options?: Array<{ value: string; label: string }>;
+        onSearch?: (search: string) => Promise<Array<{ value: string; label: string }>> | Array<{ value: string; label: string }>;
+        onSelect?: (selected: string | string[]) => void;
+        isSingle?: boolean;
+    };
+    children?: React.ReactNode;
 }) {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-    const { config } = useContext(Config);
-    const { setTableDetails } = useContext(TableDetails);
     const [searchBarValue, setSearchBarValue] = useState("");
+    const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
+    const [selectedValues, setSelectedValues] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (filterConfig?.options) {
+            setFilteredOptions(filterConfig.options);
+            console.log('FilterTableHeader options:', filterConfig.options);
+        } else {
+            setFilteredOptions([]);
+            console.log('FilterTableHeader options are empty or undefined');
+        }
+    }, [filterConfig?.options]);
+
+    useEffect(() => {
+        // Local search filtering if no onSearch handler
+        if (!filterConfig?.onSearch && filterConfig?.options) {
+            if (searchBarValue.trim() === "") {
+                setFilteredOptions(filterConfig.options);
+            } else {
+                const lower = searchBarValue.toLowerCase();
+                setFilteredOptions(
+                    filterConfig.options.filter(
+                        opt => opt.label.toLowerCase().includes(lower)
+                    )
+                );
+            }
+        }
+    }, [searchBarValue, filterConfig?.options, filterConfig?.onSearch]);
 
     async function handleSearch() {
-        if (!config.api?.search) return;
-        const result = await config.api.search(
-            searchBarValue,
-            config.pageSize || defaultPageSize,
-            column
-        );
-        const resolvedResult =
-            result instanceof Promise ? await result : result;
-        const { data, pageSize } = resolvedResult;
-        setTableDetails({
-            data,
-            total: 0,
-            currentPage: 0,
-            pageSize: pageSize || defaultPageSize,
-        });
+        if (filterConfig?.onSearch) {
+            const result = await filterConfig.onSearch(searchBarValue);
+            setFilteredOptions(result);
+        }
+        // If no onSearch, local filtering is handled by useEffect above
     }
+
+    function handleSelect(value: string) {
+        const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
+        if (isSingle) {
+            if (filterConfig?.onSelect) {
+                filterConfig.onSelect(value);
+            }
+            setShowFilterDropdown(false);
+        } else {
+            setSelectedValues((prev) => {
+                if (prev.includes(value)) {
+                    // remove
+                    const updated = prev.filter((v) => v !== value);
+                    if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+                    return updated;
+                } else {
+                    // add
+                    const updated = [...prev, value];
+                    if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+                    return updated;
+                }
+            });
+        }
+    }
+
     return (
         <DismissibleDropdown
             isOpen={showFilterDropdown}
@@ -859,7 +913,40 @@ function FilterTableHeader({
                     setSearchBarValue={setSearchBarValue}
                     onEnterPress={handleSearch}
                 >
-                    {children}
+                    {children ? (
+                        <div>{children}</div>
+                    ) : filteredOptions.length > 0 ? (
+                        <div className="flex flex-col">
+                            {(filterConfig?.isSingle !== false
+                                ? filteredOptions.map((option, idx) => (
+                                    <div
+                                        key={option.value}
+                                        className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
+                                        onClick={() => handleSelect(option.value)}
+                                    >
+                                        <span className="text-[#535862]">{option.label}</span>
+                                    </div>
+                                ))
+                                : filteredOptions.map((option, idx) => (
+                                    <div
+                                        key={option.value}
+                                        className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
+                                    >
+                                        <CustomCheckbox
+                                            id={option.value}
+                                            checked={selectedValues.includes(option.value)}
+                                            label={option.label}
+                                            onChange={() => handleSelect(option.value)}
+                                        />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-4 text-[#EA0A2A] text-sm">
+                            No options available
+                        </div>
+                    )}
                 </FilterDropdown>
             }
         />
