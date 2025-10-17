@@ -1781,6 +1781,15 @@ export const itemList = async (params?: Params) => {
   }
 };
 
+export const updateItemStatus = async ( body: object) => {
+  try {
+    const res = await API.post(`api/master/items/update-status`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  } 
+};
+
 export const addItem = async (payload: object) => {
   try {
     const res = await API.post("/api/master/items/add", payload);
@@ -2224,6 +2233,7 @@ export const pricingHeaderList = async (params?: Params) => {
       params: params,
     });
     return res.data;
+    console.log(res)
   } catch (error: unknown) {
     return handleError(error);
   }
@@ -2599,7 +2609,16 @@ export const exportAgentCustomerData = async (body: object) => {
   }
 };
 
-export const exportCompanyCustomerData = async (body: object) => {
+export const agentCustomerStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/agent_customers/bulk-update-status`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCompanyCustomerData = async (body:object) => {
   try {
     const res = await API.post(`/api/master/companycustomer/export`, body);
     return res.data;
@@ -2608,7 +2627,16 @@ export const exportCompanyCustomerData = async (body: object) => {
   }
 };
 
-export const exportVehicleData = async (body: object) => {
+export const companyCustomerStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/companycustomer/bulk-update-status`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportVehicleData = async (body:object) => {
   try {
     const res = await API.post(`/api/master/vehicle/export`, body);
     return res.data;
@@ -2628,3 +2656,14 @@ export const vehicleStatusUpdate = async (body: object) => {
     return handleError(error);
   }
 };
+
+export const routeStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/master/route/bulk-update-status`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+

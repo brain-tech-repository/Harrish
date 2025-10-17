@@ -52,7 +52,7 @@ export default function Complaint() {
           data: res?.data || [],
           currentPage: res?.pagination?.current_page,
           pageSize: res?.pagination?.per_page,
-          total: res?.pagination?.last_page, // Use last_page for total pages
+          total: res?.pagination?.last_page, 
         };
       } catch (err) {
         setLoading(false);
@@ -200,39 +200,30 @@ export default function Complaint() {
 
         <Table
           refreshKey={refreshKey}
+
           config={{
             api: { list: fetchComplainedFeedback },
             header: {
-              wholeTableActions: [
-                <div key={0} className="flex gap-[12px] relative">
-                  <DismissibleDropdown
-                    isOpen={showDropdown}
-                    setIsOpen={setShowDropdown}
-                    button={<BorderIconButton icon="ic:sharp-more-vert" />}
-                    dropdown={
-                      <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                        <CustomDropdown>
-                          {dropdownDataList.map((link, idx) => (
-                            <div
-                              key={idx}
-                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
-                            >
-                              <Icon
-                                icon={link.icon}
-                                width={link.iconWidth}
-                                className="text-[#717680]"
-                              />
-                              <span className="text-[#181D27] font-[500] text-[16px]">
-                                {link.label}
-                              </span>
-                            </div>
-                          ))}
-                        </CustomDropdown>
-                      </div>
-                    }
-                  />
-                </div>,
+   title: "Complaint Feedback",
+
+  threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    handleExport("csv")
+                  },
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    handleExport("xlsx")
+                  },
+                },
+            
               ],
+            
               searchBar: false,
               columnFilter: true,
               // actions: [
@@ -271,7 +262,7 @@ export default function Complaint() {
                     : "-",
               },
               { key: "type", label: "Type" },
-              { key: "description", label: "Description" },
+            
             ],
             rowSelection: true,
             rowActions: [
@@ -289,10 +280,10 @@ export default function Complaint() {
         />
       </div>
 
-      {/* Image Preview Popup */}
+      Image Preview Popup
       {popupImages.length > 0 && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+          className="fixed inset-0 flex items-center justify-center bg-black/60 z-50 "
           onClick={() => setPopupImages([])}
         >
           <div
