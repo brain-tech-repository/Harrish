@@ -475,6 +475,7 @@ function ColumnFilter() {
                 button={
                     <BorderIconButton
                         icon="lucide:filter"
+                        className="h-[40px]"
                         onClick={() => setShowDropdown(!showDropdown)}
                     />
                 }
@@ -812,6 +813,11 @@ function TableBody() {
                     No data available
                 </div>
             )}
+            {displayedData.length > 0 && selectedColumns.length === 0 && (
+                <div className="p-2 content-center text-center py-[12px] text-[24px] max-h-full min-h-[200px] text-primary">
+                    No Column Selected
+                </div>
+            )}
         </>
     );
 }
@@ -880,8 +886,14 @@ function FilterTableHeader({
     function handleSelect(value: string) {
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
         if (isSingle) {
+            // If already selected, deselect (clear filter)
+            const selectedValue = (filterConfig as any)?.selectedValue;
             if (filterConfig?.onSelect) {
-                filterConfig.onSelect(value);
+                if (selectedValue === value) {
+                    filterConfig.onSelect(""); // Deselect
+                } else {
+                    filterConfig.onSelect(value);
+                }
             }
             setShowFilterDropdown(false);
         } else {
@@ -935,17 +947,18 @@ function FilterTableHeader({
                             />
                         ) : filterConfig?.isSingle !== false ? (
                             filteredOptions.map((option, idx) => {
-                                const [code, value] = option.label.split("-");
-                                return <div
+                                const selectedValue = (filterConfig as any)?.selectedValue;
+                                const isSelected = selectedValue === option.value;
+                                return (
+                                    <div
                                     key={option.value}
-                                    className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
+                                    className={`font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${isSelected ? 'bg-[#F0F0F0] font-semibold' : ''}`}
                                     onClick={() => handleSelect(option.value)}
-                                >
-                                    <span className="text-[#181D27] font-medium">{code}</span>
-                                    <span className="text-[#535862]">{value}</span>
-                                </div>
-                            }
-                            )
+                                    >
+                                        <span className="text-[#535862]">{option.label}</span>
+                                    </div>
+                                );
+                            })
                         ) : (
                             filteredOptions.map((option, idx) => (
                                 <div

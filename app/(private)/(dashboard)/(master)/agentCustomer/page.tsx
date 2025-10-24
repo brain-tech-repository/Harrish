@@ -16,6 +16,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 export default function AgentCustomer() {
+    console.log(useAllDropdownListData());
     const { customerSubCategoryOptions,channelOptions,warehouseOptions,routeOptions } = useAllDropdownListData();
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
@@ -76,6 +77,7 @@ export default function AgentCustomer() {
             onSelect: (selected) => {
                 setSelectedSubCategoryId((prev) => prev === selected ? "" : (selected as string));
             },
+            selectedValue: selectedSubCategoryId,
         },
         showByDefault: true,
     },
@@ -89,14 +91,15 @@ export default function AgentCustomer() {
                 ? (row.outlet_channel as { outlet_channel?: string })
                       .outlet_channel || "-"
                 : "-",
-        filter: {
-            isFilterable: true,
-            width: 320,
-            options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
-            onSelect: (selected) => {
-                setChannelId((prev) => prev === selected ? "" : (selected as string));
-            },
-        },
+                filter: {
+                    isFilterable: true,
+                    width: 320,
+                    options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
+                    onSelect: (selected) => {
+                        setChannelId((prev) => prev === selected ? "" : (selected as string));
+                    },
+                    selectedValue: channelId,
+                },
         
         showByDefault: true,
     },
@@ -121,6 +124,7 @@ export default function AgentCustomer() {
                     onSelect: (selected) => {
                         setWarehouseId((prev) => prev === selected ? "" : (selected as string));
                     },
+                    selectedValue: warehouseId,
                 },
        
         showByDefault: true,
@@ -145,6 +149,7 @@ export default function AgentCustomer() {
             onSelect: (selected) => {
                 setRouteId((prev) => prev === selected ? "" : (selected as string));
             },
+            selectedValue: routeId,
         },
        
         showByDefault: true,
