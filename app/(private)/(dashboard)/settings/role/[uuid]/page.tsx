@@ -123,109 +123,32 @@ export default function AddEditRole() {
             };
           });
 
-          // Start with full baseRows (all menus)
-          const cloneDeep = <T,>(v: T) => JSON.parse(JSON.stringify(v)) as T;
-          let merged: any[] = cloneDeep(baseRows);
-
-          // 1) merge any role.menus shape (if backend returned menus/submenus)
-          if (menusFromRes && menusFromRes.length) {
-            const findMatch = (arr: any[], item: any) =>
-              arr.find((a: any) =>
-                (a.menu && (a.menu.id === item.id || a.menu.uuid === item.uuid || a.menu.osa_code === item.osa_code))
-                || a.id === item.id || a.uuid === item.uuid || a.osa_code === item.osa_code || a.osa_code === item.code
-              );
-
-            merged = merged.map((base: any) => {
-              const incomingItem = findMatch(menusFromRes, base)
-                || menusFromRes.find((r: any) => {
-                  const inner = r.menu ?? r;
-                  return inner?.id === base.id || inner?.uuid === base.uuid || inner?.osa_code === base.osa_code || inner?.osa_code === base.code;
-                });
-              if (!incomingItem) return base;
-
-              const incomingInner = incomingItem.menu ?? incomingItem;
-              const incomingSubs = (Array.isArray(incomingInner.submenu) && incomingInner.submenu) || (Array.isArray(incomingInner.sub_menus) && incomingInner.sub_menus) || [];
-
-              const baseSubs = base.submenu || [];
-              const baseIndex: Record<string, any> = {};
-              const keyOf = (s: any) => String(s.id ?? s.uuid ?? s.osa_code ?? "");
-              baseSubs.forEach((s: any) => (baseIndex[keyOf(s)] = cloneDeep(s)));
-
-              const incomingOnly: any[] = [];
-              incomingSubs.forEach((isub: any) => {
-                const k = keyOf(isub);
-                if (k && baseIndex[k]) {
-                  const mergedSub = { ...baseIndex[k], ...isub };
-                  mergedSub.permissions = Array.isArray(isub.permissions) ? isub.permissions : baseIndex[k].permissions || [];
-                  baseIndex[k] = mergedSub;
-                } else {
-                  const match = Object.values(baseIndex).find((bs: any) => bs.name === isub.name || (isub.menu && isub.menu.id === base.id));
-                  if (match) {
-                    const k2 = keyOf(match);
-                    const mergedSub = { ...match, ...isub };
-                    mergedSub.permissions = Array.isArray(isub.permissions) ? isub.permissions : match.permissions || [];
-                    baseIndex[k2] = mergedSub;
-                  } else {
-                    incomingOnly.push({ ...isub, permissions: Array.isArray(isub.permissions) ? isub.permissions : [] });
-                  }
-                }
-              });
-
-              const mergedSubs = baseSubs.map((s: any) => baseIndex[keyOf(s)]).concat(incomingOnly);
-
-              // exclude incomingInner.name to preserve base.name (or control which wins)
-              const { id: _skipId, name: _skipName, ...incomingRest } = incomingInner || {};
-              return {
-                ...base,
-                ...incomingRest,
-                submenu: mergedSubs,
-              };
+// Simple deterministic merge: map role menus -> submenu permissions by id, then apply to baseRows
+          const roleMenusById = new Map<number, Map<number, Permission[]>>();
+          (menusFromRes || []).forEach((rm: any) => {
+            const menuId = Number(rm.id ?? rm.menu?.id ?? rm.menu_id);
+            if (!Number.isFinite(menuId)) return;
+            const subArr = Array.isArray(rm.submenu) ? rm.submenu : (Array.isArray(rm.menu?.submenu) ? rm.menu.submenu : []);
+            const subMap = new Map<number, Permission[]>();
+            (subArr || []).forEach((s: any) => {
+              const sid = Number(s.id ?? s.submenu_id);
+              if (!Number.isFinite(sid)) return;
+              subMap.set(sid, Array.isArray(s.permissions) ? JSON.parse(JSON.stringify(s.permissions)) : []);
             });
-          }
+            roleMenusById.set(menuId, subMap);
+          });
 
-          // 2) apply role.permissions payload shape:
-          //    permissions: [{ permission_id, menus: [{ menu_id, submenu_id }] }, ...]
-          const permsFromRole = Array.isArray(roleData?.permissions) ? roleData.permissions : [];
-          if (permsFromRole.length) {
-            // get permission_name lookup from dropdowns if available
-            // const dropdown = useAllDropdownListData ? undefined : undefined; // no-op placeholder to avoid lint - we use local permissions below
-            // const allPerms = (typeof window !== "undefined" ? (window as any).__allPermissions : undefined) || []; // fallback - we'll try to derive names from available dropdown later
-            // prefer using local permission list from page scope if available
-            // try to get permission names from menu service dropdown available earlier via hook
-            // (we'll attempt to map using labelOptions.permissions if present)
-            // Build quick lookup for merged menus/submenus
-            const menuIndex = new Map<string, any>();
-            merged.forEach((m: any) => {
-              const mid = String(m.id ?? m.uuid ?? m.osa_code ?? "");
-              menuIndex.set(mid, m);
+          const merged = baseRows.map((base: any) => {
+            const mid = Number(base.id);
+            const subMap = roleMenusById.get(mid);
+            const mergedSubs = (base.submenu || []).map((s: any) => {
+              const sid = Number(s.id);
+              const perms = subMap && subMap.has(sid) ? subMap.get(sid) : (Array.isArray(s.permissions) ? s.permissions : []);
+              return { ...s, permissions: Array.isArray(perms) ? JSON.parse(JSON.stringify(perms)) : [] };
             });
+            return { ...base, submenu: mergedSubs };
+          });
 
-            const permNameForId = (pid: number) => {
-              const found = permissions.find((p: any) => Number(p.id) === Number(pid) || Number(p.permission_id) === Number(pid));
-              if (found) return found.name ?? String(pid);
-              return String(pid);
-            };
-
-            // apply mappings
-            permsFromRole.forEach((pEntry: any) => {
-              const pid = pEntry.permission_id;
-              const pname = pEntry.permission_name ?? permNameForId(pid);
-              const menus = Array.isArray(pEntry.menus) ? pEntry.menus : [];
-              menus.forEach((mmap: any) => {
-                const menuKey = String(mmap.menu_id ?? mmap.menuId ?? mmap.menu);
-                const submenuId = mmap.submenu_id ?? mmap.submenuId ?? mmap.submenu;
-                const menuObj = merged.find((mm: any) => String(mm.id) === menuKey || String(mm.osa_code) === menuKey || String(mm.uuid) === menuKey);
-                if (!menuObj) return;
-                const sub = (menuObj.submenu || []).find((s: any) => String(s.id) === String(submenuId) || String(s.uuid) === String(submenuId));
-                if (!sub) return;
-                sub.permissions = Array.isArray(sub.permissions) ? sub.permissions : [];
-                const exists = sub.permissions.some((pp: any) => Number(pp.permission_id) === Number(pid));
-                if (!exists) sub.permissions.push({ permission_id: pid, permission_name: pname });
-              });
-            });
-          }
-
-          // finally set merged menus
           setRoleTableData(merged);
           // populate Formik initial values from roleData so form fields autofill
           setInitialValues({
@@ -235,7 +158,7 @@ export default function AddEditRole() {
           });
           // compute permission ids from merged structure and store
           const permIdSet = new Set<number>();
-          merged.forEach((m: any) => {
+           merged.forEach((m: any) => {
             (m.submenu || []).forEach((s: any) => {
               (s.permissions || []).forEach((p: any) => {
                 const id = Number(p.permission_id ?? p.id);

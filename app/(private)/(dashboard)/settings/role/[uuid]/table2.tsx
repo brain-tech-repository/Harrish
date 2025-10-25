@@ -8,7 +8,7 @@ import { JSX, useEffect, useMemo, useRef, useState } from "react";
 
 type Permission = { permission_id: number; permission_name: string; [k: string]: any };
 type Submenu = { id?: number | null; uuid?: string | null; osa_code?: string | null; name?: string | null; path?: string | null; permissions?: Permission[]; [k: string]: any };
-export type MenuItem = { id?: number | null; uuid?: string | null; osa_code?: string | null; name?: string | null; path?: string | null; submenu?: Submenu[]; sub_menus?: Submenu[]; menus?: any; [k: string]: any };
+export type MenuItem = { id?: number | null; uuid?: string | null; osa_code?: string | null; name?: string | null; path?: string | null; submenu?: Submenu[]; sub_menus?: Submenu[]; menus?: any; menu?: any; [k: string]: any };
 
 const DEFAULT_PERMS = ["view", "create", "edit", "delete"];
 
@@ -18,10 +18,12 @@ function deepClone<T>(v: T): T {
 
 export default function RolesPermissionTable({
     menus: initialMenus = [],
+    roleMenus = [], // optional role-specific menus (with submenu.permissions)
     activeIndex = 0,
     onMenusChange,
 }: {
-    menus?: MenuItem[];
+    menus?: MenuItem[]; // master / base menus (submenus without permissions)
+    roleMenus?: any[];   // incoming role data menus (may include submenu.permissions)
     activeIndex?: number;
     onMenusChange?: (menus: MenuItem[], permissionIds: number[]) => void;
 }): JSX.Element {
@@ -29,39 +31,72 @@ export default function RolesPermissionTable({
 
     const [menus, setMenus] = useState<MenuItem[]>(Array.isArray(initialMenus) ? deepClone(initialMenus) : []);
     const [refreshKey, setRefreshKey] = useState<number>(0);
-
-    useEffect(() => {
-        if (Array.isArray(initialMenus)) setMenus(deepClone(initialMenus));
-    }, [initialMenus]);
-
-    // prevent notifying parent repeatedly (causes depth exceeded loop)
     const lastSentRef = useRef<string | null>(null);
 
-    // helper: get submenus array for a MenuItem (support wrapper and flat shapes)
-    const getSubmenus = (menuItem: MenuItem): Submenu[] => {
-        if (!menuItem) return [];
-        // wrapper shape: menus: [{ menu: { submenu: [...] } }]
-        const wrapper = Array.isArray(menuItem.menus) && menuItem.menus.length > 0 ? menuItem.menus[0] : undefined;
-        const inner = wrapper?.menu ?? menuItem;
-        return (inner?.submenu ?? inner?.sub_menus ?? []) as Submenu[];
+    // Normalize shape: ensure each item has submenu[] and do not share references.
+    const normalizeMenus = (arr: any[] = []): MenuItem[] =>
+        (arr || []).map((m) => {
+            const subs =
+                (Array.isArray(m.submenu) && m.submenu) ||
+                (m.menu && Array.isArray(m.menu.submenu) && m.menu.submenu) ||
+                (Array.isArray(m.sub_menus) && m.sub_menus) ||
+                (Array.isArray(m.menus?.[0]?.menu?.submenu) && m.menus[0].menu.submenu) ||
+                [];
+            return { ...m, submenu: deepClone(subs) };
+        });
+
+    // Build quick map from roleMenus for applying permissions by menu_id -> submenu_id
+    const buildRoleMap = (rmenus: any[] = []) => {
+        const map = new Map<string, Map<string, Permission[]>>();
+        (rmenus || []).forEach((rm) => {
+            const menuId = String(rm.id ?? rm.menu?.id ?? rm.menu_id ?? rm.menuId ?? "");
+            if (!menuId) return;
+            const subArr = Array.isArray(rm.submenu) ? rm.submenu : (Array.isArray(rm.menu?.submenu) ? rm.menu.submenu : []);
+            const subMap = new Map<string, Permission[]>();
+            (subArr || []).forEach((s: any) => {
+                const sid = String(s.id ?? s.submenu_id ?? s.uuid ?? "");
+                if (sid) subMap.set(sid, Array.isArray(s.permissions) ? deepClone(s.permissions) : []);
+            });
+            map.set(menuId, subMap);
+        });
+        return map;
     };
 
-    // helper: set submenus for a menu item (preserve original shape)
-    const setSubmenusForMenu = (menuItem: MenuItem, newSubs: Submenu[]): MenuItem => {
-        const copy = deepClone(menuItem);
-        const wrapper = Array.isArray(copy.menus) && copy.menus.length > 0 ? copy.menus[0] : undefined;
-        if (wrapper && wrapper.menu) {
-            // keep menu key shape
-            if (wrapper.menu.hasOwnProperty("submenu")) wrapper.menu.submenu = newSubs;
-            else wrapper.menu.sub_menus = newSubs;
-        } else {
-            // flat shape
-            (copy as any).submenu = newSubs;
-            // remove inconsistent field if present
-            if ((copy as any).sub_menus && !(copy as any).submenu) (copy as any).sub_menus = newSubs;
-        }
-        return copy;
-    };
+    useEffect(() => {
+        const base = normalizeMenus(Array.isArray(initialMenus) ? initialMenus : []);
+        const roleMap = buildRoleMap(Array.isArray(roleMenus) ? roleMenus : []);
+
+        // apply permissions from roleMap to base submenus (match by id)
+        const merged = base.map((m) => {
+            const menuId = String(m.id ?? m.menu?.id ?? m.osa_code ?? m.uuid ?? "");
+            const subMap = roleMap.get(menuId);
+            const baseSubs = Array.isArray(m.submenu) ? deepClone(m.submenu) : [];
+            // apply permissions to matching submenus; preserve base order; append incoming-only subs optionally
+            const applied = baseSubs.map((s) => {
+                const sid = String(s.id ?? s.uuid ?? s.osa_code ?? "");
+                if (subMap && subMap.has(sid)) {
+                    return { ...s, permissions: deepClone(subMap.get(sid) || []) };
+                }
+                return s;
+            });
+            // also include role-only submenus that are not present in base (append)
+            if (subMap) {
+                for (const [sid, perms] of subMap) {
+                    const exists = applied.some((x) => String(x.id ?? x.uuid ?? x.osa_code ?? "") === sid);
+                    if (!exists) {
+                        applied.push({ id: isFinite(Number(sid)) ? Number(sid) : undefined, permissions: deepClone(perms) } as Submenu);
+                    }
+                }
+            }
+            return { ...m, submenu: applied };
+        });
+
+        setMenus(merged);
+        // mark initial load as already sent so we don't immediately emit to parent
+        lastSentRef.current = JSON.stringify(merged);
+        setRefreshKey((k) => k + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialMenus, JSON.stringify(roleMenus)]);
 
     const permExistsIn = (perms: Permission[] | undefined, key: string) => {
         if (!Array.isArray(perms)) return false;
@@ -76,7 +111,7 @@ export default function RolesPermissionTable({
     const extractPermissionIds = (ms: MenuItem[]) => {
         const set = new Set<number>();
         for (const r of ms) {
-            const subs = getSubmenus(r);
+            const subs = Array.isArray(r.submenu) ? r.submenu : [];
             for (const s of subs) {
                 const perms = s?.permissions ?? [];
                 for (const p of perms) if (typeof p.permission_id === "number") set.add(p.permission_id);
@@ -103,7 +138,7 @@ export default function RolesPermissionTable({
             const menu = newMenus[idx];
             if (!menu) return prev;
 
-            const subs = getSubmenus(menu);
+            const subs = Array.isArray(menu.submenu) ? menu.submenu : [];
             // derive perm list names
             const permList = Array.isArray(permissions)
                 ? permissions.map((p: any) => String(p.name ?? "").toLowerCase()).filter(Boolean)
@@ -113,10 +148,8 @@ export default function RolesPermissionTable({
                 if (String(s.id) !== String(submenuId)) return s;
                 let perms = Array.isArray(s.permissions) ? deepClone(s.permissions) : [];
                 if (field === "all") {
-                    // check if all currently exist
                     const allCurrently = permList.every((pname) => permExistsIn(perms, pname));
                     if (!allCurrently) {
-                        // add missing
                         for (const pname of permList) {
                             if (!permExistsIn(perms, pname)) {
                                 const id = permissionIdForName(pname) ?? Date.now();
@@ -124,7 +157,6 @@ export default function RolesPermissionTable({
                             }
                         }
                     } else {
-                        // remove all known permList
                         perms = perms.filter((p) => {
                             const pn = String(p.permission_name || "").toLowerCase();
                             return !permList.includes(pn);
@@ -146,8 +178,7 @@ export default function RolesPermissionTable({
                 return { ...s, permissions: perms };
             });
 
-            // set updated submenus back to the menu
-            newMenus[idx] = setSubmenusForMenu(menu, newSubs);
+            newMenus[idx] = { ...menu, submenu: newSubs };
             setRefreshKey((k) => k + 1);
             return newMenus;
         });
@@ -190,7 +221,7 @@ export default function RolesPermissionTable({
     // build table config for submenus of active menu
     const tableConfig = useMemo(() => {
         const active = menus && menus.length > 0 ? menus[Math.max(0, Math.min(activeIndex, menus.length - 1))] : undefined;
-        const subrows = active ? getSubmenus(active) : [];
+        const subrows = active ? (Array.isArray(active.submenu) ? active.submenu : []) : [];
         return {
             columns: [
                 { key: "name", label: "Submenu", width: 200, sticky: "left", align: "left", render: (row: TableDataType) => (row as any).name || (row as any).title || "-" },
@@ -200,7 +231,6 @@ export default function RolesPermissionTable({
                     align: "center",
                     render: (row: TableDataType) => {
                         const r = row as unknown as Submenu;
-                        // determine all-perm for this submenu
                         const permList = Array.isArray(permissions)
                             ? permissions.map((p: any) => String(p.name ?? "").toLowerCase()).filter(Boolean)
                             : DEFAULT_PERMS;
