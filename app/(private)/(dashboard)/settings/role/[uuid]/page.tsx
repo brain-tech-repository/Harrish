@@ -11,9 +11,29 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { addRoles, getRoleById, editRoles, menuList, submenuList } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
-import RolesPermissionTable from "./table2";
+import RolesPermissionTable, { MenuItem } from "./table2";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
+
+interface Permission {
+  permission_id: number;
+  permission_name: string;
+  [key: string]: any;
+}
+
+interface Submenu {
+  id: number;
+  uuid?: string | null;
+  osa_code?: string | null;
+  name: string;
+  path?: string | null;
+  permissions: Permission[];
+  [key: string]: any;
+}
+
+interface RoleFormValues {
+  name: string;
+}
 
 const RoleSchema = Yup.object().shape({
   name: Yup.string().required("Role Name is required."),
@@ -35,13 +55,10 @@ export default function AddEditRole() {
   const [activeTab, onTabClick] = useState(0);
 
   // hold full nested menus -> menu -> submenu -> permissions JSON from table
-  const [roleTableData, setRoleTableData] = useState<any[]>([]);
+  const [roleTableData, setRoleTableData] = useState<MenuItem[]>([]);
   // optional: keep last permission ids computed by table (if needed)
   const [tablePermissionIds, setTablePermissionIds] = useState<number[]>([]);
 
-  type RoleFormValues = {
-    name: string;
-  };
   // console.log(roleTableRows)
   useEffect(() => {
     if (params?.uuid && params.uuid !== "add") {
@@ -288,19 +305,19 @@ export default function AddEditRole() {
                   {roleTableData && roleTableData.length > 0 && <RolesPermissionTable
                     menus={roleTableData}
                     activeIndex={activeTab}
-                    onMenusChange={(updatedMenus: any, permissionIds: any) => {
+                    onMenusChange={(menus: MenuItem[], permissionIds: number[]) => {
                       // update asynchronously to be safe (avoid setState during child render)
                       setTimeout(() => {
                         try {
-                          const incomingJson = JSON.stringify(updatedMenus || []);
+                          const incomingJson = JSON.stringify(menus || []);
                           const currentJson = JSON.stringify(roleTableData || []);
                           if (incomingJson === currentJson) return; // no-op if identical
                         } catch (e) {
                           // ignore stringify errors and proceed to set
                         }
-                        setRoleTableData(updatedMenus || []);
+                        setRoleTableData(menus || []);
                         setTablePermissionIds(permissionIds || []);
-                        console.log("Updated menus from table:", updatedMenus);
+                        console.log("Updated menus from table:", menus);
                         console.log("Updated permission IDs from table:", permissionIds);
                       }, 0);
                     }}

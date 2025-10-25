@@ -13,6 +13,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 
 const columns = [
     { key: "name", label: "Name" },
+    { key: "guard_name", label: "Guard Name" },
     // { key: "permissions", label: "Permissions", render: (data: TableDataType) => {
     //     const row = (data as any)[0];
     //     if (row && typeof row === "object" && "menus" in row) {

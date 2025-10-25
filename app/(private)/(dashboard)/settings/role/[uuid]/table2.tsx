@@ -6,11 +6,9 @@ import Toggle from "@/app/components/toggle";
 import { Icon } from "@iconify-icon/react";
 import { JSX, useEffect, useMemo, useRef, useState } from "react";
 
-type Permission = { permission_id: number; permission_name: string };
-type Submenu = { id?: number | null; uuid?: string | null; name?: string | null; path?: string | null; permissions?: Permission[]; [k: string]: any };
-type MenuInner = { id?: number | null; uuid?: string | null; name?: string | null; path?: string | null; submenu?: Submenu[]; sub_menus?: Submenu[]; [k: string]: any };
-type MenuWrapper = { menu?: MenuInner | null };
-type RoleRow = { id: number | string; uuid?: string | null; name?: string | null; guard_name?: string | null; menus?: MenuWrapper[]; sub_menus?: any };
+type Permission = { permission_id: number; permission_name: string; [k: string]: any };
+type Submenu = { id?: number | null; uuid?: string | null; osa_code?: string | null; name?: string | null; path?: string | null; permissions?: Permission[]; [k: string]: any };
+export type MenuItem = { id?: number | null; uuid?: string | null; osa_code?: string | null; name?: string | null; path?: string | null; submenu?: Submenu[]; sub_menus?: Submenu[]; menus?: any; [k: string]: any };
 
 const DEFAULT_PERMS = ["view", "create", "edit", "delete"];
 
@@ -23,13 +21,13 @@ export default function RolesPermissionTable({
     activeIndex = 0,
     onMenusChange,
 }: {
-    menus?: RoleRow[];
+    menus?: MenuItem[];
     activeIndex?: number;
-    onMenusChange?: (menus: RoleRow[], permissionIds: number[]) => void;
+    onMenusChange?: (menus: MenuItem[], permissionIds: number[]) => void;
 }): JSX.Element {
     const { permissions } = useAllDropdownListData();
 
-    const [menus, setMenus] = useState<RoleRow[]>(Array.isArray(initialMenus) ? deepClone(initialMenus) : []);
+    const [menus, setMenus] = useState<MenuItem[]>(Array.isArray(initialMenus) ? deepClone(initialMenus) : []);
     const [refreshKey, setRefreshKey] = useState<number>(0);
 
     useEffect(() => {
@@ -39,25 +37,28 @@ export default function RolesPermissionTable({
     // prevent notifying parent repeatedly (causes depth exceeded loop)
     const lastSentRef = useRef<string | null>(null);
 
-    // helper: get submenus array for a RoleRow (support both submenu and sub_menus)
-    const getSubmenus = (role: RoleRow): Submenu[] => {
-        if (!role) return [];
-        const mw = Array.isArray(role.menus) && role.menus.length > 0 ? role.menus[0] : undefined;
-        const inner = mw?.menu ?? (role as any);
-        return (inner?.sub_menus ?? inner?.submenu ?? []) as Submenu[];
+    // helper: get submenus array for a MenuItem (support wrapper and flat shapes)
+    const getSubmenus = (menuItem: MenuItem): Submenu[] => {
+        if (!menuItem) return [];
+        // wrapper shape: menus: [{ menu: { submenu: [...] } }]
+        const wrapper = Array.isArray(menuItem.menus) && menuItem.menus.length > 0 ? menuItem.menus[0] : undefined;
+        const inner = wrapper?.menu ?? menuItem;
+        return (inner?.submenu ?? inner?.sub_menus ?? []) as Submenu[];
     };
 
-    // helper: set submenus for a role (preserve field name that existed)
-    const setSubmenusForRole = (role: RoleRow, newSubs: Submenu[]): RoleRow => {
-        const copy = deepClone(role);
-        const mw = Array.isArray(copy.menus) && copy.menus.length > 0 ? copy.menus[0] : undefined;
-        if (mw && mw.menu) {
-            if (mw.menu.hasOwnProperty("sub_menus")) mw.menu.sub_menus = newSubs;
-            else mw.menu.submenu = newSubs;
+    // helper: set submenus for a menu item (preserve original shape)
+    const setSubmenusForMenu = (menuItem: MenuItem, newSubs: Submenu[]): MenuItem => {
+        const copy = deepClone(menuItem);
+        const wrapper = Array.isArray(copy.menus) && copy.menus.length > 0 ? copy.menus[0] : undefined;
+        if (wrapper && wrapper.menu) {
+            // keep menu key shape
+            if (wrapper.menu.hasOwnProperty("submenu")) wrapper.menu.submenu = newSubs;
+            else wrapper.menu.sub_menus = newSubs;
         } else {
-            // fallback to top-level fields
-            if ((copy as any).hasOwnProperty("sub_menus")) (copy as any).sub_menus = newSubs;
-            else (copy as any).submenu = newSubs;
+            // flat shape
+            (copy as any).submenu = newSubs;
+            // remove inconsistent field if present
+            if ((copy as any).sub_menus && !(copy as any).submenu) (copy as any).sub_menus = newSubs;
         }
         return copy;
     };
@@ -72,7 +73,7 @@ export default function RolesPermissionTable({
         });
     };
 
-    const extractPermissionIds = (ms: RoleRow[]) => {
+    const extractPermissionIds = (ms: MenuItem[]) => {
         const set = new Set<number>();
         for (const r of ms) {
             const subs = getSubmenus(r);
@@ -99,10 +100,10 @@ export default function RolesPermissionTable({
         setMenus((prev) => {
             const newMenus = deepClone(prev);
             const idx = Math.max(0, Math.min(activeIndex, newMenus.length - 1));
-            const role = newMenus[idx];
-            if (!role) return prev;
+            const menu = newMenus[idx];
+            if (!menu) return prev;
 
-            const subs = getSubmenus(role);
+            const subs = getSubmenus(menu);
             // derive perm list names
             const permList = Array.isArray(permissions)
                 ? permissions.map((p: any) => String(p.name ?? "").toLowerCase()).filter(Boolean)
@@ -145,8 +146,8 @@ export default function RolesPermissionTable({
                 return { ...s, permissions: perms };
             });
 
-            // set updated submenus back to the role
-            newMenus[idx] = setSubmenusForRole(role, newSubs);
+            // set updated submenus back to the menu
+            newMenus[idx] = setSubmenusForMenu(menu, newSubs);
             setRefreshKey((k) => k + 1);
             return newMenus;
         });
@@ -192,7 +193,7 @@ export default function RolesPermissionTable({
         const subrows = active ? getSubmenus(active) : [];
         return {
             columns: [
-                { key: "name", label: "Submenu", width: 200, sticky: "left", align: "left", render: (row: TableDataType) => (row as any).name || (row as any).title || "-" },
+                { key: "name", label: "Submenu", width: 300, sticky: "left", align: "left", render: (row: TableDataType) => (row as any).name || (row as any).title || "-" },
                 {
                     key: "search",
                     label: <Icon icon="lucide:search" />,
@@ -211,7 +212,6 @@ export default function RolesPermissionTable({
             ],
             rows: subrows,
         };
-        // dependencies
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [permissionColumns, menus, activeIndex, refreshKey]);
 
