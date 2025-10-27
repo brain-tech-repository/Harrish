@@ -666,11 +666,13 @@ export default function Planogram() {
 
                 {/* Selected shelves with image upload */}
                 {values.shelf_id.length > 0 && (
-                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                  <div className="col-span-full w-full mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
                     <h3 className="font-medium mb-4">
                       Selected Shelves ({values.shelf_id.length}):
                     </h3>
-                    <div className="space-y-4">
+
+                    {/* Flex wrap grid style */}
+                    <div className="flex flex-wrap gap-4">
                       {values.shelf_id.map((shelfId) => {
                         const shelf = shelfOptions.find(
                           (s) => s.shelf_id === shelfId
@@ -680,27 +682,25 @@ export default function Planogram() {
                         ]?.[shelf?.cust_id || ""]?.find(
                           (img: ShelfImage) => img.shelf_id === shelfId
                         )?.image;
-                        const existingImage =
-                          process.env.NEXT_PUBLIC_API_URL +
-                          existingImages[shelfId];
+                        const existingImage = existingImages[shelfId];
 
                         return (
                           <div
                             key={shelfId}
-                            className="p-4 bg-white border rounded-lg"
+                            className="flex-1 min-w-[250px] max-w-[320px] p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
                             <div className="mb-3">
-                              <h4 className="font-medium text-lg">
+                              <h4 className="font-medium text-gray-800 text-base truncate">
                                 {shelf?.label}
                               </h4>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-xs text-gray-500">
                                 Shelf ID: {shelfId}
                               </p>
                             </div>
 
-                            <div className="mt-3">
+                            <div className="mt-2">
                               <InputFields
-                                label="Add Image for this Shelf"
+                                label="Add Image"
                                 name={`image_${shelfId}`}
                                 type="file"
                                 onChange={(e) => {
@@ -715,24 +715,24 @@ export default function Planogram() {
                                   );
                                 }}
                               />
-                              <>{console.log(existingImage)}</>
-                              {/* Image Preview */}
+
                               {(currentImage || existingImage) && (
-                                <div className="flex flex-col gap-[10px] mt-2">
+                                <div className="flex flex-col items-start gap-2 mt-3">
                                   <Image
                                     width={128}
                                     height={128}
                                     src={
                                       currentImage
                                         ? URL.createObjectURL(currentImage)
-                                        : existingImage || ""
+                                        : process.env.NEXT_PUBLIC_API_URL +
+                                            existingImage || ""
                                     }
                                     alt={`Shelf ${shelfId}`}
-                                    className="h-32 w-32 object-cover rounded-xl bg-blue-100"
+                                    className="h-32 w-32 object-cover rounded-lg border bg-gray-100"
                                   />
                                   {currentImage && (
                                     <span className="text-xs text-green-600">
-                                      Image: {currentImage.name}
+                                      {currentImage.name}
                                     </span>
                                   )}
                                 </div>
