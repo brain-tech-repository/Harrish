@@ -383,7 +383,7 @@ export default function Planogram() {
   const handleImageUpload = (
     shelfId: number,
     file: File | null,
-    setFieldValue: (field: string, value: unknown) => void,
+    setFieldValue: (field: keyof PlanogramFormValues, value: unknown) => void,
     values: PlanogramFormValues
   ) => {
     const shelfOption = shelfOptions.find((s) => s.shelf_id === shelfId);
@@ -570,7 +570,12 @@ export default function Planogram() {
                     setFieldValue("images", {});
                     fetchCustomers(selectedIds);
                   }}
-                  error={touched.merchendiser_ids && errors.merchendiser_ids}
+                  error={
+                    touched.merchendiser_ids &&
+                    (Array.isArray(errors.merchendiser_ids)
+                      ? errors.merchendiser_ids[0]
+                      : errors.merchendiser_ids)
+                  }
                 />
                 <ErrorMessage
                   name="merchendiser_ids"
@@ -607,7 +612,12 @@ export default function Planogram() {
                     setFieldValue("images", {});
                     shelfPayload && fetchShelves(shelfPayload);
                   }}
-                  error={touched.customer_ids && errors.customer_ids}
+                  error={
+                    touched.customer_ids &&
+                    (Array.isArray(errors.customer_ids)
+                      ? errors.customer_ids[0]
+                      : errors.customer_ids)
+                  }
                 />
                 <ErrorMessage
                   name="customer_ids"
@@ -641,7 +651,12 @@ export default function Planogram() {
                     ).map(Number);
                     setFieldValue("shelf_id", selectedIds);
                   }}
-                  error={touched.shelf_id && errors.shelf_id}
+                  error={
+                    touched.shelf_id &&
+                    (Array.isArray(errors.shelf_id)
+                      ? errors.shelf_id[0]
+                      : errors.shelf_id)
+                  }
                 />
                 <ErrorMessage
                   name="shelf_id"
