@@ -473,6 +473,7 @@ function ColumnFilter() {
                 button={
                     <BorderIconButton
                         icon="lucide:filter"
+                        className="h-[40px]"
                         onClick={() => setShowDropdown(!showDropdown)}
                     />
                 }
@@ -808,6 +809,11 @@ function TableBody() {
             {displayedData.length <= 0 && (
                 <div className="p-2 content-center text-center py-[12px] text-[24px] max-h-full min-h-[200px] text-primary">
                     No data available
+                </div>
+            )}
+            {displayedData.length > 0 && selectedColumns.length === 0 && (
+                <div className="p-2 content-center text-center py-[12px] text-[24px] max-h-full min-h-[200px] text-primary">
+                    No Column Selected
                 </div>
             )}
         </>
