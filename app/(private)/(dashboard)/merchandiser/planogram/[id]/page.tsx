@@ -680,7 +680,9 @@ export default function Planogram() {
                         ]?.[shelf?.cust_id || ""]?.find(
                           (img: ShelfImage) => img.shelf_id === shelfId
                         )?.image;
-                        const existingImage = existingImages[shelfId];
+                        const existingImage =
+                          process.env.NEXT_PUBLIC_API_URL +
+                          existingImages[shelfId];
 
                         return (
                           <div
@@ -723,8 +725,7 @@ export default function Planogram() {
                                     src={
                                       currentImage
                                         ? URL.createObjectURL(currentImage)
-                                        : process.env.NEXT_PUBLIC_API_URL +
-                                            existingImage || ""
+                                        : existingImage || ""
                                     }
                                     alt={`Shelf ${shelfId}`}
                                     className="h-32 w-32 object-cover rounded-xl bg-blue-100"
