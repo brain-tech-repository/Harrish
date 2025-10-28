@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import {
   companyList,
   countryList,
@@ -93,7 +93,11 @@ interface DropdownDataContextType {
   fetchItemSubCategoryOptions: (category_id: string | number) => Promise<void>;
   fetchAreaOptions: (region_id: string | number) => Promise<void>;
   fetchRouteOptions: (warehouse_id: string | number) => Promise<void>;
+  fetchWarehouseOptions: (area_id: string | number) => Promise<void>;
   fetchRegionOptions: (company_id: string | number) => Promise<void>;
+  fetchCustomerCategoryOptions: (outlet_channel_id: string | number) => Promise<void>;
+  fetchCompanyCustomersOptions: (category_id: string | number) => Promise<void>;
+  fetchItemOptions: (category_id: string | number) => Promise<void>;
   labelOptions: { value: string; label: string }[];
   loading: boolean;
 }
@@ -476,7 +480,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     label: c.osa_code && c.name ? `${c.osa_code} - ${c.name}` : (c.name ?? '')
   }));
 
-  const fetchAreaOptions = async (region_id: string | number) => {
+  const fetchAreaOptions = useCallback(async (region_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
     setLoading(false);
     try {
       // call subRegionList with an object matching the expected Params shape
@@ -495,9 +500,75 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRouteOptions = async (warehouse_id: string | number) => {
+  const fetchCustomerCategoryOptions = useCallback(async (outlet_channel_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call customerCategoryList with channel_id
+      const res = await customerCategoryList({ outlet_channel_id: String(outlet_channel_id) });
+      const normalize = (r: unknown): CustomerCategory[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as CustomerCategory[];
+        }
+        if (Array.isArray(r)) return r as CustomerCategory[];
+        return [];
+      };
+      setCustomerCategory(normalize(res));
+    } catch (error) {
+      setCustomerCategory([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchCompanyCustomersOptions = useCallback(async (category_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call getCompanyCustomers with category_id
+      const res = await getCompanyCustomers({ category_id: String(category_id) });
+      const normalize = (r: unknown): CustomerItem[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as CustomerItem[];
+        }
+        if (Array.isArray(r)) return r as CustomerItem[];
+        return [];
+      };
+      setCompanyCustomersData(normalize(res));
+    } catch (error) {
+      setCompanyCustomersData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchItemOptions = useCallback(async (category_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call itemList with category_id to fetch items for this category
+      const res = await itemList({ category_id: String(category_id) });
+      const normalize = (r: unknown): Item[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as Item[];
+        }
+        if (Array.isArray(r)) return r as Item[];
+        return [];
+      };
+      setItem(normalize(res));
+    } catch (error) {
+      setItem([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchRouteOptions =  useCallback(async (warehouse_id: string | number) => {
     setLoading(false);
     try {
       // call routeList with warehouse_id
@@ -516,9 +587,32 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  },[]);
 
-  const fetchRegionOptions = async (company_id: string | number) => {
+  const fetchWarehouseOptions = useCallback(async (area_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call getWarehouse with an object matching the expected Params shape
+      const res = await getWarehouse({ area_id: String(area_id) });
+      const normalize = (r: unknown): WarehouseItem[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as WarehouseItem[];
+        }
+        if (Array.isArray(r)) return r as WarehouseItem[];
+        return [];
+      };
+      setWarehouseListData(normalize(res));
+    } catch (error) {
+      setWarehouseListData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchRegionOptions = useCallback(async (company_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
     setLoading(false);
     try {
       // call regionList with company_id
@@ -537,7 +631,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchItemSubCategoryOptions = async (category_id: string | number) => {
     setLoading(false);
@@ -741,6 +835,10 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         refreshDropdowns,
         fetchAreaOptions,
         fetchRouteOptions,
+        fetchCustomerCategoryOptions,
+        fetchCompanyCustomersOptions,
+        fetchItemOptions,
+        fetchWarehouseOptions,
         loading
       }}
     >

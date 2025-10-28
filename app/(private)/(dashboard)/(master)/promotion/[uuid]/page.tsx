@@ -171,7 +171,7 @@ export default function AddPricing() {
   const rawParam = (params as any)?.uuid ?? (params as any)?.id;
   const id = Array.isArray(rawParam) ? rawParam[0] : rawParam;
   const isEditMode = id !== undefined && id !== "add" && id !== "";
-  const { itemOptions,companyOptions,regionOptions,warehouseOptions,areaOptions,routeOptions,customerTypeOptions,channelOptions,customerCategoryOptions,companyCustomersOptions,itemCategoryOptions } = useAllDropdownListData();
+  const { itemOptions,companyOptions,regionOptions,warehouseOptions,areaOptions,routeOptions,customerTypeOptions,channelOptions,customerCategoryOptions,companyCustomersOptions,itemCategoryOptions, fetchRegionOptions, fetchAreaOptions, fetchWarehouseOptions, fetchRouteOptions, fetchCustomerCategoryOptions, fetchCompanyCustomersOptions, fetchItemOptions } = useAllDropdownListData();
   useEffect(() => {
     async function fetchEditData() {
       if (!isEditMode || !id) return;
@@ -526,8 +526,113 @@ export default function AddPricing() {
     }
   }, [keyValue["Item"]]);
 
-    // bundle_combination is now a single value: "normal" or "slab" stored in promotion.bundle_combination
-  
+  useEffect(() => {
+    const companies = keyValue["Company"];
+    if (Array.isArray(companies) && companies.length > 0) {
+      try {
+        fetchRegionOptions(companies[0]);
+      } catch (err) {
+        console.error("Failed to fetch region options for company", companies[0], err);
+      }
+    }
+  }, [keyValue["Company"], fetchRegionOptions]);
+
+  // When Region selection changes, fetch areas for the first selected region.
+  useEffect(() => {
+    const regions = keyValue["Region"];
+    if (Array.isArray(regions) && regions.length > 0) {
+      try {
+        fetchAreaOptions(regions[0]);
+      } catch (err) {
+        console.error("Failed to fetch area options for region", regions[0], err);
+      }
+    }
+  }, [keyValue["Region"], fetchAreaOptions]);
+
+  // When Area selection changes, fetch warehouses for the first selected area.
+  useEffect(() => {
+    const areas = keyValue["Area"];
+    if (Array.isArray(areas) && areas.length > 0) {
+      try {
+        fetchWarehouseOptions(areas[0]);
+      } catch (err) {
+        console.error("Failed to fetch warehouse options for area", areas[0], err);
+      }
+    }
+  }, [keyValue["Area"], fetchWarehouseOptions]);
+
+  // When Warehouse selection changes, fetch routes for the first selected warehouse.
+  useEffect(() => {
+    const warehouses = keyValue["Warehouse"];
+    if (Array.isArray(warehouses) && warehouses.length > 0) {
+      try {
+        fetchRouteOptions(warehouses[0]);
+      } catch (err) {
+        console.error("Failed to fetch route options for warehouse", warehouses[0], err);
+      }
+    }
+  }, [keyValue["Warehouse"], fetchRouteOptions]);
+
+  // When Channel selection changes, fetch customer categories for the first selected channel.
+  useEffect(() => {
+    const channels = keyValue["Channel"];
+    if (Array.isArray(channels) && channels.length > 0) {
+      try {
+        fetchCustomerCategoryOptions(channels[0]);
+      } catch (err) {
+        console.error("Failed to fetch customer category options for channel", channels[0], err);
+      }
+    }
+  }, [keyValue["Channel"], fetchCustomerCategoryOptions]);
+
+  // When Customer Category selection changes, fetch customers for the first selected category.
+  useEffect(() => {
+    const categories = keyValue["Customer Category"];
+    if (Array.isArray(categories) && categories.length > 0) {
+      try {
+        fetchCompanyCustomersOptions(categories[0]);
+      } catch (err) {
+        console.error("Failed to fetch company customers for category", categories[0], err);
+      }
+    }
+  }, [keyValue["Customer Category"], fetchCompanyCustomersOptions]);
+
+  // When Item Category selection changes, fetch items for the first selected category.
+  useEffect(() => {
+    const itemCategories = keyValue["Item Category"];
+    if (Array.isArray(itemCategories) && itemCategories.length > 0) {
+      try {
+        fetchItemOptions(itemCategories[0]);
+      } catch (err) {
+        console.error("Failed to fetch item options for category", itemCategories[0], err);
+      }
+    }
+  }, [keyValue["Item Category"], fetchItemOptions]);
+
+  // When Item Category selection changes, prefill category on existing table rows
+  useEffect(() => {
+    const itemCategories = keyValue["Item Category"];
+    if (Array.isArray(itemCategories) && itemCategories.length > 0) {
+      const firstCat = itemCategories[0];
+      // Prefill orderTables' promotionGroupName if empty
+      setOrderTables(tables => tables.map(table => table.map(row => ({ ...row, promotionGroupName: row.promotionGroupName || firstCat }))));
+
+      // Prefill offerItems depending on bundle mode. offerItems may be either
+      // OfferItemType[] or OfferItemType[][] (bundle mode uses nested arrays).
+      const isBundle = promotion.bundle_combination === "slab";
+      setOfferItems(prev => {
+        const p: any = prev;
+        if (isBundle && Array.isArray(p) && p.length > 0 && Array.isArray(p[0])) {
+          // nested arrays
+          const next = (p as any[][]).map(arr => arr.map(row => ({ ...row, promotionGroupName: row.promotionGroupName || firstCat })));
+          return next as unknown as OfferItemType[];
+        }
+        // flat array
+        return (p as any[]).map(row => ({ ...row, promotionGroupName: row.promotionGroupName || firstCat })) as OfferItemType[];
+      });
+    }
+  }, [keyValue["Item Category"]]);
+
 
   const renderStepContent = () => {
   switch (currentStep) {
@@ -616,30 +721,61 @@ export default function AddPricing() {
         </ContainerCard>
       );
     case 3:
-      // Helper to update orderItems by itemCode and key for a specific table
-      function updateOrderItem(tableIdx: number, itemCode: string, key: keyof OrderItemType, value: string) {
+      // Helper to update orderItems by row index for a specific table so each row
+      // can store independent values even when itemCode is empty or duplicated.
+      function updateOrderItem(tableIdx: number, rowIdx: string, key: keyof OrderItemType, value: string) {
         setOrderTables((tables) => tables.map((arr, idx) => {
           if (idx !== tableIdx) return arr;
-          const idxFound = arr.findIndex((oi) => oi.itemCode === itemCode);
-          if (idxFound !== -1) {
-            return arr.map((oi, i) => i === idxFound ? { ...oi, [key]: value } : oi);
-          } else {
-            const newItem: OrderItemType = {
-              promotionGroupName: key === "promotionGroupName" ? value : "",
-              itemName: "",
-              itemCode,
-              quantity: key === "quantity" ? value : "",
-              toQuantity: key === "toQuantity" ? value : "",
-              uom: key === "uom" ? value : "CTN",
-              price: key === "price" ? value : "",
-            };
-            return [...arr, newItem];
-          }
+          return arr.map((oi, i) => String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi);
         }));
       }
 
       function updateOfferItem(idx: string, key: keyof OfferItemType, value: string) {
         setOfferItems((arr) => arr.map((oi, i) => String(i) === String(idx) ? { ...oi, [key]: value } : oi));
+      }
+      // Options built from items selected in Step 2
+      const selectedItemOptions = selectedItemDetails.map(d => {
+        const name = String(d.name || d.itemName || d.itemName || d.label || "").trim();
+        const code = String(d.code || d.itemCode || "").trim();
+        const label = code ? `${name} - ${code}` : name;
+        const value = code || name || "";
+        return { label, value };
+      });
+
+      // Helper to set both itemCode and itemName for an order row
+      function selectItemForOrder(tableIdx: number, row: any, value: string) {
+        const item = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value));
+        const name = item ? String(item.name || item.itemName || item.label || "") : "";
+        // update itemCode then itemName using the row index so it applies to the correct row
+        updateOrderItem(tableIdx, row.idx, "itemCode", value);
+        updateOrderItem(tableIdx, row.idx, "itemName", name);
+      }
+
+      // Helper to set both itemCode and itemName for an offer row/table
+      function selectItemForOffer(tableIdx: number, rowIdx: string, value: string) {
+        const item = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value));
+        const name = item ? String(item.name || item.itemName || item.label || "") : "";
+        setOfferItems((prev: any) => {
+          // bundle mode -> nested arrays
+          if (Array.isArray(prev) && prev.length > 0 && Array.isArray(prev[0])) {
+            return prev.map((arr: any[], idx: number) =>
+              idx === tableIdx
+                ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name } : oi))
+                : arr
+            );
+          }
+          // normal single array mode
+          return prev.map((oi: any, i: number) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name } : oi));
+        });
+      }
+
+      // Clamp percentage inputs to 0-100 when discount_apply_on is Percentage
+      function clampPercentInput(val: string) {
+        if (promotion.discount_apply_on !== "1") return val;
+        const n = Number(val);
+        if (Number.isNaN(n)) return "";
+        const clamped = Math.max(0, Math.min(100, n));
+        return String(clamped);
       }
       // Render all order tables
       const renderOrderTables = () => {
@@ -656,7 +792,7 @@ export default function AddPricing() {
               itemCode: "",
               quantity: "",
               toQuantity: "",
-              uom: "CTN",
+              uom: "",
               price: "",
               idx: "0",
             }];
@@ -681,26 +817,26 @@ export default function AddPricing() {
                        
                         {
                           key: "quantity",
-                          label: "From Quantity",
-                          render: (row) => (
+                          label: (promotion.discount_apply_on === "1") ? "Percentage" : "From Quantity",
+                            render: (row) => (
                             <InputFields
                               label=""
                               type="number"
                               value={row.quantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "quantity", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "quantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
                         },
                         {
                           key: "toQuantity",
-                          label: "To Quantity",
+                          label: (promotion.discount_apply_on === "1") ? "To Percentage" : "To Quantity",
                           render: (row) => (
                             <InputFields
                               label=""
                               type="number"
                               value={row.toQuantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "toQuantity", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "toQuantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
@@ -713,11 +849,48 @@ export default function AddPricing() {
                               label=""
                               type="text"
                               value={row.uom || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "uom", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "uom", e.target.value)}
                               width="w-full"
                             />
                           ),
                         },
+                        // If offer_type is Item Range (0), show Item column populated from Step-2 selected items
+                        ...(promotion.offer_type === "0" ? [
+                          {
+                            key: "selectedItem",
+                            label: "Item",
+                            render: (row: any) => (
+                              <InputFields
+                                label=""
+                                type="select"
+                                isSingle={true}
+                                options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
+                                value={row.itemCode || ""}
+                                onChange={e => selectItemForOrder(tableIdx, row, e.target.value)}
+                                width="w-full"
+                              />
+                            ),
+                          }
+                        ] : []),
+
+                        // If offer_type is Category Range (1), show Category column populated from Item Category options
+                        ...(promotion.offer_type === "1" ? [
+                          {
+                            key: "promotionGroupName",
+                            label: "Category",
+                            render: (row: any) => (
+                              <InputFields
+                                label=""
+                                type="select"
+                                isSingle={true}
+                                options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
+                                value={row.promotionGroupName || ""}
+                                onChange={e => updateOrderItem(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                width="w-full"
+                              />
+                            ),
+                          }
+                        ] : []),
                         {
                           key: "free_qty",
                           label: "Free Qty",
@@ -726,22 +899,58 @@ export default function AddPricing() {
                               label=""
                               type="number"
                               value={row.free_qty || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "free_qty", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "free_qty", e.target.value)}
                               width="w-full"
                             />
                           ),
                         },
                       ] : [
                         // Normal mode: simplified order item columns (Qty, UOM)
+                        // If offer_type is Item Range (0), show Item column populated from Step-2 selected items
+                        ...(promotion.offer_type === "0" ? [
+                          {
+                            key: "selectedItem",
+                            label: "Item",
+                            render: (row: any) => (
+                              <InputFields
+                                label=""
+                                type="select"
+                                isSingle={true}
+                                options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
+                                value={row.itemCode || ""}
+                                onChange={e => selectItemForOrder(tableIdx, row, e.target.value)}
+                                width="w-full"
+                              />
+                            ),
+                          }
+                        ] : []),
+
+                        ...(promotion.offer_type === "1" ? [
+                          {
+                            key: "promotionGroupName",
+                            label: "Category",
+                            render: (row: any) => (
+                              <InputFields
+                                label=""
+                                type="select"
+                                isSingle={false}
+                                options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
+                                value={row.promotionGroupName || ""}
+                                onChange={e => updateOrderItem(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                width="w-full"
+                              />
+                            ),
+                          }
+                        ] : []),
                         {
                           key: "quantity",
-                          label: "Qty",
+                          label: (promotion.discount_apply_on === "1") ? "Percentage" : "Qty",
                           render: (row) => (
                             <InputFields
                               label=""
                               type="number"
                               value={row.quantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "quantity", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "quantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
@@ -754,11 +963,12 @@ export default function AddPricing() {
                               label=""
                               type="text"
                               value={row.uom || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "uom", e.target.value)}
+                              onChange={e => updateOrderItem(tableIdx, row.idx, "uom", e.target.value)}
                               width="w-full"
                             />
                           ),
                         },
+                       
                       ]),
                       rowActions: [
                       {
@@ -1173,6 +1383,42 @@ export default function AddPricing() {
                           data={paginatedData}
                           config={{
                             columns: (isBundle ? [
+                                  // If offer_type is Item Range (0), show Item column populated from Step-2 selected items
+                                  ...(promotion.offer_type === "0" ? [
+                                    {
+                                      key: "selectedItem",
+                                      label: "Item",
+                                      render: (row: any) => (
+                                        <InputFields
+                                          label=""
+                                          type="select"
+                                          isSingle={true}
+                                          options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
+                                          value={row.itemCode || ""}
+                                          onChange={e => selectItemForOffer(tableIdx, row.idx, e.target.value)}
+                                          width="w-full"
+                                        />
+                                      ),
+                                    }
+                                  ] : []),
+
+                                  ...(promotion.offer_type === "1" ? [
+                                    {
+                                      key: "promotionGroupName",
+                                      label: "Category",
+                                      render: (row: any) => (
+                                        <InputFields
+                                          label=""
+                                          type="select"
+                                          isSingle={false}
+                                          options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
+                                          value={row.promotionGroupName || ""}
+                                          onChange={e => updateOfferItemTable(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                          width="w-full"
+                                        />
+                                      ),
+                                    }
+                                  ] : []),
                               {
                                 key: "itemName",
                                 label: "Item Name",
@@ -1186,6 +1432,7 @@ export default function AddPricing() {
                                   />
                                 ),
                               },
+                            
                              
                               {
                                 key: "uom",
@@ -1203,6 +1450,42 @@ export default function AddPricing() {
                              
                               
                             ] : [
+                                // If offer_type is Item Range (0), show Item column populated from Step-2 selected items
+                                ...(promotion.offer_type === "0" ? [
+                                  {
+                                    key: "selectedItem",
+                                    label: "Item",
+                                    render: (row: any) => (
+                                      <InputFields
+                                        label=""
+                                        type="select"
+                                        isSingle={true}
+                                        options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
+                                        value={row.itemCode || ""}
+                                        onChange={e => selectItemForOffer(tableIdx, row.idx, e.target.value)}
+                                        width="w-full"
+                                      />
+                                    ),
+                                  }
+                                ] : []),
+
+                                ...(promotion.offer_type === "1" ? [
+                                  {
+                                    key: "promotionGroupName",
+                                    label: "Category",
+                                    render: (row: any) => (
+                                      <InputFields
+                                        label=""
+                                        type="select"
+                                        isSingle={true}
+                                        options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
+                                        value={row.promotionGroupName || ""}
+                                        onChange={e => updateOfferItemTable(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                        width="w-full"
+                                      />
+                                    ),
+                                  }
+                                ] : []),
                               // Normal mode: Offer items simplified to Item Name, UOM, Qty
                               {
                                 key: "itemName",
@@ -1232,13 +1515,13 @@ export default function AddPricing() {
                               },
                               {
                                 key: "toQuantity",
-                                label: "Qty",
+                                label: (promotion.discount_apply_on === "1") ? "Percentage" : "Qty",
                                 render: (row) => (
                                   <InputFields
                                     label=""
                                     type="number"
                                     value={row.toQuantity || ""}
-                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "toQuantity", e.target.value)}
+                                      onChange={e => updateOfferItemTable(tableIdx, row.idx, "toQuantity", clampPercentInput(e.target.value))}
                                     width="w-full"
                                   />
                                 ),

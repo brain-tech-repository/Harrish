@@ -823,7 +823,7 @@ export const getCustomerType = async (params?: Params) => {
 
 type Payload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
@@ -839,7 +839,7 @@ export const addRegion = async (payload: Payload) => {
 
 type ipdatePayload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
