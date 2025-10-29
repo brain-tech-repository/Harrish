@@ -37,16 +37,16 @@ export function handleError(error: unknown) {
 }
 
 export const downloadFile = (fileurl: string, type?: string): void => {
-  const n = fileurl.lastIndexOf('/');
+  const n = fileurl.lastIndexOf("/");
   const final_url = fileurl.substring(n + 1);
-  const link = document.createElement('a');
-  link.setAttribute('target', '_blank');
-  link.setAttribute('href', fileurl);
-  link.setAttribute('download', final_url);
+  const link = document.createElement("a");
+  link.setAttribute("target", "_blank");
+  link.setAttribute("href", fileurl);
+  link.setAttribute("download", final_url);
   document.body.appendChild(link);
   link.click();
   link.remove();
-}
+};
 
 export const login = async (credentials: {
   email: string;
@@ -444,6 +444,33 @@ export const deleteRoute = async (id: string) => {
     const res = await API.delete(`/api/master/route/routes/${id}`);
     return res.data;
   } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const saveRouteVisit = async (body: object) => {
+  try {
+    const res = await API.post("/api/master/route-visits/add", body);
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const updateRouteVisitDetails = async (body: object) => {
+  try {
+    const res = await API.put(`/api/master/route-visits/bulk-update`, body);
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const getRouteVisitDetails = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/master/route-visits/${uuid}`);
+    return res.data;
+  } catch (error) {
     return handleError(error);
   }
 };
@@ -1802,13 +1829,13 @@ export const itemList = async (params?: Params) => {
   }
 };
 
-export const updateItemStatus = async ( body: object) => {
+export const updateItemStatus = async (body: object) => {
   try {
     const res = await API.post(`api/master/items/update-status`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
-  } 
+  }
 };
 
 export const addItem = async (payload: object) => {
@@ -2057,10 +2084,7 @@ export const addSurveyQuestion = async (payload: object) => {
   }
 };
 
-export const UpdateSurveyQuestion = async (
-  id: string,
-  payload: object
-) => {
+export const UpdateSurveyQuestion = async (id: string, payload: object) => {
   try {
     // ✅ Send payload directly
     const res = await API.put(
@@ -2167,9 +2191,15 @@ export const editRoles = async (id: string, payload: roletype) => {
 };
 
 // assign permission to role
-export const assignPermissionsToRole = async (roleId: string, rolePermissionData: object) => {
+export const assignPermissionsToRole = async (
+  roleId: string,
+  rolePermissionData: object
+) => {
   try {
-    const res = await API.post(`/api/settings/roles/assign-permissions/${roleId}`, rolePermissionData);
+    const res = await API.post(
+      `/api/settings/roles/assign-permissions/${roleId}`,
+      rolePermissionData
+    );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -2240,7 +2270,7 @@ export const pricingHeaderList = async (params?: Params) => {
       params: params,
     });
     return res.data;
-    console.log(res)
+    console.log(res);
   } catch (error: unknown) {
     return handleError(error);
   }
@@ -2616,16 +2646,19 @@ export const exportAgentCustomerData = async (body: object) => {
   }
 };
 
-export const agentCustomerStatusUpdate = async (body:object) => {
+export const agentCustomerStatusUpdate = async (body: object) => {
   try {
-    const res = await API.post(`/api/master/agent_customers/bulk-update-status`,body);
+    const res = await API.post(
+      `/api/master/agent_customers/bulk-update-status`,
+      body
+    );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const exportCompanyCustomerData = async (body:object) => {
+export const exportCompanyCustomerData = async (body: object) => {
   try {
     const res = await API.post(`/api/master/companycustomer/export`, body);
     return res.data;
@@ -2634,16 +2667,19 @@ export const exportCompanyCustomerData = async (body:object) => {
   }
 };
 
-export const companyCustomerStatusUpdate = async (body:object) => {
+export const companyCustomerStatusUpdate = async (body: object) => {
   try {
-    const res = await API.post(`/api/master/companycustomer/bulk-update-status`,body);
+    const res = await API.post(
+      `/api/master/companycustomer/bulk-update-status`,
+      body
+    );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const exportVehicleData = async (body:object) => {
+export const exportVehicleData = async (body: object) => {
   try {
     const res = await API.post(`/api/master/vehicle/export`, body);
     return res.data;
@@ -2664,18 +2700,14 @@ export const vehicleStatusUpdate = async (body: object) => {
   }
 };
 
-export const routeStatusUpdate = async (body:object) => {
+export const routeStatusUpdate = async (body: object) => {
   try {
-    const res = await API.post(`/api/master/route/bulk-update-status`,body);
+    const res = await API.post(`/api/master/route/bulk-update-status`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
-
-
-
-
 
 export const promotionHeaderList = async (params?: Params) => {
   try {
@@ -2730,8 +2762,6 @@ export const deletePromotionHeader = async (id: string) => {
   }
 };
 
-
-
 export const promotionDetailList = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/promotion-details/list", {
@@ -2765,7 +2795,10 @@ export const promotionDetailById = async (uuid: string) => {
 
 export const editPromotionDetail = async (uuid: string, payload: object) => {
   try {
-    const res = await API.put(`/api/master/promotion-details/update/${uuid}`, payload);
+    const res = await API.put(
+      `/api/master/promotion-details/update/${uuid}`,
+      payload
+    );
 
     return res.data;
   } catch (error: unknown) {
@@ -2775,7 +2808,9 @@ export const editPromotionDetail = async (uuid: string, payload: object) => {
 
 export const deletePromotionDetail = async (uuid: string) => {
   try {
-    const res = await API.delete(`/api/master/promotion-details/delete/${uuid}`);
+    const res = await API.delete(
+      `/api/master/promotion-details/delete/${uuid}`
+    );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -2831,4 +2866,3 @@ export const editLabel = async (id: string, payload: labelType) => {
     return handleError(error);
   }
 };
-
