@@ -533,7 +533,7 @@ export default function UserAddEdit() {
                     <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
                         <div className="p-6">
                             <h2 className="text-lg font-medium text-gray-800 mb-4">
-                                {steps[currentStep].label}
+                                {steps[currentStep]?.label}
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>

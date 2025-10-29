@@ -122,7 +122,7 @@ export default function User() {
                                 onClick: (data: object) => {
                                     const row = data as TableRow;
                                     router.push(
-                                        `/agentCustomer/${row.uuid}`
+                                        `/user/${row.uuid}`
                                     );
                                 },
                             },
