@@ -1,14 +1,29 @@
 "use client";
 
-import StepperForm, { useStepperForm, StepperStep } from "@/app/components/stepperForm";
+import StepperForm, {
+  useStepperForm,
+  StepperStep,
+} from "@/app/components/stepperForm";
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import FormInputField from "@/app/components/formInputField";
-import { addCompany, getCompanyById, updateCompany, genearateCode, saveFinalCode } from "@/app/services/allApi";
+import {
+  addCompany,
+  getCompanyById,
+  updateCompany,
+  genearateCode,
+  saveFinalCode,
+} from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams, useRouter } from "next/navigation";
 import * as Yup from "yup";
-import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
+import {
+  Formik,
+  Form,
+  FormikHelpers,
+  FormikErrors,
+  FormikTouched,
+} from "formik";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
@@ -66,12 +81,21 @@ const CompanySchema = Yup.object().shape({
   street: Yup.string().required("Street is required"),
   landmark: Yup.string().required("Landmark is required"),
   sub_region: Yup.string().required("Sub Region is required"),
-  primary_contact: Yup.string().required("Primary contact is required").min(9).max(10),
-  toll_free_no: Yup.string().required("Toll free number is required").min(11).max(11),
-    module_access: Yup.string().required("Module is required field "),
-    
-    
 
+  primary_contact: Yup.string()
+    .required("Primary contact is required")
+    .matches(/^[0-9]+$/, "Only numbers are allowed")
+    .min(9, "Must be at least 9 digits")
+    .max(10, "Must be at most 10 digits"),
+
+  toll_free_no: Yup.string()
+    .required("Toll free number is required")
+    .matches(/^[0-9]+$/, "Only numbers are allowed")
+    .min(10, "Must be at least 10 digits")
+    .max(13, "Must be at most 13 digits"),
+
+  module_access: Yup.string().required("Module is required field "),
+ 
 });
 
 // 🔹 Step-wise schemas
@@ -87,10 +111,19 @@ const stepSchemas = [
   }),
 
   Yup.object({
-    primary_contact: Yup.string().required("Primary contact is required").min(9).max(10),
+    primary_contact: Yup.string()
+      .required("Primary contact is required")
+      .matches(/^[0-9]+$/, "Only numbers are allowed")
+      .min(9, "Must be at least 9 digits")
+      .max(10, "Must be at most 10 digits"),
+
     primary_code: Yup.string(),
-    toll_free_no: Yup.string().required("Toll free number is required").min(11).max(11),
-    toll_free_code: Yup.string(),
+    toll_free_no: Yup.string()
+      .required("Toll free number is required")
+      .matches(/^[0-9]+$/, "Only numbers are allowed")
+      .min(10, "Must be at least 9 digits")
+      .max(13, "Must be at most 10 digits"),
+   
     email: Yup.string().email("Invalid email").required("Email is required"),
   }),
 
@@ -125,9 +158,10 @@ const stepSchemas = [
 
 export default function AddEditCompany() {
   const [isOpen, setIsOpen] = useState(false);
-  const [codeMode, setCodeMode] = useState<'auto' | 'manual'>('auto');
-  const [prefix, setPrefix] = useState('');
-  const { regionOptions, areaOptions, onlyCountryOptions, countryCurrency } = useAllDropdownListData();
+  const [codeMode, setCodeMode] = useState<"auto" | "manual">("auto");
+  const [prefix, setPrefix] = useState("");
+  const { regionOptions, areaOptions, onlyCountryOptions, countryCurrency } =
+    useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams();
@@ -189,7 +223,10 @@ export default function AddEditCompany() {
           });
         }
       })();
-    } else if ((params?.id === "add" || !params?.id) && !codeGeneratedRef.current) {
+    } else if (
+      (params?.id === "add" || !params?.id) &&
+      !codeGeneratedRef.current
+    ) {
       codeGeneratedRef.current = true;
       (async () => {
         try {
@@ -218,10 +255,19 @@ export default function AddEditCompany() {
     { id: 5, label: "Additional" },
   ];
 
-  const { currentStep, nextStep, prevStep, markStepCompleted, isStepCompleted, isLastStep } =
-    useStepperForm(steps.length);
+  const {
+    currentStep,
+    nextStep,
+    prevStep,
+    markStepCompleted,
+    isStepCompleted,
+    isLastStep,
+  } = useStepperForm(steps.length);
 
-  const handleSubmit = async (values: CompanyFormValues, { setSubmitting }: FormikHelpers<CompanyFormValues>) => {
+  const handleSubmit = async (
+    values: CompanyFormValues,
+    { setSubmitting }: FormikHelpers<CompanyFormValues>
+  ) => {
     try {
       await CompanySchema.validate(values, { abortEarly: false });
 
@@ -240,10 +286,18 @@ export default function AddEditCompany() {
       if (res.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
       } else {
-        showSnackbar(isEditMode ? "Company Updated Successfully" : "Company Created Successfully", "success");
+        showSnackbar(
+          isEditMode
+            ? "Company Updated Successfully"
+            : "Company Created Successfully",
+          "success"
+        );
         router.push("/company");
         try {
-          await saveFinalCode({ reserved_code: values.company_code, model_name: "company" });
+          await saveFinalCode({
+            reserved_code: values.company_code,
+            model_name: "company",
+          });
         } catch (e) {
           // Optionally handle error, but don't block success
         }
@@ -281,8 +335,10 @@ export default function AddEditCompany() {
                   label="Company Code"
                   name="company_code"
                   value={values.company_code}
-                  onChange={(e) => setFieldValue("company_code", e.target.value)}
-                  disabled={codeMode === 'auto'}
+                  onChange={(e) =>
+                    setFieldValue("company_code", e.target.value)
+                  }
+                  disabled={codeMode === "auto"}
                 />
                 {!isEditMode && (
                   <>
@@ -300,10 +356,10 @@ export default function AddEditCompany() {
                       setPrefix={setPrefix}
                       onSave={(mode, code) => {
                         setCodeMode(mode);
-                        if (mode === 'auto' && code) {
-                          setFieldValue('company_code', code);
-                        } else if (mode === 'manual') {
-                          setFieldValue('company_code', '');
+                        if (mode === "auto" && code) {
+                          setFieldValue("company_code", code);
+                        } else if (mode === "manual") {
+                          setFieldValue("company_code", "");
                         }
                       }}
                     />
@@ -316,11 +372,19 @@ export default function AddEditCompany() {
                   label="Company Name"
                   name="company_name"
                   value={values.company_name}
-                  onChange={(e) => setFieldValue("company_name", e.target.value)}
-                  error={touched.company_name && errors.company_name}
+                  onChange={(e) =>
+                    setFieldValue("company_name", e.target.value)
+                  }
+                  error={
+                    errors?.company_name && touched.company_name
+                      ? errors.company_name
+                      : false
+                  }
                 />
-                {errors.company_name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.company_name}</p>
+                {errors?.company_name && touched?.company_name && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.company_name}
+                  </p>
                 )}
               </div>
 
@@ -663,7 +727,14 @@ export default function AddEditCompany() {
         validationSchema={CompanySchema}
         onSubmit={handleSubmit}
       >
-        {({ values, setFieldValue, errors, touched, setTouched, handleSubmit: formikSubmit }) => {
+        {({
+          values,
+          setFieldValue,
+          errors,
+          touched,
+          setTouched,
+          handleSubmit: formikSubmit,
+        }) => {
           const handleNextStep = async () => {
             try {
               const schema = stepSchemas[currentStep - 1];
@@ -689,9 +760,12 @@ export default function AddEditCompany() {
           return (
             <Form>
               <StepperForm
-                steps={steps.map((s) => ({ ...s, isCompleted: isStepCompleted(s.id) }))}
+                steps={steps.map((s) => ({
+                  ...s,
+                  isCompleted: isStepCompleted(s.id),
+                }))}
                 currentStep={currentStep}
-                onStepClick={() => { }}
+                onStepClick={() => {}}
                 onBack={prevStep}
                 onNext={handleNextStep}
                 onSubmit={() => formikSubmit()}

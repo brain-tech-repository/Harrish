@@ -2203,6 +2203,17 @@ export const permissionListById = async (id: string, params?: Params) => {
   }
 };
 
+
+
+export const rolepermissionListById = async (id: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/roles/permissions/${id}`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 type permissionType = {
   name: string;
 };

@@ -1,7 +1,5 @@
 
 "use client";
-// Reusable component for single-select filter dropdowns with highlight/toggle
-
 
 import SearchBar from "./searchBar";
 import { Icon } from "@iconify-icon/react";

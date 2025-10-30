@@ -9,6 +9,11 @@ import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { itemList,addPromotionHeader ,promotionDetailById,promotionHeaderById} from "@/app/services/allApi";
+import InputFields from "@/app/components/inputFields";
+import Table from "@/app/components/customTable";
+import { useRouter } from "next/navigation";
+import CustomCheckbox from "@/app/components/customCheckbox";
+import * as yup from "yup";
 
 type KeyComboType = {
   Location: string[];
@@ -23,25 +28,24 @@ const initialKeys: KeyGroup[] = [
     options: [
       { id: "1", label: "Company", isSelected: false },
       { id: "2", label: "Region", isSelected: false },
-      { id: "3", label: "Warehouse", isSelected: false },
       { id: "4", label: "Area", isSelected: false },
+      { id: "3", label: "Warehouse", isSelected: false },
       { id: "5", label: "Route", isSelected: false },
     ],
   },
   {
     type: "Customer",
     options: [
-      { id: "6", label: "Customer Type", isSelected: false },
-      { id: "7", label: "Channel", isSelected: false },
-      { id: "8", label: "Customer Category", isSelected: false },
-      { id: "9", label: "Customer", isSelected: false },
+      { id: "6", label: "Channel", isSelected: false },
+      { id: "7", label: "Customer Category", isSelected: false },
+      { id: "8", label: "Customer", isSelected: false },
     ],
   },
   {
     type: "Item",
     options: [
-      { id: "10", label: "Item Category", isSelected: false },
-      { id: "11", label: "Item", isSelected: false },
+      { id: "9", label: "Item Category", isSelected: false },
+      { id: "10", label: "Item", isSelected: false },
     ],
   },
 ];
@@ -159,17 +163,14 @@ function SelectKeyCombinationInline({ keyCombo, setKeyCombo }: { keyCombo: KeyCo
     </ContainerCard>
   );
 }
-// --- End SelectKeyCombination component ---
-import InputFields from "@/app/components/inputFields";
-import Table from "@/app/components/customTable";
-import { useRouter } from "next/navigation";
-import CustomCheckbox from "@/app/components/customCheckbox";
-import * as yup from "yup";
+
+
 
 export default function AddPricing() {
   const params = useParams();
-  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const isEditMode = id !== undefined && id !== "add";
+  const rawParam = (params as any)?.uuid ?? (params as any)?.id;
+  const id = Array.isArray(rawParam) ? rawParam[0] : rawParam;
+  const isEditMode = id !== undefined && id !== "add" && id !== "";
   const { itemOptions,companyOptions,regionOptions,warehouseOptions,areaOptions,routeOptions,customerTypeOptions,channelOptions,customerCategoryOptions,companyCustomersOptions,itemCategoryOptions } = useAllDropdownListData();
   useEffect(() => {
     async function fetchEditData() {
@@ -181,13 +182,12 @@ export default function AddPricing() {
         if (headerRes && typeof headerRes === "object") {
           setPromotion(s => ({
             ...s,
-            itemName: headerRes.name || "",
-            startDate: headerRes.start_date || "",
-            endDate: headerRes.end_date || "",
-            order_type: headerRes.order_type || "",
+            itemName: headerRes.promotion_name || "",
+            from_date: headerRes.from_date || "",
+            to_date: headerRes.to_date || "",
             offer_type: headerRes.offer_type || "",
-            type: headerRes.type || "",
-            discount_type: headerRes.discount_type || "",
+            // type: headerRes.type || "",
+            // discount_type: headerRes.discount_type || "",
             discount_apply_on: headerRes.discount_apply_on || "",
             bundle_combination: headerRes.bundle_combination || s.bundle_combination || "",
             status: headerRes.status !== undefined ? String(headerRes.status) : s.status,
@@ -219,22 +219,17 @@ export default function AddPricing() {
   const [loading, setLoading] = useState(false);
   const validateStep = (step: number) => {
     if (step === 1) {
-      return (
-        keyCombo.Location.length > 0 &&
-        keyCombo.Customer.length > 0 &&
-        keyCombo.Item.length > 0
-      );
+      // Only require the Item key to be selected. Other key groups (Location, Customer)
+      // are optional per request.
+      return keyCombo.Item.length > 0;
     }
     if (step === 2) {
-      for (const locKey of keyCombo.Location) {
-        if (!keyValue[locKey] || keyValue[locKey].length === 0) return false;
-      }
-      for (const custKey of keyCombo.Customer) {
-        if (!keyValue[custKey] || keyValue[custKey].length === 0) return false;
-      }
-      for (const itemKey of keyCombo.Item) {
-        if (!keyValue[itemKey] || keyValue[itemKey].length === 0) return false;
-      }
+      // Only require Item Category and Item values in Key Value step.
+      // If these selects are present they must have at least one selection.
+      const itemCategoryVals = keyValue["Item Category"] || [];
+      const itemVals = keyValue["Item"] || [];
+      if (!Array.isArray(itemCategoryVals) || itemCategoryVals.length === 0) return false;
+      if (!Array.isArray(itemVals) || itemVals.length === 0) return false;
       return true;
     }
     if (step === 3) {
@@ -255,135 +250,194 @@ export default function AddPricing() {
   };
 
   const router = useRouter();
-  const pricingValidationSchema = yup.object().shape({
-    name: yup.string().required("Name is required"),
-    start_date: yup.string().required("Start date is required"),
-    end_date: yup.string().required("End date is required"),
-    item: yup.array().of(yup.string()).min(1, "At least one item is required"),
-    key: yup.object({
-      Location: yup.array().of(yup.string()).min(1, "Location key required"),
-      Customer: yup.array().of(yup.string()).min(1, "Customer key required"),
-      Item: yup.array().of(yup.string()).min(1, "Item key required"),
-    })
-  });
-
+ const pricingValidationSchema = yup.object().shape({
+  // Only validate selected items at payload level. The stricter rule for Item Category
+  // and Item selections in Key Value step is enforced separately in the UI validation
+  // (validateStep and pre-submit checks).
+  item: yup.array().of(yup.string()).min(1, "At least one item is required"),
+});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const clearErrors = () => setErrors({});
 
-  const handleSubmit = async () => {
-    clearErrors();
-        const initialKeys = [
-          {
-            type: "Location",
-            options: [
-              { id: "1", label: "Company", isSelected: false },
-              { id: "2", label: "Region", isSelected: false },
-              { id: "3", label: "Warehouse", isSelected: false },
-              { id: "4", label: "Area", isSelected: false },
-              { id: "5", label: "Route", isSelected: false },
-            ],
-          },
-          {
-            type: "Customer",
-            options: [
-              { id: "6", label: "Customer Type", isSelected: false },
-              { id: "7", label: "Channel", isSelected: false },
-              { id: "8", label: "Customer Category", isSelected: false },
-              { id: "9", label: "Customer", isSelected: false },
-            ],
-          },
-          {
-            type: "Item",
-            options: [
-              { id: "10", label: "Item Category", isSelected: false },
-              { id: "11", label: "Item", isSelected: false },
-            ],
-          },
-        ];
-        function getKeyIds(type: string, selectedLabels: string[]): string[] {
-          const group = initialKeys.find(g => g.type === type);
-          if (!group) return [];
-          return selectedLabels.map((label: string) => {
-            const found = group.options.find(opt => opt.label === label);
-            return found ? found.id : label;
-          });
-        }
+ const handleSubmit = async () => {
+  clearErrors();
+  
+  const initialKeys = [
+    {
+      type: "Location",
+      options: [
+        { id: "1", label: "Company", isSelected: false },
+        { id: "2", label: "Region", isSelected: false },
+        { id: "3", label: "Warehouse", isSelected: false },
+        { id: "4", label: "Area", isSelected: false },
+        { id: "5", label: "Route", isSelected: false },
+      ],
+    },
+    {
+      type: "Customer",
+      options: [
+        { id: "6", label: "Channel", isSelected: false },
+        { id: "7", label: "Customer Category", isSelected: false },
+        { id: "8", label: "Customer", isSelected: false },
+      ],
+    },
+    {
+      type: "Item",
+      options: [
+        { id: "9", label: "Item Category", isSelected: false },
+        { id: "10", label: "Item", isSelected: false },
+      ],
+    },
+  ];
 
-        const description = [
-          ...getKeyIds("Location", keyCombo.Location),
-          ...getKeyIds("Customer", keyCombo.Customer),
-          ...getKeyIds("Item", keyCombo.Item)
-        ];
+  function getKeyIds(type: string, selectedLabels: string[]): string[] {
+    const group = initialKeys.find(g => g.type === type);
+    if (!group) return [];
+    return selectedLabels.map((label: string) => {
+      const found = group.options.find(opt => opt.label === label);
+      return found ? found.id : label;
+    });
+  }
 
-        const selectedItemIds = keyValue["Item"] || [];
-        let promotionDetails: any[] = [];
-        if (Array.isArray(offerItems) && Array.isArray(offerItems[0])) {
-          promotionDetails = offerItems.flat();
-        } else {
-          promotionDetails = offerItems;
-        }
+  // ✅ Fix: Join description IDs properly as comma-separated string
+  const descriptionIds = [
+    ...getKeyIds("Location", keyCombo.Location),
+    ...getKeyIds("Customer", keyCombo.Customer),
+    ...getKeyIds("Item", keyCombo.Item)
+  ];
+  const description = descriptionIds.join(",");
 
-        const payload = {
-          ...promotion,
-          name: promotion.itemName,
-          start_date: promotion.startDate,
-          end_date: promotion.endDate,
-          status: promotion.status,
-          order_type: promotion.order_type,
-          offer_type: promotion.offer_type,
-          type: promotion.type,
-          discount_type: promotion.discount_type,
-          discount_apply_on: promotion.discount_apply_on,
-          bundle_combination: promotion.bundle_combination,
-          item: selectedItemIds,
-          description,
-          pricing: selectedItemIds.map(itemId => {
-            let itemData = selectedItemDetails.find(item => String(item.code || item.itemCode) === String(itemId));
-            if (!itemData) {
-              itemData = itemOptions.find(opt => String(opt.value) === String(itemId));
-            }
-            let itemCode = itemId;
-            if (itemData) {
-              if (itemData.code) itemCode = itemData.code;
-              else if (itemData.itemCode) itemCode = itemData.itemCode;
-              else if (itemData.label) {
-                const labelParts = String(itemData.label).split(" - ");
-                itemCode = labelParts.length > 1 ? labelParts[0] : String(itemData.label);
-              }
-            }
-            const orderItem = orderTables.flat().find((oi: any) => String(oi.itemCode) === String(itemCode));
-            return {
-              item_id: itemId,
-              price: orderItem ? orderItem.price : ""
-            };
-          }),
-          promotion_details: promotionDetails,
-        };
-    try {
-      await pricingValidationSchema.validate(payload, { abortEarly: false });
-      setLoading(true);
-      const res = await addPromotionHeader(payload);
-      if (res?.error) {
-        showSnackbar(res.data?.message || "Failed to submit Promotion", "error");
-      } else {
-        showSnackbar(isEditMode ? "Promotion updated successfully" : "Promotion added successfully", "success");
-        router.push("/promotion");
+  const selectedItemIds = keyValue["Item"] || [];
+  
+  // ✅ Fix: Flatten promotion details properly
+  let promotionDetails: any[] = [];
+  if (Array.isArray(offerItems) && offerItems.length > 0 && Array.isArray(offerItems[0])) {
+    promotionDetails = offerItems.flat();
+  } else {
+    promotionDetails = offerItems;
+  }
+
+  const payload = {
+    promotion_name: promotion.itemName || "",
+    from_date: promotion.startDate || "",
+    to_date: promotion.endDate || "",
+    status: promotion.status || "1",
+    offer_type: promotion.offer_type || "",
+    // type: promotion.type || "",
+    // discount_type: promotion.discount_type || "",
+    discount_apply_on: promotion.discount_apply_on || "",
+    bundle_combination: promotion.bundle_combination || "",
+    item: selectedItemIds,
+    description: description,
+    
+    // ✅ Fix: Ensure pricing array structure
+    pricing: selectedItemIds.map(itemId => {
+      let itemData = selectedItemDetails.find(item => 
+        String(item.code || item.itemCode) === String(itemId)
+      );
+      if (!itemData) {
+        itemData = itemOptions.find(opt => String(opt.value) === String(itemId));
       }
-      setLoading(false);
-    } catch (err) {
-      setLoading(false);
-      if (err && typeof err === "object" && "name" in err && err.name === "ValidationError" && Array.isArray((err as yup.ValidationError).inner)) {
-        const formErrors: Record<string, string> = {};
-        (err as yup.ValidationError).inner.forEach((e: yup.ValidationError) => {
-          if (e.path) formErrors[e.path] = e.message;
-        });
-        setErrors(formErrors);
-        showSnackbar("Please fix validation errors before proceeding", "error");
-      } else {
-        showSnackbar(isEditMode ? "Failed to update promotion" : "Failed to add promotion", "error");
+
+      let itemCode = itemId;
+      if (itemData) {
+        if (itemData.code) itemCode = itemData.code;
+        else if (itemData.itemCode) itemCode = itemData.itemCode;
+        else if (itemData.label) {
+          const labelParts = String(itemData.label).split(" - ");
+          itemCode = labelParts.length > 1 ? labelParts[0] : String(itemData.label);
+        }
       }
+
+      const orderItem = orderTables.flat().find(
+        (oi: any) => String(oi.itemCode) === String(itemCode)
+      );
+
+      return {
+        item_id: String(itemId),
+        price: orderItem ? Number(orderItem.price) || 0 : 0,
+      };
+    }),
+
+    // ✅ Fix: Map promotion_details with correct field names
+    promotion_details: (promotionDetails || []).map(detail => ({
+      lower_qty: Number(detail.quantity || detail.lower_qty) || 0,
+      upper_qty: Number(detail.toQuantity || detail.upper_qty) || 0,
+      free_qty: Number(detail.free_qty || detail.toQuantity) || 0,
+      uom: detail.uom || "CTN",
+      promotion_group_name: detail.promotionGroupName || "",
+    })),
+
+    // ✅ Add key object for validation
+    key: {
+      Location: keyCombo.Location,
+      Customer: keyCombo.Customer,
+      Item: keyCombo.Item,
     }
   };
+
+  try {
+    // Pre-submit: ensure Item Category and Item key-values are present
+    const missingErrors: Record<string, string> = {};
+    if (!keyValue["Item Category"] || keyValue["Item Category"].length === 0) {
+      missingErrors["Item Category"] = "Item Category is required";
+    }
+    if (!keyValue["Item"] || keyValue["Item"].length === 0) {
+      missingErrors["Item"] = "Item is required";
+    }
+    if (Object.keys(missingErrors).length > 0) {
+      setErrors(missingErrors);
+      showSnackbar("Please fill Item Category and Item before submitting", "error");
+      return;
+    }
+
+    // ✅ Validate payload-level required pieces (items)
+    await pricingValidationSchema.validate(payload, { abortEarly: false });
+    
+    setLoading(true);
+    const res = await addPromotionHeader(payload);
+    
+    if (res?.error) {
+      showSnackbar(res.data?.message || "Failed to submit Promotion", "error");
+    } else {
+      showSnackbar(
+        isEditMode ? "Promotion updated successfully" : "Promotion added successfully", 
+        "success"
+      );
+      router.push("/promotion");
+    }
+    setLoading(false);
+  } catch (err) {
+    setLoading(false);
+    
+    if (err && typeof err === "object" && "name" in err && err.name === "ValidationError") {
+      const formErrors: Record<string, string> = {};
+      const validationError = err as yup.ValidationError;
+      
+      if (Array.isArray(validationError.inner)) {
+        validationError.inner.forEach((e: yup.ValidationError) => {
+          if (e.path) {
+            formErrors[e.path] = e.message;
+            console.error(`Validation error at ${e.path}:`, e.message);
+          }
+        });
+      }
+      
+      setErrors(formErrors);
+      showSnackbar("Please fix validation errors before proceeding", "error");
+      
+      // Log which fields failed for debugging
+      console.log("Validation errors:", formErrors);
+    } else {
+      console.error("Submit error:", err);
+      showSnackbar(
+        isEditMode ? "Failed to update promotion" : "Failed to add promotion", 
+        "error"
+      );
+    }
+  }
+};
+
 
   type KeyComboType = {
     Location: string[];
@@ -402,12 +456,11 @@ export default function AddPricing() {
     itemName: "",
     startDate: "",
     endDate: "",
-    order_type: "",
     offer_type: "",
-    type: "",
-    discount_type: "",
+    // type: "",
+    // discount_type: "",
     discount_apply_on : "",
-    bundle_combination:"",
+    bundle_combination:"normal",
     status: "1", 
   });
 
@@ -419,6 +472,7 @@ export default function AddPricing() {
     toQuantity: string;
     uom: string;
     price: string;
+    free_qty?: string;
     type?: string;
     idx?: string;
   };
@@ -433,7 +487,7 @@ export default function AddPricing() {
   };
   const [orderTables, setOrderTables] = useState<OrderItemType[][]>([
     [
-      { promotionGroupName: "", itemName: "", itemCode: "", quantity: "", toQuantity: "", uom: "CTN", price: "" },
+      { promotionGroupName: "", itemName: "", itemCode: "", quantity: "", toQuantity: "", uom: "CTN", price: "", free_qty: "" },
     ]
   ]);
   const [offerItems, setOfferItems] = useState<OfferItemType[]>([
@@ -472,16 +526,7 @@ export default function AddPricing() {
     }
   }, [keyValue["Item"]]);
 
-    const handleCheckboxChange = (value: string, isChecked: boolean) => {
-      const selected = (promotion.bundle_combination || "").split(",").filter(Boolean);
-      let updated: string[];
-      if (isChecked) {
-        updated = [...new Set([...selected, value])];
-      } else {
-        updated = selected.filter((v) => v !== value);
-      }
-      setPromotion(s => ({ ...s, bundle_combination: updated.join(",") }));
-    };
+    // bundle_combination is now a single value: "normal" or "slab" stored in promotion.bundle_combination
   
 
   const renderStepContent = () => {
@@ -498,7 +543,6 @@ export default function AddPricing() {
         Route: routeOptions,
       };
       const customerDropdownMap: Record<string, DropdownOption[]> = {
-        "Customer Type": customerTypeOptions,
         Channel: channelOptions,
         "Customer Category": customerCategoryOptions,
         Customer: companyCustomersOptions,
@@ -598,8 +642,9 @@ export default function AddPricing() {
         setOfferItems((arr) => arr.map((oi, i) => String(i) === String(idx) ? { ...oi, [key]: value } : oi));
       }
       // Render all order tables
-      const renderOrderTables = () => (
-        orderTables.map((orderItems, tableIdx) => {
+      const renderOrderTables = () => {
+        const isBundle = promotion.bundle_combination === "slab";
+        return orderTables.map((orderItems, tableIdx) => {
           let itemsData = orderItems.map((orderItem, idx) => ({
             ...orderItem,
             idx: String(idx),
@@ -631,138 +676,109 @@ export default function AddPricing() {
                 <Table
                   data={paginatedData}
                   config={{
-                    columns: [
-                      ...(promotion.bundle_combination?.split(",").includes("bundle_combination") ? [
+                      columns: (isBundle ? [
+                        // Slab (bundle) mode: keep existing detailed columns
+                       
                         {
-                          key: "type",
-                          label: "Type",
-                          render: (row: any) => (
-                            <>
-                              <InputFields
-                                label=""
-                                type="text"
-                                value={row.type || ""}
-                                onChange={e => updateOrderItem(tableIdx, row.itemCode, "type", e.target.value)}
-                                width="w-full"
-                              />
-                              {promotion.bundle_combination?.split(",").includes("bundle_combination") && row.idx === "0" && (
-                                <button
-                                  type="button"
-                                  className="flex items-center gap-2 mt-2 px-3 py-1 rounded bg-[#ffffff] text-[#EA0A2A] font-semibold hover:bg-[#FFF0F2]"
-                                  onClick={() => {
-                                    setOrderTables(tables => tables.map((arr, idx) => idx === tableIdx ? ([
-                                      ...arr,
-                                      {
-                                        promotionGroupName: "",
-                                        itemName: "",
-                                        itemCode: "",
-                                        quantity: "",
-                                        toQuantity: "",
-                                        uom: "CTN",
-                                        price: ""
-                                      }
-                                    ]) : arr));
-                                  }}
-                                >
-                                  <Icon icon="material-symbols:add-circle-outline" width={20} />
-                                  Add Detail
-                                </button>
-                              )}
-                            </>
+                          key: "quantity",
+                          label: "From Quantity",
+                          render: (row) => (
+                            <InputFields
+                              label=""
+                              type="number"
+                              value={row.quantity || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "quantity", e.target.value)}
+                              width="w-full"
+                            />
                           ),
                         },
-                      ] : []),
-                      {
-                        key: "promotionGroupName",
-                        label: "Promotion Group Name",
-                        render: (row) => (
-                          <>
-                          <div>
+                        {
+                          key: "toQuantity",
+                          label: "To Quantity",
+                          render: (row) => (
+                            <InputFields
+                              label=""
+                              type="number"
+                              value={row.toQuantity || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "toQuantity", e.target.value)}
+                              width="w-full"
+                            />
+                          ),
+                        },
+                        {
+                          key: "uom",
+                          label: "UOM",
+                          render: (row) => (
                             <InputFields
                               label=""
                               type="text"
-                              value={row.promotionGroupName || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "promotionGroupName", e.target.value)}
+                              value={row.uom || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "uom", e.target.value)}
                               width="w-full"
                             />
-                          </div>
-                         
-                          </>
-                        ),
-                      },
-                      {
-                        key: "quantity",
-                        label: "From Quantity",
-                        render: (row) => (
-                          <InputFields
-                            label=""
-                            type="number"
-                            value={row.quantity || ""}
-                            onChange={e => updateOrderItem(tableIdx, row.itemCode, "quantity", e.target.value)}
-                            width="w-full"
-                          />
-                        ),
-                      },
-                      {
-                        key: "toQuantity",
-                        label: "To Quantity",
-                        render: (row) => (
-                          <InputFields
-                            label=""
-                            type="number"
-                            value={row.toQuantity || ""}
-                            onChange={e => updateOrderItem(tableIdx, row.itemCode, "toQuantity", e.target.value)}
-                            width="w-full"
-                          />
-                        ),
-                      },
-                      {
-                        key: "uom",
-                        label: "UOM",
-                        render: (row) => (
-                          <InputFields
-                            label=""
-                            type="number"
-                            value={row.uom || ""}
-                            onChange={e => updateOrderItem(tableIdx, row.itemCode, "uom", e.target.value)}
-                            width="w-full"
-                          />
-                        ),
-                      },
-                      {
-                        key: "price",
-                        label: "Price",
-                        render: (row) => (
-                          <InputFields
-                            label=""
-                            type="number"
-                            value={row.price || ""}
-                            onChange={e => updateOrderItem(tableIdx, row.itemCode, "price", e.target.value)}
-                            width="w-full"
-                          />
-                        ),
-                      },
-                    ],
-                    rowActions: [
+                          ),
+                        },
+                        {
+                          key: "free_qty",
+                          label: "Free Qty",
+                          render: (row) => (
+                            <InputFields
+                              label=""
+                              type="number"
+                              value={row.free_qty || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "free_qty", e.target.value)}
+                              width="w-full"
+                            />
+                          ),
+                        },
+                      ] : [
+                        // Normal mode: simplified order item columns (Qty, UOM)
+                        {
+                          key: "quantity",
+                          label: "Qty",
+                          render: (row) => (
+                            <InputFields
+                              label=""
+                              type="number"
+                              value={row.quantity || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "quantity", e.target.value)}
+                              width="w-full"
+                            />
+                          ),
+                        },
+                        {
+                          key: "uom",
+                          label: "UOM",
+                          render: (row) => (
+                            <InputFields
+                              label=""
+                              type="text"
+                              value={row.uom || ""}
+                              onChange={e => updateOrderItem(tableIdx, row.itemCode, "uom", e.target.value)}
+                              width="w-full"
+                            />
+                          ),
+                        },
+                      ]),
+                      rowActions: [
                       {
                         icon: "material-symbols:add-circle-outline",
                         onClick: () => {
-                          if (promotion.bundle_combination?.split(",").includes("bundle_combination")) {
-                            // Add a new table
-                            setOrderTables(tables => ([
-                              ...tables,
-                              [
-                                {
-                                  promotionGroupName: "",
-                                  itemName: "",
-                                  itemCode: "",
-                                  quantity: "",
-                                  toQuantity: "",
-                                  uom: "CTN",
-                                  price: ""
-                                }
-                              ]
-                            ]));
+                          if (promotion.bundle_combination === "slab") {
+                            // In slab mode, add a new row to the current table (tableIdx)
+                            setOrderTables(tables => tables.map((arr, idx) => idx === tableIdx ? [
+                              ...arr,
+                              {
+                                promotionGroupName: "",
+                                itemName: "",
+                                itemCode: "",
+                                quantity: "",
+                                toQuantity: "",
+                                uom: "CTN",
+                                price: "",
+                                free_qty: "",
+                              }
+                            ] : arr));
                           } else {
                             // Add a new row to the last table
                             setOrderTables(tables =>
@@ -777,7 +793,8 @@ export default function AddPricing() {
                                         quantity: "",
                                         toQuantity: "",
                                         uom: "CTN",
-                                        price: ""
+                                        price: "",
+                                        free_qty: "",
                                       }
                                     ]
                                   : arr
@@ -811,8 +828,8 @@ export default function AddPricing() {
               </div>
             </React.Fragment>
           );
-        })
-      );
+        });
+      };
 
       // Show all offerItems, including custom added rows
       let offerItemsData: OfferItemType[] = offerItems.map((offerItem, idx) => ({
@@ -942,27 +959,18 @@ export default function AddPricing() {
                 width="w-full"
               />
             </div>
-              <div>
-                <label className="block mb-1 font-medium">Order Type<span className="text-red-500 ml-1">*</span></label>
-                <InputFields
-                  isSingle={true}
-                  options={[{ label: "Any", value: "1" }, { label: "All", value: "0" }]}
-                  value={promotion.order_type}
-                  onChange={e => setPromotion(s => ({ ...s, order_type: e.target.value }))}
-                  width="w-full"
-                />
-              </div>
+             
               <div>
                 <label className="block mb-1 font-medium">Offer Type<span className="text-red-500 ml-1">*</span></label>
                 <InputFields
                   isSingle={true}
-                  options={[{ label: "Any", value: "1" }, { label: "All", value: "0" }]}
+                  options={[{ label: "Category Range", value: "1" }, { label: "Item Range", value: "0" }]}
                   value={promotion.offer_type}
                   onChange={e => setPromotion(s => ({ ...s, offer_type: e.target.value }))}
                   width="w-full"
                 />
               </div>
-              <div>
+              {/* <div>
                 <label className="block mb-1 font-medium">Type<span className="text-red-500 ml-1">*</span></label>
                 <InputFields
                   isSingle={true}
@@ -971,8 +979,8 @@ export default function AddPricing() {
                   onChange={e => setPromotion(s => ({ ...s, type: e.target.value }))}
                   width="w-full"
                 />
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <label className="block mb-1 font-medium">Discount Type<span className="text-red-500 ml-1">*</span></label>
                 <InputFields
                   isSingle={true}
@@ -981,7 +989,7 @@ export default function AddPricing() {
                   onChange={e => setPromotion(s => ({ ...s, discount_type: e.target.value }))}
                   width="w-full"
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block mb-1 font-medium">Discount Apply On<span className="text-red-500 ml-1">*</span></label>
                 <InputFields
@@ -1006,14 +1014,15 @@ export default function AddPricing() {
           </div>
           <div className="mt-8">
             <div className="mb-4">
-               <CustomCheckbox
-                                  id="bundle_combination"
-                                  label="Bundle Combination"
-                                  checked={promotion.bundle_combination?.split(",").includes("bundle_combination")}
-                                  onChange={(e) =>
-                                    handleCheckboxChange("bundle_combination", e.target.checked)
-                                  }
-                                />
+              <label className="block mb-1 font-medium">Mode</label>
+              <InputFields
+                type="radio"
+                isSingle={true}
+                options={[{ label: "Normal", value: "normal" }, { label: "Slab", value: "slab" }]}
+                value={promotion.bundle_combination}
+                onChange={e => setPromotion(s => ({ ...s, bundle_combination: e.target.value }))}
+                width="w-full"
+              />
             </div>
             <div className="font-semibold text-lg mb-4">Promotional Order Items</div>
             {renderOrderTables()}
@@ -1021,8 +1030,8 @@ export default function AddPricing() {
             <div className="mb-6">
               {/* Multi-table logic for offerItems, similar to orderTables */}
               {(() => {
-                // If bundle_combination is checked, treat offerItems as an array of tables (array of arrays)
-                const isBundle = promotion.bundle_combination?.split(",").includes("bundle_combination");
+                // If 'slab' mode is selected, treat offerItems as an array of tables (array of arrays)
+                const isBundle = promotion.bundle_combination === "slab";
                 // For backward compatibility, if offerItems is not an array of arrays, wrap it
                 let offerTables: any[][] = [];
                   if (isBundle) {
@@ -1163,43 +1172,47 @@ export default function AddPricing() {
                         <Table
                           data={paginatedData}
                           config={{
-                            columns: [
-                              ...(isBundle ? [
-                                {
-                                  key: "type",
-                                  label: "Type",
-                                  render: (row: any) => (
-                                    <>
-                                      <InputFields
-                                        label=""
-                                        type="text"
-                                        value={row.type || ""}
-                                        onChange={e => updateOfferItemTable(tableIdx, row.idx, "type", e.target.value)}
-                                        width="w-full"
-                                      />
-                                      {row.idx === "0" && (
-                                        <button
-                                          type="button"
-                                          className="flex items-center gap-2 mt-2 px-3 py-1 rounded bg-[#ffffff] text-[#EA0A2A] font-semibold hover:bg-[#FFF0F2]"
-                                          onClick={() => addRowToOfferTable(tableIdx)}
-                                        >
-                                          <Icon icon="material-symbols:add-circle-outline" width={20} />
-                                          Add Detail
-                                        </button>
-                                      )}
-                                    </>
-                                  ),
-                                },
-                              ] : []),
+                            columns: (isBundle ? [
                               {
-                                key: "promotionGroupName",
-                                label: "Promotion Group Name",
+                                key: "itemName",
+                                label: "Item Name",
                                 render: (row) => (
                                   <InputFields
                                     label=""
                                     type="text"
-                                    value={row.promotionGroupName || ""}
-                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                    value={row.itemName || ""}
+                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "itemName", e.target.value)}
+                                    width="w-full"
+                                  />
+                                ),
+                              },
+                             
+                              {
+                                key: "uom",
+                                label: "UOM",
+                                render: (row) => (
+                                  <InputFields
+                                    label=""
+                                    type="text"
+                                    value={row.uom || ""}
+                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "uom", e.target.value)}
+                                    width="w-full"
+                                  />
+                                ),
+                              },
+                             
+                              
+                            ] : [
+                              // Normal mode: Offer items simplified to Item Name, UOM, Qty
+                              {
+                                key: "itemName",
+                                label: "Item Name",
+                                render: (row) => (
+                                  <InputFields
+                                    label=""
+                                    type="text"
+                                    value={row.itemName || ""}
+                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "itemName", e.target.value)}
                                     width="w-full"
                                   />
                                 ),
@@ -1210,7 +1223,7 @@ export default function AddPricing() {
                                 render: (row) => (
                                   <InputFields
                                     label=""
-                                    type="number"
+                                    type="text"
                                     value={row.uom || ""}
                                     onChange={e => updateOfferItemTable(tableIdx, row.idx, "uom", e.target.value)}
                                     width="w-full"
@@ -1219,7 +1232,7 @@ export default function AddPricing() {
                               },
                               {
                                 key: "toQuantity",
-                                label: "Quantity",
+                                label: "Qty",
                                 render: (row) => (
                                   <InputFields
                                     label=""
@@ -1230,19 +1243,7 @@ export default function AddPricing() {
                                   />
                                 ),
                               },
-                              {
-                                key: "is_discount",
-                                label: "Is Discount",
-                                render: (row) => (
-                                  <CustomCheckbox
-                                    id={`is_discount_${row.idx}`}
-                                    label="Is Discount"
-                                    checked={row.is_discount === "1"}
-                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "is_discount", e.target.checked ? "1" : "0")}
-                                  />
-                                ),
-                              },
-                            ],
+                            ]),
                             rowActions: [
                               {
                                 icon: "material-symbols:add-circle-outline",

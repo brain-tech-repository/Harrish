@@ -8,9 +8,18 @@ import ContainerCard from "@/app/components/containerCard";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
-import * as Yup from 'yup';
-import { addWarehouse, getWarehouseById, updateWarehouse, genearateCode, saveFinalCode } from '@/app/services/allApi';
-import StepperForm, { StepperStep, useStepperForm } from "@/app/components/stepperForm";
+import * as Yup from "yup";
+import {
+  addWarehouse,
+  getWarehouseById,
+  updateWarehouse,
+  genearateCode,
+  saveFinalCode,
+} from "@/app/services/allApi";
+import StepperForm, {
+  StepperStep,
+  useStepperForm,
+} from "@/app/components/stepperForm";
 import { useEffect, useState, useRef } from "react";
 import Loading from "@/app/components/Loading";
 import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
@@ -223,12 +232,10 @@ export default function AddEditWarehouse() {
                     });
                 }
             } else if (!isEditMode && !codeGeneratedRef.current) {
-                setLoading(true);
                 codeGeneratedRef.current = true;
                 const res = await genearateCode({ model_name: "warehouse" });
                 if (res?.code) setInitialValues((prev) => ({ ...prev, warehouse_code: res.code }));
                 if (res?.prefix) setPrefix(res.prefix);
-                setLoading(false);
             }
         }
         fetchData();
@@ -275,8 +282,8 @@ export default function AddEditWarehouse() {
                 is_branch: isBranchPayload,
             } as Record<string, unknown>;
 
-            const p12 = values.p12_file;
-            let res;
+      const p12 = values.p12_file;
+      let res;
 
             if (p12 instanceof File) {
                 const form = new FormData();
@@ -392,64 +399,70 @@ export default function AddEditWarehouse() {
         }
     };
 
-    if (isEditMode && loading) {
-        return <Loading />;
-    }
+  if (isEditMode && loading) {
+    return <Loading />;
+  }
 
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                    <Link href="/warehouse">
-                        <Icon icon="lucide:arrow-left" width={24} />
-                    </Link>
-                    <h1 className="text-xl font-semibold text-gray-900">
-                        {isEditMode ? "Edit Warehouse" : "Add Warehouse"}
-                    </h1>
-                </div>
-            </div>
-            <Formik
-                initialValues={initialValues}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-                enableReinitialize
-            >
-                {({
-                    values,
-                    setFieldValue,
-                    errors,
-                    touched,
-                    handleSubmit: formikSubmit,
-                    setErrors,
-                    setTouched,
-                    isSubmitting,
-                }) => (
-                    <Form>
-                        <StepperForm
-                            steps={steps.map((step) => ({
-                                ...step,
-                                isCompleted: isStepCompleted(step.id),
-                            }))}
-                            currentStep={currentStep}
-                            onStepClick={() => {}}
-                            onBack={prevStep}
-                            onNext={() =>
-                                handleNext(values, {
-                                    setErrors,
-                                    setTouched,
-                                } as unknown as FormikHelpers<FormValues>)
-                            }
-                            onSubmit={() => formikSubmit()}
-                            showSubmitButton={isLastStep}
-                            showNextButton={!isLastStep}
-                            nextButtonText="Save & Next"
-                            submitButtonText={isSubmitting ? "Submitting..." : isEditMode ? "Update" : "Submit"}
-                        >
-                            {renderStepContent(values, setFieldValue, errors, touched)}
-                        </StepperForm>
-                    </Form>
-                )}
-            </Formik>
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-2">
+          <Link href="/warehouse">
+            <Icon icon="lucide:arrow-left" width={24} />
+          </Link>
+          <h1 className="text-xl font-semibold text-gray-900">
+            {isEditMode ? "Edit Warehouse" : "Add Warehouse"}
+          </h1>
         </div>
-    );
+      </div>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleSubmit}
+        enableReinitialize
+      >
+        {({
+          values,
+          setFieldValue,
+          errors,
+          touched,
+          handleSubmit: formikSubmit,
+          setErrors,
+          setTouched,
+          isSubmitting,
+        }) => (
+          <Form>
+            <StepperForm
+              steps={steps.map((step) => ({
+                ...step,
+                isCompleted: isStepCompleted(step.id),
+              }))}
+              currentStep={currentStep}
+              onStepClick={() => {}}
+              onBack={prevStep}
+              onNext={() =>
+                handleNext(values, {
+                  setErrors,
+                  setTouched,
+                } as unknown as FormikHelpers<FormValues>)
+              }
+              onSubmit={() => formikSubmit()}
+              showSubmitButton={isLastStep}
+              showNextButton={!isLastStep}
+              nextButtonText="Save & Next"
+              submitButtonText={
+                isSubmitting
+                  ? "Submitting..."
+                  : isEditMode
+                  ? "Update"
+                  : "Submit"
+              }
+            >
+              {renderStepContent(values, setFieldValue, errors, touched)}
+            </StepperForm>
+          </Form>
+        )}
+      </Formik>
+    </div>
+  );
 }
