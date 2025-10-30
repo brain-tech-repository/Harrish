@@ -264,13 +264,49 @@ export default function UserAddEdit() {
   const dynamicSchema = Yup.object().shape({
     ...baseFields,
     ...roleField,
-    // Handle fields that may be single value (string) or multi-select arrays
-    ...(visibleLabels.includes("company") && { company: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Company is required") : Yup.string().required("Company is required")) }),
-    ...(visibleLabels.includes("region") && { region: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Region is required") : Yup.string().required("Region is required")) }),
-    ...(visibleLabels.includes("area") && { area: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Area is required") : Yup.string().required("Area is required")) }),
-    ...(visibleLabels.includes("warehouse") && { warehouse: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Warehouse is required") : Yup.string().required("Warehouse is required")) }),
-    ...(visibleLabels.includes("route") && { route: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Route is required") : Yup.string().required("Route is required")) }),
-    ...(visibleLabels.includes("salesman") && { salesman: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Salesman is required") : Yup.string().required("Salesman is required")) }),
+    // allow either a single string id or an array of ids (multi-select). Accept non-empty string or non-empty array.
+    ...(visibleLabels.includes("company") && {
+      company: Yup.mixed().test("company-required", "Company is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
+    ...(visibleLabels.includes("region") && {
+      region: Yup.mixed().test("region-required", "Region is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
+    ...(visibleLabels.includes("area") && {
+      area: Yup.mixed().test("area-required", "Area is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
+    ...(visibleLabels.includes("warehouse") && {
+      warehouse: Yup.mixed().test("warehouse-required", "Warehouse is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
+    ...(visibleLabels.includes("route") && {
+      route: Yup.mixed().test("route-required", "Route is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
+    ...(visibleLabels.includes("salesman") && {
+      salesman: Yup.mixed().test("salesman-required", "Salesman is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
   });
 
   const handleNext = async (
@@ -292,11 +328,41 @@ export default function UserAddEdit() {
           ? Yup.object().shape({ ...baseFields })
           : Yup.object().shape({
               ...roleField,
-              ...(visibleLabels.includes("company") && { company: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Company is required") : Yup.string().required("Company is required")) }),
-              ...(visibleLabels.includes("region") && { region: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Region is required") : Yup.string().required("Region is required")) }),
-              ...(visibleLabels.includes("area") && { area: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Area is required") : Yup.string().required("Area is required")) }),
-              ...(visibleLabels.includes("warehouse") && { warehouse: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Warehouse is required") : Yup.string().required("Warehouse is required")) }),
-              ...(visibleLabels.includes("route") && { route: Yup.lazy((val) => Array.isArray(val) ? Yup.array().of(Yup.string()).min(1, "Route is required") : Yup.string().required("Route is required")) }),
+                  ...(visibleLabels.includes("company") && {
+                    company: Yup.mixed().test("company-required", "Company is required", (v) => {
+                      if (Array.isArray(v)) return v.length > 0;
+                      if (typeof v === "string") return v.trim() !== "";
+                      return false;
+                    }),
+                  }),
+                  ...(visibleLabels.includes("region") && {
+                    region: Yup.mixed().test("region-required", "Region is required", (v) => {
+                      if (Array.isArray(v)) return v.length > 0;
+                      if (typeof v === "string") return v.trim() !== "";
+                      return false;
+                    }),
+                  }),
+                  ...(visibleLabels.includes("area") && {
+                    area: Yup.mixed().test("area-required", "Area is required", (v) => {
+                      if (Array.isArray(v)) return v.length > 0;
+                      if (typeof v === "string") return v.trim() !== "";
+                      return false;
+                    }),
+                  }),
+                  ...(visibleLabels.includes("warehouse") && {
+                    warehouse: Yup.mixed().test("warehouse-required", "Warehouse is required", (v) => {
+                      if (Array.isArray(v)) return v.length > 0;
+                      if (typeof v === "string") return v.trim() !== "";
+                      return false;
+                    }),
+                  }),
+                  ...(visibleLabels.includes("route") && {
+                    route: Yup.mixed().test("route-required", "Route is required", (v) => {
+                      if (Array.isArray(v)) return v.length > 0;
+                      if (typeof v === "string") return v.trim() !== "";
+                      return false;
+                    }),
+                  }),
             });
 
       await stepSchema.validate(normalized, { abortEarly: false });
