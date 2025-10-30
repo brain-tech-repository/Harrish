@@ -1,7 +1,5 @@
-// app/services/allApi.ts
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
-import { TableDataType } from "../components/customTable";
 
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -859,7 +857,7 @@ export const getCustomerType = async (params?: Params) => {
 
 type Payload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
@@ -875,7 +873,7 @@ export const addRegion = async (payload: Payload) => {
 
 type ipdatePayload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
@@ -2729,6 +2727,35 @@ export const routeStatusUpdate = async (body: object) => {
   }
 };
 
+export const addAgentOrder = async (payload: object) => {
+  try {
+    const res = await API.post("/api/agent_transaction/orders/add", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editAgentOrder = async (uuid: string, payload: object) => {
+  try {
+    const res = await API.put(`/api/agent_transaction/orders/update/${uuid}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getAgentOrderById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/orders/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
 export const promotionHeaderList = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/promotion-headers/list", {
@@ -2909,6 +2936,25 @@ export const registerAuthUser = async (body: object) => {
 export const updateAuthUser = async (uuid: string, body: object) => {
   try {
     const res = await API.put(`/api/master/auth/updateUser/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const getUserList = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/auth/getUserList", { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getUserByUuid = async (uuid?: string) => {
+  try {
+    const res = await API.get(`/api/master/auth/getUserbyUuid/${uuid}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
