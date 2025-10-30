@@ -3,7 +3,7 @@
 import KeyValueData from "@/app/(private)/(dashboard)/(master)/customer/[customerId]/keyValueData";
 import ContainerCard from "@/app/components/containerCard";
 import { useLoading } from "@/app/services/loadingContext";
-import { getWarehouseById } from "@/app/services/allApi";
+import { getWarehouseById, getWarehouseCustomerById } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
@@ -83,7 +83,7 @@ export default function ViewPage() {
     const columns: configType["columns"] = [
     {
         key: "osa_code",
-        label: "Outlet Code",
+        label: "SAP Code",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
                 {row.osa_code || "-"}
@@ -91,7 +91,7 @@ export default function ViewPage() {
         ),
         showByDefault: true,
     },
-    { key: "outlet_name", label: "Outlet Name", showByDefault: true },
+    { key: "outlet_name", label: "Customer Name", showByDefault: true },
     { key: "owner_name", label: "Owner Name" },
     {
         key: "customer_type",
@@ -166,28 +166,6 @@ export default function ViewPage() {
     { key: "street", label: "Street" },
     { key: "town", label: "Town" },
     {
-        key: "getWarehouse",
-        label: "Warehouse",
-        render: (row: TableDataType) =>
-            typeof row.getWarehouse === "object" &&
-            row.getWarehouse !== null &&
-            "warehouse_name" in row.getWarehouse
-                ? (row.getWarehouse as { warehouse_name?: string })
-                      .warehouse_name || "-"
-                : "-",
-                filter: {
-                    isFilterable: true,
-                    width: 320,
-                    options: Array.isArray(warehouseOptions) ? warehouseOptions : [], // [{ value, label }]
-                    onSelect: (selected) => {
-                        setWarehouseId((prev) => prev === selected ? "" : (selected as string));
-                    },
-                    selectedValue: warehouseId,
-                },
-       
-        showByDefault: true,
-    },
-    {
         key: "route",
         label: "Route",
         render: (row: TableDataType) => {
@@ -237,6 +215,7 @@ export default function ViewPage() {
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const [item, setItem] = useState<Item | null>(null);
+    const [warehouseCustomerData, setWarehouseCustomerData] = useState<TableDataType[]>([]);
   const onTabClick = (idx: number) => {
     // ensure index is within range and set the corresponding tab key
     if (typeof idx !== "number") return;
@@ -258,6 +237,7 @@ export default function ViewPage() {
         const fetchPlanogramImageDetails = async () => {
             setLoading(true);
             const res = await getWarehouseById(id);
+            const result = await getWarehouseCustomerById(id);
             setLoading(false);
             if (res.error) {
                 showSnackbar(
@@ -267,6 +247,7 @@ export default function ViewPage() {
                 throw new Error("Unable to fetch Warehouse Details");
             } else {
                 setItem(res.data);
+                setWarehouseCustomerData(result.data);
             }
         };
         fetchPlanogramImageDetails();
@@ -484,7 +465,7 @@ export default function ViewPage() {
                                         // refreshKey={refreshKey}
                                         config={{
                                             header: {
-                                                title: "Agent Customer",
+                                                title: "Warehouse Customer",
                                                 searchBar: false,
                                                 columnFilter: true,
                                                 actions: [
@@ -498,7 +479,7 @@ export default function ViewPage() {
                                                     // />,
                                                 ],
                                             },
-                                            localStorageKey: "agentCustomer-table",
+                                            localStorageKey: "WarehouseCustomer-table",
                                             footer: { nextPrevBtn: true, pagination: true },
                                             columns,
                                             rowSelection: true,
