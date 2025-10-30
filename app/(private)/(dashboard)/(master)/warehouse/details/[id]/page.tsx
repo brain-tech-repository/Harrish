@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
 import Map from "@/app/components/map";
+import Table, { configType, TableDataType } from "@/app/components/customTable";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 interface Item {
     id: string;
@@ -59,7 +61,14 @@ interface Item {
 const title = "Warehouse Details";
 const backBtnUrl = "/warehouse";
 
+ 
+
 export default function ViewPage() {
+        const { customerSubCategoryOptions,channelOptions,warehouseOptions,routeOptions } = useAllDropdownListData();
+    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
+    const [warehouseId, setWarehouseId] = useState<string>("");
+    const [channelId, setChannelId] = useState<string>("");
+    const [routeId, setRouteId] = useState<string>("");
     const params = useParams();
     let id: string = "";
     if (params.id) {
@@ -69,6 +78,161 @@ export default function ViewPage() {
             id = params.id as string;
         }
     }
+
+
+    const columns: configType["columns"] = [
+    {
+        key: "osa_code",
+        label: "Outlet Code",
+        render: (row: TableDataType) => (
+            <span className="font-semibold text-[#181D27] text-[14px]">
+                {row.osa_code || "-"}
+            </span>
+        ),
+        showByDefault: true,
+    },
+    { key: "outlet_name", label: "Outlet Name", showByDefault: true },
+    { key: "owner_name", label: "Owner Name" },
+    {
+        key: "customer_type",
+        label: "Customer Type",
+        render: (row: TableDataType) => {
+            if (
+                typeof row.customer_type === "object" &&
+                row.customer_type !== null &&
+                "name" in row.customer_type
+            ) {
+                return (row.customer_type as { name?: string }).name || "-";
+            }
+            return row.customer_type || "-";
+        },
+    },
+    {
+        key: "category",
+        label: "Customer Category",
+        render: (row: TableDataType) =>
+            typeof row.category === "object" &&
+            row.category !== null &&
+            "customer_category_name" in row.category
+                ? (row.category as { customer_category_name?: string })
+                      .customer_category_name || "-"
+                : "-",
+    },
+    {
+        key: "subcategory",
+        label: "Customer Sub Category",
+        render: (row: TableDataType) =>
+            typeof row.subcategory === "object" &&
+            row.subcategory !== null &&
+            "customer_sub_category_name" in row.subcategory
+                ? (row.subcategory as { customer_sub_category_name?: string })
+                      .customer_sub_category_name || "-"
+                : "-",
+        filter: {
+            isFilterable: true,
+            width: 320,
+            options: Array.isArray(customerSubCategoryOptions) ? customerSubCategoryOptions : [], // [{ value, label }]
+            onSelect: (selected) => {
+                setSelectedSubCategoryId((prev) => prev === selected ? "" : (selected as string));
+            },
+            selectedValue: selectedSubCategoryId,
+        },
+        showByDefault: true,
+    },
+    {
+        key: "outlet_channel",
+        label: "Outlet Channel",
+        render: (row: TableDataType) =>
+            typeof row.outlet_channel === "object" &&
+            row.outlet_channel !== null &&
+            "outlet_channel" in row.outlet_channel
+                ? (row.outlet_channel as { outlet_channel?: string })
+                      .outlet_channel || "-"
+                : "-",
+                filter: {
+                    isFilterable: true,
+                    width: 320,
+                    options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
+                    onSelect: (selected) => {
+                        setChannelId((prev) => prev === selected ? "" : (selected as string));
+                    },
+                    selectedValue: channelId,
+                },
+        
+        showByDefault: true,
+    },
+    { key: "landmark", label: "Landmark" },
+    { key: "district", label: "District" },
+    { key: "street", label: "Street" },
+    { key: "town", label: "Town" },
+    {
+        key: "getWarehouse",
+        label: "Warehouse",
+        render: (row: TableDataType) =>
+            typeof row.getWarehouse === "object" &&
+            row.getWarehouse !== null &&
+            "warehouse_name" in row.getWarehouse
+                ? (row.getWarehouse as { warehouse_name?: string })
+                      .warehouse_name || "-"
+                : "-",
+                filter: {
+                    isFilterable: true,
+                    width: 320,
+                    options: Array.isArray(warehouseOptions) ? warehouseOptions : [], // [{ value, label }]
+                    onSelect: (selected) => {
+                        setWarehouseId((prev) => prev === selected ? "" : (selected as string));
+                    },
+                    selectedValue: warehouseId,
+                },
+       
+        showByDefault: true,
+    },
+    {
+        key: "route",
+        label: "Route",
+        render: (row: TableDataType) => {
+            if (
+                typeof row.route === "object" &&
+                row.route !== null &&
+                "route_name" in row.route
+            ) {
+                return (row.route as { route_name?: string }).route_name || "-";
+            }
+            return typeof row.route === 'string' ? row.route : "-";
+        },
+        filter: {
+            isFilterable: true,
+            width: 320,
+            options: Array.isArray(routeOptions) ? routeOptions : [],
+            onSelect: (selected) => {
+                setRouteId((prev) => prev === selected ? "" : (selected as string));
+            },
+            selectedValue: routeId,
+        },
+       
+        showByDefault: true,
+    },
+    { key: "contact_no", label: "Contact No." },
+    { key: "whatsapp_no", label: "Whatsapp No." },
+    { key: "buyertype", label: "Buyer Type", render: (row: TableDataType) => (row.buyertype === "0" ? "B2B" : "B2C") },
+    { key: "payment_type", label: "Payment Type" },
+    {
+        key: "status",
+        label: "Status",
+        render: (row: TableDataType) => {
+            // Treat status 1 or 'active' (case-insensitive) as active
+            const isActive =
+                String(row.status) === "1" ||
+                (typeof row.status === "string" &&
+                    row.status.toLowerCase() === "active");
+            return <StatusBtn isActive={isActive} />;
+        },
+        showByDefault: true,
+    },
+    ];
+
+
+
 
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
@@ -315,9 +479,51 @@ export default function ViewPage() {
                {activeTab === "warehouseCustomer" && (
              <ContainerCard >
                  
-                    <div className="text-[18px] mt-4 text-center items-center font-semibold mb-[25px]">
-                        No Data Found
-                        </div>
+                    <div className="flex flex-col h-full">
+                                    <Table
+                                        // refreshKey={refreshKey}
+                                        config={{
+                                            header: {
+                                                title: "Agent Customer",
+                                                searchBar: false,
+                                                columnFilter: true,
+                                                actions: [
+                                                    // <SidebarBtn
+                                                    //     key={0}
+                                                    //     href="/agentCustomer/new"
+                                                    //     isActive
+                                                    //     leadingIcon="lucide:plus"
+                                                    //     label="Add"
+                                                    //     labelTw="hidden sm:block"
+                                                    // />,
+                                                ],
+                                            },
+                                            localStorageKey: "agentCustomer-table",
+                                            footer: { nextPrevBtn: true, pagination: true },
+                                            columns,
+                                            rowSelection: true,
+                                            // rowActions: [
+                                            //     {
+                                            //         icon: "lucide:eye",
+                                            //         onClick: (data: object) => {
+                                            //             const row = data as TableRow;
+                                            //             router.push(`/agentCustomer/details/${row.uuid}`);
+                                            //         },
+                                            //     },
+                                            //     // {
+                                            //     //     icon: "lucide:edit-2",
+                                            //     //     onClick: (data: object) => {
+                                            //     //         const row = data as TableRow;
+                                            //     //         router.push(
+                                            //     //             `/agentCustomer/${row.uuid}`
+                                            //     //         );
+                                            //     //     },
+                                            //     // },
+                                            // ],
+                                            pageSize: 50,
+                                        }}
+                                    />
+                                </div>
                 </ContainerCard>
           )}
           {activeTab === "warehouseStock" && (
@@ -363,4 +569,3 @@ export default function ViewPage() {
         </>
     );
 }
-

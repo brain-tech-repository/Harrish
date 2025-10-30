@@ -477,6 +477,16 @@ export const getWarehouseById = async (id: string) => {
   }
 };
 
+export const getWarehouseCustomerById = async (id: string) => {
+  try {
+    const res = await API.get(`/api/master/warehouse/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const updateWarehouse = async (id: string, payload: object) => {
   try {
     const res =
