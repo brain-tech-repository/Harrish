@@ -88,8 +88,8 @@ export function filterMenuByPermissions(
     allMenus: LinkDataType[],
     role: Role
 ): LinkDataType[] {
-    const allowedMenus = role.menus.map((m) => m.menu.name);
-    const allowedSubMenus = role.menus.flatMap((m) => m.submenu.map((s) => s.name));
+    const allowedMenus = role?.menus?.map((m) => m.menu.name);
+    const allowedSubMenus = role?.menus?.flatMap((m) => m.submenu.map((s) => s.name));
 
     return allMenus
         .filter((menu) => allowedMenus.includes(menu.label))
