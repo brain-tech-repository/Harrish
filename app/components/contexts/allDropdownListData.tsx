@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import {
   companyList,
   countryList,
@@ -29,7 +29,8 @@ import {
   SurveyList,
   getWarehouse,
   subRegionList,
-  labelList
+  labelList,
+  roleList
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
@@ -58,6 +59,7 @@ interface DropdownDataContextType {
   discountType: DiscountType[];
   menuList: MenuList[];
   labels: LabelItem[];
+  roles: Role[];
   // mapped dropdown options
   companyOptions: { value: string; label: string }[];
   countryOptions: { value: string; label: string }[];
@@ -80,7 +82,7 @@ interface DropdownDataContextType {
   vehicleListOptions: { value: string; label: string }[];
   customerCategoryOptions: { value: string; label: string }[];
   customerSubCategoryOptions: { value: string; label: string }[];
-  itemOptions: { value: string; label: string }[];
+  itemOptions: { value: string; label: string; uoms?: { id?: string; name?: string; uom_type?: string; price?: string; upc?: string }[] }[];
   discountTypeOptions: { value: string; label: string }[];
   menuOptions: { value: string; label: string }[];
   vendorOptions: { value: string; label: string }[];
@@ -93,8 +95,15 @@ interface DropdownDataContextType {
   fetchItemSubCategoryOptions: (category_id: string | number) => Promise<void>;
   fetchAreaOptions: (region_id: string | number) => Promise<void>;
   fetchRouteOptions: (warehouse_id: string | number) => Promise<void>;
+  fetchWarehouseOptions: (area_id: string | number) => Promise<void>;
   fetchRegionOptions: (company_id: string | number) => Promise<void>;
+  fetchCustomerCategoryOptions: (outlet_channel_id: string | number) => Promise<void>;
+  fetchCompanyCustomersOptions: (category_id: string | number) => Promise<void>;
+  fetchItemOptions: (category_id: string | number) => Promise<void>;
+  getItemUoms: (item_id: string | number) => { id?: string; name?: string; uom_type?: string; price?: string; upc?: string }[];
+  getPrimaryUom: (item_id: string | number) => { id?: string; name?: string; uom_type?: string; price?: string; upc?: string } | null;
   labelOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
   loading: boolean;
 }
 
@@ -215,6 +224,18 @@ interface Item {
   id?: number | string;
   item_code?: string;
   name?: string;
+  uom?: UomItem[];
+}
+
+interface UomItem {
+  id?: number | string;
+  item_id?: number | string;
+  uom_type?: string;
+  name?: string;
+  price?: string;
+  is_stock_keeping?: boolean;
+  upc?: string;
+  enable_for?: string;
 }
 
 interface DiscountType {
@@ -277,6 +298,12 @@ interface LabelItem {
   status: number;
 }
 
+interface Role {
+  id: number;
+  name: string;
+  status: number;
+}
+
 const AllDropdownListDataContext = createContext<DropdownDataContextType | undefined>(undefined);
 
 export const useAllDropdownListData = () => {
@@ -318,6 +345,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [submenu, setSubmenu] = useState<submenuList[]>([]);
   const [permissions, setPermissions] = useState<permissionsList[]>([]);
   const [labels, setLabels] = useState<LabelItem[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
 
   // mapped dropdown options (explicit typed mappings)
@@ -426,8 +454,36 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => ({
     value: String(c.id ?? ''),
-    label: c.item_code && c.name ? `${c.item_code} - ${c.name}` : (c.name ?? '')
+    label: c.item_code && c.name ? `${c.item_code} - ${c.name}` : (c.name ?? ''),
+    uoms: Array.isArray((c as any).uom) ? (c as any).uom.map((u: any) => ({
+      id: String(u.id ?? ''),
+      name: String(u.name ?? ''),
+      uom_type: String(u.uom_type ?? ''),
+      price: String(u.price ?? ''),
+      upc: String(u.upc ?? ''),
+    })) : []
   }));
+
+  const getItemUoms = (item_id: string | number) => {
+    const idStr = String(item_id ?? '');
+    const found = item.find(it => String(it.id ?? '') === idStr);
+    if (!found) return [];
+    return (Array.isArray(found.uom) ? found.uom : []).map(u => ({
+      id: String(u.id ?? ''),
+      name: String(u.name ?? ''),
+      uom_type: String(u.uom_type ?? ''),
+      price: String(u.price ?? ''),
+      upc: String(u.upc ?? ''),
+    }));
+  };
+
+  const getPrimaryUom = (item_id: string | number) => {
+    const uoms = getItemUoms(item_id);
+    if (!uoms || uoms.length === 0) return null;
+    // prefer uom_type === 'primary', otherwise return first
+    const primary = uoms.find(u => (u.uom_type || '').toLowerCase() === 'primary');
+    return primary ?? uoms[0];
+  };
 
   const discountTypeOptions = (Array.isArray(discountType) ? discountType : []).map((c: DiscountType) => ({
     value: String(c.id ?? ''),
@@ -475,8 +531,16 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.osa_code && c.name ? `${c.osa_code} - ${c.name}` : (c.name ?? '')
   }));
+  const roleOptions = (Array.isArray(roles) ? roles : []).map((r: Role) => ({
+    value: String(r.id ?? ''),
+    label: r.name ?? ''
+  }));
 
-  const fetchAreaOptions = async (region_id: string | number) => {
+
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+  
+    const fetchAreaOptions = useCallback(async (region_id: string | number) => {
+
     setLoading(false);
     try {
       // call subRegionList with an object matching the expected Params shape
@@ -495,9 +559,75 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRouteOptions = async (warehouse_id: string | number) => {
+  const fetchCustomerCategoryOptions = useCallback(async (outlet_channel_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call customerCategoryList with channel_id
+      const res = await customerCategoryList({ outlet_channel_id: String(outlet_channel_id) });
+      const normalize = (r: unknown): CustomerCategory[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as CustomerCategory[];
+        }
+        if (Array.isArray(r)) return r as CustomerCategory[];
+        return [];
+      };
+      setCustomerCategory(normalize(res));
+    } catch (error) {
+      setCustomerCategory([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchCompanyCustomersOptions = useCallback(async (category_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call getCompanyCustomers with category_id
+      const res = await getCompanyCustomers({ category_id: String(category_id) });
+      const normalize = (r: unknown): CustomerItem[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as CustomerItem[];
+        }
+        if (Array.isArray(r)) return r as CustomerItem[];
+        return [];
+      };
+      setCompanyCustomersData(normalize(res));
+    } catch (error) {
+      setCompanyCustomersData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchItemOptions = useCallback(async (category_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call itemList with category_id to fetch items for this category
+      const res = await itemList({ category_id: String(category_id) });
+      const normalize = (r: unknown): Item[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as Item[];
+        }
+        if (Array.isArray(r)) return r as Item[];
+        return [];
+      };
+      setItem(normalize(res));
+    } catch (error) {
+      setItem([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchRouteOptions =  useCallback(async (warehouse_id: string | number) => {
     setLoading(false);
     try {
       // call routeList with warehouse_id
@@ -516,9 +646,32 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  },[]);
 
-  const fetchRegionOptions = async (company_id: string | number) => {
+  const fetchWarehouseOptions = useCallback(async (area_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
+    setLoading(false);
+    try {
+      // call getWarehouse with an object matching the expected Params shape
+      const res = await getWarehouse({ area_id: String(area_id) });
+      const normalize = (r: unknown): WarehouseItem[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as WarehouseItem[];
+        }
+        if (Array.isArray(r)) return r as WarehouseItem[];
+        return [];
+      };
+      setWarehouseListData(normalize(res));
+    } catch (error) {
+      setWarehouseListData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchRegionOptions = useCallback(async (company_id: string | number) => {
+    // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
     setLoading(false);
     try {
       // call regionList with company_id
@@ -537,7 +690,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchItemSubCategoryOptions = async (category_id: string | number) => {
     setLoading(false);
@@ -593,6 +746,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         submenuList(),
         permissionList(),
         labelList(),
+        roleList(),
       ]);
 
 
@@ -635,6 +789,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setSubmenu(normalize(res[26]) as submenuList[]);
       setPermissions(normalize(res[27]) as permissionsList[]);
       setLabels(normalize(res[28]) as LabelItem[]);
+      setRoles(normalize(res[29]) as Role[]);
 
     } catch (error) {
       console.error('Error loading dropdown data:', error);
@@ -668,6 +823,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setSubmenu([]);
       setPermissions([]);
       setLabels([]);
+      setRoles([]);
     } finally {
       setLoading(false);
     }
@@ -705,8 +861,9 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         discountType: discountType,
         menuList: menuList,
         labels: labels,
+        roles: roles,
         fetchItemSubCategoryOptions,
-  fetchRegionOptions,
+        fetchRegionOptions,
         companyOptions,
         countryOptions,
         onlyCountryOptions,
@@ -741,6 +898,13 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         refreshDropdowns,
         fetchAreaOptions,
         fetchRouteOptions,
+        fetchCustomerCategoryOptions,
+        fetchCompanyCustomersOptions,
+        fetchItemOptions,
+        fetchWarehouseOptions,
+        roleOptions,
+        getItemUoms,
+        getPrimaryUom,
         loading
       }}
     >

@@ -823,7 +823,7 @@ export const getCustomerType = async (params?: Params) => {
 
 type Payload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
@@ -839,7 +839,7 @@ export const addRegion = async (payload: Payload) => {
 
 type ipdatePayload = {
   region_name: string;
-  country_id: number;
+  company_id: number;
   status: number;
 };
 
@@ -2868,3 +2868,49 @@ export const editLabel = async (id: string, payload: labelType) => {
   }
 };
 
+// Authentication User APIs
+export const authUserList = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/master/auth/getUserList`, params);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const registerAuthUser = async (body: object) => {
+  try {
+    const res = await API.post(`/api/master/auth/register`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updateAuthUser = async (uuid: string, body: object) => {
+  try {
+    const res = await API.put(`/api/master/auth/updateUser/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const getUserList = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/auth/getUserList", { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getUserByUuid = async (uuid?: string) => {
+  try {
+    const res = await API.get(`/api/master/auth/getUserbyUuid/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

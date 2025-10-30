@@ -10,12 +10,167 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { itemList, addPricingDetail, pricingDetailById, editPricingDetail } from "@/app/services/allApi";
-import SelectKeyCombination from "./selectKeyCombination";
+import { itemList, addPricingDetail, pricingDetailById,pricingHeaderById, editPricingDetail } from "@/app/services/allApi";
+import CustomCheckbox from "@/app/components/customCheckbox";
 import InputFields from "@/app/components/inputFields";
 import Table from "@/app/components/customTable";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
+
+type KeyOption = { label: string; id: string; isSelected: boolean };
+type KeyGroup = { type: string; options: KeyOption[] };
+
+const initialKeys: KeyGroup[] = [
+  {
+    type: "Location",
+    options: [
+      { id: "1", label: "Company", isSelected: false },
+      { id: "2", label: "Region", isSelected: false },
+      { id: "3", label: "Area", isSelected: false },
+      { id: "4", label: "Warehouse", isSelected: false },
+      { id: "5", label: "Route", isSelected: false },
+    ],
+  },
+  {
+    type: "Customer",
+    options: [
+      { id: "6", label: "Channel", isSelected: false },
+      { id: "7", label: "Customer Category", isSelected: false },
+      { id: "8", label: "Customer", isSelected: false },
+    ],
+  },
+  {
+    type: "Item",
+    options: [
+      { id: "9", label: "Item Category", isSelected: false },
+      { id: "10", label: "Item", isSelected: false },
+    ],
+  },
+];
+
+type SelectKeyProps = {
+  keyCombo: { Location: string[]; Customer: string[]; Item: string[] };
+  setKeyCombo: React.Dispatch<
+    React.SetStateAction<{ Location: string[]; Customer: string[]; Item: string[] }>
+  >;
+};
+
+function SelectKeyCombination({ keyCombo, setKeyCombo }: SelectKeyProps) {
+  const [keysArray, setKeysArray] = useState<KeyGroup[]>(() => {
+    return initialKeys.map((group) => ({
+      ...group,
+      options: group.options.map((opt) => ({
+        ...opt,
+        isSelected:
+          keyCombo[group.type as keyof SelectKeyProps['keyCombo']]?.includes(
+            opt.label
+          ) || false,
+      })),
+    }));
+  });
+
+  useEffect(() => {
+    setKeysArray((prev) => {
+      const next = initialKeys.map((group) => ({
+        ...group,
+        options: group.options.map((opt) => ({
+          ...opt,
+          isSelected:
+            keyCombo[group.type as keyof SelectKeyProps['keyCombo']]?.includes(
+              opt.label
+            ) || false,
+        })),
+      }));
+      const isSame = prev.every((group, i) =>
+        group.options.every((opt, j) => opt.isSelected === next[i].options[j].isSelected)
+      );
+      return isSame ? prev : next;
+    });
+  }, [keyCombo]);
+
+  useEffect(() => {
+    const selected: { Location: string[]; Customer: string[]; Item: string[] } = {
+      Location: [],
+      Customer: [],
+      Item: [],
+    };
+    keysArray.forEach((group) => {
+      if (group.type === "Location" || group.type === "Customer" || group.type === "Item") {
+        // @ts-ignore
+        selected[group.type] = group.options.filter((o) => o.isSelected).map((o) => o.label);
+      }
+    });
+    setKeyCombo(selected);
+  }, [keysArray, setKeyCombo]);
+
+  function onKeySelect(index: number, optionIndex: number) {
+    setKeysArray((prev) => {
+      const newKeys = prev.map((group, i) => {
+        if (i !== index) return group;
+        return {
+          ...group,
+          options: group.options.map((opt, j) =>
+            j === optionIndex ? { ...opt, isSelected: !opt.isSelected } : opt
+          ),
+        };
+      });
+      return newKeys;
+    });
+  }
+
+  return (
+    <ContainerCard className="h-fit mt-[20px] flex flex-col gap-2 p-6 bg-white border border-[#E5E7EB] rounded-[12px] shadow-none text-[#181D27]">
+      <div className="font-semibold text-[20px] mb-4">Key Combination</div>
+      <div className="grid grid-cols-3 gap-6">
+        {keysArray.map((group, index) => (
+          <div key={index} className="bg-white border border-[#E5E7EB] rounded-[12px] p-6 flex flex-col shadow-sm">
+            <div className="font-semibold text-[18px] mb-4 text-[#181D27]">{group.type}</div>
+            <div className="flex flex-col gap-4">
+              {group.options.map((option, optionIndex) => (
+                <CustomCheckbox
+                  key={optionIndex}
+                  id={option.label + index}
+                  label={option.label}
+                  checked={option.isSelected}
+                  onChange={() => onKeySelect(index, optionIndex)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <ContainerCard className="mt-6 bg-white border border-[#E5E7EB] rounded-[12px] shadow-none p-4 flex items-center gap-2">
+        <span className="font-semibold text-[#181D27] text-[16px]">Key</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {(() => {
+            const loc = keysArray.find((g) => g.type === "Location")?.options.filter((o) => o.isSelected).map((o) => o.label) || [];
+            return loc.length > 0 ? loc.map((k, i) => (
+              <span key={"loc-" + i} className="bg-[#F3F4F6] text-[#181D27] px-3 py-1 rounded-full text-[15px] border border-[#E5E7EB]">{k}</span>
+            )) : null;
+          })()}
+          {(() => {
+            const cust = keysArray.find((g) => g.type === "Customer")?.options.filter((o) => o.isSelected).map((o) => o.label) || [];
+            return cust.length > 0 ? [
+              <span key="slash-cust" className="mx-1 text-[#A0A4AB] text-[18px] font-bold">/</span>,
+              ...cust.map((k, i) => (
+                <span key={"cust-" + i} className="bg-[#F3F4F6] text-[#181D27] px-3 py-1 rounded-full text-[15px] border border-[#E5E7EB]">{k}</span>
+              ))
+            ] : null;
+          })()}
+          {(() => {
+            const item = keysArray.find((g) => g.type === "Item")?.options.filter((o) => o.isSelected).map((o) => o.label) || [];
+            return item.length > 0 ? [
+              <span key="slash-item" className="mx-1 text-[#A0A4AB] text-[18px] font-bold">/</span>,
+              ...item.map((k, i) => (
+                <span key={"item-" + i} className="bg-[#F3F4F6] text-[#181D27] px-3 py-1 rounded-full text-[15px] border border-[#E5E7EB]">{k}</span>
+              ))
+            ] : null;
+          })()}
+        </div>
+      </ContainerCard>
+    </ContainerCard>
+  );
+}
 
 export default function AddPricing() {
   const {
@@ -47,8 +202,51 @@ export default function AddPricing() {
   } = useStepperForm(steps.length);
   const { showSnackbar } = useSnackbar();
   const params = useParams();
-  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const isEditMode = id !== undefined && id !== "add";
+  // support routes that use either [uuid] or [id] as the segment name
+  const rawParam = (params as any)?.uuid ?? (params as any)?.id;
+  const id = Array.isArray(rawParam) ? rawParam[0] : rawParam;
+  const isEditMode = id !== undefined && id !== "add" && id !== "";
+
+  // Fetch existing pricing details in edit mode
+  useEffect(() => {
+    async function fetchEditData() {
+      if (!isEditMode || !id) return;
+      setLoading(true);
+      try {
+        const res = await pricingHeaderById(id);
+        if (res && typeof res === "object") {
+          // populate basic fields if available
+          setPromotion((s) => ({
+            ...s,
+            itemName: res.name || res.title || s.itemName,
+            startDate: res.start_date || s.startDate,
+            endDate: res.end_date || s.endDate,
+            status: res.status !== undefined ? String(res.status) : s.status,
+            // note: other nested fields (orderItems, keyValue) may require mapping depending on API shape
+          }));
+
+          // if API returned item ids, load item details into selectedItemDetails and keyValue
+          try {
+            const itemIds = (res.item_id && typeof res.item_id === 'string') ? res.item_id.split(",") : (res.item || []);
+            if (Array.isArray(itemIds) && itemIds.length > 0) {
+              setKeyValue((kv) => ({ ...kv, Item: itemIds }));
+              // fetch full item details
+              const items = await itemList({ ids: itemIds });
+              if (Array.isArray(items)) setSelectedItemDetails(items as any[]);
+              else if (items && typeof items === 'object' && Array.isArray((items as any).data)) setSelectedItemDetails((items as any).data as any[]);
+            }
+          } catch (innerErr) {
+            console.error('Failed to fetch item details for edit mode', innerErr);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch pricing detail for edit mode', err);
+        showSnackbar('Failed to load pricing details for edit', 'error');
+      }
+      setLoading(false);
+    }
+    fetchEditData();
+  }, [isEditMode, id]);
   const [loading, setLoading] = useState(false);
   const validateStep = (step: number) => {
     if (step === 1) {
