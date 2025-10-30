@@ -2684,7 +2684,32 @@ export const routeStatusUpdate = async (body:object) => {
   }
 };
 
+export const addAgentOrder = async (payload: object) => {
+  try {
+    const res = await API.post("/api/agent_transaction/orders/add", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 
+export const editAgentOrder = async (uuid: string, payload: object) => {
+  try {
+    const res = await API.put(`/api/agent_transaction/orders/update/${uuid}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getAgentOrderById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/orders/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 
 
 
