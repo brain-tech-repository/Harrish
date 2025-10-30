@@ -168,7 +168,8 @@ function SelectKeyCombinationInline({ keyCombo, setKeyCombo }: { keyCombo: KeyCo
 
 export default function AddPricing() {
   const params = useParams();
-  const rawParam = (params as any)?.uuid ?? (params as any)?.id;
+  const paramsTyped = params as { uuid?: string | string[]; id?: string | string[] } | undefined;
+  const rawParam = (paramsTyped?.uuid ?? paramsTyped?.id) as string | string[] | undefined;
   const id = Array.isArray(rawParam) ? rawParam[0] : rawParam;
   const isEditMode = id !== undefined && id !== "add" && id !== "";
   const { item, itemOptions, companyOptions, regionOptions, warehouseOptions, areaOptions, routeOptions, customerTypeOptions, channelOptions, customerCategoryOptions, companyCustomersOptions, itemCategoryOptions, fetchRegionOptions, fetchAreaOptions, fetchWarehouseOptions, fetchRouteOptions, fetchCustomerCategoryOptions, fetchCompanyCustomersOptions, fetchItemOptions } = useAllDropdownListData();
@@ -310,11 +311,21 @@ export default function AddPricing() {
   const selectedItemIds = keyValue["Item"] || [];
   
   // ✅ Fix: Flatten promotion details properly
-  let promotionDetails: any[] = [];
+  type PromotionDetailInput = {
+    quantity?: string | number;
+    lower_qty?: string | number;
+    toQuantity?: string | number;
+    upper_qty?: string | number;
+    free_qty?: string | number;
+    uom?: string;
+    promotionGroupName?: string;
+  };
+
+  let promotionDetails: PromotionDetailInput[] = [];
   if (Array.isArray(offerItems) && offerItems.length > 0 && Array.isArray(offerItems[0])) {
-    promotionDetails = offerItems.flat();
+    promotionDetails = (offerItems as unknown as PromotionDetailInput[][]).flat();
   } else {
-    promotionDetails = offerItems;
+    promotionDetails = offerItems as unknown as PromotionDetailInput[];
   }
 
   const payload = {
@@ -350,7 +361,7 @@ export default function AddPricing() {
       }
 
       const orderItem = orderTables.flat().find(
-        (oi: any) => String(oi.itemCode) === String(itemCode)
+        (oi: OrderItemType) => String(oi.itemCode) === String(itemCode)
       );
 
       return {
@@ -490,7 +501,7 @@ export default function AddPricing() {
       { promotionGroupName: "", itemName: "", itemCode: "", quantity: "", toQuantity: "", uom: "CTN", price: "", free_qty: "" },
     ]
   ]);
-  const [offerItems, setOfferItems] = useState<OfferItemType[]>([
+  const [offerItems, setOfferItems] = useState<OfferItemType[] | OfferItemType[][]>([
     { promotionGroupName: "", itemName: "", itemCode: "", uom: "BAG", toQuantity: "", is_discount: "0" },
   ]);
 
@@ -502,6 +513,7 @@ export default function AddPricing() {
     label?: string;
     [key: string]: unknown;
   };
+  type Uom = { name?: string; uom?: string; uom_type?: string; price?: number | string; [k: string]: unknown };
   const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -517,11 +529,12 @@ export default function AddPricing() {
           }
 
           // Enrich each returned item with uomSummary from provider `item` state when available
-          const ctxItems: any[] = Array.isArray(item) ? item : [];
-          const enriched = items.map((it: any) => {
+          const ctxItems: ItemDetail[] = Array.isArray(item) ? (item as ItemDetail[]) : [];
+          const enriched = items.map((it: ItemDetail) => {
             // match by id or code
-            const match = ctxItems.find(ci => String(ci.id) === String(it.id) || String(ci.id) === String(it.code) || String(ci.id) === String(it.itemCode) || String(ci.uuid) === String(it.id));
-            const uomSummary = match?.uomSummary ?? match?.uom ?? it.uom ?? [];
+            const match = ctxItems.find(ci => String((ci as Record<string, unknown>)['id'] ?? (ci as Record<string, unknown>)['code'] ?? (ci as Record<string, unknown>)['itemCode'] ?? '') === String(it.id ?? it.code ?? it.itemCode ?? ''));
+            const maybeUomSummary = match ? ((match as Record<string, unknown>)['uomSummary'] ?? (match as Record<string, unknown>)['uom']) : undefined;
+            const uomSummary = Array.isArray(maybeUomSummary) ? (maybeUomSummary as unknown[]) : (Array.isArray((it as Record<string, unknown>)['uom']) ? (it as Record<string, unknown>)['uom'] as unknown[] : []);
             return { ...it, uomSummary };
           });
 
@@ -732,7 +745,7 @@ export default function AddPricing() {
     case 3:
       // Helper to update orderItems by row index for a specific table so each row
       // can store independent values even when itemCode is empty or duplicated.
-      function updateOrderItem(tableIdx: number, rowIdx: string, key: keyof OrderItemType, value: string) {
+      function updateOrderItem(tableIdx: number, rowIdx: string | undefined, key: keyof OrderItemType, value: string) {
         setOrderTables((tables) => tables.map((arr, idx) => {
           if (idx !== tableIdx) return arr;
           return arr.map((oi, i) => String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi);
@@ -740,7 +753,12 @@ export default function AddPricing() {
       }
 
       function updateOfferItem(idx: string, key: keyof OfferItemType, value: string) {
-        setOfferItems((arr) => arr.map((oi, i) => String(i) === String(idx) ? { ...oi, [key]: value } : oi));
+        setOfferItems((prev) => {
+          if (Array.isArray(prev) && prev.length > 0 && Array.isArray(prev[0])) {
+            return (prev as OfferItemType[][]).map((sub) => sub.map((oi, i) => (String(i) === String(idx) ? { ...oi, [key]: value } : oi)));
+          }
+          return (prev as OfferItemType[]).map((oi, i) => (String(i) === String(idx) ? { ...oi, [key]: value } : oi));
+        });
       }
       // Options built from items selected in Step 2
       const selectedItemOptions = selectedItemDetails.map(d => {
@@ -752,23 +770,25 @@ export default function AddPricing() {
       });
 
       // Helper to set both itemCode and itemName for an order row
-      function selectItemForOrder(tableIdx: number, row: any, value: string) {
-        const foundItem = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value)) || (Array.isArray(item) ? (item as any).find((ci: any) => String(ci.id) === String(value) || String(ci.id) === String(value)) : undefined);
+  function selectItemForOrder(tableIdx: number, row: Record<string, unknown>, value: string) {
+        const providerItems: ItemDetail[] = Array.isArray(item) ? (item as ItemDetail[]) : [];
+        const foundItem = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value)) || providerItems.find((ci) => String((ci as Record<string, unknown>)['id'] ?? '') === String(value));
         const name = foundItem ? String(foundItem.name || foundItem.itemName || foundItem.label || "") : "";
         // update itemCode then itemName using the row index so it applies to the correct row
-        updateOrderItem(tableIdx, row.idx, "itemCode", value);
-        updateOrderItem(tableIdx, row.idx, "itemName", name);
+  updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "itemCode", value);
+  updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "itemName", name);
 
         // If UOM data exists on the selected item, prefill uom and price for this order row.
         // Prefer a UOM flagged as primary (uom_type === 'primary'), otherwise use the first available UOM.
         try {
-          const uomList: any[] = (foundItem && ((foundItem as any).uomSummary || (foundItem as any).uom)) || [];
+          const uomList = (foundItem ? ((foundItem as Record<string, unknown>)['uomSummary'] ?? (foundItem as Record<string, unknown>)['uom']) : undefined) as unknown;
           if (Array.isArray(uomList) && uomList.length > 0) {
-            const primary = uomList.find(u => String(u.uom_type || '').toLowerCase() === 'primary') || uomList[0];
+            const uomArr = uomList as Uom[];
+            const primary = uomArr.find(u => String(u.uom_type || '').toLowerCase() === 'primary') || uomArr[0];
             const uomName = String(primary?.name ?? primary?.uom ?? '');
             const uomPrice = primary && (primary.price !== undefined && primary.price !== null) ? String(primary.price) : '';
-            if (uomName) updateOrderItem(tableIdx, row.idx, 'uom', uomName);
-            if (uomPrice) updateOrderItem(tableIdx, row.idx, 'price', uomPrice);
+            if (uomName) updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), 'uom', uomName);
+            if (uomPrice) updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), 'price', uomPrice);
           }
         } catch (err) {
           // non-fatal: skip prefill on error
@@ -778,23 +798,24 @@ export default function AddPricing() {
 
       // Helper to set both itemCode and itemName for an offer row/table
       function selectItemForOffer(tableIdx: number, rowIdx: string, value: string) {
-        const foundItem = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value)) || (Array.isArray(item) ? (item as any).find((ci: any) => String(ci.id) === String(value) || String(ci.id) === String(value)) : undefined);
+        const providerItems: ItemDetail[] = Array.isArray(item) ? (item as ItemDetail[]) : [];
+        const foundItem = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === String(value) || String(it.name || it.itemName || it.label) === String(value)) || providerItems.find((ci) => String((ci as Record<string, unknown>)['id'] ?? '') === String(value));
         const name = foundItem ? String(foundItem.name || foundItem.itemName || foundItem.label || "") : "";
         // choose primary UOM when available, otherwise first UOM
-        const uomListOffer: any[] = (foundItem && ((foundItem as any).uomSummary || (foundItem as any).uom)) || [];
-        const primaryUom = Array.isArray(uomListOffer) && uomListOffer.length > 0 ? (uomListOffer.find((uu: any) => String(uu.uom_type || '').toLowerCase() === 'primary') || uomListOffer[0]) : undefined;
+        const uomListOffer = foundItem ? ((foundItem as Record<string, unknown>)['uomSummary'] ?? (foundItem as Record<string, unknown>)['uom']) : undefined;
+        const primaryUom = Array.isArray(uomListOffer) && uomListOffer.length > 0 ? ((uomListOffer as Uom[]).find((uu) => String(uu.uom_type || '').toLowerCase() === 'primary') || (uomListOffer as Uom[])[0]) : undefined;
 
-        setOfferItems((prev: any) => {
+        setOfferItems((prev: OfferItemType[] | OfferItemType[][]) => {
           // bundle mode -> nested arrays
           if (Array.isArray(prev) && prev.length > 0 && Array.isArray(prev[0])) {
-            return prev.map((arr: any[], idx: number) =>
+            return (prev as OfferItemType[][]).map((arr: OfferItemType[], idx: number) =>
               idx === tableIdx
-                ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name, uom: primaryUom ? String(primaryUom.name ?? '') : (oi.uom ?? '') } : oi))
+                ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name, uom: primaryUom ? String((primaryUom as Record<string, unknown>)['name'] ?? '') : (oi.uom ?? '') } : oi))
                 : arr
             );
           }
           // normal single array mode
-          return prev.map((oi: any, i: number) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name, uom: primaryUom ? String(primaryUom.name ?? '') : (oi.uom ?? '') } : oi));
+          return (prev as OfferItemType[]).map((oi: OfferItemType, i: number) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name, uom: primaryUom ? String((primaryUom as Record<string, unknown>)['name'] ?? '') : (oi.uom ?? '') } : oi));
         });
       }
 
@@ -808,20 +829,20 @@ export default function AddPricing() {
       }
       // Build UOM options for a given table row using selectedItemDetails or provider `item`.
       // Always returns an array of options so the UI can render a select dropdown.
-      function getUomOptionsForRow(row: any) {
-        const codeOrName = String(row.itemCode || row.itemName || "");
-        let itemObj: any = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === codeOrName || String(it.name || it.itemName || it.label) === codeOrName);
+      function getUomOptionsForRow(row: Record<string, unknown>) {
+        const codeOrName = String((row as Record<string, unknown>)['itemCode'] ?? (row as Record<string, unknown>)['itemName'] ?? "");
+        let itemObj: ItemDetail | undefined = selectedItemDetails.find(it => String(it.code || it.itemCode || it.label) === codeOrName || String(it.name || it.itemName || it.label) === codeOrName);
         if (!itemObj && Array.isArray(item)) {
-          itemObj = (item as any).find((ci: any) => String(ci.id) === codeOrName || String(ci.code) === codeOrName || String(ci.label) === codeOrName || String(ci.name) === codeOrName);
+          itemObj = (item as ItemDetail[]).find((ci) => String((ci as Record<string, unknown>)['id'] ?? (ci as Record<string, unknown>)['code'] ?? '') === codeOrName || String((ci as Record<string, unknown>)['label'] ?? (ci as Record<string, unknown>)['name'] ?? '') === codeOrName);
         }
-        const uoms = (itemObj && (itemObj.uomSummary || itemObj.uom)) || [];
+        const uoms = (itemObj ? ((itemObj as Record<string, unknown>)['uomSummary'] ?? (itemObj as Record<string, unknown>)['uom']) : undefined) ?? [];
         // If no uoms available return a single placeholder option (so dropdown always shows)
         if (!Array.isArray(uoms) || uoms.length === 0) {
           const fallback = String(row.uom || "");
           if (fallback) return [{ label: fallback, value: fallback, price: undefined }];
           return [{ label: "-", value: "", price: undefined }];
         }
-        return uoms.map((u: any) => ({ label: `${u.name}${u.uom_type ? ` (${u.uom_type})` : ""}${u.price ? ` - ${u.price}` : ""}`, value: String(u.name), price: u.price }));
+        return (uoms as Uom[]).map((u) => ({ label: `${u.name ?? u.uom ?? ""}${u.uom_type ? ` (${u.uom_type})` : ""}${u.price ? ` - ${u.price}` : ""}`, value: String(u.name ?? u.uom ?? ""), price: u.price }));
       }
       // Render all order tables
       const renderOrderTables = () => {
@@ -868,8 +889,8 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              value={row.quantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.idx, "quantity", clampPercentInput(e.target.value))}
+                              value={String((row as Record<string, unknown>)['quantity'] ?? "")}
+                              onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "quantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
@@ -881,8 +902,8 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              value={row.toQuantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.idx, "toQuantity", clampPercentInput(e.target.value))}
+                              value={String((row as Record<string, unknown>)['toQuantity'] ?? "")}
+                              onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "toQuantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
@@ -898,12 +919,12 @@ export default function AddPricing() {
                                 type="select"
                                 isSingle={true}
                                 options={[{ label: `Select UOM`, value: "" }, ...uomOptions.map((o: any) => ({ label: o.label, value: o.value }))]}
-                                value={row.uom || ""}
+                                value={String((row as Record<string, unknown>)['uom'] ?? "")}
                                 onChange={e => {
                                   const val = e.target.value;
-                                  updateOrderItem(tableIdx, row.idx, "uom", val);
+                                  updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "uom", val);
                                   const found = uomOptions.find((u: any) => String(u.value) === String(val));
-                                  if (found) updateOrderItem(tableIdx, row.idx, "price", String(found.price ?? ""));
+                                  if (found) updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "price", String(found.price ?? ""));
                                 }}
                                 width="w-full"
                               />
@@ -915,13 +936,13 @@ export default function AddPricing() {
                           {
                             key: "selectedItem",
                             label: "Item",
-                            render: (row: any) => (
+                            render: (row: Record<string, unknown>) => (
                               <InputFields
                                 label=""
                                 type="select"
                                 isSingle={true}
                                 options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
-                                value={row.itemCode || ""}
+                                value={String((row as Record<string, unknown>)['itemCode'] ?? "")}
                                 onChange={e => selectItemForOrder(tableIdx, row, e.target.value)}
                                 width="w-full"
                               />
@@ -934,14 +955,14 @@ export default function AddPricing() {
                           {
                             key: "promotionGroupName",
                             label: "Category",
-                            render: (row: any) => (
+                            render: (row: Record<string, unknown>) => (
                               <InputFields
                                 label=""
                                 type="select"
                                 isSingle={true}
                                 options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
-                                value={row.promotionGroupName || ""}
-                                onChange={e => updateOrderItem(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                value={String((row as Record<string, unknown>)['promotionGroupName'] ?? "")}
+                                onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "promotionGroupName", e.target.value)}
                                 width="w-full"
                               />
                             ),
@@ -954,8 +975,8 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              value={row.free_qty || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.idx, "free_qty", e.target.value)}
+                              value={String((row as Record<string, unknown>)['free_qty'] ?? "")}
+                              onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "free_qty", e.target.value)}
                               width="w-full"
                             />
                           ),
@@ -967,13 +988,13 @@ export default function AddPricing() {
                           {
                             key: "selectedItem",
                             label: "Item",
-                            render: (row: any) => (
+                            render: (row: Record<string, unknown>) => (
                               <InputFields
                                 label=""
                                 type="select"
                                 isSingle={true}
                                 options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
-                                value={row.itemCode || ""}
+                                value={String((row as Record<string, unknown>)['itemCode'] ?? "")}
                                 onChange={e => selectItemForOrder(tableIdx, row, e.target.value)}
                                 width="w-full"
                               />
@@ -985,14 +1006,14 @@ export default function AddPricing() {
                           {
                             key: "promotionGroupName",
                             label: "Category",
-                            render: (row: any) => (
+                            render: (row: Record<string, unknown>) => (
                               <InputFields
                                 label=""
                                 type="select"
                                 isSingle={false}
                                 options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
-                                value={row.promotionGroupName || ""}
-                                onChange={e => updateOrderItem(tableIdx, row.idx, "promotionGroupName", e.target.value)}
+                                value={String((row as Record<string, unknown>)['promotionGroupName'] ?? "")}
+                                onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "promotionGroupName", e.target.value)}
                                 width="w-full"
                               />
                             ),
@@ -1005,8 +1026,8 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              value={row.quantity || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.idx, "quantity", clampPercentInput(e.target.value))}
+                              value={String((row as Record<string, unknown>)['quantity'] ?? "")}
+                              onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "quantity", clampPercentInput(e.target.value))}
                               width="w-full"
                             />
                           ),
@@ -1018,8 +1039,8 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="text"
-                              value={row.uom || ""}
-                              onChange={e => updateOrderItem(tableIdx, row.idx, "uom", e.target.value)}
+                              value={String((row as Record<string, unknown>)['uom'] ?? "")}
+                              onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "uom", e.target.value)}
                               width="w-full"
                             />
                           ),
@@ -1098,10 +1119,12 @@ export default function AddPricing() {
       };
 
       // Show all offerItems, including custom added rows
-      let offerItemsData: OfferItemType[] = offerItems.map((offerItem, idx) => ({
-        ...offerItem,
-        idx: String(idx),
-      }));
+      let offerItemsData: OfferItemType[] = [];
+      if (Array.isArray(offerItems) && offerItems.length > 0 && Array.isArray(offerItems[0])) {
+        offerItemsData = (offerItems as OfferItemType[][]).flat().map((offerItem, idx) => ({ ...offerItem, idx: String(idx) }));
+      } else {
+        offerItemsData = (offerItems as OfferItemType[]).map((offerItem, idx) => ({ ...offerItem, idx: String(idx) }));
+      }
       if (offerItemsData.length === 0) {
         offerItemsData = [{
           promotionGroupName: "",
@@ -1299,31 +1322,31 @@ export default function AddPricing() {
                 // If 'slab' mode is selected, treat offerItems as an array of tables (array of arrays)
                 const isBundle = promotion.bundle_combination === "slab";
                 // For backward compatibility, if offerItems is not an array of arrays, wrap it
-                let offerTables: any[][] = [];
+                let offerTables: OfferItemType[][] = [];
                   if (isBundle) {
                   // If offerItems is already an array of arrays, use as is, else wrap each object in its own array
-                  if (Array.isArray(offerItems) && offerItems.length > 0 && Array.isArray((offerItems as any)[0])) {
+                  if (Array.isArray(offerItems) && offerItems.length > 0 && Array.isArray((offerItems as unknown[])[0])) {
                     // Cast via unknown first to satisfy TypeScript when converting between incompatible array shapes
-                    offerTables = offerItems as unknown as any[][];
+                    offerTables = offerItems as unknown as OfferItemType[][];
                   } else {
-                    offerTables = offerItems.map((oi: any) => [oi]);
+                    offerTables = (offerItems as OfferItemType[]).map((oi: OfferItemType) => [oi]);
                   }
                 } else {
                   // Single table mode
-                  offerTables = [offerItems];
+                  offerTables = [offerItems as OfferItemType[]];
                 }
 
                 // Helper to update offerItems by tableIdx and rowIdx
                 function updateOfferItemTable(tableIdx: number, rowIdx: string, key: string, value: string) {
-                  setOfferItems((prev: any) => {
+                  setOfferItems((prev: OfferItemType[] | OfferItemType[][]) => {
                     if (isBundle) {
-                      return prev.map((arr: any[], idx: number) =>
+                      return (prev as OfferItemType[][]).map((arr: OfferItemType[], idx: number) =>
                         idx === tableIdx
-                          ? arr.map((oi, i) => String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi)
+                          ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi))
                           : arr
                       );
                     } else {
-                      return prev.map((oi: any, i: number) => String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi);
+                      return (prev as OfferItemType[]).map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, [key]: value } : oi));
                     }
                   });
                 }
@@ -1331,38 +1354,30 @@ export default function AddPricing() {
                 // Helper to add a new table or row
                 function addOfferItem(tableIdx: number) {
                   if (isBundle) {
-                    setOfferItems((prev: any) => ([
-                      ...prev,
-                      [
-                        {
-                          promotionGroupName: "",
-                          itemName: "",
-                          itemCode: "",
-                          uom: "BAG",
-                          toQuantity: "",
-                          is_discount: "0"
-                        }
-                      ]
-                    ]));
+                    setOfferItems((prev) => ((prev as OfferItemType[][]).concat([[{
+                      promotionGroupName: "",
+                      itemName: "",
+                      itemCode: "",
+                      uom: "BAG",
+                      toQuantity: "",
+                      is_discount: "0"
+                    }]])));
                   } else {
-                    setOfferItems((prev: any) => ([
-                      ...prev,
-                      {
-                        promotionGroupName: "",
-                        itemName: "",
-                        itemCode: "",
-                        uom: "BAG",
-                        toQuantity: "",
-                        is_discount: "0"
-                      }
-                    ]));
+                    setOfferItems((prev) => ((prev as OfferItemType[]).concat([{
+                      promotionGroupName: "",
+                      itemName: "",
+                      itemCode: "",
+                      uom: "BAG",
+                      toQuantity: "",
+                      is_discount: "0"
+                    }])));
                   }
                 }
 
                 // Helper to add a row to a specific table (only for bundle mode)
                 function addRowToOfferTable(tableIdx: number) {
-                  setOfferItems((prev: any) =>
-                    prev.map((arr: any[], idx: number) =>
+                  setOfferItems((prev: OfferItemType[] | OfferItemType[][]) =>
+                    (prev as OfferItemType[][]).map((arr: OfferItemType[], idx: number) =>
                       idx === tableIdx
                         ? [
                             ...arr,
@@ -1382,16 +1397,16 @@ export default function AddPricing() {
 
                 // Helper to delete a row or table
                 function deleteOfferItem(tableIdx: number, rowIdx: string) {
-                  setOfferItems((prev: any) => {
+                  setOfferItems((prev: OfferItemType[] | OfferItemType[][]) => {
                     if (isBundle) {
                       // Remove row from the correct table
-                      const newTables = prev.map((arr: any[], idx: number) => {
+                      const newTables = (prev as OfferItemType[][]).map((arr: OfferItemType[], idx: number) => {
                         if (idx !== tableIdx) return arr;
                         const filtered = arr.filter((oi, i) => String(i) !== String(rowIdx));
                         return filtered;
                       });
                       // Remove table if empty and more than one table exists
-                      const filteredTables = newTables.filter((arr: any[]) => arr.length > 0);
+                      const filteredTables = newTables.filter((arr: OfferItemType[]) => arr.length > 0);
                       return filteredTables.length > 0 ? filteredTables : [[{
                         promotionGroupName: "",
                         itemName: "",
@@ -1402,16 +1417,17 @@ export default function AddPricing() {
                       }]];
                     } else {
                       // Only allow delete if more than one row exists
-                      if (prev.length > 1) {
-                        return prev.filter((_: any, idx: number) => idx !== Number(rowIdx));
+                      const prevArr = prev as OfferItemType[];
+                      if (prevArr.length > 1) {
+                        return prevArr.filter((_, idx: number) => idx !== Number(rowIdx));
                       }
-                      return prev;
+                      return prevArr;
                     }
                   });
                 }
 
                 return offerTables.map((offerArr, tableIdx) => {
-                  let offerItemsData = offerArr.map((offerItem, idx) => ({ ...offerItem, idx: String(idx) }));
+                  let offerItemsData = offerArr.map((offerItem: OfferItemType, idx: number) => ({ ...offerItem, idx: String(idx) }));
                   if (offerItemsData.length === 0) {
                     offerItemsData = [{
                       promotionGroupName: "",
@@ -1450,7 +1466,7 @@ export default function AddPricing() {
                                           type="select"
                                           isSingle={true}
                                           options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
-                                          value={row.itemCode || ""}
+                                          value={String((row as Record<string, unknown>)['itemCode'] ?? "")}
                                           onChange={e => selectItemForOffer(tableIdx, row.idx, e.target.value)}
                                           width="w-full"
                                         />
@@ -1468,7 +1484,7 @@ export default function AddPricing() {
                                           type="select"
                                           isSingle={false}
                                           options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
-                                          value={row.promotionGroupName || ""}
+                                          value={String((row as Record<string, unknown>)['promotionGroupName'] ?? "")}
                                           onChange={e => updateOfferItemTable(tableIdx, row.idx, "promotionGroupName", e.target.value)}
                                           width="w-full"
                                         />
@@ -1482,7 +1498,7 @@ export default function AddPricing() {
                                   <InputFields
                                     label=""
                                     type="text"
-                                    value={row.itemName || ""}
+                                    value={String((row as Record<string, unknown>)['itemName'] ?? "")}
                                     onChange={e => updateOfferItemTable(tableIdx, row.idx, "itemName", e.target.value)}
                                     width="w-full"
                                   />
@@ -1501,7 +1517,7 @@ export default function AddPricing() {
                                       type="select"
                                       isSingle={true}
                                       options={[{ label: `Select UOM`, value: "" }, ...uomOptions.map((o: any) => ({ label: o.label, value: o.value }))]}
-                                      value={row.uom || ""}
+                                      value={String((row as Record<string, unknown>)['uom'] ?? "")}
                                       onChange={e => updateOfferItemTable(tableIdx, row.idx, "uom", e.target.value)}
                                       width="w-full"
                                     />
@@ -1522,7 +1538,7 @@ export default function AddPricing() {
                                         type="select"
                                         isSingle={true}
                                         options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
-                                        value={row.itemCode || ""}
+                                        value={String((row as Record<string, unknown>)['itemCode'] ?? "")}
                                         onChange={e => selectItemForOffer(tableIdx, row.idx, e.target.value)}
                                         width="w-full"
                                       />
@@ -1540,7 +1556,7 @@ export default function AddPricing() {
                                         type="select"
                                         isSingle={true}
                                         options={[{ label: `Select Category`, value: "" }, ...itemCategoryOptions]}
-                                        value={row.promotionGroupName || ""}
+                                        value={String((row as Record<string, unknown>)['promotionGroupName'] ?? "")}
                                         onChange={e => updateOfferItemTable(tableIdx, row.idx, "promotionGroupName", e.target.value)}
                                         width="w-full"
                                       />
@@ -1555,7 +1571,7 @@ export default function AddPricing() {
                                   <InputFields
                                     label=""
                                     type="text"
-                                    value={row.itemName || ""}
+                                    value={String((row as Record<string, unknown>)['itemName'] ?? "")}
                                     onChange={e => updateOfferItemTable(tableIdx, row.idx, "itemName", e.target.value)}
                                     width="w-full"
                                   />
@@ -1568,7 +1584,7 @@ export default function AddPricing() {
                                   <InputFields
                                     label=""
                                     type="text"
-                                    value={row.uom || ""}
+                                    value={String((row as Record<string, unknown>)['uom'] ?? "")}
                                     onChange={e => updateOfferItemTable(tableIdx, row.idx, "uom", e.target.value)}
                                     width="w-full"
                                   />
@@ -1581,7 +1597,7 @@ export default function AddPricing() {
                                   <InputFields
                                     label=""
                                     type="number"
-                                    value={row.toQuantity || ""}
+                                    value={String((row as Record<string, unknown>)['toQuantity'] ?? "")}
                                       onChange={e => updateOfferItemTable(tableIdx, row.idx, "toQuantity", clampPercentInput(e.target.value))}
                                     width="w-full"
                                   />

@@ -1,13 +1,12 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import InputFields from "@/app/components/inputFields";
 import StepperForm, { useStepperForm, StepperStep } from "@/app/components/stepperForm";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import {
-  agentCustomerById,
   updateAuthUser,
   registerAuthUser,
   getRoleById,
@@ -15,7 +14,7 @@ import {
 } from "@/app/services/allApi";
 import * as Yup from "yup";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { Form, Formik, FormikHelpers } from "formik";
+import { Form, Formik, FormikHelpers, FormikErrors, FormikTouched } from "formik";
 import { useLoading } from "@/app/services/loadingContext";
 import CustomPasswordInput from "@/app/components/customPasswordInput";
 
@@ -97,7 +96,7 @@ export default function UserAddEdit() {
     area: "",
     salesman: "",
   });
-  const [originalUser, setOriginalUser] = useState<any>(null);
+  const [originalUser, setOriginalUser] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -109,12 +108,24 @@ export default function UserAddEdit() {
           const user = data?.user ?? data;
           const roleVal = user?.role ? (typeof user.role === "object" ? String(user.role.id ?? user.role) : String(user.role)) : "";
           // Build arrays of ids for multi-select initial values (preserve all selections)
-          const companyIds = Array.isArray(user?.companies) && user.companies.length > 0 ? user.companies.map((c: any) => String(c.id ?? c)) : (user?.company ? [String(user.company)] : []);
-          const regionIds = Array.isArray(user?.regions) && user.regions.length > 0 ? user.regions.map((r: any) => String(r.id ?? r)) : (user?.region ? [String(user.region)] : []);
-          const areaIds = Array.isArray(user?.areas) && user.areas.length > 0 ? user.areas.map((a: any) => String(a.id ?? a)) : (user?.area ? [String(user.area)] : []);
-          const warehouseIds = Array.isArray(user?.warehouses) && user.warehouses.length > 0 ? user.warehouses.map((w: any) => String(w.id ?? w)) : (user?.warehouse ? [String(user.warehouse)] : []);
-          const routeIds = Array.isArray(user?.routes) && user.routes.length > 0 ? user.routes.map((r: any) => String(r.id ?? r)) : (user?.route ? [String(user.route)] : []);
-          const salesmanVals = Array.isArray(user?.salesmen) && user.salesmen.length > 0 ? user.salesmen.map((s: any) => String(s.id ?? s)) : (user?.salesman ? [String(user.salesman)] : []);
+          const companyIds = Array.isArray(user?.companies) && user.companies.length > 0
+            ? user.companies.map((c: unknown) => String(((c as Record<string, unknown>)?.id) ?? c))
+            : (user?.company ? [String(user.company)] : []);
+          const regionIds = Array.isArray(user?.regions) && user.regions.length > 0
+            ? user.regions.map((r: unknown) => String(((r as Record<string, unknown>)?.id) ?? r))
+            : (user?.region ? [String(user.region)] : []);
+          const areaIds = Array.isArray(user?.areas) && user.areas.length > 0
+            ? user.areas.map((a: unknown) => String(((a as Record<string, unknown>)?.id) ?? a))
+            : (user?.area ? [String(user.area)] : []);
+          const warehouseIds = Array.isArray(user?.warehouses) && user.warehouses.length > 0
+            ? user.warehouses.map((w: unknown) => String(((w as Record<string, unknown>)?.id) ?? w))
+            : (user?.warehouse ? [String(user.warehouse)] : []);
+          const routeIds = Array.isArray(user?.routes) && user.routes.length > 0
+            ? user.routes.map((r: unknown) => String(((r as Record<string, unknown>)?.id) ?? r))
+            : (user?.route ? [String(user.route)] : []);
+          const salesmanVals = Array.isArray(user?.salesmen) && user.salesmen.length > 0
+            ? user.salesmen.map((s: unknown) => String(((s as Record<string, unknown>)?.id) ?? s))
+            : (user?.salesman ? [String(user.salesman)] : []);
 
           setInitialValues({
             name: String(user?.name ?? ""),
@@ -200,7 +211,7 @@ export default function UserAddEdit() {
         : Array.isArray(data?.label)
         ? data.label
         : [];
-      const labelNames = labelsArr.map((l: any) => l.name?.toLowerCase() || "");
+      const labelNames = labelsArr.map((l: unknown) => String(((l as Record<string, unknown>)?.name) ?? "").toLowerCase());
       setVisibleLabels(labelNames);
     } catch (err) {
       console.error("Failed to fetch labels:", err);
@@ -242,16 +253,19 @@ export default function UserAddEdit() {
     ...(visibleLabels.includes("salesman") && { salesman: Yup.string().required("Salesman is required") }),
   });
 
-  const handleNext = async (values: User, actions: FormikHelpers<User>) => {
+  const handleNext = async (
+    values: User,
+    actions: Pick<FormikHelpers<User>, "setErrors" | "setTouched">
+  ) => {
     try {
       const normalized = {
         ...values,
-        company: Array.isArray((values as any).company) ? (values as any).company[0] : (values as any).company,
-        region: Array.isArray((values as any).region) ? (values as any).region[0] : (values as any).region,
-        area: Array.isArray((values as any).area) ? (values as any).area[0] : (values as any).area,
-        warehouse: Array.isArray((values as any).warehouse) ? (values as any).warehouse[0] : (values as any).warehouse,
-        route: Array.isArray((values as any).route) ? (values as any).route[0] : (values as any).route,
-        salesman: Array.isArray((values as any).salesman) ? (values as any).salesman[0] : (values as any).salesman,
+        company: Array.isArray(values.company) ? values.company[0] : values.company,
+        region: Array.isArray(values.region) ? values.region[0] : values.region,
+        area: Array.isArray(values.area) ? values.area[0] : values.area,
+        warehouse: Array.isArray(values.warehouse) ? values.warehouse[0] : values.warehouse,
+        route: Array.isArray(values.route) ? values.route[0] : values.route,
+        salesman: Array.isArray(values.salesman) ? values.salesman[0] : values.salesman,
       } as User;
       const stepSchema =
         currentStep === 1
@@ -278,9 +292,9 @@ export default function UserAddEdit() {
       await stepSchema.validate(normalized, { abortEarly: false });
       markStepCompleted(currentStep);
       nextStep();
-    } catch (err) {
+      } catch (err) {
       if (err instanceof Yup.ValidationError) {
-        const errors = err.inner.reduce((acc: any, curr) => {
+        const errors = err.inner.reduce((acc: Record<string, string>, curr: Yup.ValidationError) => {
           acc[curr.path!] = curr.message;
           return acc;
         }, {});
@@ -292,30 +306,30 @@ export default function UserAddEdit() {
 
   const handleSubmit = async (
     values: User,
-    actions?: Pick<FormikHelpers<User>, "setErrors" | "setTouched" | "setSubmitting">
+    actions?: Partial<Pick<FormikHelpers<User>, "setErrors" | "setTouched" | "setSubmitting">>
   ) => {
     try {
       const normalized = {
         ...values,
-        company: Array.isArray((values as any).company) ? (values as any).company[0] : (values as any).company,
-        region: Array.isArray((values as any).region) ? (values as any).region[0] : (values as any).region,
-        area: Array.isArray((values as any).area) ? (values as any).area[0] : (values as any).area,
-        warehouse: Array.isArray((values as any).warehouse) ? (values as any).warehouse[0] : (values as any).warehouse,
-        route: Array.isArray((values as any).route) ? (values as any).route[0] : (values as any).route,
-        salesman: Array.isArray((values as any).salesman) ? (values as any).salesman[0] : (values as any).salesman,
+        company: Array.isArray(values.company) ? values.company[0] : values.company,
+        region: Array.isArray(values.region) ? values.region[0] : values.region,
+        area: Array.isArray(values.area) ? values.area[0] : values.area,
+        warehouse: Array.isArray(values.warehouse) ? values.warehouse[0] : values.warehouse,
+        route: Array.isArray(values.route) ? values.route[0] : values.route,
+        salesman: Array.isArray(values.salesman) ? values.salesman[0] : values.salesman,
       } as User;
 
       await dynamicSchema.validate(normalized, { abortEarly: false });
-      const payload: any = { ...normalized };
-      if (payload.role) payload.role = Number(payload.role);
+    const payload: Record<string, unknown> = { ...normalized };
+    if (payload.role) payload.role = Number(payload.role as unknown);
 
-      const toArray = <T,>(v?: T | T[]): T[] => (Array.isArray(v) ? v : v ? [v] : []);
-      const companies = toArray((values as any).company).map((id: any) => Number(id));
-      const regions = toArray((values as any).region).map((id: any) => Number(id));
-      const areas = toArray((values as any).area).map((id: any) => Number(id));
-      const warehouses = toArray((values as any).warehouse).map((id: any) => Number(id));
-      const routes = toArray((values as any).route).map((id: any) => Number(id));
-  const salesmen = toArray((values as any).salesman).map((id: any) => Number(id));
+    const toArray = <T,>(v?: T | T[]): T[] => (Array.isArray(v) ? v : v ? [v] : []);
+    const companies = toArray(values.company).map((id) => Number(String(id)));
+    const regions = toArray(values.region).map((id) => Number(String(id)));
+    const areas = toArray(values.area).map((id) => Number(String(id)));
+    const warehouses = toArray(values.warehouse).map((id) => Number(String(id)));
+    const routes = toArray(values.route).map((id) => Number(String(id)));
+    const salesmen = toArray(values.salesman).map((id) => Number(String(id)));
   // Always include these keys as arrays (may be empty) per backend requirement
   payload.company = companies;
   payload.region = regions;
@@ -325,11 +339,11 @@ export default function UserAddEdit() {
   payload.salesman = salesmen;
 
       if (isEditMode) {
-        if (payload.hasOwnProperty("password_confirmation")) delete payload.password_confirmation;
+        if (Object.prototype.hasOwnProperty.call(payload, "password_confirmation")) delete (payload as Record<string, unknown>)["password_confirmation"];
 
-        if (!payload.password) delete payload.password;
+        if (!(payload as Record<string, unknown>).password) delete (payload as Record<string, unknown>)["password"];
 
-        if (payload.role) payload.role = Number(payload.role);
+        if (payload.role) payload.role = Number(payload.role as unknown);
       }
 
       let res;
@@ -344,9 +358,9 @@ export default function UserAddEdit() {
         showSnackbar(isEditMode ? "User updated successfully" : "User added successfully", "success");
         router.push("/settings/user");
       }
-    } catch (err) {
+      } catch (err) {
       if (err instanceof Yup.ValidationError) {
-        const errors = err.inner.reduce((acc: any, curr) => {
+        const errors = err.inner.reduce((acc: Record<string, string>, curr: Yup.ValidationError) => {
           if (curr.path) acc[curr.path] = curr.message;
           return acc;
         }, {});
@@ -359,7 +373,12 @@ export default function UserAddEdit() {
     }
   };
 
-  const renderStepContent = (values: User, setFieldValue: any, errors: any, touched: any) => {
+  const renderStepContent = (
+    values: User,
+    setFieldValue: (field: string, value: unknown) => void,
+    errors: FormikErrors<User>,
+    touched: FormikTouched<User>
+  ) => {
     switch (currentStep) {
       case 1:
         return (
@@ -440,7 +459,7 @@ export default function UserAddEdit() {
                 name="role"
                 value={values.role}
                 options={roleOptions}
-                onChange={async (e: any) => {
+                onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
                   const val = e?.target?.value;
                   setFieldValue("role", val);
                   await fetchLabelsForRoles(val);
@@ -456,7 +475,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.company}
                   options={companyOptions}
-                  onChange={async (e) => {
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
                     const v = e?.target?.value;
                     setFieldValue("company", v);
                     setSkeleton((s) => ({ ...s, region: true }));
@@ -478,7 +497,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.region}
                   options={regionOptions}
-                  onChange={async (e) => {
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
                     const v = e?.target?.value;
                     setFieldValue("region", v);
                     setSkeleton((s) => ({ ...s, area: true }));
@@ -500,7 +519,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.area}
                   options={areaOptions}
-                  onChange={async (e) => {
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
                     const v = e?.target?.value;
                     setFieldValue("area", v);
                     setSkeleton((s) => ({ ...s, warehouse: true }));
@@ -522,7 +541,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.warehouse}
                   options={warehouseOptions}
-                  onChange={async (e) => {
+                  onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
                     const v = e?.target?.value;
                     setFieldValue("warehouse", v);
                     setSkeleton((s) => ({ ...s, route: true }));
@@ -544,7 +563,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.route}
                   options={routeOptions}
-                  onChange={(e) => setFieldValue("route", e?.target?.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFieldValue("route", e?.target?.value)}
                   error={touched.route && errors.route}
                   showSkeleton={skeleton.route}
                 />
@@ -557,7 +576,7 @@ export default function UserAddEdit() {
                   isSingle={false}
                   value={values.salesman}
                   options={salesmanOptions}
-                  onChange={(e) => setFieldValue("salesman", e?.target?.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFieldValue("salesman", e?.target?.value)}
                   error={touched.salesman && errors.salesman}
                 />
               )}
@@ -588,15 +607,15 @@ export default function UserAddEdit() {
       >
         {({ values, setFieldValue, errors, touched, setErrors, setTouched, isSubmitting }) => (
           <Form>
-            <StepperForm
+              <StepperForm
               steps={steps.map((step) => ({
                 ...step,
                 isCompleted: isStepCompleted(step.id),
               }))}
               currentStep={currentStep}
               onBack={prevStep}
-              onNext={() => handleNext(values, { setErrors, setTouched } as any)}
-              onSubmit={() => handleSubmit(values, { setErrors, setTouched } as any)}
+              onNext={() => handleNext(values, { setErrors, setTouched })}
+              onSubmit={() => handleSubmit(values, { setErrors, setTouched })}
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"

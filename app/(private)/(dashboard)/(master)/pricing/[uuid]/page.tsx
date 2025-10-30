@@ -96,7 +96,7 @@ function SelectKeyCombination({ keyCombo, setKeyCombo }: SelectKeyProps) {
     };
     keysArray.forEach((group) => {
       if (group.type === "Location" || group.type === "Customer" || group.type === "Item") {
-        // @ts-ignore
+
         selected[group.type] = group.options.filter((o) => o.isSelected).map((o) => o.label);
       }
     });
