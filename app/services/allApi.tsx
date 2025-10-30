@@ -891,7 +891,7 @@ export const updateRegion = async (id: string, payload: ipdatePayload) => {
       payload
     );
     return res.data;
-  } catch (error: unknown) {
+  } catch (error: unknown) {  
     return handleError(error);
   }
 };
@@ -1237,7 +1237,10 @@ export const updateCustomerCategory = async (
     throw error;
   }
 };
-
+export const getCustomerCategoryByUUID = async (id: string) => {
+  const res = await API.get(`/api/settings/customer-category/${id}`);
+  return res.data;
+};
 export const userList = async (params?: Params) => {
   try {
     const res = await API.get("/api/settings/user-type/list", {
