@@ -262,9 +262,7 @@ export default function AddEditRoute() {
                   />
                 </>
               )}
-                {errors.routeCode && (
-              <p className="text-red-500 text-sm mt-1">{errors.routeCode}</p>
-            )}
+           
             </div>
           
 
