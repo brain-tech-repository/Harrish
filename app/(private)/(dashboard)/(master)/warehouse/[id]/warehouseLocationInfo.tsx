@@ -53,9 +53,7 @@ export default function WarehouseLocationInfo({
             ]}
             error={errors?.location && touched?.location ? errors.location : undefined}
           />
-          {errors?.location && touched?.location && (
-            <span className="text-xs text-red-500 mt-1">{errors.location}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
@@ -66,9 +64,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.city && touched?.city ? errors.city : undefined}
           />
-          {errors?.city && touched?.city && (
-            <span className="text-xs text-red-500 mt-1">{errors.city}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
@@ -83,9 +79,7 @@ export default function WarehouseLocationInfo({
             options={regionOptions}
             error={errors?.region_id && touched?.region_id ? errors.region_id : undefined}
           />
-          {errors?.region_id && touched?.region_id && (
-            <span className="text-xs text-red-500 mt-1">{errors.region_id}</span>
-          )}
+         
         </div>
         <div>
           <InputFields
@@ -100,9 +94,7 @@ export default function WarehouseLocationInfo({
             options={areaOptions}
             error={errors?.area_id && touched?.area_id ? errors.area_id : undefined}
           />
-          {errors?.area_id && touched?.area_id && (
-            <span className="text-xs text-red-500 mt-1">{errors.area_id}</span>
-          )}
+          
         </div>
         {/* ...rest fields unchanged */}
         <div>
@@ -113,9 +105,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.town_village && touched?.town_village ? errors.town_village : undefined}
           />
-          {errors?.town_village && touched?.town_village && (
-            <span className="text-xs text-red-500 mt-1">{errors.town_village}</span>
-          )}
+         
         </div>
         <div>
           <InputFields
@@ -125,9 +115,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.street && touched?.street ? errors.street : undefined}
           />
-          {errors?.street && touched?.street && (
-            <span className="text-xs text-red-500 mt-1">{errors.street}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
@@ -137,9 +125,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.landmark && touched?.landmark ? errors.landmark : undefined}
           />
-          {errors?.landmark && touched?.landmark && (
-            <span className="text-xs text-red-500 mt-1">{errors.landmark}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
@@ -151,9 +137,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.latitude && touched?.latitude ? errors.latitude : undefined}
           />
-          {errors?.latitude && touched?.latitude && (
-            <span className="text-xs text-red-500 mt-1">{errors.latitude}</span>
-          )}
+         
         </div>
         <div>
           <InputFields
@@ -165,9 +149,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.longitude && touched?.longitude ? errors.longitude : undefined}
           />
-          {errors?.longitude && touched?.longitude && (
-            <span className="text-xs text-red-500 mt-1">{errors.longitude}</span>
-          )}
+         
         </div>
       </div>
     </>

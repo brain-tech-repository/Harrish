@@ -82,12 +82,12 @@ export default function ViewPage() {
       const [activeTab, setActiveTab] = useState("overview");
   const tabList = [
     { key: "overview", label: "Overview" },
-    { key: "warehouseCustomer", label: "Warehouse Customer" },
-    { key: "warehouseStock", label: "Warehouse Stock" },
-    { key: "rout&vehicle", label: "Route & Vechile" },
-    { key: "salesman", label: "Salesman" },
-    { key: "sales", label: "Sales" },
-    { key: "return", label: "Return" },
+    // { key: "warehouseCustomer", label: "Warehouse Customer" },
+    // { key: "warehouseStock", label: "Warehouse Stock" },
+    // { key: "rout&vehicle", label: "Route & Vechile" },
+    // { key: "salesman", label: "Salesman" },
+    // { key: "sales", label: "Sales" },
+    // { key: "return", label: "Return" },
   ];
 
     useEffect(() => {

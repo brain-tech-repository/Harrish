@@ -375,11 +375,11 @@ export default function AddEditCompany() {
                   onChange={(e) =>
                     setFieldValue("company_name", e.target.value)
                   }
-                  error={
-                    errors?.company_name && touched.company_name
-                      ? errors.company_name
-                      : false
-                  }
+                  // error={
+                  //   errors?.company_name && touched.company_name
+                  //     ? errors.company_name
+                  //     : false
+                  // }
                 />
                 {errors?.company_name && touched?.company_name && (
                   <p className="text-red-500 text-sm mt-1">
@@ -399,7 +399,7 @@ export default function AddEditCompany() {
                     { value: "manufacturing", label: "Manufacturing" },
                     { value: "trading", label: "Trading" },
                   ]}
-                  error={touched.company_type && errors.company_type}
+                  // error={touched.company_type && errors.company_type}
                 />
                 {errors.company_type && (
                   <p className="text-red-500 text-sm mt-1">{errors.company_type}</p>
@@ -413,7 +413,7 @@ export default function AddEditCompany() {
                   name="website"
                   value={values.website}
                   onChange={(e) => setFieldValue("website", e.target.value)}
-                  error={touched.website && errors.website}
+                  // error={touched.website && errors.website}
                 />
                 {errors.website && (
                   <p className="text-red-500 text-sm mt-1">{errors.website}</p>
@@ -426,7 +426,7 @@ export default function AddEditCompany() {
                   type="file"
                   value={values.company_logo}
                   onChange={(e) => setFieldValue("company_logo", e.target.value)}
-                  error={touched.company_logo && errors.company_logo}
+                  // error={touched.company_logo && errors.company_logo}
                 />
                 {errors.company_logo && (
                   <p className="text-red-500 text-sm mt-1">{errors.company_logo}</p>
@@ -450,7 +450,7 @@ export default function AddEditCompany() {
                   onContactChange={(e) => handleNumericInput(e, "primary_contact", setFieldValue)}
                   onCodeChange={(e) => setFieldValue("primary_code", e.target.value)}
                   options={onlyCountryOptions}
-                  error={touched.primary_contact && errors.primary_contact}
+                  // error={touched.primary_contact && errors.primary_contact}
                 />
                 {errors.primary_contact && (
                   <p className="text-red-500 text-sm mt-1">{errors.primary_contact}</p>
@@ -467,7 +467,7 @@ export default function AddEditCompany() {
                   onContactChange={(e) => handleNumericInput(e, "toll_free_no", setFieldValue)}
                   onCodeChange={(e) => setFieldValue("toll_free_code", e.target.value)}
                   options={onlyCountryOptions}
-                  error={touched.toll_free_no && errors.toll_free_no}
+                  // error={touched.toll_free_no && errors.toll_free_no}
                 />
                 {errors.toll_free_no && (
                   <p className="text-red-500 text-sm mt-1">{errors.toll_free_no}</p>
@@ -481,7 +481,7 @@ export default function AddEditCompany() {
                   name="email"
                   value={values.email}
                   onChange={(e) => setFieldValue("email", e.target.value)}
-                  error={touched.email && errors.email}
+                  // error={touched.email && errors.email}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -503,7 +503,7 @@ export default function AddEditCompany() {
                   value={String(values.region)}
                   options={regionOptions}
                   onChange={(e) => setFieldValue("region", e.target.value)}
-                  error={touched.region && errors.region}
+                  // error={touched.region && errors.region}
                 />
                 {errors.region && (
                   <p className="text-red-500 text-sm mt-1">{errors.region}</p>
@@ -518,7 +518,7 @@ export default function AddEditCompany() {
                   value={String(values.sub_region)}
                   options={areaOptions}
                   onChange={(e) => setFieldValue("sub_region", e.target.value)}
-                  error={touched.sub_region && errors.sub_region}
+                  // error={touched.sub_region && errors.sub_region}
                 />
                 {errors.sub_region && (
                   <p className="text-red-500 text-sm mt-1">{errors.sub_region}</p>
@@ -532,7 +532,7 @@ export default function AddEditCompany() {
                   name="district"
                   value={values.district}
                   onChange={(e) => setFieldValue("district", e.target.value)}
-                  error={touched.district && errors.district}
+                  // error={touched.district && errors.district}
                 />
                 {errors.district && (
                   <p className="text-red-500 text-sm mt-1">{errors.district}</p>
@@ -546,7 +546,7 @@ export default function AddEditCompany() {
                   name="town"
                   value={values.town}
                   onChange={(e) => setFieldValue("town", e.target.value)}
-                  error={touched.town && errors.town}
+                  // error={touched.town && errors.town}
                 />
                 {errors.town && (
                   <p className="text-red-500 text-sm mt-1">{errors.town}</p>
@@ -560,7 +560,7 @@ export default function AddEditCompany() {
                   name="street"
                   value={values.street}
                   onChange={(e) => setFieldValue("street", e.target.value)}
-                  error={touched.street && errors.street}
+                  // error={touched.street && errors.street}
                 />
                 {errors.street && (
                   <p className="text-red-500 text-sm mt-1">{errors.street}</p>
@@ -573,7 +573,7 @@ export default function AddEditCompany() {
                   name="landmark"
                   value={values.landmark}
                   onChange={(e) => setFieldValue("landmark", e.target.value)}
-                  error={touched.landmark && errors.landmark}
+                  // error={touched.landmark && errors.landmark}
                 />
                 {errors.landmark && (
                   <p className="text-red-500 text-sm mt-1">{errors.landmark}</p>
@@ -588,7 +588,7 @@ export default function AddEditCompany() {
                   value={values.country_id ? values.country_id.toString() : ""}
                   options={onlyCountryOptions}
                   onChange={(e) => setFieldValue("country_id", e.target.value)}
-                  error={touched.country_id && errors.country_id}
+                  // error={touched.country_id && errors.country_id}
                 />
                 {errors.country_id && (
                   <p className="text-red-500 text-sm mt-1">{errors.country_id}</p>
@@ -610,7 +610,7 @@ export default function AddEditCompany() {
                   value={values.selling_currency}
                   options={countryCurrency}
                   onChange={(e) => setFieldValue("selling_currency", e.target.value)}
-                  error={touched.selling_currency && errors.selling_currency}
+                  // error={touched.selling_currency && errors.selling_currency}
                 />
                 {errors.selling_currency && (
                   <p className="text-red-500 text-sm mt-1">{errors.selling_currency}</p>
@@ -625,7 +625,7 @@ export default function AddEditCompany() {
                   value={values.purchase_currency}
                   options={countryCurrency}
                   onChange={(e) => setFieldValue("purchase_currency", e.target.value)}
-                  error={touched.purchase_currency && errors.purchase_currency}
+                  // error={touched.purchase_currency && errors.purchase_currency}
                 />
                 {errors.purchase_currency && (
                   <p className="text-red-500 text-sm mt-1">{errors.purchase_currency}</p>
@@ -638,7 +638,7 @@ export default function AddEditCompany() {
                   name="vat"
                   value={values.vat}
                   onChange={(e) => setFieldValue("vat", e.target.value)}
-                  error={touched.vat && errors.vat}
+                  // error={touched.vat && errors.vat}
                 />
                 {errors.vat && (
                   <p className="text-red-500 text-sm mt-1">{errors.vat}</p>
@@ -658,7 +658,7 @@ export default function AddEditCompany() {
                   name="module_access"
                   value={values.module_access}
                   onChange={(e) => setFieldValue("module_access", e.target.value)}
-                  error={touched.module_access && errors.module_access}
+                  // error={touched.module_access && errors.module_access}
                 />
                 {errors.module_access && (
                   <p className="text-red-500 text-sm mt-1">{errors.module_access}</p>
@@ -676,7 +676,7 @@ export default function AddEditCompany() {
                     { value: "branch", label: "Branch" },
                     { value: "warehouse", label: "Warehouse" },
                   ]}
-                  error={touched.service_type && errors.service_type}
+                  // error={touched.service_type && errors.service_type}
                 />
                 {errors.service_type && (
                   <p className="text-red-500 text-sm mt-1">{errors.service_type}</p>
@@ -695,7 +695,7 @@ export default function AddEditCompany() {
                     { value: "1", label: "Active" },
                     { value: "0", label: "Inactive" },
                   ]}
-                  error={touched.status && errors.status}
+                  // error={touched.status && errors.status}
                 />
                 {errors.status && (
                   <p className="text-red-500 text-sm mt-1">{errors.status}</p>
