@@ -5,6 +5,7 @@ import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
 import CustomSecurityCode from "@/app/components/customSecurityCode";
+import { getCompanyCustomerById } from '@/app/services/allApi';
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { agentCustomerList } from '@/app/services/allApi';
 
@@ -78,9 +79,9 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     onChange={(e) => {
                         handleChange(e);
                         const val = (e.target as HTMLSelectElement).value;
-                        if (val === 'company_outlet') {
+                        if (val === 'agent_customer') {
                             try {
-                                setFieldValue('agent_customer', '');
+                                setFieldValue('company_outlet', '');
                                 setFieldValue('region_id', '');
                                 setFieldValue('area_id', '');
                             } catch (err) {
@@ -96,6 +97,32 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     <div className="text-xs text-red-500 mt-1">{errors.warehouse_type}</div>
                 )}
             </div>
+            {values.warehouse_type === 'company_outlet' && (
+            <div className="flex flex-col gap-2">
+                <InputFields
+                    required
+                    label="Select Agent"
+                    name="agent_customer"
+                    value={values.agent_customer}
+                    options={companyCustomersOptions}
+                    onChange={async(e) => {
+                        const val = (e.target as HTMLSelectElement).value;
+                        await getCompanyCustomerById(val).then((res) => {
+                            if (res) {
+                                const customer = res;
+                                setFieldValue('region_id', String(customer.region_id) || '');
+                                setFieldValue('area_id', String(customer.area_id) || '');
+                                
+                            }
+                        });
+                        handleChange(e);
+                    }}
+                />
+                {errors?.agent_customer && touched?.agent_customer && (
+                    <div className="text-xs text-red-500 mt-1">{errors.agent_customer}</div>
+                )}
+            </div>
+            )}
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
@@ -159,35 +186,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                 )}
             </div>
             
-            {values.warehouse_type === 'agent_customer' && (
-            <div className="flex flex-col gap-2">
-                <InputFields
-                    required
-                    label="Select Agent"
-                    name="agent_customer"
-                    value={values.agent_customer}
-                    options={companyCustomersOptions}
-                    onChange={(e) => {
-                        const val = (e.target as HTMLSelectElement).value;
-                        setFieldValue('agent_customer', val);
-                        const selected = companyCustomersOptions?.find((c) => c.value === String(val)) as { value: string; label: string; region_id?: number; area_id?: number };
-                        if (selected && selected.region_id) {
-                            setSkeleton({ ...skeleton, region_id: true });
-                            const regionId = String(selected.region_id);
-                            setFieldValue('region_id', regionId);
-                            try { fetchAreaOptions(regionId); } catch (err) {}
-                            if (selected.area_id) {
-                                setSkeleton({ ...skeleton, area_id: true });
-                                setFieldValue('area_id', String(selected.area_id));
-                            }
-                        }
-                    }}
-                />
-                {errors?.agent_customer && touched?.agent_customer && (
-                    <div className="text-xs text-red-500 mt-1">{errors.agent_customer}</div>
-                )}
-            </div>
-            )}
+            
             <div className="flex flex-col gap-2">
                 <InputFields
                     required

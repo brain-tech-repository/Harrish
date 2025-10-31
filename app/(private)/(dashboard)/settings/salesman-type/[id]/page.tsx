@@ -154,7 +154,7 @@ export default function AddOrEditSalesmanType() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            {isEditMode ? "Edit Salesman Type" : "Add New Salesman Type"}
+            {isEditMode ? "Update Salesman Type" : "Add New Salesman Type"}
           </h1>
         </div>
       </div>

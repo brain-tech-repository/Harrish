@@ -144,7 +144,7 @@ export default function AddEditRegion() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Edit Region" : "Add New Region"}
+          {isEditMode ? "Update Region" : "Add New Region"}
         </h1>
       </div>
       <Formik

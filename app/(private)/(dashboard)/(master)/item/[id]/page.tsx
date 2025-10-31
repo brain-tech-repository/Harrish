@@ -245,7 +245,7 @@ export default function AddEditItem() {
             volume: data.volume?.toString() || "",
             is_Promotional: data.is_promotional ? "yes" : "no",
             is_tax_applicable: data.is_taxable ? "yes" : "no",
-            excise: data.has_excies ? "yes" : "no", 
+            excise: data.has_excies == true ? "1" : "0", 
             uom: data.uom?.[0]?.name || "",
             uomType: data.uom?.[0]?.uom_type || "primary",
             upc: data.uom?.[0]?.upc || "",
@@ -480,7 +480,7 @@ const payload = {
   volume: form.volume || "0",
   is_promotional: form.is_Promotional === "yes" ? "1" : "0",
   is_taxable: form.is_tax_applicable === "yes" ? "1" : "0",
-  has_excies: form.excise === "yes" ? "1" : "0",
+  has_excies: form.excise === "true" ? "1" : "0",
   status: form.status === "active" ? "1" : "0",
   commodity_goods_code: form.commodity_goods_code,
   excise_duty_code: form.excise_duty_code,
@@ -724,13 +724,16 @@ const res = isEditMode
               </div>
               <div>
                 <InputFields
-                
+                  type="radio"
                   required
-                  type="number"
                   label="Excise"
                   name="excise"
                   value={form.excise}
                   onChange={handleChange}
+                  options={[
+                    { value: "1", label: "Yes" },
+                    { value: "0", label: "No" },
+                  ]}
                 />
                 {errors.excise && (
                   <p className="text-red-500 text-sm mt-1">
@@ -1011,7 +1014,7 @@ const res = isEditMode
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Item" : "Add Item"}
+            {isEditMode ? "Update Item" : "Add Item"}
           </h1>
         </div>
       </div>

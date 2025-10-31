@@ -132,7 +132,7 @@ export default function AddCustomerTypePage() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            {isEditMode ? "Edit Customer Type" : "Add Customer Type"}
+            {isEditMode ? "Update Customer Type" : "Add Customer Type"}
           </h1>
         </div>
       </div>

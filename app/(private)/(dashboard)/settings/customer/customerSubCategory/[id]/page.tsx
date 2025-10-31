@@ -196,7 +196,7 @@ export default function AddEditCustomerSubCategory() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Customer Sub Category" : "Add Customer Sub Category"}
+            {isEditMode ? "Update Customer Sub Category" : "Add Customer Sub Category"}
           </h1>
         </div>
       </div>

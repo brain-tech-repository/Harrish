@@ -3,6 +3,7 @@
 import { Icon } from "@iconify-icon/react";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { ReactNode, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLoading } from "../services/loadingContext";
 
 export interface StepperStep {
@@ -50,6 +51,7 @@ export default function StepperForm({
   const isLastStep = currentStep === steps.length;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setLoading } = useLoading();
+  const router = useRouter();
 
 
   // Returns 'completed', 'active', or 'pending'
@@ -142,7 +144,16 @@ export default function StepperForm({
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-end gap-3 w-full px-2 sm:px-0">
         <button
-          onClick={onBack}
+          onClick={() => {
+            if (isSubmitting) return;
+            // If we're on the first step, treat this as a cancel and go back in history
+            if (currentStep === 1) {
+              router.back();
+              return;
+            }
+            // Otherwise call provided onBack handler
+            if (onBack) onBack();
+          }}
           disabled={isSubmitting}
           className="px-4 py-2 h-10 rounded-md font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors w-full sm:w-auto"
           type="button"

@@ -604,7 +604,7 @@ useEffect(() => {
                         onBlur={onBlur}
                         
                         minLength={9}
-                        maxLength={13}
+                        maxLength={10}
                       />
                     </div>
                   </div>

@@ -1340,7 +1340,7 @@ export default function AddEditAgentCustomer() {
                     </div>
                     <h1 className="text-xl font-semibold text-gray-900">
                         {isEditMode
-                            ? "Edit Agent Customer"
+                            ? "Update Agent Customer"
                             : "Add Agent Customer"}
                     </h1>
                 </div>
@@ -1380,7 +1380,13 @@ export default function AddEditAgentCustomer() {
                             showSubmitButton={isLastStep}
                             showNextButton={!isLastStep}
                             nextButtonText="Save & Next"
-                            submitButtonText={issubmitting ? "Submitting..." : "Submit"}
+                            submitButtonText={
+                                issubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
                         >
                             {renderStepContent(
                                 values,

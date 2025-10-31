@@ -141,7 +141,7 @@ export default function Page() {
         <Link href="/merchandiser/planogramImage">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold">{isEditMode ? "Edit Planogram Image" : "Add New Planogram Image"}</h1>
+        <h1 className="text-xl font-semibold">{isEditMode ? "Update Planogram Image" : "Add New Planogram Image"}</h1>
       </div>
       <Formik
         initialValues={initialValues}
