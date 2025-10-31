@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Skeleton from '@mui/material/Skeleton';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import LoaderCircle from "./loaderCircle";
 
 type Option = {
   value: string;
@@ -232,7 +233,7 @@ useEffect(() => {
 
 
   return (
-    <div className={`flex flex-col gap-2 w-full ${width} ${showSkeleton && "animate-pulse"} min-w-0`}>
+    <div className={`flex flex-col gap-2 w-full ${width} min-w-0`}>
       <label
         htmlFor={id ?? name}
         className="text-sm font-medium text-gray-700"
@@ -242,7 +243,9 @@ useEffect(() => {
       </label>
 
       <div className="relative">
-        {showSkeleton && <div className="absolute h-[50px] w-full rounded-[5px] bg-gray-300 z-40"></div>}
+        {showSkeleton && <div className="absolute h-[50px] w-full rounded-[5px] bg-white z-40">
+          <LoaderCircle size={50} />  
+        </div>}
       {type === "radio" && options && options.length > 0 ? (
         loading ? (
           <Skeleton variant="rounded" width={210} height={60} />
