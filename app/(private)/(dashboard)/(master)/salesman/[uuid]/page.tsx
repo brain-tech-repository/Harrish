@@ -664,7 +664,7 @@ export default function AddEditSalesman({
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Salesman" : "Add New Salesman"}
+            {isEditMode ? "Update Salesman" : "Add New Salesman"}
           </h1>
         </div>
       </div>
@@ -683,6 +683,7 @@ export default function AddEditSalesman({
           handleSubmit: formikSubmit,
           setErrors,
           setTouched,
+          isSubmitting: isSubmitting,
         }) => (
           <Form>
             <>{console.log(values)}</>
@@ -709,7 +710,13 @@ export default function AddEditSalesman({
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={isEditMode ? "Update" : "Submit"}
+              submitButtonText={
+                                isSubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

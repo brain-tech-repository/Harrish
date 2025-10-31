@@ -595,7 +595,7 @@ export default function AddOrEditCompanyWithStepper() {
             <Icon icon="lucide:arrow-left" width={24} />
           </div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {params.id == "add" ? "Add New Chiller" : "Edit Chiller"}
+            {params.id == "add" ? "Add New Chiller" : "Update Chiller"}
           </h1>
         </div>
       </div>

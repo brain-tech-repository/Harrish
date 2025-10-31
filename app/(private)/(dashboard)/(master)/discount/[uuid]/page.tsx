@@ -554,13 +554,13 @@ export default function AddDiscountWithStepper() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Discount" : "Add New Discount"}
+            {isEditMode ? "Update Discount" : "Add New Discount"}
           </h1>
         </div>
       </div>
 
       <Formik initialValues={initialValues} validationSchema={DiscountSchema} enableReinitialize onSubmit={handleSubmit}>
-        {({ values, setFieldValue, errors, touched, handleSubmit: formikSubmit, setErrors, setTouched }) => (
+        {({ values, setFieldValue, errors, touched, handleSubmit: formikSubmit, setErrors, setTouched,isSubmitting: issubmitting }) => (
           <Form>
             <StepperForm
               steps={steps.map((s) => ({ ...s, isCompleted: isStepCompleted(s.id) }))}
@@ -573,7 +573,14 @@ export default function AddDiscountWithStepper() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={isEditMode ? "Update" : "Submit"}
+              submitButtonText={
+                                issubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
+
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

@@ -460,7 +460,7 @@ export default function ShelfDisplay() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">
-          {isEditMode ? "Edit Shelf" : "Add Shelf"}
+          {isEditMode ? "Update Shelf" : "Add Shelf"}
         </h1>
       </div>
 

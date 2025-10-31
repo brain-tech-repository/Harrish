@@ -293,7 +293,7 @@ export default function AddEditRole() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Role" : "Add New Role"}
+            {isEditMode ? "Update Role" : "Add New Role"}
           </h1>
         </div>
       </div>

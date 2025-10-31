@@ -77,15 +77,15 @@ export default function WarehouseLocationInfo({
               </span>
           )}
         </div>
-        {values.warehouse_type === 'agent_customer' && (
+        {values.warehouse_type === 'company_outlet' && (
           <>
             <div>
               <InputFields
                 required
                 label="Region"
                 name="region_id"
-                disabled={true}
                 showSkeleton={loading}
+                disabled={true}
                 value={values.region_id}
                 onChange={handleChange}
                 onBlur={() => setTouched && setTouched({ region_id: true })}
@@ -102,8 +102,8 @@ export default function WarehouseLocationInfo({
               <InputFields
                 required
                 label="Area"
-                name="area_id"
                 disabled={true}
+                name="area_id"
                 showSkeleton={loading}
                 value={values.area_id}
                 onChange={handleChange}

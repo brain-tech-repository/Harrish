@@ -762,7 +762,7 @@ export default function Planogram() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">
-          {isEditMode ? "Edit Planogram" : "Add Planogram"}
+          {isEditMode ? "Update Planogram" : "Add Planogram"}
         </h1>
       </div>
 

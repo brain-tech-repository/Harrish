@@ -1169,7 +1169,13 @@ export default function AddCompanyCustomer() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={isSubmitting ? "Submitting..." : "Submit"}
+              submitButtonText={
+                                isSubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

@@ -66,7 +66,7 @@ const validationSchema = Yup.object({
     company: Yup.string().required('Company is required'),
     agreed_stock_capital: Yup.string(),
     agent_customer: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Agent Customer is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
@@ -85,12 +85,12 @@ const validationSchema = Yup.object({
     location: Yup.string().required('Location is required'),
     city: Yup.string().required('City is required'),
     region_id: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Region is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
     area_id: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Area ID is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
@@ -423,7 +423,7 @@ export default function AddEditWarehouse() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Warehouse" : "Add Warehouse"}
+            {isEditMode ? "Update Warehouse" : "Add Warehouse"}
           </h1>
         </div>
       </div>
@@ -462,13 +462,13 @@ export default function AddEditWarehouse() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={
-                isSubmitting
-                  ? "Submitting..."
-                  : isEditMode
-                  ? "Update"
-                  : "Submit"
-              }
+                            submitButtonText={
+                                isSubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

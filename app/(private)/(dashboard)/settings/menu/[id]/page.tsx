@@ -117,7 +117,7 @@ export default function AddShelfDisplay() {
         <Link href="/settings/menu">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold">{isEditMode ? "Edit Menu" : "Add New Menu"}</h1>
+        <h1 className="text-xl font-semibold">{isEditMode ? "Update Menu" : "Add New Menu"}</h1>
       </div>
 
       <Formik

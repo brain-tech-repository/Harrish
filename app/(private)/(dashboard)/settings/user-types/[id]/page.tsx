@@ -142,7 +142,7 @@ const [isOpen, setIsOpen] = useState(false);
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            {isEditMode ? "Edit User Type" : "Add User Type"}
+            {isEditMode ? "Update User Type" : "Add User Type"}
           </h1>
         </div>
       </div>
