@@ -1,3 +1,4 @@
+"use server";
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 

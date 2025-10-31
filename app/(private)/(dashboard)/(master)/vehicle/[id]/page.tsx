@@ -116,7 +116,9 @@ export default function AddEditVehicleWithStepper() {
     if (!isEditMode && !codeGeneratedRef.current) {
       codeGeneratedRef.current = true;
       (async () => {
+        setLoading(true);
         const res = await genearateCode({ model_name: "vehicle" });
+        setLoading(false);
         if (res?.code) {
           setForm((prev) => ({ ...prev, vehicle_code: res.code }));
         }

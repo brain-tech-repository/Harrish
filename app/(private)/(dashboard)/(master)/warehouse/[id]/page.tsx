@@ -23,6 +23,7 @@ import StepperForm, {
 import { useEffect, useState, useRef } from "react";
 import Loading from "@/app/components/Loading";
 import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
+import { useLoading } from "@/app/services/loadingContext";
 
 // TYPES
 type FormValues = {
@@ -168,7 +169,7 @@ export default function AddEditWarehouse() {
     } = useStepperForm(steps.length);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
-    const [loading, setLoading] = useState(false);
+    const { setLoading } = useLoading();
     const [prefix, setPrefix] = useState('WH');
     const codeGeneratedRef = useRef(false);
 
@@ -245,7 +246,9 @@ export default function AddEditWarehouse() {
                 }
             } else if (!isEditMode && !codeGeneratedRef.current) {
                 codeGeneratedRef.current = true;
+                setLoading(true);
                 const res = await genearateCode({ model_name: "warehouse" });
+                setLoading(false);
                 if (res?.code) setInitialValues((prev) => ({ ...prev, warehouse_code: res.code }));
                 if (res?.prefix) setPrefix(res.prefix);
             }
@@ -410,10 +413,6 @@ export default function AddEditWarehouse() {
                 return null;
         }
     };
-
-  if (isEditMode && loading) {
-    return <Loading />;
-  }
 
   return (
     <div>
