@@ -211,18 +211,14 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     const fetchCustomers = async () => {
       let res = null;
-      if (selectedCustomerType == "1") {
-        res = await agentCustomerList();
-      } else {
-        res = await agentCustomerList();
-      }
+      res = await agentCustomerList({ params: form.salesman_type });
 
       console.log(res, selectedCustomerType);
       setCustomers(res.data);
     };
 
     fetchCustomers();
-  }, [selectedCustomerType]);
+  }, [form.salesman_type]);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -357,14 +353,10 @@ export default function AddEditRouteVisit() {
     if (isEditMode && visitId) loadVisitData(visitId);
   }, [isEditMode, visitId]);
 
-  // ✅ Handle customer schedule updates from Table component
-  const handleCustomerScheduleUpdate = (schedules: CustomerSchedule[]) => {
-    setCustomerSchedules(schedules);
-  };
-
   // ✅ Multi-select handler
   const handleMultiSelectChange = (field: string, value: string[]) => {
     if (field == "salesman_type") {
+      console.log(value);
       setSelectedCustomerType(value[0] || "");
       setForm((prev) => ({ ...prev, [field]: value[0] || "" }));
     } else {
@@ -405,6 +397,21 @@ export default function AddEditRouteVisit() {
     }
   };
 
+  // ✅ Convert rowStates object to array format
+  const convertRowStatesToSchedules = (rowStates: Record<number, any>) => {
+    return Object.entries(rowStates)
+      .map(([customerId, daysObj]) => {
+        const days = Object.entries(daysObj)
+          .filter(([_, isSelected]) => isSelected)
+          .map(([day]) => day);
+        return {
+          customer_id: Number(customerId),
+          days,
+        };
+      })
+      .filter((schedule) => schedule.days.length > 0);
+  };
+
   // ✅ Handle submit
   const handleSubmit = async () => {
     try {
@@ -420,49 +427,53 @@ export default function AddEditRouteVisit() {
         }
       }
 
-      // Validate that at least one customer has days selected
-      const hasValidSchedules = customerSchedules.some(
-        (schedule) => schedule.days && schedule.days.length > 0
-      );
+      console.log("Form data:", form);
+      console.log("Raw customerSchedules (rowStates):", customerSchedules);
 
-      if (!hasValidSchedules) {
+      // ✅ Convert your raw object to expected format
+      const formattedSchedules = convertRowStatesToSchedules(customerSchedules);
+
+      console.log("✅ Converted customer schedules:", formattedSchedules);
+
+      // Validate if at least one customer has days
+      if (formattedSchedules.length === 0) {
         showSnackbar("Please select days for at least one customer", "error");
         return;
       }
 
-      await validationSchema.validate(form, { abortEarly: false });
       setErrors({});
       setSubmitting(true);
 
-      // ✅ Build payload in the required format
+      // ✅ Build payload in correct format
       const payload = {
         customer_type: Number(form.salesman_type),
-        customers: customerSchedules
-          .filter((schedule) => schedule.days && schedule.days.length > 0)
-          .map((schedule) => ({
-            customer_id: Number(schedule.customer_id),
-            company_id: form.company.join(","),
-            region: form.region.join(","),
-            area: form.area.join(","),
-            warehouse: form.warehouse.join(","),
-            route: form.route.join(","),
-            days: schedule.days.join(","),
-            from_date: form.from_date,
-            to_date: form.to_date,
-            status: Number(form.status),
-          })),
+        customers: formattedSchedules.map((schedule) => ({
+          customer_id: Number(schedule.customer_id),
+          company_id: form.company.join(","),
+          region: form.region.join(","),
+          area: form.area.join(","),
+          warehouse: form.warehouse.join(","),
+          route: form.route.join(","),
+          days: schedule.days.join(","), // ✅ Join days
+          from_date: form.from_date,
+          to_date: form.to_date,
+          status: Number(form.status),
+        })),
       };
 
-      console.log("Submitting payload:", payload);
+      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
       let res;
       if (isEditMode && visitId) {
+        console.log("Updating existing route visit...");
         res = await updateRouteVisitDetails(payload);
       } else {
+        console.log("Creating new route visit...");
         res = await saveRouteVisit(payload);
       }
 
       if (res?.error) {
+        console.error("API Error:", res.error);
         showSnackbar(
           res?.data?.message || "Failed to save route visit",
           "error"
@@ -474,15 +485,18 @@ export default function AddEditRouteVisit() {
             : "Route visit created successfully",
           "success"
         );
-        router.push("/route-visit");
+        router.push("/routeVisit");
       }
     } catch (err) {
+      console.error("Error in handleSubmit:", err);
+
       if (err instanceof yup.ValidationError) {
         const formErrors: Record<string, string> = {};
         err.inner.forEach((e) => {
           if (e.path) formErrors[e.path] = e.message;
         });
         setErrors(formErrors);
+        showSnackbar("Please fix the form errors", "error");
       } else {
         showSnackbar("Failed to submit form", "error");
       }
@@ -510,11 +524,11 @@ export default function AddEditRouteVisit() {
                   }
                   error={errors.from_date}
                 />
-                {errors.from_date && (
+                {/* {errors.from_date && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.from_date}
                   </p>
-                )}
+                )} */}
               </div>
 
               {/* To Date */}
@@ -529,9 +543,9 @@ export default function AddEditRouteVisit() {
                   }
                   error={errors.to_date}
                 />
-                {errors.to_date && (
+                {/* {errors.to_date && (
                   <p className="text-red-500 text-sm mt-1">{errors.to_date}</p>
-                )}
+                )} */}
               </div>
 
               {/* Company - Multi Select */}
@@ -551,9 +565,9 @@ export default function AddEditRouteVisit() {
                   isSingle={false}
                   error={errors.company}
                 />
-                {errors.company && (
+                {/* {errors.company && (
                   <p className="text-red-500 text-sm mt-1">{errors.company}</p>
-                )}
+                )} */}
               </div>
 
               {/* Region - Multi Select */}
@@ -574,9 +588,9 @@ export default function AddEditRouteVisit() {
                   isSingle={false}
                   error={errors.region}
                 />
-                {errors.region && (
+                {/* {errors.region && (
                   <p className="text-red-500 text-sm mt-1">{errors.region}</p>
-                )}
+                )} */}
               </div>
 
               {/* Area - Multi Select */}
@@ -597,9 +611,9 @@ export default function AddEditRouteVisit() {
                   isSingle={false}
                   error={errors.area}
                 />
-                {errors.area && (
+                {/* {errors.area && (
                   <p className="text-red-500 text-sm mt-1">{errors.area}</p>
-                )}
+                )} */}
               </div>
 
               {/* Warehouse - Multi Select */}
@@ -620,11 +634,11 @@ export default function AddEditRouteVisit() {
                   isSingle={false}
                   error={errors.warehouse}
                 />
-                {errors.warehouse && (
+                {/* {errors.warehouse && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.warehouse}
                   </p>
-                )}
+                )} */}
               </div>
 
               {/* Route - Multi Select */}
@@ -645,9 +659,9 @@ export default function AddEditRouteVisit() {
                   isSingle={false}
                   error={errors.route}
                 />
-                {errors.route && (
+                {/* {errors.route && (
                   <p className="text-red-500 text-sm mt-1">{errors.route}</p>
-                )}
+                )} */}
               </div>
 
               {/* Status */}
@@ -666,9 +680,9 @@ export default function AddEditRouteVisit() {
                   ]}
                   error={errors.status}
                 />
-                {errors.status && (
+                {/* {errors.status && (
                   <p className="text-red-500 text-sm mt-1">{errors.status}</p>
-                )}
+                )} */}
               </div>
             </div>
           </div>
@@ -696,11 +710,11 @@ export default function AddEditRouteVisit() {
                     ]}
                     error={errors.salesman_type}
                   />
-                  {errors.salesman_type && (
+                  {/* {errors.salesman_type && (
                     <p className="text-red-500 text-sm mt-1">
                       {errors.salesman_type}
                     </p>
-                  )}
+                  )} */}
                 </div>
               </div>
 
@@ -709,7 +723,7 @@ export default function AddEditRouteVisit() {
               </h3>
               <Table
                 customers={customers}
-                onScheduleUpdate={handleCustomerScheduleUpdate}
+                setCustomerSchedules={setCustomerSchedules}
                 initialSchedules={customerSchedules}
               />
             </div>
@@ -729,11 +743,11 @@ export default function AddEditRouteVisit() {
   }
 
   return (
-    <>
+    <div className="pb-5">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/route-visit">
+          <Link href="/routeVisit">
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
@@ -759,6 +773,6 @@ export default function AddEditRouteVisit() {
       >
         {renderStepContent()}
       </StepperForm>
-    </>
+    </div>
   );
 }

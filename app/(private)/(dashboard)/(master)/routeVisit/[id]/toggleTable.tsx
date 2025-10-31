@@ -1,6 +1,6 @@
 "use client";
 import { Icon } from "@iconify-icon/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Toggle from "@/app/components/toggle";
 
 const transformCustomerList = (apiResponse: any[]) => {
@@ -18,16 +18,17 @@ type CustomerSchedule = {
 
 type TableProps = {
   customers: any[];
-  onScheduleUpdate: (schedules: CustomerSchedule[]) => void;
+  setCustomerSchedules: any;
   initialSchedules?: CustomerSchedule[];
 };
 
 export default function Table({
   customers,
-  onScheduleUpdate,
+  setCustomerSchedules,
   initialSchedules = [],
 }: TableProps) {
   const data = transformCustomerList(customers);
+  const isInitialMount = useRef(true);
 
   const [rowStates, setRowStates] = useState<
     Record<
@@ -54,9 +55,9 @@ export default function Table({
     Sunday: false,
   });
 
-  // Initialize row states from initialSchedules
+  // Initialize row states from initialSchedules - DON'T notify parent
   useEffect(() => {
-    if (initialSchedules.length > 0) {
+    if (initialSchedules.length > 0 && isInitialMount.current) {
       const initialRowStates: typeof rowStates = {};
 
       initialSchedules.forEach((schedule) => {
@@ -74,8 +75,14 @@ export default function Table({
       });
 
       setRowStates(initialRowStates);
+      isInitialMount.current = false;
     }
   }, [initialSchedules]);
+
+  useEffect(() => {
+    console.log(data);
+    setCustomerSchedules(rowStates);
+  }, [rowStates]);
 
   // Handle individual toggle
   const handleToggle = (
@@ -93,20 +100,13 @@ export default function Table({
         Sunday: false,
       };
 
-      const updatedRow = {
-        ...current,
-        [field]: !current[field],
-      };
-
-      const newState = {
+      return {
         ...prev,
-        [rowId]: updatedRow,
+        [rowId]: {
+          ...current,
+          [field]: !current[field],
+        },
       };
-
-      // Notify parent component of schedule changes
-      notifyScheduleUpdate(newState);
-
-      return newState;
     });
   };
 
@@ -141,9 +141,6 @@ export default function Table({
         };
       });
 
-      // Notify parent component of schedule changes
-      notifyScheduleUpdate(updatedStates);
-
       return updatedStates;
     });
   };
@@ -164,47 +161,19 @@ export default function Table({
       // Check if all days in this row are currently selected
       const allSelected = Object.values(current).every(Boolean);
 
-      // Toggle all days in the row
-      const updatedRow = {
-        Monday: !allSelected,
-        Tuesday: !allSelected,
-        Wednesday: !allSelected,
-        Thursday: !allSelected,
-        Friday: !allSelected,
-        Saturday: !allSelected,
-        Sunday: !allSelected,
-      };
-
-      const newState = {
+      return {
         ...prev,
-        [rowId]: updatedRow,
+        [rowId]: {
+          Monday: !allSelected,
+          Tuesday: !allSelected,
+          Wednesday: !allSelected,
+          Thursday: !allSelected,
+          Friday: !allSelected,
+          Saturday: !allSelected,
+          Sunday: !allSelected,
+        },
       };
-
-      // Notify parent component of schedule changes
-      notifyScheduleUpdate(newState);
-
-      return newState;
     });
-  };
-
-  // Notify parent component about schedule changes
-  const notifyScheduleUpdate = (currentRowStates: typeof rowStates) => {
-    const schedules: CustomerSchedule[] = [];
-
-    Object.entries(currentRowStates).forEach(([customerId, daysState]) => {
-      const selectedDays = Object.entries(daysState)
-        .filter(([_, isSelected]) => isSelected)
-        .map(([day]) => day);
-
-      if (selectedDays.length > 0) {
-        schedules.push({
-          customer_id: Number(customerId),
-          days: selectedDays,
-        });
-      }
-    });
-
-    onScheduleUpdate(schedules);
   };
 
   // Check if all toggles in a column are selected
@@ -261,14 +230,14 @@ export default function Table({
           <table className="w-full min-w-max">
             <thead className="text-[12px] bg-[#FAFAFA] text-[#535862] sticky top-0 z-20">
               <tr className="border-b-[1px] border-[#E9EAEB]">
-                {/* Customer List column with select all checkbox */}
+                {/* Customer List column with select all toggle */}
                 <th className="px-4 py-3 font-[500] text-left min-w-[220px] sticky left-0 bg-[#FAFAFA] z-10 border-r border-[#E9EAEB]">
                   <div className="flex items-center gap-2">
                     <span>Customer List</span>
                   </div>
                 </th>
 
-                {/* Days columns with checkboxes */}
+                {/* Days columns with toggles on the left */}
                 {Object.keys(columnSelection).map((day) => {
                   const dayKey = day as keyof typeof columnSelection;
                   const isFullySelected = isColumnFullySelected(dayKey);
@@ -279,19 +248,12 @@ export default function Table({
                       key={day}
                       className="px-4 py-3 font-[500] text-center min-w-[120px] border-l border-[#E9EAEB]"
                     >
-                      <div className="flex flex-col items-center gap-1">
-                        {/* Checkbox for column selection */}
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Toggle for column selection - on the left */}
                         <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={isFullySelected}
-                            ref={(input) => {
-                              if (input) {
-                                input.indeterminate = isPartiallySelected;
-                              }
-                            }}
+                          <Toggle
+                            isChecked={isFullySelected}
                             onChange={() => handleColumnSelect(dayKey)}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
                         </div>
                         {/* Day name */}
@@ -323,20 +285,13 @@ export default function Table({
                     className="border-b-[1px] border-[#E9EAEB] hover:bg-gray-50"
                     key={row.id}
                   >
-                    {/* Customer name with row selection checkbox */}
+                    {/* Customer name with row selection toggle */}
                     <td className="px-4 py-3 text-left font-[500] sticky left-0 bg-white z-10 border-r border-[#E9EAEB] min-w-[220px]">
                       <div className="flex items-center gap-3">
-                        {/* Row selection checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={isRowSelected}
-                          ref={(input) => {
-                            if (input) {
-                              input.indeterminate = isRowPartial;
-                            }
-                          }}
+                        {/* Row selection toggle */}
+                        <Toggle
+                          isChecked={isRowSelected}
                           onChange={() => handleRowSelect(row.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                         <span
                           className="truncate max-w-[160px]"
@@ -379,101 +334,6 @@ export default function Table({
             No customers found
           </div>
         )}
-      </div>
-
-      {/* Mobile responsive view */}
-      <div className="block md:hidden mt-4">
-        <div className="bg-white rounded-lg border border-[#E9EAEB] p-4">
-          <h3 className="font-medium text-gray-900 mb-3">Customer Schedule</h3>
-
-          {/* Column selection for mobile */}
-          <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
-            {Object.keys(columnSelection).map((day) => {
-              const dayKey = day as keyof typeof columnSelection;
-              const isFullySelected = isColumnFullySelected(dayKey);
-              const isPartiallySelected = isColumnPartiallySelected(dayKey);
-
-              return (
-                <div key={day} className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={isFullySelected}
-                    ref={(input) => {
-                      if (input) {
-                        input.indeterminate = isPartiallySelected;
-                      }
-                    }}
-                    onChange={() => handleColumnSelect(dayKey)}
-                    className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-600">
-                    {day.slice(0, 3)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="space-y-4">
-            {data.map((row) => {
-              const state = rowStates[row.id] || {
-                Monday: false,
-                Tuesday: false,
-                Wednesday: false,
-                Thursday: false,
-                Friday: false,
-                Saturday: false,
-                Sunday: false,
-              };
-
-              const isRowSelected = isRowFullySelected(row.id);
-              const isRowPartial = isRowPartiallySelected(row.id);
-
-              return (
-                <div
-                  key={row.id}
-                  className="border-b border-gray-200 pb-4 last:border-b-0"
-                >
-                  {/* Customer name with row selection checkbox */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <input
-                      type="checkbox"
-                      checked={isRowSelected}
-                      ref={(input) => {
-                        if (input) {
-                          input.indeterminate = isRowPartial;
-                        }
-                      }}
-                      onChange={() => handleRowSelect(row.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <div className="font-medium text-gray-900">{row.name}</div>
-                  </div>
-
-                  {/* Days grid for mobile */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {Object.entries(state).map(([day, isChecked]) => (
-                      <div key={day} className="flex flex-col items-center">
-                        <span className="text-xs text-gray-600 mb-1">
-                          {day.slice(0, 3)}
-                        </span>
-                        <Toggle
-                          isChecked={isChecked}
-                          onChange={() =>
-                            handleToggle(
-                              row.id,
-                              day as keyof (typeof rowStates)[number]
-                            )
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </div>
   );
