@@ -711,7 +711,7 @@ export default function UserAddEdit() {
             <Icon icon="lucide:arrow-left" width={24} />
           </div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit User" : "Add User"}
+            {isEditMode ? "Update User" : "Add User"}
           </h1>
         </div>
       </div>

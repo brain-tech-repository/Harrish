@@ -1063,7 +1063,7 @@ export default function AddPricing() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold text-gray-900">
-          {isEditMode ? "Edit Pricing" : "Add Pricing"}
+          {isEditMode ? "Update Pricing" : "Add Pricing"}
         </h1>
       </div>
       <div className="flex justify-between items-center mb-6">

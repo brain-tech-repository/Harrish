@@ -108,7 +108,7 @@ export default function AddShelfDisplay() {
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Edit Permission" : "Add New Permission"}
+          {isEditMode ? "Update Permission" : "Add New Permission"}
         </h1>
       </div>
 

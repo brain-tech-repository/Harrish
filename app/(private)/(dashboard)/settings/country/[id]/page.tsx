@@ -136,7 +136,7 @@ export default function AddEditCountry() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Country" : "Add New Country"}
+            {isEditMode ? "Update Country" : "Add New Country"}
           </h1>
         </div>
       </div>

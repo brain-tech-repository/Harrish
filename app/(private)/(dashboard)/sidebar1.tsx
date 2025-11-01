@@ -1,6 +1,6 @@
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { LinkDataType, SidebarDataType } from "../data/dashboardLinks";
 import Link from "next/link";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
@@ -10,14 +10,28 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/app/services/allApi";
 import SidebarBtn1 from "@/app/components/iconButton1";
 import { on } from "events";
+import usePermissionManager from "@/app/components/contexts/usePermission";
 
 export default function Sidebar({
-    data,
     onClickHandler,
 }: Readonly<{
-    data: SidebarDataType[];
     onClickHandler: (href: string) => void;
 }>) {
+    const { filteredMenu } = usePermissionManager();
+      const data: SidebarDataType[] = (() => {
+        if (!filteredMenu) return [];
+        // If filteredMenu items are grouped (have 'data') treat as SidebarDataType[]
+        if (Array.isArray(filteredMenu) && filteredMenu.length > 0 && 'data' in filteredMenu[0]) {
+          return filteredMenu as unknown as SidebarDataType[];
+        }
+        // Otherwise assume it's a flat LinkDataType[] and wrap into a single group
+        return [
+          {
+            name: undefined,
+            data: filteredMenu as unknown as LinkDataType[],
+          },
+        ];
+      })();
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [showDropdown, setShowDropdown] = useState<boolean>(false);
     const [currentPageForSecondSidebar, setCurrentPageForSecondSidebar] = useState("");
@@ -25,10 +39,26 @@ export default function Sidebar({
     const pathname = usePathname();
     const [secondSidebarChildren, setSecondSidebarChildren] = useState([] as LinkDataType[]);
     const [activeHref, setActiveHref] = useState<string>("");
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
         // keep local activeHref in sync with router pathname
         setActiveHref(pathname ?? window.location.pathname);
     }, [pathname]);
+
+    // Collapse second sidebar when clicking outside the whole sidebar area
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            const target = event.target as Node | null;
+            if (!wrapperRef.current) return;
+            if (target && !wrapperRef.current.contains(target) && isOpen) {
+                setIsOpen(false);
+                setCurrentPageForSecondSidebar("");
+                setSecondSidebarChildren([]);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
 
     const miscLinks = [
     {
@@ -68,7 +98,7 @@ export default function Sidebar({
 
 
     return (
-        <div className="flex">
+    <div className="flex" ref={wrapperRef}>
             {/* first side bar */}
             <div className="w-[40px] h-screen bg-[#121D33] text-white flex flex-col justify-between items-center">
                 {/* upper part */}

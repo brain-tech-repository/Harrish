@@ -1545,7 +1545,7 @@ export default function AddCompanyWithStepper() {
             <Icon icon="lucide:arrow-left" width={24} />
           </div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Chiller" : "Add New Chiller"}
+            {isEditMode ? "Update Chiller" : "Add New Chiller"}
           </h1>
         </div>
       </div>

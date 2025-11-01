@@ -23,6 +23,7 @@ import StepperForm, {
 import { useEffect, useState, useRef } from "react";
 import Loading from "@/app/components/Loading";
 import { Formik, Form, FormikHelpers, FormikErrors, FormikTouched } from "formik";
+import { useLoading } from "@/app/services/loadingContext";
 
 // TYPES
 type FormValues = {
@@ -66,7 +67,7 @@ const validationSchema = Yup.object({
     company: Yup.string().required('Company is required'),
     agreed_stock_capital: Yup.string(),
     agent_customer: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Agent Customer is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
@@ -85,12 +86,12 @@ const validationSchema = Yup.object({
     location: Yup.string().required('Location is required'),
     city: Yup.string().required('City is required'),
     region_id: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Region is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
     area_id: Yup.string().when('warehouse_type', {
-        is: (val: any) => String(val) === 'agent_customer',
+        is: (val: any) => String(val) === 'company_outlet',
         then: (schema: any) => schema.required('Area ID is required'),
         otherwise: (schema: any) => schema.notRequired(),
     }),
@@ -168,7 +169,7 @@ export default function AddEditWarehouse() {
     } = useStepperForm(steps.length);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
-    const [loading, setLoading] = useState(false);
+    const { setLoading } = useLoading();
     const [prefix, setPrefix] = useState('WH');
     const codeGeneratedRef = useRef(false);
 
@@ -245,7 +246,9 @@ export default function AddEditWarehouse() {
                 }
             } else if (!isEditMode && !codeGeneratedRef.current) {
                 codeGeneratedRef.current = true;
+                setLoading(true);
                 const res = await genearateCode({ model_name: "warehouse" });
+                setLoading(false);
                 if (res?.code) setInitialValues((prev) => ({ ...prev, warehouse_code: res.code }));
                 if (res?.prefix) setPrefix(res.prefix);
             }
@@ -411,10 +414,6 @@ export default function AddEditWarehouse() {
         }
     };
 
-  if (isEditMode && loading) {
-    return <Loading />;
-  }
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -423,7 +422,7 @@ export default function AddEditWarehouse() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Warehouse" : "Add Warehouse"}
+            {isEditMode ? "Update Warehouse" : "Add Warehouse"}
           </h1>
         </div>
       </div>
@@ -462,13 +461,13 @@ export default function AddEditWarehouse() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={
-                isSubmitting
-                  ? "Submitting..."
-                  : isEditMode
-                  ? "Update"
-                  : "Submit"
-              }
+                            submitButtonText={
+                                isSubmitting
+                                    ? (isEditMode ? "Updating..." : "Submitting...")
+                                    : isEditMode
+                                    ? "Update"
+                                    : "Submit"
+                            }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

@@ -34,6 +34,7 @@ export default function CustomPasswordInput({
       </label>
       <div className="relative mt-[13.5px]">
         <input
+          autoComplete={"off"}
           type={isPasswordVisible ? "text" : "password"}
           id={label}
           value={value}
