@@ -116,7 +116,9 @@ export default function AddEditVehicleWithStepper() {
     if (!isEditMode && !codeGeneratedRef.current) {
       codeGeneratedRef.current = true;
       (async () => {
+        setLoading(true);
         const res = await genearateCode({ model_name: "vehicle" });
+        setLoading(false);
         if (res?.code) {
           setForm((prev) => ({ ...prev, vehicle_code: res.code }));
         }
@@ -371,11 +373,7 @@ export default function AddEditVehicleWithStepper() {
                   name="vehicleBrand"
                   error={touched.vehicleBrand && errors.vehicleBrand}
                 />
-                {touched.vehicleBrand && errors.vehicleBrand && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.vehicleBrand} */}
-                  </div>
-                )}
+               
               </div>
 
               <div>
@@ -387,11 +385,7 @@ export default function AddEditVehicleWithStepper() {
                   name="numberPlate"
                   error={touched.numberPlate && errors.numberPlate}
                 />
-                {touched.numberPlate && errors.numberPlate && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.numberPlate} */}
-                  </div>
-                )}
+                
               </div>
               <div>
                 <InputFields
@@ -402,11 +396,7 @@ export default function AddEditVehicleWithStepper() {
                   name="chassisNumber"
                   error={touched.chassisNumber && errors.chassisNumber}
                 />
-                {touched.chassisNumber && errors.chassisNumber && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.chassisNumber} */}
-                  </div>
-                )}
+               
               </div>
 
               <div>
@@ -424,11 +414,7 @@ export default function AddEditVehicleWithStepper() {
                     { value: "tuktuk", label: "Tuktuk" },
                   ]}
                 />
-                {touched.vehicleType && errors.vehicleType && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.vehicleType} */}
-                  </div>
-                )}
+                
               </div>
             </div>
           </ContainerCard>
@@ -451,11 +437,7 @@ export default function AddEditVehicleWithStepper() {
                     { value: "agent", label: "Agent" },
                   ]}
                 />
-                {touched.ownerType && errors.ownerType && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.ownerType} */}
-                  </div>
-                )}
+                
               </div>
               <div>
                 <InputFields
@@ -486,11 +468,7 @@ export default function AddEditVehicleWithStepper() {
                   name="odoMeter"
                   error={touched.odoMeter && errors.odoMeter}
                 />
-                {touched.odoMeter && errors.odoMeter && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.odoMeter} */}
-                  </div>
-                )}
+               
               </div>
               <div>
                 <InputFields
@@ -501,11 +479,7 @@ export default function AddEditVehicleWithStepper() {
                   name="capacity"
                   error={touched.capacity && errors.capacity}
                 />
-                {touched.capacity && errors.capacity && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.capacity} */}
-                  </div>
-                )}
+               
               </div>
               
               <div>
@@ -519,11 +493,11 @@ export default function AddEditVehicleWithStepper() {
                   maxLength={3}
                   error={touched.fuel_reading && errors.fuel_reading}
                 />
-                {touched.fuel_reading && errors.fuel_reading && (
+                {/* {touched.fuel_reading && errors.fuel_reading && (
                   <div className="text-red-500 text-xs mt-1">
                     {errors.fuel_reading}
                   </div>
-                )}
+                )} */}
               </div>
               <div>
                 <InputFields
@@ -532,11 +506,9 @@ export default function AddEditVehicleWithStepper() {
                   onChange={handleChange}
                   name="description"
                 />
-                    {touched.description && errors.description && (
+                    {/* {touched.description && errors.description && (
                   <div className="text-red-500 text-xs mt-1">
                     {/* {errors.description} */}
-                  </div>
-                )}
               </div>
 
               <div>
@@ -549,11 +521,11 @@ export default function AddEditVehicleWithStepper() {
                   name="validFrom"
                   error={touched.validFrom && errors.validFrom}
                 />
-                {touched.validFrom && errors.validFrom && (
+                {/* {touched.validFrom && errors.validFrom && (
                   <div className="text-red-500 text-xs mt-1">
-                    {/* {errors.validFrom} */}
+                    {errors.validFrom}
                   </div>
-                )}
+                )} */}
               </div>
               <div>
                 <InputFields
@@ -565,11 +537,9 @@ export default function AddEditVehicleWithStepper() {
                   name="validTo"
                   error={touched.validTo && errors.validTo}
                 />
-                {touched.validTo && errors.validTo && (
+                {/* {touched.validTo && errors.validTo && (
                   <div className="text-red-500 text-xs mt-1">
                     {/* {errors.validTo} */}
-                  </div>
-                )}
               </div>
               <div>
                 <InputFields
@@ -585,11 +555,9 @@ export default function AddEditVehicleWithStepper() {
                     { value: "inactive", label: "Inactive" },
                   ]}
                 />
-                {touched.status && errors.status && (
+                {/* {touched.status && errors.status && (
                   <div className="text-red-500 text-xs mt-1">
                     {/* {errors.status} */}
-                  </div>
-                )}
               </div>
             </div>
           </ContainerCard>
@@ -614,7 +582,7 @@ export default function AddEditVehicleWithStepper() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
+            {isEditMode ? "Update Vehicle" : "Add Vehicle"}
           </h1>
         </div>
       <div className="flex justify-between items-center mb-6">

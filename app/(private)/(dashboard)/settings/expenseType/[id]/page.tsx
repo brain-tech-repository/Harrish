@@ -135,7 +135,7 @@ export default function AddEditExpenseType() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Expense Type" : "Add New Expense Type"}
+            {isEditMode ? "Update Expense Type" : "Add New Expense Type"}
           </h1>
         </div>
       </div>

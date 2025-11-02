@@ -137,7 +137,7 @@ const { showSnackbar } = useSnackbar();
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            {isEditMode ? "Edit Channel" : "Add New Channel"}
+            {isEditMode ? "Update Channel" : "Add New Channel"}
           </h1>
         </div>
       </div>

@@ -142,7 +142,7 @@ export default function AddEditDiscountType() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Discount Type" : "Add New Discount Type"}
+            {isEditMode ? "Update Discount Type" : "Add New Discount Type"}
           </h1>
         </div>
       </div>

@@ -219,7 +219,7 @@ export default function AddEditRoute() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Route" : "Add Route"}
+            {isEditMode ? "Update Route" : "Add Route"}
           </h1>
         </div>
       </div>
@@ -262,9 +262,7 @@ export default function AddEditRoute() {
                   />
                 </>
               )}
-                {errors.routeCode && (
-              <p className="text-red-500 text-sm mt-1">{errors.routeCode}</p>
-            )}
+           
             </div>
           
 

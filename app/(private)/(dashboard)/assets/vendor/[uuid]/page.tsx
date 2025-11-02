@@ -187,7 +187,7 @@ export default function AddEditVendor() {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Edit Vendor" : "Add Vendor"}
+          {isEditMode ? "Update Vendor" : "Add Vendor"}
         </h1>
       </div>
 

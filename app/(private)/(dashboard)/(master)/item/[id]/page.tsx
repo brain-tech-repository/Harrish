@@ -245,7 +245,7 @@ export default function AddEditItem() {
             volume: data.volume?.toString() || "",
             is_Promotional: data.is_promotional ? "yes" : "no",
             is_tax_applicable: data.is_taxable ? "yes" : "no",
-            excise: data.has_excies ? "yes" : "no", 
+            excise: data.has_excies == true ? "1" : "0", 
             uom: data.uom?.[0]?.name || "",
             uomType: data.uom?.[0]?.uom_type || "primary",
             upc: data.uom?.[0]?.upc || "",
@@ -480,7 +480,7 @@ const payload = {
   volume: form.volume || "0",
   is_promotional: form.is_Promotional === "yes" ? "1" : "0",
   is_taxable: form.is_tax_applicable === "yes" ? "1" : "0",
-  has_excies: form.excise === "yes" ? "1" : "0",
+  has_excies: form.excise === "true" ? "1" : "0",
   status: form.status === "active" ? "1" : "0",
   commodity_goods_code: form.commodity_goods_code,
   excise_duty_code: form.excise_duty_code,
@@ -577,7 +577,7 @@ const res = isEditMode
                   name="itemName"
                   value={form.itemName}
                   onChange={handleChange}
-                  error={touched.itemName && errors.itemName}
+                  // error={touched.itemName && errors.itemName}
                 />
                 {touched.itemName && errors.itemName && (
                   <p className="text-red-500 text-sm mt-1">
@@ -592,7 +592,7 @@ const res = isEditMode
                   name="itemDesc"
                   value={form.itemDesc}
                   onChange={handleChange}
-                  error={touched.itemDesc && errors.itemDesc}
+                  // error={touched.itemDesc && errors.itemDesc}
                 />
                 {touched.itemDesc && errors.itemDesc && (
                   <p className="text-red-500 text-sm mt-1">
@@ -607,7 +607,7 @@ const res = isEditMode
                   name="brand"
                   value={form.brand}
                   onChange={handleChange}
-                  error={touched.brand && errors.brand}
+                  // error={touched.brand && errors.brand}
                 />
                 {touched.brand && errors.brand && (
                   <p className="text-red-500 text-sm mt-1">
@@ -624,6 +624,9 @@ const res = isEditMode
                   name="itemImage"
                   onChange={handleFileChange}
                 />
+                {touched.itemImage && errors.itemImage && (
+                  <p className="text-red-500 text-sm mt-1">{errors.itemImage}</p>
+                )}
               </div>
               <div>
                 <InputFields
@@ -633,7 +636,7 @@ const res = isEditMode
                   value={form.itemCategory}
                   onChange={handleChange}
                   options={itemCategoryOptions}
-                  error={touched.itemCategory && errors.itemCategory}
+                  // error={touched.itemCategory && errors.itemCategory}
                 />
                 {touched.itemCategory && errors.itemCategory && (
                   <p className="text-red-500 text-sm mt-1">
@@ -657,7 +660,7 @@ const res = isEditMode
                       ? itemSubCategoryOptions
                       : [{ value: "", label: "No options available" }]
                   }
-                  error={touched.itemSubCategory && errors.itemSubCategory}
+                  // error={touched.itemSubCategory && errors.itemSubCategory}
                 />
                 {touched.itemSubCategory && errors.itemSubCategory && (
                   <p className="text-red-500 text-sm mt-1">
@@ -682,7 +685,7 @@ const res = isEditMode
                   name="itemWeight"
                   value={form.itemWeight}
                   onChange={handleChange}
-                  error={touched.itemWeight && errors.itemWeight}
+                  // error={touched.itemWeight && errors.itemWeight}
                 />
                 {touched.itemWeight && errors.itemWeight && (
                   <p className="text-red-500 text-sm mt-1">
@@ -698,7 +701,7 @@ const res = isEditMode
                   name="shelfLife"
                   value={form.shelfLife}
                   onChange={handleChange}
-                  error={touched.shelfLife && errors.shelfLife}
+                  // error={touched.shelfLife && errors.shelfLife}
                 />
                 {touched.shelfLife && errors.shelfLife && (
                   <p className="text-red-500 text-sm mt-1">
@@ -714,7 +717,7 @@ const res = isEditMode
                   name="volume"
                   value={form.volume}
                   onChange={handleChange}
-                  error={touched.volume && errors.volume}
+                  // error={touched.volume && errors.volume}
                 />
                 {touched.volume && errors.volume && (
                   <p className="text-red-500 text-sm mt-1">
@@ -724,13 +727,16 @@ const res = isEditMode
               </div>
               <div>
                 <InputFields
-                
+                  type="radio"
                   required
-                  type="number"
                   label="Excise"
                   name="excise"
                   value={form.excise}
                   onChange={handleChange}
+                  options={[
+                    { value: "1", label: "Yes" },
+                    { value: "0", label: "No" },
+                  ]}
                 />
                 {errors.excise && (
                   <p className="text-red-500 text-sm mt-1">
@@ -745,9 +751,9 @@ const res = isEditMode
                   name="commodity_goods_code"
                   value={form.commodity_goods_code}
                   onChange={handleChange}
-                  error={
-                    touched.commodity_goods_code && errors.commodity_goods_code
-                  }
+                  // error={
+                  //   touched.commodity_goods_code && errors.commodity_goods_code
+                  // }
                 />
                 {touched.commodity_goods_code && errors.commodity_goods_code && (
                   <p className="text-red-500 text-sm mt-1">
@@ -762,7 +768,7 @@ const res = isEditMode
                   name="excise_duty_code"
                   value={form.excise_duty_code}
                   onChange={handleChange}
-                  error={touched.excise_duty_code && errors.excise_duty_code}
+                  // error={touched.excise_duty_code && errors.excise_duty_code}
                 />
                 {touched.excise_duty_code && errors.excise_duty_code && (
                   <p className="text-red-500 text-sm mt-1">
@@ -821,6 +827,11 @@ const res = isEditMode
                     { value: "inactive", label: "Inactive" },
                   ]}
                 />
+                 {errors.status && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.status}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1011,7 +1022,7 @@ const res = isEditMode
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Item" : "Add Item"}
+            {isEditMode ? "Update Item" : "Add Item"}
           </h1>
         </div>
       </div>

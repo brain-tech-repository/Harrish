@@ -117,7 +117,7 @@ const router = useRouter();
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold text-gray-900">
-          {isEditMode ? "Edit Company Type" : "Add New Company Type"}
+          {isEditMode ? "Update Company Type" : "Add New Company Type"}
         </h1>
       </div>
       <Formik

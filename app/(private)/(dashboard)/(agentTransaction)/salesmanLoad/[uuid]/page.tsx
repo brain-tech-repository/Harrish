@@ -135,7 +135,7 @@ export default function AddEditSalesmanLoad() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Salesman Load" : "Add Salesman Load"}
+            {isEditMode ? "Update Salesman Load" : "Add Salesman Load"}
           </h1>
         </div>
       </div>

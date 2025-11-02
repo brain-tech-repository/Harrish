@@ -118,7 +118,7 @@ export default function AddEditServiceType() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold text-gray-900">
-          {isEditMode ? "Edit Service Type" : "Add New Service Type"}
+          {isEditMode ? "Update Service Type" : "Add New Service Type"}
         </h1>
       </div>
       <Formik

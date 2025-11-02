@@ -141,7 +141,7 @@ export default function AddEditSubRegion() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Area" : "Add New Area"}
+            {isEditMode ? "Update Area" : "Add New Area"}
           </h1>
         </div>
       </div>

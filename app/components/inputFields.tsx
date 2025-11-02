@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Skeleton from '@mui/material/Skeleton';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import LoaderCircle from "./loaderCircle";
 
 type Option = {
   value: string;
@@ -129,8 +130,10 @@ const countries: { name?: string; code?: string; flag?: string }[] = [
       safeOnChange({ target: { value: `${phone}`, name } } as React.ChangeEvent<HTMLInputElement>);
     };
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPhone(e.target.value);
-      safeOnChange({ target: { value: `${e.target.value}`, name } } as React.ChangeEvent<HTMLInputElement>);
+      // Allow only digits by removing any non-digit characters from the input value
+      const cleaned = e.target.value.replace(/\D/g, "");
+      setPhone(cleaned);
+      safeOnChange({ target: { value: `${cleaned}`, name } } as React.ChangeEvent<HTMLInputElement>);
     };
 
   const filteredOptions = (options?.filter(opt => {
@@ -230,7 +233,7 @@ useEffect(() => {
 
 
   return (
-    <div className={`flex flex-col gap-2 w-full ${width} ${showSkeleton && "animate-pulse"} min-w-0`}>
+    <div className={`flex flex-col gap-2 w-full ${width} min-w-0`}>
       <label
         htmlFor={id ?? name}
         className="text-sm font-medium text-gray-700"
@@ -240,7 +243,9 @@ useEffect(() => {
       </label>
 
       <div className="relative">
-        {showSkeleton && <div className="absolute h-[50px] w-full rounded-[5px] bg-gray-300 z-40"></div>}
+        {showSkeleton && <div className="absolute h-[50px] w-full rounded-[5px] bg-white z-40">
+          <LoaderCircle size={50} />  
+        </div>}
       {type === "radio" && options && options.length > 0 ? (
         loading ? (
           <Skeleton variant="rounded" width={210} height={60} />
@@ -596,15 +601,14 @@ useEffect(() => {
                         type="tel"
                         id="phone-input"
                         placeholder={placeholder || "Enter phone number"}
-                        className="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        className="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg outline-none border border-gray-300"
                         value={phone}
                         onChange={handlePhoneChange}
                         disabled={disabled}
                         required={required}
                         onBlur={onBlur}
-                        
                         minLength={9}
-                        maxLength={13}
+                        maxLength={10}
                       />
                     </div>
                   </div>

@@ -643,7 +643,7 @@ export default function AddEditCompany() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit Company" : "Add New Company"}
+            {isEditMode ? "Update Company" : "Add New Company"}
           </h1>
         </div>
       </div>

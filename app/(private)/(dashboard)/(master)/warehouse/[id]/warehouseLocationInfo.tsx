@@ -77,15 +77,15 @@ export default function WarehouseLocationInfo({
               </span>
           )}
         </div>
-        {values.warehouse_type === 'agent_customer' && (
+        {values.warehouse_type === 'company_outlet' && (
           <>
             <div>
               <InputFields
                 required
                 label="Region"
                 name="region_id"
-                disabled={true}
                 showSkeleton={loading}
+                disabled={true}
                 value={values.region_id}
                 onChange={handleChange}
                 onBlur={() => setTouched && setTouched({ region_id: true })}
@@ -102,8 +102,8 @@ export default function WarehouseLocationInfo({
               <InputFields
                 required
                 label="Area"
-                name="area_id"
                 disabled={true}
+                name="area_id"
                 showSkeleton={loading}
                 value={values.area_id}
                 onChange={handleChange}
@@ -128,9 +128,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.town_village && touched?.town_village ? errors.town_village : undefined}
           />
-          {errors?.town_village && touched?.town_village && (
-            <span className="text-xs text-red-500 mt-1">{errors.town_village}</span>
-          )}
+         
         </div>
         <div>
           <InputFields
@@ -140,9 +138,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.street && touched?.street ? errors.street : undefined}
           />
-          {errors?.street && touched?.street && (
-            <span className="text-xs text-red-500 mt-1">{errors.street}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
@@ -152,9 +148,7 @@ export default function WarehouseLocationInfo({
             onChange={handleChange}
             error={errors?.landmark && touched?.landmark ? errors.landmark : undefined}
           />
-          {errors?.landmark && touched?.landmark && (
-            <span className="text-xs text-red-500 mt-1">{errors.landmark}</span>
-          )}
+          
         </div>
         <div>
           <InputFields
