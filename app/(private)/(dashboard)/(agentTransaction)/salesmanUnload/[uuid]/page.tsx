@@ -36,6 +36,7 @@ export default function AddEditSalesmanLoad() {
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({
         salesmanType: "",
+        project_type: "",
         unload_date: "",
         route_id: "",
         salesman_id: "",
@@ -54,6 +55,7 @@ export default function AddEditSalesmanLoad() {
                     const data = res?.data ?? res;
                     setForm({
                         salesmanType: data?.salesmanType || "",
+                            project_type: data?.project_type || "",
                         unload_date: data?.unload_date || "",
                         route_id: data?.route?.id?.toString() || "",
                         salesman_id: data?.salesman?.id?.toString() || "",
@@ -188,6 +190,7 @@ export default function AddEditSalesmanLoad() {
     const payload = {
       route_id: Number(form.route_id),
       salesmanType: form.salesmanType,
+      project_type: form.project_type,
       salesman_id: Number(form.salesman_id),
       unload_date: form.unload_date,
       details: itemData
@@ -270,16 +273,32 @@ export default function AddEditSalesmanLoad() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Salesman Type */}
-                        <InputFields
+                        <div>
+                            <InputFields
                             required
                             label="Salesman Type"
                             value={form.salesmanType}
-                            options={salesmanTypeOptions}
+                            options={[{ label: "Sales Executive-GT", value: "Sales Executive-GT" }, 
+                                { label: "Salesman", value: "Salesman", },
+                            { label: "Project", value: "Project", }]}
                             onChange={(e) => handleChange("salesmanType", e.target.value)}
                         />
                         {errors.salesmanType && (
                             <p className="text-red-500 text-sm mt-1">{errors.salesmanType}</p>
                         )}
+                        </div>
+                        {form.salesmanType === "Project" && (
+                                          <div>
+                                            <InputFields
+                                              label="Project List"
+                                              name="project_type"
+                                              value={form.project_type || ""}
+                                              options={salesmanTypeOptions}
+                                              onChange={(e) => handleChange("project_type", e.target.value)}
+                                            />
+                                          </div>
+                                        )}
+                        
 
                         {/* Unload Date */}
                         <InputFields
