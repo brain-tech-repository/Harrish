@@ -1,35 +1,31 @@
 "use client";
-import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import * as yup from "yup";
-import InputFields from "@/app/components/inputFields";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { useSnackbar } from "@/app/services/snackbarContext";
-import CustomTable, { TableDataType } from "@/app/components/customTable";
-import {
-  getRouteById,
-} from "@/app/services/allApi";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { useLoading } from "@/app/services/loadingContext";
+
 import ContainerCard from "@/app/components/containerCard";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Table, {
+  configType,
+  listReturnType,
+  TableDataType,
+} from "@/app/components/customTable";
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import InputFields from "@/app/components/inputFields";
 import {
   salesmanLoadHeaderAdd,
+  salesmanLoadHeaderById,
   salesmanLoadHeaderUpdate,
 } from "@/app/services/agentTransaction";
+import { itemList } from "@/app/services/allApi";
+import { useLoading } from "@/app/services/loadingContext";
+import { useSnackbar } from "@/app/services/snackbarContext";
+import { Icon } from "@iconify-icon/react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import * as yup from "yup";
 
 export default function AddEditSalesmanLoad() {
-  const {
-    salesmanTypeOptions,
-    warehouseOptions,
-    salesmanOptions,
-    fetchRoutebySalesmanOptions,
-    fetchSalesmanOptions,
-    routeOptions,
-    itemOptions,
-  } = useAllDropdownListData();
-
+  const { salesmanTypeOptions, routeOptions, salesmanOptions, warehouseOptions, fetchSalesmanOptions, fetchRoutebySalesmanOptions } =
+    useAllDropdownListData();
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
@@ -38,75 +34,97 @@ export default function AddEditSalesmanLoad() {
   const isEditMode = loadUUID !== undefined && loadUUID !== "add";
 
   const [submitting, setSubmitting] = useState(false);
-  const [filteredOptions, setFilteredRouteOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
   const [form, setForm] = useState({
-    salesmanType: "",
-    project_type: "",
-    route: "",
+    salesman_type: "",
     warehouse: "",
+    route: "",
     salesman: "",
+    project_type: "",
   });
-
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [skeleton, setSkeleton] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [itemData, setItemData] = useState<TableDataType[]>([]);
+  const [isItemsLoaded, setIsItemsLoaded] = useState(false);
 
-  const [tableData, setTableData] = useState<TableDataType[]>([]);
-
+  // ✅ Load items on mount
   useEffect(() => {
-    if (itemOptions && itemOptions.length > 0) {
-      setTableData(
-        itemOptions.map((item) => ({
-          id: item.value,
-          item: item.label,
-          availableStock: "100", // Replace with actual stock data
-          // uom: item.uom || [],
-          cse: "",
-        }))
-      );
-    }
-  }, [itemOptions]);
-
-  const handleCseChange = (id: string, value: string) => {
-    setTableData((prev) =>
-      prev.map((row) =>
-        row.id === id ? { ...row, cse: value } : row
-      )
-    );
-  };
-
-  useEffect(() => {
-    if (isEditMode && loadUUID) {
-      setLoading(true);
+    if (!isItemsLoaded) {
       (async () => {
         try {
-          const res = await getRouteById(String(loadUUID));
-          const data = res?.data ?? res;
-          setForm({
-            salesmanType: data?.salesmanType || "",
-            project_type: data?.project_type || "",
-            route: data?.route || "",
-            warehouse: data?.warehouse || "",
-            salesman: data?.salesman || "",
-          });
-          if (data?.warehouse) {
-            await fetchSalesmanOptions(String(data.warehouse));
-          }
-        } catch {
-          showSnackbar("Failed to fetch route details", "error");
+          setLoading(true);
+          const res = await itemList({ page: "1" });
+          const data = res.data.map((item: any) => ({
+            ...item,
+            qty: "",
+            available_stock: item.volume || 0, // Map volume to available_stock
+          }));
+          setItemData(data);
+          setIsItemsLoaded(true);
+        } catch (error) {
+          console.error(error);
         } finally {
           setLoading(false);
         }
       })();
     }
-  }, [isEditMode, loadUUID]);
+  }, [isItemsLoaded, setLoading]);
 
+  // ✅ Fetch existing data in edit mode
+  useEffect(() => {
+    if (isEditMode && loadUUID && isItemsLoaded) {
+      setLoading(true);
+      (async () => {
+        try {
+          const res = await salesmanLoadHeaderById(String(loadUUID), {});
+          const data = res?.data ?? res;
+          
+          const warehouseId = data?.warehouse?.id?.toString() || "";
+          const salesmanId = data?.salesman?.id?.toString() || "";
+          
+          setForm({
+            salesman_type: data?.salesman_type || "",
+            warehouse: warehouseId,
+            route: data?.route?.id?.toString() || "",
+            salesman: salesmanId,
+            project_type: data?.projecttype?.id?.toString() || data?.project_type || "",
+          });
+
+          // Fetch salesman options based on warehouse and then fetch route options
+          if (warehouseId) {
+            await fetchSalesmanOptions(warehouseId);
+          }
+          if (salesmanId) {
+            await fetchRoutebySalesmanOptions(salesmanId);
+          }
+
+          // Populate CSE values from details array using item IDs
+          if (data?.details && Array.isArray(data.details)) {
+            setItemData((prevItems) =>
+              prevItems.map((item) => {
+                const existingDetail = data.details.find(
+                  (detail: any) => detail.item?.id === item.id
+                );
+                return existingDetail
+                  ? { ...item, qty: existingDetail.qty?.toString() || "" }
+                  : item;
+              })
+            );
+          }
+        } catch (err) {
+          showSnackbar("Failed to fetch details", "error");
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [isEditMode, loadUUID, isItemsLoaded, setLoading, showSnackbar, fetchSalesmanOptions, fetchRoutebySalesmanOptions]);
+
+  // ✅ Validation Schema
   const validationSchema = yup.object().shape({
-    salesmanType: yup.string().required("Salesman Type is required"),
+    salesman_type: yup.string().required("Salesman Type is required"),
     warehouse: yup.string().required("Warehouse is required"),
-    salesman: yup.string().required("Salesman is required"),
     route: yup.string().required("Route is required"),
+    salesman: yup.string().required("Salesman is required"),
   });
 
   const handleChange = (field: string, value: string) => {
@@ -114,88 +132,100 @@ export default function AddEditSalesmanLoad() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const fetchRoutesBySalesman = async (salesman: string) => {
-    if (!salesman) {
-      setFilteredRouteOptions([]);
+  // ✅ Handle Qty Change
+  const handleQtyChange = (itemId: string | number, value: string) => {
+    const item = itemData.find((i) => i.id === itemId);
+    const availableStock = Number(item?.volume || 0);
+    const enteredQty = Number(value);
+
+    // Check if entered quantity exceeds available stock
+    if (value !== "" && enteredQty > availableStock) {
+      showSnackbar(`Please check the quantity. Available stock is ${availableStock}`, "error");
       return;
     }
-    setSkeleton(true);
-    try {
-      const res = await fetchRoutebySalesmanOptions(String(salesman));
-      const normalize = (
-        r: unknown
-      ): { id?: string | number; route_code?: string; route_name?: string }[] => {
-        if (r && typeof r === "object") {
-          const obj = r as Record<string, unknown>;
-          if (Array.isArray(obj.data)) return obj.data as any[];
-        }
-        if (Array.isArray(r)) return r as any[];
-        return [];
-      };
-      const routes = normalize(res);
-      const options = routes.map((r) => ({
-        value: String(r.id ?? ""),
-        label:
-          r.route_code && r.route_name
-            ? `${r.route_code} - ${r.route_name}`
-            : r.route_name ?? "",
-      }));
-      setFilteredRouteOptions(options);
-    } catch {
-      setFilteredRouteOptions([]);
-    } finally {
-      setSkeleton(false);
-    }
+
+    setItemData((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, qty: value } : item
+      )
+    );
   };
 
+  // ✅ Table Columns
+  const columns: configType["columns"] = [
+    {
+      key: "item",
+      label: "Items",
+      render: (row: TableDataType) => {
+        const currentItem = itemData.find((item) => item.id === row.id);
+        return (
+          <span>
+            {row.item_code && row.name
+              ? `${row.item_code} - ${row.name}`
+              : row.item_code
+                ? row.item_code
+                : row.name
+                  ? row.name
+                  : "-"}
+          </span>
+        );
+      },
+    },
+    { key: "volume", label: "Available Stock" },
+    {
+      key: "cse",
+      label: "CSE",
+      render: (row: TableDataType) => {
+        const currentItem = itemData.find((item) => item.id === row.id);
+        return (
+          <div className="w-[100px]">
+            <InputFields
+                                  type="number"
+                                  value={currentItem?.qty ?? ""}
+                                  onChange={(e) => handleQtyChange(row.id, e.target.value)}
+                                  placeholder="Quantity"
+                                />
+           
+          </div>
+        );
+      },
+    },
+  ];
+
+  // ✅ Handle Submit
   const handleSubmit = async () => {
     try {
       await validationSchema.validate(form, { abortEarly: false });
       setErrors({});
-
-      // Validate qty (CSE)
-      const invalidItems = tableData.filter((row) => {
-        const cse = parseFloat(row.cse) || 0;
-        const availableStock = parseFloat(row.availableStock) || 0;
-        return cse > availableStock;
-      });
-
-      if (invalidItems.length > 0) {
-        showSnackbar("Check the CSE values. CSE cannot exceed available stock.", "error");
-        return;
-      }
-
       setSubmitting(true);
 
-      const details = tableData
-        .filter((i) => i.cse && Number(i.cse) > 0)
-        .map((i) => {
-          const uomArray = typeof i.uom === "string" ? JSON.parse(i.uom) : i.uom;
-          const uomId = Array.isArray(uomArray)
-            ? (
-                uomArray.find(
-                  (u: { id: number | string; uom_type: string }) =>
-                    u.uom_type === "secondary"
-                )?.id || uomArray[0]?.id
-              )
-            : null;
-
-          return {
-            item_id: Number(i.id),
-            uom: Number(uomId),
-            qty: Number(i.cse),
-            status: 1,
-          };
-        });
-
-      const payload = {
+      const payload: any = {
         warehouse_id: Number(form.warehouse),
         route_id: Number(form.route),
         salesman_id: Number(form.salesman),
-        salesmanType: String(form.salesmanType),
-        project_type: Number(form.project_type),
-        details,
+        salesman_type: String(form.salesman_type),
+        details: itemData
+          .filter((i) => i.qty && Number(i.qty) > 0)
+          .map((i) => {
+            const uomArray =
+              typeof i.uom === "string" ? JSON.parse(i.uom) : i.uom;
+            const secondaryUom =
+              Array.isArray(uomArray) &&
+              uomArray.find((u: { uom_type: string }) => u.uom_type === "secondary");
+
+            return {
+              item_id: i.id,
+              uom: secondaryUom?.id || uomArray?.[0]?.id || null,
+              qty: Number(i.qty),
+              status: i.status ?? 1,
+            };
+          }),
       };
+
+      // Only include project_type if salesman_type is "Project"
+      if (form.salesman_type === "Project" && form.project_type) {
+        payload.project_type = Number(form.project_type);
+      }
 
       let res;
       if (isEditMode && loadUUID) {
@@ -223,10 +253,8 @@ export default function AddEditSalesmanLoad() {
         });
         setErrors(formErrors);
       } else {
-        showSnackbar(
-          isEditMode ? "Failed to update Salesman Load" : "Failed to add Salesman Load",
-          "error"
-        );
+        console.error(err);
+        showSnackbar("Failed to submit form", "error");
       }
     } finally {
       setSubmitting(false);
@@ -247,136 +275,60 @@ export default function AddEditSalesmanLoad() {
         </div>
       </div>
 
-      {/* Form */}
-      <ContainerCard>
-        <div className="p-6">
-          <h2 className="text-lg font-medium text-gray-800 mb-4">
-            Salesman Load Details
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           <div>
-                                       <InputFields
-                                       required
-                                       label="Salesman Type"
-                                       value={form.salesmanType}
-                                       options={[{ label: "Sales Executive-GT", value: "Sales Executive-GT" }, 
-                                           { label: "Salesman", value: "Salesman", },
-                                       { label: "Project", value: "Project", }]}
-                                       onChange={(e) => handleChange("salesmanType", e.target.value)}
-                                   />
-                                   {errors.salesmanType && (
-                                       <p className="text-red-500 text-sm mt-1">{errors.salesmanType}</p>
-                                   )}
-                                   </div>
-                                   {form.salesmanType === "Project" && (
-                                                     <div>
-                                                       <InputFields
-                                                         label="Project List"
-                                                         name="project_type"
-                                                         value={form.project_type || ""}
-                                                         options={salesmanTypeOptions}
-                                                         onChange={(e) => handleChange("project_type", e.target.value)}
-                                                       />
-                                                     </div>
-                                                   )}
-            <InputFields
-              required
-              label="Warehouse"
-              value={form.warehouse}
-              options={warehouseOptions}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange("warehouse", val);
-                handleChange("salesman", "");
-                if (val) fetchSalesmanOptions(val);
-              }}
-            />
-            <InputFields
-              required
-              label="Salesman"
-              value={form.salesman}
-              options={salesmanOptions}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange("salesman", val);
-                fetchRoutesBySalesman(val);
-              }}
-            />
-            <InputFields
-              required
-              label="Route"
-              value={form.route}
-              options={routeOptions}
-              onChange={(e) => handleChange("route", e.target.value)}
-            />
-          </div>
-        </div>
-      </ContainerCard>
+      {/* Form Section */}
+      <ContainerCard> <div className="p-6">
+        <h2 className="text-lg font-medium text-gray-800 mb-4"> Salesman Load Details </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div> 
+            <InputFields 
+            required
+             label="Salesman Type" 
+             value={form.salesman_type} 
+             options={[{ label: "Sales Executive-GT", value: "Sales Executive-GT" }, { label: "Salesman", value: "Salesman" }, { label: "Project", value: "Project" },]} 
+             onChange={(e) => handleChange("salesman_type", e.target.value)} /> {errors.salesman_type && (<p className="text-red-500 text-sm mt-1"> {errors.salesman_type} </p>)} 
+            </div> 
+            {form.salesman_type === "Project" &&
+             (<div> 
+              <InputFields label="Project List" name="project_type" value={form.project_type || ""} options={salesmanTypeOptions} onChange={(e) => handleChange("project_type", e.target.value)} /> </div>)} 
+              <InputFields required label="Warehouse" value={form.warehouse} options={warehouseOptions} onChange={(e) => { const val = e.target.value; handleChange("warehouse", val); handleChange("salesman", ""); if (val) fetchSalesmanOptions(val); }} />
+               <InputFields required label="Salesman" value={String(form.salesman)} options={salesmanOptions} onChange={(e) => { const val = e.target.value; handleChange("salesman", val); fetchRoutebySalesmanOptions(val); }} /> <InputFields required label="Route" value={form.route} options={routeOptions} onChange={(e) => handleChange("route", e.target.value)} /> </div> </div> </ContainerCard>
 
       {/* Items Table */}
-      <div className="mb-6">
-        <CustomTable
-          data={tableData}
+      <div className="mt-6">
+        <Table
+          data={itemData}
+          refreshKey={refreshKey}
           config={{
-            header: { title: "Items" },
-            columns: [
-              { key: "item", label: "Item", showByDefault: true, width: 250 },
-              {
-                key: "availableStock",
-                label: "Available Stock",
-                showByDefault: true,
-                width: 150,
-              },
-              {
-                key: "cse",
-                label: "CSE (Qty)",
-                showByDefault: true,
-                width: 150,
-                render: (row) => {
-                  const cse = parseFloat(row.cse) || 0;
-                  const stock = parseFloat(row.availableStock) || 0;
-                  const invalid = cse > stock;
-                  return (
-                    <div>
-                      <input
-                        type="number"
-                        value={row.cse}
-                        onChange={(e) =>
-                          handleCseChange(row.id, e.target.value)
-                        }
-                        className={`w-full px-3 py-2 border rounded-lg text-sm ${
-                          invalid
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-blue-500"
-                        }`}
-                        placeholder="Enter CSE"
-                      />
-                      {invalid && (
-                        <p className="text-red-500 text-xs mt-1">
-                          Exceeds stock
-                        </p>
-                      )}
-                    </div>
-                  );
-                },
-              },
-            ],
-            footer: { pagination: false, nextPrevBtn: false },
+            header: {
+              title: "Items",
+              searchBar: false,
+              columnFilter: false,
+            },
+            table: {
+              height: 500,
+            },
+            footer: { nextPrevBtn: false, pagination: false },
+            columns,
+            rowSelection: false,
+            pageSize: 50,
           }}
         />
       </div>
 
-      {/* Buttons */}
-      <div className="flex justify-end gap-4 mt-6">
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-4 mt-6 pr-0">
         <button
           type="button"
-          className="px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+          className={`px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 ${submitting
+              ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
+              : "border-gray-300"
+            }`}
           onClick={() => router.push("/salesmanLoad")}
           disabled={submitting}
         >
           Cancel
         </button>
+
         <SidebarBtn
           label={
             submitting
@@ -384,8 +336,8 @@ export default function AddEditSalesmanLoad() {
                 ? "Updating..."
                 : "Submitting..."
               : isEditMode
-              ? "Update"
-              : "Submit"
+                ? "Update"
+                : "Submit"
           }
           isActive={!submitting}
           leadingIcon="mdi:check"

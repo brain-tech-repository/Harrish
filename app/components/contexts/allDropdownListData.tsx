@@ -82,7 +82,7 @@ interface DropdownDataContextType {
   vehicleListOptions: { value: string; label: string }[];
   customerCategoryOptions: { value: string; label: string }[];
   customerSubCategoryOptions: { value: string; label: string }[];
-  itemOptions: { value: string; label: string; uoms?: { id?: string; name?: string; uom_type?: string; price?: string; upc?: string }[] }[];
+  itemOptions: { value: string; label: string; volume?: string | number; uoms?: { id?: string; name?: string; uom_type?: string; price?: string; upc?: string }[] }[];
   discountTypeOptions: { value: string; label: string }[];
   menuOptions: { value: string; label: string }[];
   vendorOptions: { value: string; label: string }[];
@@ -227,6 +227,8 @@ interface Item {
   id?: number | string;
   item_code?: string;
   name?: string;
+  volume?: string;
+  status?: string;
   uom?: UomItem[];
 }
 
@@ -464,6 +466,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => ({
     value: String(c.id ?? ''),
     label: c.item_code && c.name ? `${c.item_code} - ${c.name}` : (c.name ?? ''),
+    volume: (c).volume ?? '',
+    status: (c).status ?? '',
     uoms: Array.isArray((c as any).uom) ? (c as any).uom.map((u: any) => ({
       id: String(u.id ?? ''),
       name: String(u.name ?? ''),
