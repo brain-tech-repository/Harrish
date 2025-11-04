@@ -37,6 +37,15 @@ export const salesmanLoadHeaderUpdate = async (uuid: string, body: object) => {
   }
 };
 
+export const salesmanLoadByUuid= async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/load/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 // Salesman Load Details
 
 export const salesmanLoadDetailsList = async (params: Params) => {
@@ -146,9 +155,9 @@ export const salesmanUnloadHeaderAdd = async (body: object) => {
   }
 };
 
-export const salesmanUnloadHeaderById = async (uuid: string, params: object) => {
+export const salesmanUnloadHeaderById = async (uuid: string) => {
   try {
-    const res = await API.get(`/api/agent_transaction/unload/${uuid}`, { params });
+    const res = await API.get(`/api/agent_transaction/unload/${uuid}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -158,6 +167,60 @@ export const salesmanUnloadHeaderById = async (uuid: string, params: object) => 
 export const salesmanUnloadHeaderUpdate = async (uuid: string, body: object) => {
   try {
     const res = await API.put(`/api/agent_transaction/unload/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const capsCollectionList = async (params: Params) => {
+  try {
+    const res = await API.get("/api/agent_transaction/capscollection/list", { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const capsCollectionByUuid = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/capscollection/show/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const capsCollectionStatusUpdate = async (body:object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/capscollection/updatestatus`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const createCapsCollection = async (body:object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/capscollection/create`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updateCapsCollection = async (uuid:string,body:object) => {
+  try {
+    const res = await API.put(`/api/agent_transaction/capscollection/update/${uuid}`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCapsCollection = async () => {
+  try {
+    const res = await API.get(`/api/agent_transaction/capscollection/export`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

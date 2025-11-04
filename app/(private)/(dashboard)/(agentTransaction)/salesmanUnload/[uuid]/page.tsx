@@ -51,7 +51,7 @@ export default function AddEditSalesmanLoad() {
             setLoading(true);
             (async () => {
                 try {
-                    const res = await salesmanUnloadHeaderById(String(loadUUID),{});
+                    const res = await salesmanUnloadHeaderById(String(loadUUID));
                     const data = res?.data ?? res;
                     setForm({
                         salesmanType: data?.salesmanType || "",

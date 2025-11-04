@@ -269,7 +269,7 @@ export default function SalesmanUnloadPage() {
               icon: "lucide:eye",
               onClick: (data: object) => {
                 const row = data as TableDataType;
-                router.push(`/salesmanLoad/details/${String(row.uuid)}`);
+                router.push(`/salesmanUnload/details/${String(row.uuid)}`);
               },
             },
             {

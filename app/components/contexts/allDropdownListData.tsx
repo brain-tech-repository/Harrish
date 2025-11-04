@@ -87,12 +87,13 @@ interface DropdownDataContextType {
   menuOptions: { value: string; label: string }[];
   vendorOptions: { value: string; label: string }[];
   salesmanOptions: { value: string; label: string }[];
-  agentCustomerOptions: { value: string; label: string }[];
+  agentCustomerOptions: { value: string; label: string; contact_no?: string }[];
   shelvesOptions: { value: string; label: string }[];
   submenuOptions: { value: string; label: string }[];
   permissions: permissionsList[];
   refreshDropdowns: () => Promise<void>;
   fetchItemSubCategoryOptions: (category_id: string | number) => Promise<void>;
+  fetchAgentCustomerOptions: (warehouse_id: string | number) => Promise<void>;
   fetchSalesmanOptions: (warehouse_id: string | number) => Promise<void>;
   fetchAreaOptions: (region_id: string | number) => Promise<void>;
   fetchRouteOptions: (warehouse_id: string | number) => Promise<void>;
@@ -274,6 +275,7 @@ interface AgentCustomerList {
   uuid: string,
   osa_code: string,
   outlet_name: string,
+  contact_no?: string,
   status: number
 }
 
@@ -520,7 +522,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const agentCustomerOptions = (Array.isArray(agentCustomer) ? agentCustomer : []).map((c: AgentCustomerList) => ({
     value: String(c.id ?? ''),
-    label: c.osa_code && c.outlet_name ? `${c.osa_code} - ${c.outlet_name}` : (c.outlet_name ?? '')
+    label: c.osa_code && c.outlet_name ? `${c.osa_code} - ${c.outlet_name}` : (c.outlet_name ?? ''),
+    contact_no: c.contact_no ?? ''
   }));
   console.log("agent", agentCustomerOptions)
 
@@ -745,6 +748,28 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setLoading(false);
     }
   };
+
+  const fetchAgentCustomerOptions = useCallback(async (warehouse_id: string | number) => {
+    setLoading(false);
+    try {
+      // call agentCustomerList with warehouse_id
+      const res = await agentCustomerList({ warehouse_id: String(warehouse_id) });
+      const normalize = (r: unknown): AgentCustomerList[] => {
+        if (r && typeof r === 'object') {
+          const obj = r as Record<string, unknown>;
+          if (Array.isArray(obj.data)) return obj.data as AgentCustomerList[];
+        }
+        if (Array.isArray(r)) return r as AgentCustomerList[];
+        return [];
+      };
+      setAgentCustomer(normalize(res));
+    } catch (error) {
+      setAgentCustomer([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
     const fetchSalesmanOptions = useCallback(async (warehouse_id: string | number) => {
     // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
     setLoading(false);
@@ -917,6 +942,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         labels: labels,
         roles: roles,
         fetchItemSubCategoryOptions,
+        fetchAgentCustomerOptions,
         fetchSalesmanOptions,
         fetchRegionOptions,
         companyOptions,
