@@ -599,7 +599,6 @@ function TableBody() {
         } else {
             setTableOrder({ column, order: "desc" });
         }
-
         setDisplayedData(naturalSort(displayedData, tableOrder.order, column));
     };
 
