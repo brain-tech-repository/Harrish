@@ -267,6 +267,13 @@ export const initialLinkData: SidebarDataType[] = [
                         leadingIcon: "carbon:delivery-parcel",
                         iconColor: "text-cyan-500"
                     },
+                    {
+                        isActive: false,
+                        href: "/agentCustomerDelivery",
+                        label: "Agent Customer Delivery",
+                        leadingIcon: "carbon:delivery-parcel",
+                        iconColor: "text-cyan-500"
+                    },
                     // {
                     //     isActive: false,
                     //     href: "/agentTransaction/agentCustomerInvoice",

@@ -53,6 +53,8 @@ type Props = {
   showSkeleton?: boolean;
 
   maxLength?: number;
+  min?: string;
+  max?: string;
   setSelectedCountry?: ({ name: string; code?: string; flag?: string });
   selectedCountry?: { name: string; code?: string; flag?: string };
   /** When true and this is a multi-select, render selected values as chips inside the field */
@@ -85,6 +87,8 @@ export default function InputFields({
   trailingElement,
   showBorder = true,
   maxLength,
+  min,
+  max,
   showSkeleton = false,
   setSelectedCountry,
   selectedCountry,
@@ -705,6 +709,7 @@ useEffect(() => {
           id={id}
           disabled={disabled}
           error={error}
+          
           placeholder={placeholder}
           showBorder={showBorder}
           onChange={(e) => {
@@ -721,6 +726,8 @@ useEffect(() => {
           onChange={safeOnChange}
           disabled={disabled}
           onBlur={onBlur}
+          min={ min || (originalValue ? String(originalValue) : undefined) }
+          max={ max }
           className={`border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] px-3 mt-0 text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${error ? "border-red-500" : "border-gray-300"}`}
           placeholder={`Enter ${label}`}
         />

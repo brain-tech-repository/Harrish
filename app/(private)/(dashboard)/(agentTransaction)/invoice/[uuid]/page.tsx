@@ -51,14 +51,18 @@ const keyValueData = [
 ];
 
 export default function InvoiceddEditPage() {
-    const { warehouseOptions, agentCustomerOptions } = useAllDropdownListData();
+    const { warehouseOptions, agentCustomerOptions, routeOptions } = useAllDropdownListData();
     const router = useRouter();
     const [showDropdown, setShowDropdown] = useState(false);
     const orderId = "#W1O20933";
 
     const [form, setForm] = useState({
+        customerType: "",
         warehouse: "",
+        route: "",
         customer: "",
+        invoice_type: "",
+        invoice_date: new Date().toISOString().slice(0, 10),
         note: "",
         transactionType: "1",
         paymentTerms: "1",
@@ -93,7 +97,7 @@ const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTML
                         onClick={() => router.back()}
                     />
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-                        Add Order
+                        Add Invoice
                     </h1>
                 </div>
             </div>
@@ -108,7 +112,7 @@ const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTML
 
                     <div className="flex flex-col">
                         <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-                            Order
+                            Invoice
                         </span>
                         <span className="text-primary text-[14px] tracking-[10px]">
                             {orderId}
@@ -117,23 +121,79 @@ const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTML
                 </div>
                 <hr className="text-[#D5D7DA]" />
 
-                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-wrap">
                     <InputFields
-                        label="Warehouse"
-                        type="text"
-                        name="warehouse"
-                        value={form.warehouse}
-                        options={warehouseOptions}
+                        label="Invoice type"
+                        name="invoice_type"
+                        value={form.invoice_type}
+                        options={[
+                            { label: "Against Delivery", value: "0" },
+                            { label: "Direct Invoice", value: "1" },
+                        ]}
                         onChange={handleChange}
                     />
-                    <InputFields
-                        label="Customer"
-                        type="text"
-                        name="customer"
-                        value={form.warehouse}
-                        options={agentCustomerOptions}
-                        onChange={handleChange}
-                    />
+                    {form.invoice_type === "0" && (
+                        <>
+                            <InputFields
+                                label="Warehouse"
+                                type="text"
+                                name="warehouse"
+                                value={form.warehouse}
+                                options={warehouseOptions}
+                                onChange={handleChange}
+                            />
+                            <InputFields
+                                label="Delivery"
+                                type="text"
+                                name="customer"
+                                value={form.customer}
+                                options={agentCustomerOptions}
+                                onChange={handleChange}
+                            />
+                        </>
+                    )}
+                    {form.invoice_type === "1" && (
+                        <>
+                            <InputFields
+                                label="Customer Type"
+                                name="customerType"
+                                value={form.customerType}
+                                options={[
+                                    { label: "Agent Customer", value: "1" },
+                                    { label: "Company Customer", value: "2" },
+                                ]}
+                                onChange={handleChange}
+                            />
+                            <InputFields
+                                label="Warehouse"
+                                name="warehouse"
+                                value={form.warehouse}
+                                options={warehouseOptions}
+                                onChange={handleChange}
+                            />
+                            <InputFields
+                                label="Route"
+                                name="route"
+                                value={form.route}
+                                options={routeOptions}
+                                onChange={handleChange}
+                            />
+                            <InputFields
+                                label="Customer"
+                                name="customer"
+                                value={form.customer}
+                                options={agentCustomerOptions}
+                                onChange={handleChange}
+                            />
+                            <InputFields
+                                label="Invoice Date"
+                                type="date"
+                                name="invoice_date"
+                                value={form.invoice_date}
+                                onChange={handleChange}
+                            />
+                        </>
+                    )}
                 </div>
 
                 <Table

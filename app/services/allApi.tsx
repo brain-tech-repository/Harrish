@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
-import Warehouse from '../(private)/(dashboard)/(master)/warehouse/page';
+
 
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

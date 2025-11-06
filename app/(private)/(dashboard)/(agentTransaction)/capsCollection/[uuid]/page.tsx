@@ -450,7 +450,7 @@ export default function AddEditSalesmanLoad() {
                 render: (row) => {
                   const uomOptions = rowUomOptions[row.id] || [];
                   return (
-                    <div style={{ minWidth: '150px', maxWidth: '150px' }}>
+                    <div style={{ minWidth: '134px', maxWidth: '134px' }}>
                       <InputFields 
                         options={uomOptions}
                         value={row.uom}
