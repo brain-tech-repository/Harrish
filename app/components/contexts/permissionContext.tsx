@@ -14,7 +14,7 @@ type PermissionContextType = {
     type:string,
     options?: { roleId?: string; force?: boolean }
   ) => Promise<LinkDataType[]>;
-  allowedPaths?: Set<String>;
+  allowedPaths?: Set<string>;
 };
 
 const PermissionContext = createContext<PermissionContextType | undefined>(undefined);

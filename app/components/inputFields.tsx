@@ -5,7 +5,7 @@ import 'react-phone-input-2/lib/style.css';
 import LoaderCircle from "./loaderCircle";
 import DateRangePicker from "./DateRangePicker";
 
-type Option = {
+export type Option = {
   value: string;
   label: string;
   [key: string]: unknown;
