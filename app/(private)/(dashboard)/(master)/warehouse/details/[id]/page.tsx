@@ -75,6 +75,7 @@ export default function ViewPage() {
     const [warehouseSalesman, setWarehouseSalesman] = useState<TableDataType[]>([]);
     const [warehouseCustomer, setWarehouseCustomer] = useState<TableDataType[]>([]);
     const [nestedLoading, setNestedLoading] = useState<boolean>(false);
+    const [refreshKey, setRefreshKey] = useState(0)
 
     const params = useParams();
     let id: string = "";
@@ -461,14 +462,10 @@ export default function ViewPage() {
                 pageSize: number = 5,
                 columnName?: string
             ): Promise<searchReturnType> => {
-                setNestedLoading(true);
-            
-              
                 const result = await getCustomerInWarehouse(id,{
                     query: searchQuery,
+                    pageSize: pageSize.toString()
                 });
-                
-                setNestedLoading(false);
     
                 if (result.error) {
                     throw new Error(result.data?.message || "Search failed");
@@ -481,7 +478,30 @@ export default function ViewPage() {
                     total: result?.pagination?.last_page || 1,
                 };
             },
-            [setLoading]
+            []
+        );
+
+  const listCustomerById = useCallback(
+            async (
+                pageNo: number = 1,
+                pageSize: number = 50
+            ): Promise<searchReturnType> => {
+                const result = await getCustomerInWarehouse(id,{
+                    page: pageNo.toString(),
+                    pageSize: pageSize.toString()
+                });
+                if (result.error) {
+                    throw new Error(result.data?.message || "Search failed");
+                }
+    
+                return {
+                    data: result.data || [],
+                    currentPage: result?.pagination?.current_page || 1,
+                    pageSize: result?.pagination?.per_page || pageSize,
+                    total: result?.pagination?.last_page || 1,
+                };
+            },
+            []
         );
 
   const searchRouteByWarehouse = useCallback(
@@ -490,19 +510,13 @@ export default function ViewPage() {
                 pageSize: number = 5,
                 columnName?: string
             ): Promise<searchReturnType> => {
-                setNestedLoading(true);
-               
-              
                 const result = await getRouteInWarehouse(id,{
                     query: searchQuery,
                 });
-                
-                setNestedLoading(false);
-    
                 if (result.error) {
                     throw new Error(result.data?.message || "Search failed");
                 }
-    
+                
                 return {
                     data: result.data || [],
                     currentPage: result?.pagination?.current_page || 1,
@@ -510,7 +524,31 @@ export default function ViewPage() {
                     total: result?.pagination?.last_page || 1,
                 };
             },
-            [setLoading]
+            []
+        );
+
+  const listRouteByWarehouse = useCallback(
+            async (
+                pageNo: number = 1,
+                pageSize: number = 5,
+            ): Promise<searchReturnType> => {
+                const result = await getRouteInWarehouse(id,{
+                    page: pageNo.toString(),
+                    pageSize: pageSize.toString()
+                });
+    
+                if (result.error) {
+                    throw new Error(result.data?.message || "Search failed");
+                }
+                
+                return {
+                    data: result.data || [],
+                    currentPage: result?.pagination?.current_page || 1,
+                    pageSize: result?.pagination?.per_page || pageSize,
+                    total: result?.pagination?.last_page || 1,
+                };
+            },
+            []
         );
 
   const searchSalesmanByWarehouse = useCallback(
@@ -519,15 +557,10 @@ export default function ViewPage() {
                 pageSize: number = 5,
                 columnName?: string
             ): Promise<searchReturnType> => {
-                setNestedLoading(true);
-               
-              
                 const result = await getSalesmanInWarehouse(id,{
                     query: searchQuery,
                 });
                 
-                setNestedLoading(false);
-    
                 if (result.error) {
                     throw new Error(result.data?.message || "Search failed");
                 }
@@ -539,7 +572,31 @@ export default function ViewPage() {
                     total: result?.pagination?.last_page || 1,
                 };
             },
-            [setLoading]
+            []
+        );
+
+  const listSalesmanByWarehouse = useCallback(
+            async (
+                pageNo: number = 1,
+                pageSize: number = 5,
+            ): Promise<searchReturnType> => {
+                const result = await getSalesmanInWarehouse(id,{
+                    page: pageNo.toString(),
+                    pageSize: pageSize.toString()
+                });
+                
+                if (result.error) {
+                    throw new Error(result.data?.message || "Search failed");
+                }
+    
+                return {
+                    data: result.data || [],
+                    currentPage: result?.pagination?.current_page || 1,
+                    pageSize: result?.pagination?.per_page || pageSize,
+                    total: result?.pagination?.last_page || 1,
+                };
+            },
+            []
         );
 
     return (
@@ -717,13 +774,13 @@ export default function ViewPage() {
 
             {activeTab === "warehouseCustomer" && (
                 <ContainerCard >
-                    {!nestedLoading?warehouseCustomer.length > 0 ? (
+                    {!nestedLoading ? (
                         <div className="flex flex-col h-full">
                             <Table
-                                data={warehouseCustomer}
                                 config={{
                                     api:{
-                                        search:searchCustomerById
+                                        search: searchCustomerById,
+                                        list: listCustomerById
                                     },
                                     header:{
                                         searchBar:true
@@ -734,10 +791,6 @@ export default function ViewPage() {
                                     pageSize: 50,
                                 }}
                             />
-                        </div>
-                    ) : (
-                        <div className="text-[18px] mt-4 text-center items-center font-semibold mb-[25px]">
-                            No Data Found
                         </div>
                     ):(<div><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/></div>)}
                 </ContainerCard>
@@ -752,19 +805,17 @@ export default function ViewPage() {
             )}
             {activeTab === "route" && (
                 <ContainerCard >
-                    {!nestedLoading?warehouseRoutes.length > 0 ? (
+                    {!nestedLoading ? (
                         <div className="flex flex-col h-full">
                             <Table
-                                data={warehouseRoutes}
                                 config={{
                                     api: {
-                                        search: searchRouteByWarehouse
+                                        search: searchRouteByWarehouse,
+                                        list: listRouteByWarehouse
                                     },
                                     header: {
                                         searchBar: true,
-                                        columnFilter:false
                                     },
-                                    localStorageKey: "warehouse-route-table",
                                     footer: { nextPrevBtn: true, pagination: true },
                                     columns: routeColumns,
                                     rowSelection: false,
@@ -772,37 +823,28 @@ export default function ViewPage() {
                                 }}
                             />
                         </div>
-                    ) : (
-                        <div className="text-[18px] mt-4 text-center items-center font-semibold mb-[25px]">
-                            No Data Found
-                        </div>
-                    ):(<div><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/></div>)}
+                    ) : (<div><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/></div>)}
                 </ContainerCard>
             )}
             {activeTab === "salesman" && (
                 <ContainerCard >
-                    {!nestedLoading?warehouseSalesman.length > 0 ? (
+                    {!nestedLoading ? (
                         <div className="flex flex-col h-full">
                             <Table
-                                data={warehouseSalesman}
                                 config={{
                                     api: {
-                                        search: searchSalesmanByWarehouse
+                                        search: searchSalesmanByWarehouse,
+                                        list: listSalesmanByWarehouse
                                     },
                                     header: {
                                         searchBar: true
                                     },
-                                    localStorageKey: "warehouse-salesman-table",
                                     footer: { nextPrevBtn: true, pagination: true },
                                     columns: salesmanColumns,
                                     rowSelection: false,
                                     pageSize: 50,
                                 }}
                             />
-                        </div>
-                    ) : (
-                        <div className="text-[18px] mt-4 text-center items-center font-semibold mb-[25px]">
-                            No Data Found
                         </div>
                     ):(<div><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/><Skeleton/></div>)}
                 </ContainerCard>
