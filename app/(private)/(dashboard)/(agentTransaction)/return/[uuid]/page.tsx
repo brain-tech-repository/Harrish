@@ -7,9 +7,8 @@ import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useRouter, useParams } from "next/navigation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
-import { createDelivery,deliveryByUuid,updateDelivery } from "@/app/services/agentTransaction";
+import { createReturn,deliveryByUuid,updateDelivery } from "@/app/services/agentTransaction";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
@@ -23,14 +22,9 @@ interface DeliveryDetail {
     name: string;
   };
   uom_id: number;
-  item_price: string;
   quantity: number;
-  vat: string;
-  discount: string;
-  excise?: string;
-  gross_total: string;
-  net_total: string;
-  total: string;
+  return_type: string;
+  return_reason: string;
 }
 
 interface DeliveryResponse {
@@ -43,13 +37,20 @@ interface DeliveryResponse {
     id: number;
     name: string;
   };
-  comment?: string;
-  delivery_date?: string;
+  customer_type?: {
+    id: number;
+    name: string;
+  };
+  route?: {
+    id: number;
+    name: string;
+  };
   details?: DeliveryDetail[];
 }
 
+
 export default function OrderAddEditPage() {
-  const { warehouseOptions, agentCustomerOptions, itemOptions, fetchAgentCustomerOptions } = useAllDropdownListData();
+  const { warehouseOptions, agentCustomerOptions, companyCustomersOptions,itemOptions, fetchAgentCustomerOptions ,routeOptions} = useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
   const router = useRouter();
@@ -61,12 +62,15 @@ export default function OrderAddEditPage() {
   const [form, setForm] = useState({
     warehouse: "",
     customer: "",
-    note: "",
-    delivery_date: new Date().toISOString().slice(0, 10),
-    transactionType: "1",
-    paymentTerms: "1",
-    paymentTermsUnit: "1",
+    customer_type: "",
+    route: "",
   });
+  const goodOptions = [{ label: "Near By Expiry", value: "0" },
+                      { label: "Package Issue", value: "1" },
+                      { label: "Not Saleable", value: "2" },];
+  const badOptions = [{ label: "Damage", value: "0" },
+                      { label: "Expiry", value: "1" },
+                      ];
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -80,12 +84,8 @@ export default function OrderAddEditPage() {
       UOM: "",
       uom_id: "",
       Quantity: "1",
-      Price: "",
-      Excise: "",
-      Discount: "",
-      Net: "",
-      Vat: "",
-      Total: "",
+      return_type: "",
+      return_reason: "",
     },
   ]);
 
@@ -102,11 +102,8 @@ export default function OrderAddEditPage() {
           setForm({
             warehouse: data?.warehouse?.id ? String(data.warehouse.id) : "",
             customer: data?.customer?.id ? String(data.customer.id) : "",
-            note: data?.comment || "",
-            delivery_date: data?.delivery_date ? new Date(data.delivery_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-            transactionType: "1",
-            paymentTerms: "1",
-            paymentTermsUnit: "1",
+            customer_type: data?.customer_type?.id ? String(data.customer_type?.id) : "",
+            route: data?.route?.id ? String(data.route?.id) : "",
           });
           
           if (data?.warehouse?.id) {
@@ -133,28 +130,16 @@ export default function OrderAddEditPage() {
                 }));
               }
               
-              // Find the price from the selected UOM
-              const itemPrice = detail.item_price || "0";
-              
-              const qty = detail.quantity || 0;
-              const price = parseFloat(itemPrice);
-              const discount = parseFloat(detail.discount) || 0;
-              const total = (qty * price) - discount;
-              const vat = total * 0.18;
-              const net = total - vat;
+             
               
               return {
                 item_id: itemId,
                 itemName: itemId,
                 UOM: uomId,
                 uom_id: uomId,
-                Quantity: String(qty),
-                Price: (Number(price) || 0).toFixed(2),
-                Excise: detail.excise || "0.00",
-                Discount: (Number(discount) || 0).toFixed(2),
-                Net: net.toFixed(2),
-                Vat: vat.toFixed(2),
-                Total: total.toFixed(2),
+                Quantity: (detail?.quantity ?? 1).toString(),
+               return_type: detail?.return_type || "",
+               return_reason: detail?.return_reason || "",
               };
             });
             
@@ -207,7 +192,8 @@ export default function OrderAddEditPage() {
   const validationSchema = yup.object().shape({
     warehouse: yup.string().required("Warehouse is required"),
     customer: yup.string().required("Customer is required"),
-    delivery_date: yup.string().required("Delivery date is required"),
+    customer_type: yup.string().required("Customer Typa is required"),
+    route: yup.string().required("Route is required"),
   });
 
   // --- Calculate totals and VAT dynamically
@@ -215,17 +201,6 @@ export default function OrderAddEditPage() {
     const newData = [...itemData];
     const item = newData[index];
     item[field as keyof typeof item] = value;
-
-    const qty = Number(item.Quantity) || 0;
-    const price = Number(item.Price) || 0;
-    const total = qty * price;
-    const vat = total * 0.18; // 18% VAT
-    const net = total - vat;
-
-    item.Total = total.toFixed(2);
-    item.Vat = vat.toFixed(2);
-    item.Net = net.toFixed(2);
-
     setItemData(newData);
   };
 
@@ -238,12 +213,8 @@ export default function OrderAddEditPage() {
         UOM: "",
         uom_id: "",
         Quantity: "1",
-        Price: "",
-        Excise: "",
-        Discount: "",
-        Net: "",
-        Vat: "",
-        Total: "",
+        return_type: "",
+        return_reason: "",
       },
     ]);
   };
@@ -257,12 +228,8 @@ export default function OrderAddEditPage() {
           UOM: "",
           uom_id: "",
           Quantity: "1",
-          Price: "",
-          Excise: "",
-          Discount: "",
-          Net: "",
-          Vat: "",
-          Total: "",
+            return_type: "",
+            return_reason: "",
         },
       ]);
       return;
@@ -270,47 +237,23 @@ export default function OrderAddEditPage() {
     setItemData(itemData.filter((_, i) => i !== index));
   };
 
-  // --- Compute totals for summary
-  const grossTotal = itemData.reduce(
-    (sum, item) => sum + Number(item.Total || 0),
-    0
-  );
-  const totalVat = itemData.reduce(
-    (sum, item) => sum + Number(item.Vat || 0),
-    0
-  );
-  const netAmount = itemData.reduce(
-    (sum, item) => sum + Number(item.Net || 0),
-    0
-  );
-  const discount = itemData.reduce(
-    (sum, item) => sum + Number(item.Discount || 0),
-    0
-  );
-  const finalTotal = (totalVat + netAmount );
+ 
 
   // --- Create Payload for API
   const generatePayload = () => {
     return {
       warehouse_id: Number(form.warehouse),
       customer_id: Number(form.customer),
-      gross_total: Number(grossTotal.toFixed(2)),
-      discount: Number(discount.toFixed(2)),
-      vat: Number(totalVat.toFixed(2)),
-      total: Number(finalTotal.toFixed(2)),
-      comment: form.note || "",
+      customer_type: Number(form.customer_type),
+      route_id: Number(form.route),
       details: itemData
         .filter(item => item.item_id && item.uom_id) // Only include rows with item and UOM selected
         .map((item) => ({
           item_id: Number(item.item_id),
           uom_id: Number(item.uom_id),
           quantity: Number(item.Quantity) || 0,
-          item_price: Number(item.Price) || 0,
-          vat: Number(item.Vat) || 0,
-          discount: Number(item.Discount) || 0,
-          gross_total: Number(item.Total) || 0,
-          net_total: Number(item.Net) || 0,
-          total: Number(item.Total) || 0,
+            return_type: item.return_type,
+            return_reason: item.return_reason,
         })),
     };
   };
@@ -340,7 +283,7 @@ export default function OrderAddEditPage() {
         res = await updateDelivery(uuid, payload);
       } else {
         // Create new delivery
-        res = await createDelivery(payload);
+        res = await createReturn(payload);
       }
       
       // Check if response contains an error
@@ -356,11 +299,11 @@ export default function OrderAddEditPage() {
       // Success
       showSnackbar(
         isEditMode 
-          ? "Delivery updated successfully!" 
-          : "Delivery created successfully!", 
+          ? "Return updated successfully!" 
+          : "Return created successfully!", 
         "success"
       );
-      router.push("/agentCustomerDelivery");
+      router.push("/return");
     } catch (error) {
       if (error instanceof yup.ValidationError) {
         // Handle yup validation errors
@@ -403,13 +346,7 @@ export default function OrderAddEditPage() {
     }
   };
 
-  const keyValueData = [
-    { key: "Gross Total", value: `AED ${grossTotal.toFixed(2)}` },
-    { key: "Discount", value: `AED ${discount.toFixed(2)}` },
-    { key: "Net Total", value: `AED ${netAmount.toFixed(2)}` },
-    { key: "VAT", value: `AED ${totalVat.toFixed(2)}` },
-    { key: "Delivery Charges", value: "AED 0.00" },
-  ];
+
 
   return (
     <div className="flex flex-col h-full">
@@ -421,7 +358,7 @@ export default function OrderAddEditPage() {
             onClick={() => router.back()}
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-            {isEditMode ? "Update Delivery" : "Add Delivery"}
+            {isEditMode ? "Update Return" : "Add Return"}
           </h1>
         </div>
       </div>
@@ -437,7 +374,7 @@ export default function OrderAddEditPage() {
           </div>
           <div className="flex flex-col">
             <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-              DELIVERY
+              Return
             </span>
             <span className="text-primary text-[14px] tracking-[10px]">
               #W1O20933
@@ -449,22 +386,33 @@ export default function OrderAddEditPage() {
         {/* --- Form Fields --- */}
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
             <InputFields
+              label="Customer Type"
+              required
+              name="customer_type"
+              value={form.customer_type}
+              options={[
+                { label: "Agent Customer", value: "0" },
+                { label: "Company Customer", value: "1" },
+              ]}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange(e);
+               
+               
+              }}
+              error={errors.customer_type}
+            />
+            <InputFields
               label="Warehouse"
               required
               name="warehouse"
               value={form.warehouse}
               options={warehouseOptions}
               searchable={true}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange(e);
-                // Clear customer when warehouse changes
-                setForm(prev => ({ ...prev, customer: "" }));
-                // Fetch customers for selected warehouse
-                if (val) {
-                  fetchAgentCustomerOptions(val);
-                }
-              }}
+              onChange={
+                handleChange
+                
+              }
               error={errors.warehouse}
             />
             
@@ -474,21 +422,21 @@ export default function OrderAddEditPage() {
               name="customer"
               searchable={true}
               value={form.customer}
-              options={agentCustomerOptions}
+              options={form.customer_type === "0" ? agentCustomerOptions : companyCustomersOptions}
               onChange={handleChange}
               error={errors.customer}
             />
-            
             <InputFields
               required
-              label="Delivery Date"
-              type="date"
-              name="delivery_date"
-              value={form.delivery_date}
-              numberMin={new Date().toISOString().split("T")[0]}
+              label="Route"
+              name="route"
+              value={form.route}
+              options={routeOptions}
               onChange={handleChange}
-              error={errors.delivery_date}
+              error={errors.route}
             />
+            
+           
            
 </div>
         {/* --- Table --- */}
@@ -534,7 +482,6 @@ export default function OrderAddEditPage() {
                         if (firstUom) {
                           newData[index].uom_id = firstUom.value;
                           newData[index].UOM = firstUom.value;
-                          newData[index].Price = firstUom.price || "0";
                         }
                       } else {
                         setRowUomOptions(prev => {
@@ -544,7 +491,6 @@ export default function OrderAddEditPage() {
                         });
                         newData[index].uom_id = "";
                         newData[index].UOM = "";
-                        newData[index].Price = "0";
                       }
                       
                       setItemData(newData);
@@ -575,9 +521,7 @@ export default function OrderAddEditPage() {
                         const index = Number(row.idx);
                         newData[index].uom_id = selectedUomId;
                         newData[index].UOM = selectedUomId;
-                        if (selectedUom) {
-                          newData[index].Price = selectedUom.price || "0";
-                        }
+                        
                         setItemData(newData);
                         recalculateItem(index, "UOM", selectedUomId);
                       }}
@@ -616,29 +560,61 @@ export default function OrderAddEditPage() {
                 ),
               },
               {
-                key: "Price",
-                label: "Price",
+                key: "return_type",
+                label: "Return Type",
+                width: 100,
                 render: (row) => (
-                  row.Price || "0.00"
-                )
+                  <div style={{ minWidth: '100px', maxWidth: '100px' }}>
+                    <InputFields
+                      label=""
+                      name="return_type"
+                      value={row.return_type}
+                      options={[
+                        { label: "Good", value: "1" },
+                        { label: "Bad", value: "2" },
+                      ]}
+                      disabled={!row.item_id}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const newData = [...itemData];
+                        const index = Number(row.idx);
+                        newData[index].return_type = value;
+                        // Reset return_reason when type changes
+                        newData[index].return_reason = "";
+                        setItemData(newData);
+                      }}
+                    />
+                  </div>
+                ),
               },
               {
-                key: "Discount",
-                label: "Discount",
-                render: (row) => (
-                  row.Discount || "0.00"
-                )
-                
+                key: "return_reason",
+                label: "Return Reason",
+                width: 200,
+                render: (row) => {
+                  const options = row.return_type === "1" ? goodOptions : row.return_type === "2" ? badOptions : [];
+                  return (
+                    <div style={{ minWidth: '200px', maxWidth: '200px' }}>
+                      <InputFields
+                        label=""
+                        name="return_reason"
+                        value={row.return_reason}
+                        options={options}
+                        disabled={!row.return_type}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const newData = [...itemData];
+                          const index = Number(row.idx);
+                          newData[index].return_reason = value;
+                          setItemData(newData);
+                        }}
+                      />
+                    </div>
+                  );
+                },
               },
-              { key: "Net", label: "Net",render: (row) => (
-                  row.Net || "0.00"
-                ) },
-              { key: "Vat", label: "VAT",render: (row) => (
-                  row.Vat || "0.00"
-                ) },
-              { key: "Total", label: "Total" ,render: (row) => (
-                  row.Total || "0.00"
-                )},
+              
+             
               {
                 key: "action",
                 label: "Action",
@@ -674,43 +650,14 @@ export default function OrderAddEditPage() {
           </button>
         </div>
 
-        {/* --- Summary --- */}
-        <div className="flex justify-between text-primary gap-0 mb-10">
-          <div></div>
-          <div className="flex justify-between flex-wrap w-full">
-            <div className="flex flex-col justify-end gap-[20px] w-full lg:w-[400px]">
-              <InputFields
-                label="Note"
-                type="textarea"
-                name="note"
-                placeholder="Enter Description"
-                value={form.note}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="flex flex-col gap-[10px] w-full lg:w-[350px] border-b-[1px] border-[#D5D7DA]">
-              {keyValueData.map((item) => (
-                <Fragment key={item.key}>
-                  <KeyValueData data={[item]} />
-                  <hr className="text-[#D5D7DA]" />
-                </Fragment>
-              ))}
-              <div className="font-semibold text-[#181D27] text-[18px] flex justify-between mt-2 mb-2">
-                <span>Total</span>
-                <span>AED {finalTotal.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* --- Buttons --- */}
-        <hr className="text-[#D5D7DA]" />
         <div className="flex justify-end gap-4 mt-6">
           <button
             type="button"
             className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-            onClick={() => router.push("/agentCustomerDelivery")}
+            onClick={() => router.push("/return")}
             disabled={isSubmitting}
           >
             Cancel
@@ -719,8 +666,8 @@ export default function OrderAddEditPage() {
             isActive={!isSubmitting} 
             label={
               isSubmitting 
-                ? (isEditMode ? "Updating Delivery..." : "Creating Delivery...") 
-                : (isEditMode ? "Update Delivery" : "Create Delivery")
+                ? (isEditMode ? "Updating Return..." : "Creating Return...") 
+                : (isEditMode ? "Update Return" : "Create Return")
             } 
             onClick={handleSubmit} 
           />

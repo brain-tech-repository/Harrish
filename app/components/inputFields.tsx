@@ -54,8 +54,8 @@ type Props = {
   showSkeleton?: boolean;
   maxLength?: number;
   integerOnly?: boolean;
-  numberMin?: string | number;
-  numberMax?: string | number;
+  min?: string | number;
+  max?: string | number;
   setSelectedCountry?: ({ name: string; code?: string; flag?: string });
   selectedCountry?: { name: string; code?: string; flag?: string };
   /** When true and this is a multi-select, render selected values as chips inside the field */
@@ -89,8 +89,8 @@ export default function InputFields({
   trailingElement,
   showBorder = true,
   maxLength,
-  numberMin,
-  numberMax,
+  min,
+  max,
   showSkeleton = false,
   integerOnly = false,
   setSelectedCountry,
@@ -763,8 +763,8 @@ export default function InputFields({
                 className={`border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] px-3 mt-0 text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${error ? "border-red-500" : "border-gray-300"}`}
                 placeholder={`Enter ${label}`}
                 maxLength={maxLength}
-                min={numberMin}
-                max={numberMax}
+                min={min}
+                max={max}
               />
             )
           ) : type === "textarea" ? (

@@ -545,7 +545,6 @@ export default function OrderAddEditPage() {
                       value={values?.warehouse || ""}
                       options={filteredWarehouseOptions}
                       disabled={filteredWarehouseOptions.length === 0}
-                      onSearch={(searchQuery) => fetchWarehouse(searchQuery)}
                       onChange={(e) => {
                         setFieldValue("warehouse", e.target.value);
                         if (values.warehouse !== e.target.value) {
@@ -590,7 +589,7 @@ export default function OrderAddEditPage() {
                       disabled={filteredCustomerOptions.length === 0}
                       showSkeleton={skeleton.customer}
                       options={filteredCustomerOptions}
-                      onSearch={(search) => fetchAgentCustomers(values, search)}
+                      searchable={true}
                       onChange={handleChange}
                       error={touched.customer && (errors.customer as string)}
                     />
@@ -642,9 +641,7 @@ export default function OrderAddEditPage() {
                                 name="item_id"
                                 options={filteredOptions}
                                 disabled={filteredOptions.length === 0 || !values.customer}
-                                onSearch={(searchTerm: string) => {
-                                  fetchItem(searchTerm);
-                                }}
+                                searchable={true}
                                 value={row.item_id}
                                 onChange={(e) => {
                                   if (e.target.value !== row.item_id) {
@@ -700,7 +697,7 @@ export default function OrderAddEditPage() {
                                 label=""
                                 type="number"
                                 name="Quantity"
-                                integerOnly={true}
+                                // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
                                 disabled={!values.customer}
@@ -710,7 +707,7 @@ export default function OrderAddEditPage() {
                                   const sanitized = intPart === '' ? '' : String(Math.max(0, parseInt(intPart, 10) || 0));
                                   recalculateItem(Number(row.idx), "Quantity", sanitized);
                                 }}
-                                numberMin={0}
+                                // numberMin={0}
                                 error={err && err}
                               />
                             </div>

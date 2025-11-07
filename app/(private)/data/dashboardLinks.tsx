@@ -309,6 +309,13 @@ export const initialLinkData: SidebarDataType[] = [
                         leadingIcon: "mdi:truck-remove-outline",
                         iconColor: "text-cyan-500"
                     },
+                      {
+                        isActive: false,
+                        href: "/return",
+                        label: "Return",
+                        leadingIcon: "mdi:truck-remove-outline",
+                        iconColor: "text-cyan-500"
+                    },
                 ]
             },
             // {
