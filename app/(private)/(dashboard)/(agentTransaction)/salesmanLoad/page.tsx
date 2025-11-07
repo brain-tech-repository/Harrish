@@ -27,7 +27,7 @@ interface SalesmanLoadRow {
         code?: string;
         name?: string;
     };
-    projecttype?: {
+    project_type?: {
         code?: string;
         name?: string;
     };
@@ -66,12 +66,12 @@ export default function SalemanLoad() {
             }
         },
         {
-  key: "projecttype",
+  key: "project_type",
   label: "Salesman Role",
   render: (row: TableDataType) => {
     const s = row as SalesmanLoadRow;
-    if (s.projecttype && typeof s.projecttype === "object") {
-      const { code, name } = s.projecttype;
+    if (s.project_type && typeof s.project_type === "object") {
+      const { code, name } = s.project_type;
       if (code || name) {
         return `${code ?? ""}${code && name ? " - " : ""}${name ?? ""}`;
       }

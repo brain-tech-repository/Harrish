@@ -364,8 +364,8 @@ export default function AddEditSalesmanLoad() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
+      <div className="flex justify-between items-center mb-5">
+        <div className="flex items-center gap-4">
           <Icon
             icon="lucide:arrow-left"
             width={24}
@@ -413,7 +413,7 @@ export default function AddEditSalesmanLoad() {
                     </div>
           
                     {/* Show Project List only when salesman_type id = 36 */}
-                    {form.salesman_type === "36" && (
+                    {form.salesman_type === "6" && (
                       <div className="flex flex-col w-full sm:w-[30%]">
                         <InputFields
                           label="Project List"

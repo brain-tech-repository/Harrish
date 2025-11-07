@@ -16,87 +16,45 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-
 interface CustomerItem {
   id: number;
   uuid: string;
   osa_code: string;
-  salesman_type: string;
-  warehouse: { code: string; name: string };
-  route: { code: string; name: string };
-  salesman: { code: string; name: string };
-  projecttype: { code: string; name: string };
+  salesman_type: { id: number; code: string; name: string };
+  warehouse: { id: number; code: string; name: string };
+  route: { id: number; code: string; name: string };
+  salesman: { id: number; code: string; name: string };
+  project_type: { id: number; code: string; name: string };
   details: Array<{
     id: number;
     uuid: string;
     osa_code: string;
     item: { id: number; code: string; name: string };
-    uom: number;
+    uom_name: string;
     qty: number;
     price: string;
     status: number;
   }>;
-  customer_code: string;
-  customer: string;
-  contact_person: string;
-  contact_no1: string;
-  contact_no2: string;
-  road_street: string;
-  town: string;
-  landmark: string;
-  district: string;
-  balance: number;
-  payment_type: string;
-  bank_name: string;
-  bank_account_number: string;
-  creditday: string;
-  tin_no: string;
-  accuracy: string;
-  creditlimit: number;
-  guarantee_name: string;
-  guarantee_amount: number;
-  guarantee_from: string;
-  guarantee_to: string;
-  totalcreditlimit: number;
-  credit_limit_validity: string;
-  vat_no: string;
-  longitude: string;
-  latitude: string;
-  threshold_radius: number;
-  dchannel_id: number;
-  status: number;
-  get_outlet_channel: {
-    outlet_channel: string;
-    outlet_channel_code: string;
-  };
-  get_region: { region_code: string; region_name: string };
-  get_area: { area_code: string; area_name: string };
 }
-
-
 
 const backBtnUrl = "/salesmanLoad";
 
 export default function ViewPage() {
-
   const params = useParams();
   const uuid = Array.isArray(params.uuid)
     ? params.uuid[0] || ""
     : (params.uuid as string) || "";
 
   const [customer, setCustomer] = useState<CustomerItem | null>(null);
-
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
 
   const title = `Load ${customer?.osa_code || "-"}`;
 
-
-
-  // Function to download current card as PDF
+  // ✅ PDF Download
   const handleDownload = async () => {
     try {
-      const element = document.getElementById("");
+      const element = document.getElementById("print-area");
       if (!element) return;
 
       const canvas = await html2canvas(element, { scale: 2 });
@@ -113,7 +71,7 @@ export default function ViewPage() {
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      while (heightLeft >= 0) {
+      while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
@@ -126,15 +84,10 @@ export default function ViewPage() {
     }
   };
 
-  // Function to print page
-  const handlePrint = () => {
-    window.print();
-  };
+  // ✅ Print Function
+  const handlePrint = () => window.print();
 
-
-
-
-
+  // ✅ Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -158,7 +111,7 @@ export default function ViewPage() {
     fetchData();
   }, [uuid, setLoading, showSnackbar]);
 
-  // ✅ Table configuration
+  // ✅ Table config
   const columns: configType["columns"] = [
     { key: "item", label: "Item" },
     { key: "uom", label: "UOM" },
@@ -166,15 +119,15 @@ export default function ViewPage() {
     { key: "price", label: "Price" },
   ];
 
-  // ✅ Prepare data for table
+  // ✅ Prepare table data
   const tableData =
     customer?.details?.map((detail) => ({
       item: detail.item
         ? `${detail.item.code} - ${detail.item.name}`
         : "-",
-      uom: detail.uom !== undefined && detail.uom !== null ? String(detail.uom) : "-",
-      qty: detail.qty !== undefined && detail.qty !== null ? String(detail.qty) : "-",
-      price: detail.price !== undefined && detail.price !== null ? String(detail.price) : "-",
+      uom: detail.uom_name || "-",
+      qty: detail.qty?.toString() ?? "-",
+      price: detail.price ?? "-",
     })) || [];
 
   return (
@@ -188,89 +141,88 @@ export default function ViewPage() {
             className="text-gray-700 hover:text-primary transition"
           />
         </Link>
-        <h1 className="text-2xl font-semibold text-gray-800">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
       </div>
 
       {/* ---------- Main Card ---------- */}
-      <ContainerCard className="rounded-xl shadow-sm space-y-8 bg-white p-6">
-        {/* Top Section */}
-        <div className="flex justify-between flex-wrap gap-6 items-start">
-          <Logo type="full" />
-
-          <div className="text-right">
-            <h2 className="text-4xl font-bold text-gray-400 uppercase mb-2">
-              Load
-            </h2>
-            <p className="text-primary text-sm tracking-[5px]">
-              {customer?.osa_code || "-"}
-            </p>
+      <ContainerCard>
+        {/* Add print-area wrapper */}
+        <div id="print-area">
+          {/* Top Section */}
+          <div className="flex justify-between flex-wrap gap-6 items-start">
+            <Logo type="full" />
+            <div className="text-right">
+              <h2 className="text-4xl font-bold text-gray-400 uppercase mb-2">
+                Load
+              </h2>
+              <p className="text-primary text-sm tracking-[5px]">
+                {customer?.osa_code || "-"}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <hr className="border-gray-200" />
+          <hr className="border-gray-200 my-5" />
 
-        {/* ---------- Info Section ---------- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          {/* Left side - details */}
-          <div>
-            <KeyValueData
-              data={[
-                {
-                  key: "Warehouse",
-                  value:
-                    customer?.warehouse?.code && customer?.warehouse?.name
-                      ? `${customer.warehouse.code} - ${customer.warehouse.name.split("-")[0]} - (${customer.warehouse.name.split("-")[1]})`
+          {/* ---------- Info & Table Section ---------- */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* ---------- Left Side (Details) ---------- */}
+            <div className="flex flex-col ">
+              <KeyValueData
+                data={[
+                  {
+                    key: "Warehouse",
+                    value:
+                      customer?.warehouse?.code && customer?.warehouse?.name
+                        ? `${customer.warehouse.code} - ${customer.warehouse.name}`
+                        : "-",
+                  },
+                  {
+                    key: "Route",
+                    value: customer?.route
+                      ? `${customer.route.code} - ${customer.route.name}`
                       : "-",
-                },
-                {
-                  key: "Route",
-                  value: customer?.route
-                    ? `${customer.route.code} - ${customer.route.name}`
-                    : "-",
-                },
-                {
-                  key: "Salesman Type",
-                  value: customer?.salesman_type || "-",
-                },
-                {
-                  key: "Salesman",
-                  value: customer?.salesman
-                    ? `${customer.salesman.code} - ${customer.salesman.name}`
-                    : "-",
-                },
-              ]}
-            />
-          </div>
+                  },
+                  {
+                    key: "Salesman Type",
+                    value: customer?.salesman_type?.name || "-",
+                  },
+                  {
+                    key: "Project Type",
+                    value: customer?.project_type?.name || "-",
+                  },
+                  {
+                    key: "Salesman",
+                    value: customer?.salesman
+                      ? `${customer.salesman.code} - ${customer.salesman.name}`
+                      : "-",
+                  },
+                ]}
+              />
 
-          {/* Right side - image */}
-          <div className="flex justify-end items-center">
-            <Image
-              src="/logo.png"
-              alt="Salesman Signature"
-              width={300}
-              height={300}
-            // className="rounded-lg object-contain shadow-sm"
-            />
+              {/* Image Section */}
+              {/* <div className="flex justify-start items-center">
+                <Image
+                  src="/logo.png"
+                  alt="Salesman Signature"
+                  width={250}
+                  height={250}
+                  className="rounded-lg object-contain"
+                />
+              </div> */}
+            </div>
+
+            {/* ---------- Right Side (Table) ---------- */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                Load Items
+              </h3>
+              <Table data={tableData} config={{ columns }} />
+            </div>
           </div>
         </div>
 
-
-        {/* ---------- Table ---------- */}
-        <div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">
-            Load Items
-          </h3>
-          <Table
-            data={tableData}
-            config={{ columns }}
-          />
-        </div>
-
         {/* ---------- Footer Buttons ---------- */}
-        {/* ---------- Footer Buttons ---------- */}
-        <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200">
+        <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200 mt-6">
           <SidebarBtn
             leadingIcon="lucide:download"
             leadingIconSize={20}
@@ -285,7 +237,6 @@ export default function ViewPage() {
             onClick={handlePrint}
           />
         </div>
-
       </ContainerCard>
     </>
   );
