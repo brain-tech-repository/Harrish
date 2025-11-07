@@ -1,5 +1,4 @@
 "use client";
-
 import ContainerCard from "@/app/components/containerCard";
 import StatusBtn from "@/app/components/statusBtn2";
 import { Icon } from "@iconify-icon/react";
@@ -11,32 +10,23 @@ import TabBtn from "@/app/components/tabBtn";
 import { useEffect, useState } from "react";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { newCustomerById, approveOrRejectCustomer, addApprovedCustomer } from "@/app/services/agentTransaction";
+import { newCustomerById,updateStatusNewCustomer} from "@/app/services/agentTransaction";
 import Financial from "./financial";
-
-/**
- * Normalized interface that matches what the UI expects after mapping.
- * Many fields are optional because API sometimes omits them.
- */
 export interface NewCustomerDetails {
   id?: number;
   uuid?: string;
   osa_code?: string;
   outlet_name?: string;
-  name?: string; // sometimes API uses name / outlet_name
+  name?: string;
   owner_name?: string;
-
-  // original API nested objects (IDs + codes + names)
   customer?: { id?: number; route_code?: string; route_name?: string };
   customertype?: { id?: number; route_code?: string; route_name?: string; name?: string; code?: string };
   route?: { id?: number; route_code?: string; route_name?: string; route_name_display?: string };
   outlet_channel?: { id?: number; outlet_channel_code?: string; outlet_channel?: string };
   category?: { id?: number; customer_category_code?: string; customer_category_name?: string };
-  subcategory?: { id?: number; customer_category_id?: number; customer_sub_category_name?: string; customer_sub_category_code?: string };
+  subcategory?: { id?: number; customer_category_id?: number;customer_sub_category_code?: string; customer_sub_category_name?: string  };
   getWarehouse?: { id?: number; warehouse_code?: string; warehouse_name?: string };
   get_warehouse?: { id?: number; warehouse_code?: string; warehouse_name?: string };
-
-  // address & contact
   landmark?: string;
   district?: string;
   street?: string;
@@ -179,14 +169,11 @@ export default function CustomerDetails() {
       route_id: d.route_id ?? d.route?.id ?? undefined,
       category_id: d.category_id ?? d.category?.id ?? d.category?.id ?? undefined,
       subcategory_id: d.subcategory_id ?? d.subcategory?.id ?? undefined,
-
       enable_promotion: d.enable_promotion ?? undefined,
       creditday: typeof d.creditday === "number" ? d.creditday : Number(d.creditday ?? 0),
       credit_limit: d.credit_limit ?? null,
-
       latitude: d.latitude ?? undefined,
       longitude: d.longitude ?? undefined,
-
       is_cash: d.is_cash ?? undefined,
       status: d.status ?? undefined,
       vat_no: d.vat_no ?? undefined,
@@ -205,14 +192,14 @@ export default function CustomerDetails() {
         const res = await newCustomerById(uuid);
         if (!mounted) return;
         if (res?.error) {
-          showSnackbar(res?.data?.message || "Unable to fetch New Customer Details", "error");
+          showSnackbar(res?.data?.message || "Unable to fetch Customer Approvals Details", "error");
           return;
         }
         const mapped = mapApiToItem(res.data);
         setItem(mapped);
       } catch (err) {
         if (mounted) {
-          showSnackbar("Unable to fetch New Customer Details", "error");
+          showSnackbar("Unable to fetch Customer Approvals Details", "error");
           console.error(err);
         }
       } finally {
@@ -225,141 +212,85 @@ export default function CustomerDetails() {
     };
   }, [uuid]);
 
-  /**
-   * handleApproval
-   * - Builds payload using IDs (not codes)
-   * - Calls approveOrRejectCustomer(payload)
-   * - If approved, calls addApprovedCustomer with safe fields
-   */
+
 const handleApproval = async (status: number, reason?: string) => {
   if (!item) return;
+
+  const uuid = item.uuid;
+  if (!uuid) {
+    showSnackbar("Missing customer UUID", "error");
+    return;
+  }
 
   try {
     setLoading(true);
 
-    // ✅ Check if backend already created the customer
-    if (item?.approval_status === 1 || item?.status === 1) {
-     showSnackbar("Customer already exists — no approval needed.", "error");
-      setLoading(false);
-      return;
+   const payload: any = {
+  uuid: uuid,
+  approval_status: status,
+  customer_id: item.id,
+
+  // Correct name fields
+  name: item.name,
+  outlet_name: item.outlet_name,
+
+  owner_name: item.owner_name,
+  outlet_channel_id: item.outlet_channel?.id,
+  customer_type: item.customertype?.id,
+
+  contact_no: item.contact_no,
+  contact_no2: item.contact_no2,
+  whatsapp_no: item.whatsapp_no,
+
+  street: item.street,
+  landmark: item.landmark,
+  town: item.town,
+  district: item.district,
+
+  payment_type: item.payment_type,
+  warehouse: item.get_warehouse?.id,
+
+  route_id: item.route?.id,
+  category_id: item.category?.id,
+  subcategory_id: item.subcategory?.id,
+
+  status: 1, // only for approval
+};
+
+    //  Add reject reason if needed
+    if (status === 3 && reason) {
+      payload.reject_reason = reason;
     }
 
-    // ✅ MAIN APPROVAL PAYLOAD (IDs only)
-    const approvalPayload: any = {
-      customer_id: item.uuid,   // ✅ Approval API uses UUID
-      ids: [item.uuid],
-      approval_status: status,
+    //  ONE API for update + add
+    const res = await updateStatusNewCustomer(payload);
 
-      category_id: item.category?.id,
-      subcategory_id: item.subcategory?.id,
-      customer_type: item.customertype?.id,
-      route_id: item.route?.id,
-      outlet_channel_id: item.outlet_channel?.id,
-      warehouse: item.getWarehouse?.id,
-
-      name: item.outlet_name ?? item.name ?? "",
-      owner_name: item.owner_name ?? "",
-
-      contact_no: item.contact_no ?? "",
-      contact_no2: item.contact_no2 ?? "",
-      whatsapp_no: item.whatsapp_no ?? "",
-
-      street: item.street ?? "",
-      landmark: item.landmark ?? "",
-      town: item.town ?? "",
-      district: item.district ?? "",
-
-      payment_type: item.payment_type ?? "",
-      buyertype: item.buyertype ?? 0,
-      enable_promotion: item.enable_promotion ?? "1",
-      creditday: item.creditday ?? 0,
-      credit_limit: item.credit_limit ?? "",
-
-      is_cash: item.is_cash ?? 1,
-      vat_no: item.vat_no ?? "",
-
-      latitude: item.latitude ?? "",
-      longitude: item.longitude ?? "",
-      qr_code: item.qr_code ?? "",
-    };
-
-    if (reason) approvalPayload.reject_reason = reason;
-
-    // ✅ Send Approval
-    const res = await approveOrRejectCustomer(approvalPayload);
-
+    //  API returns error object?
     if (res?.error) {
-      showSnackbar(res?.data?.message || "Failed to approve", "error");
-      setLoading(false);
+      showSnackbar(res?.data?.message || "Failed to update approval", "error");
       return;
     }
 
-    // ✅ STOP HERE IF REJECTED — NO ADD API CALL
-    if (status === 2) {
-      showSnackbar("Customer rejected successfully!", "success");
-      return router.push("/agent_transaction/new-customer");
-    }
-
-    // ✅ ADD CUSTOMER PAYLOAD
-    // ✅ Add API uses numeric ID, not UUID
-    const addPayload: any = {
-      approval_status: 1,
-      customer_id: item.id, // ✅ numeric ID
-
-      // required
-      osa_code: item.osa_code,
-      name: item.outlet_name ?? item.name,
-      owner_name: item.owner_name,
-
-      outlet_channel_id: item.outlet_channel?.id,
-      customer_type: item.customertype?.id,
-      warehouse: item.getWarehouse?.id,
-      route_id: item.route?.id,
-      category_id: item.category?.id,
-      subcategory_id: item.subcategory?.id,
-
-      contact_no: item.contact_no,
-      contact_no2: item.contact_no2,
-      whatsapp_no: item.whatsapp_no,
-
-      street: item.street,
-      landmark: item.landmark,
-      town: item.town,
-      district: item.district,
-
-      payment_type: item.payment_type,
-      buyertype: item.buyertype,
-      enable_promotion: item.enable_promotion,
-      creditday: item.creditday,
-      credit_limit: item.credit_limit,
-
-      status: 1,
-      is_cash: item.is_cash,
-      vat_no: item.vat_no,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      qr_code: item.qr_code,
-    };
-
-    // ✅ Add approved customer
-    const addRes = await addApprovedCustomer(addPayload);
-
-    if (addRes?.error) {
-      showSnackbar(addRes?.data?.message || "Unable to add agent table", "error");
-      setLoading(false);
+    // ✅ Customer Already Exist Check
+    if (res?.message === "Customer already exist") {
+      showSnackbar("Customer already exist in Agent Customers!", "error");
       return;
     }
-
-    showSnackbar("✅ Customer approved and added to Agent Customer table!", "success");
-    router.push("/agent_transaction/new-customer");
-
-  } catch (e) {
-    console.error(e);
-    showSnackbar("Unexpected error during approval", "error");
+    if (status === 1) {
+      showSnackbar("Customer approved & added to Agent Customer!", "success");
+    } else {
+      showSnackbar("Customer rejected!", "success");
+    }
+    router.push("/newCustomer");
+  } catch (err) {
+    console.error(err);
+    showSnackbar("Unexpected error", "error");
   } finally {
     setLoading(false);
   }
 };
+
+
 
 
   return (
@@ -368,28 +299,32 @@ const handleApproval = async (status: number, reason?: string) => {
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
           <Icon icon="lucide:arrow-left" width={24} onClick={() => router.back()} />
-          <h1 className="text-[20px] font-semibold text-[#181D27]">New Customer Details</h1>
+          <h1 className="text-[20px] font-semibold text-[#181D27]">Customer Approvals Details</h1>
         </div>
         <div className="flex items-center gap-[10px] border border-[#D5D7DA] relative rounded-lg px-1 bg-[#FFFFFF] opacity-100">
           {/* 3-dot menu button */}
-          <button onClick={() => setShowMenu((prev) => !prev)} className="p-2 rounded-full">
-            <Icon icon="lucide:more-vertical" width={22} />
+          <button onClick={() => setShowMenu((prev) => !prev)} className="p-[6px] rounded-full">
+            <Icon icon="lucide:more-vertical" width={20} />
           </button>
 
           {/* dropdown menu */}
           {showMenu && (
-            <div className="absolute right-0 top-12 bg-[#FFFFFF] shadow-lg rounded-lg border border-gray-200 w-[226px] z-10">
-              <button onClick={() => handleApproval(1)} className="w-full text-left px-4 py-3 hover:bg-green-50 text-green-700">
-                ✅ Approve
+            <div className="absolute right-0 top-12 bg-[#FFFFFF] shadow-lg rounded-lg border border-gray-200 w-[160px] z-10">
+              <button onClick={() => handleApproval(1)} className="w-full text-left px-4 pb-2 pt-[10px] hover:bg-[#FAFAFA] leading-[20px] text-[#252B37] text-lg">
+              <div>
+                   <Icon icon="material-symbols:order-approve" width={20} /> Approve
+              </div>
               </button>
               <button
                 onClick={() => {
                   setShowRejectPopup(true);
                   setShowMenu(false);
                 }}
-                className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-700"
+            className="w-full text-left text-[#252B37] px-4 py-[10px] font-inter  hover:bg-[#FAFAFA] text-lg leading-[20px]"
               >
-                ❌ Reject
+                <div>
+                   <Icon icon="fluent:text-change-reject-24-filled" width={20} /> Reject
+                </div>
               </button>
             </div>
           )}
@@ -454,7 +389,7 @@ const handleApproval = async (status: number, reason?: string) => {
                 Cancel
               </button>
               <button
-                onClick={() => handleApproval(2, rejectReason)}
+                onClick={() => handleApproval(3, rejectReason)}
                 disabled={!rejectReason.trim()}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >

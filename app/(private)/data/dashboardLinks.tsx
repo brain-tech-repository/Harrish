@@ -339,7 +339,7 @@ export const initialLinkData: SidebarDataType[] = [
                       {
                         isActive: false,
                         href: "/newCustomer",
-                        label: "New Customer",
+                        label: "Customer Approvals",
                         leadingIcon: "mdi:truck-remove-outline",
                         iconColor: "text-cyan-500"
                     },

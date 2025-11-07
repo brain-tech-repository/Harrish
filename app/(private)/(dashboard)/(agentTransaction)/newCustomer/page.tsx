@@ -9,7 +9,6 @@ import Table, {
     searchReturnType,
     TableDataType,
 } from "@/app/components/customTable";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { downloadFile} from "@/app/services/allApi";
 import { newCustomerList,exportNewCustomerData,newCustomerStatusUpdate } from "@/app/services/agentTransaction";
 import { useSnackbar } from "@/app/services/snackbarContext"; // ✅ import snackbar
@@ -151,6 +150,7 @@ export default function NewCustomer() {
         showByDefault: true,
     },
     { key: "contact_no", label: "Contact No." },
+    { key: "reject_reason", label: "Reject Reason" },
  {
     key: "approval_status",
     label: "Approval Status",
@@ -339,7 +339,7 @@ export default function NewCustomer() {
                             search: search,
                         },
                         header: {
-                            title: "New Customer",
+                            title: " Customer Approvals",
                             threeDot: [
                                 {
                                     icon: "gala:file-document",
@@ -407,16 +407,16 @@ export default function NewCustomer() {
 
                             searchBar: false,
                             columnFilter: true,
-                            actions: [
-                                <SidebarBtn
-                                    key={0}
-                                    href="/newCustomer/new"
-                                    isActive
-                                    leadingIcon="lucide:plus"
-                                    label="Add"
-                                    labelTw="hidden sm:block"
-                                />,
-                            ],
+                            // actions: [
+                            //     <SidebarBtn
+                            //         key={0}
+                            //         href="/newCustomer/new"
+                            //         isActive
+                            //         leadingIcon="lucide:plus"
+                            //         label="Add"
+                            //         labelTw="hidden sm:block"
+                            //     />,
+                            // ],
                         },
                         localStorageKey: "newCustomer-table",
                         footer: { nextPrevBtn: true, pagination: true },
@@ -430,15 +430,15 @@ export default function NewCustomer() {
                                     router.push(`/newCustomer/details/${row.uuid}`);
                                 },
                             },
-                            {
-                                icon: "lucide:edit-2",
-                                onClick: (data: object) => {
-                                    const row = data as TableRow;
-                                    router.push(
-                                        `/newCustomer/${row.uuid}`
-                                    );
-                                },
-                            },
+                            // {
+                            //     icon: "lucide:edit-2",
+                            //     onClick: (data: object) => {
+                            //         const row = data as TableRow;
+                            //         router.push(
+                            //             `/newCustomer/${row.uuid}`
+                            //         );
+                            //     },
+                            // },
                         ],
                         pageSize: 50,
                     }}
