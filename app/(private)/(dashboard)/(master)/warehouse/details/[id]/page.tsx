@@ -827,15 +827,7 @@ function getRandomNumber(count:number) {
                                         data={[
                                             {
                                                 key: "Warehouse Type",
-                                                value: (() => {
-                                                    const value = item?.warehouse_type;
-                                                    const strValue = value != null ? String(value).toLowerCase() : "";
-                                                    if (strValue === "agent_customer") return "Hariss";
-                                                    if (strValue === "company_outlet") return "Outlet";
-                                                    if (strValue === "0") return "Hariss";
-                                                    if (strValue === "1") return "Outlet";
-                                                    return strValue || "-";
-                                                })(),
+                                                value: "Agent Warehouse",
                                             },
                                             { key: "TIN No.", value: item?.tin_no || '-' },
                                             {
