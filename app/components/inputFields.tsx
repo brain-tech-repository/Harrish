@@ -350,7 +350,7 @@ export default function InputFields({
                                 const v = (e.target as HTMLInputElement).value;
                                 console.log("Search input changed:", v);
                                 setSearch(v);
-                                onSearch(v);
+                                // onSearch(v);
                                 if (!dropdownOpen) setDropdownOpen(true);
                                 if (v === '') {
                                   // user cleared the input -> clear selected values for multi-select
@@ -382,6 +382,7 @@ export default function InputFields({
                             const v = (e.target as HTMLInputElement).value;
                             setSearch(v);
                             onSearch(v);
+                            // console.log("Search input changed:", v);
                             if (!dropdownOpen) setDropdownOpen(true);
                             if (v === '') {
                               // user cleared the input -> clear selected values for multi-select
@@ -455,7 +456,7 @@ export default function InputFields({
                             type="text"
                             placeholder="Search"
                             value={search}
-                            onChange={e => { setSearch(e.target.value); onSearch(e.target.value); }}
+                            onChange={e => { setSearch(e.target.value); onSearch(e.target.value); /*console.log("Search input changed:", e.target.value);*/ }}
                             className="w-full border-none outline-none text-sm"
                             disabled={disabled}
                           />
@@ -543,6 +544,7 @@ export default function InputFields({
                             const v = (e.target as HTMLInputElement).value;
                             setSearch(v);
                             onSearch(v);
+                            console.log("Search input changed:", v);
                             if (!dropdownOpen) setDropdownOpen(true);
                             if (v === '') {
                               // user cleared the input -> clear selected value for single-select

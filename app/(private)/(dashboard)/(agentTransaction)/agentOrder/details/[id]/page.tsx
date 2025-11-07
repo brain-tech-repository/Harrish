@@ -100,11 +100,11 @@ export default function OrderDetailPage() {
   const { showSnackbar } = useSnackbar();
   const [data, setData] = useState<OrderData | null>(null);
   const params = useParams();
-  const orderId = Array.isArray(params.id) ? params.id[0] : params.id ?? "";
+  const UUID = Array.isArray(params.id) ? params.id[0] : params.id ?? "";
   
   const fetchOrder = async () => {
       setLoading(true);
-      const listRes = await getAgentOrderById(orderId || "");
+      const listRes = await getAgentOrderById(UUID || "");
       if(listRes.error) {
           showSnackbar(listRes.error.message || "Failed to fetch order details", "error");
           setLoading(false);
@@ -117,7 +117,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     fetchOrder();
-  }, [orderId]);
+  }, [UUID]);
 
   return (
     <>
@@ -130,8 +130,8 @@ export default function OrderDetailPage() {
             onClick={() => router.back()}
             className="cursor-pointer"
           />
-          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-            Order {orderId}
+          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
+            Order #{data?.order_code || "-"}
           </h1>
         </div>
 

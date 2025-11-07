@@ -454,13 +454,11 @@ export default function OrderAddEditPage() {
   }
 
   const fetchWarehouse = async (searchQuery?: string) => {
-    setLoading(true);
     const res = await warehouseListGlobalSearch({
       query: searchQuery || "",
       dropdown: "1",
       per_page: "50"
     });
-    setLoading(false);
 
     if (res.error) {
       showSnackbar(res.data?.message || "Failed to fetch customers", "error");
@@ -473,10 +471,6 @@ export default function OrderAddEditPage() {
     }));
     setFilteredWarehouseOptions(options);
   }
-
-  useEffect(() => {
-    fetchWarehouse();
-  }, []);
 
   const fetchPrice = async (item_id: string, customer_id: string, warehouse_id?: string, route_id?: string) => {
     const res = await pricingHeaderGetItemPrice({ customer_id, item_id });
@@ -544,7 +538,7 @@ export default function OrderAddEditPage() {
                       searchable={true}
                       value={values?.warehouse || ""}
                       options={filteredWarehouseOptions}
-                      disabled={filteredWarehouseOptions.length === 0}
+                      onSearch={(search) => fetchWarehouse(search) }
                       onChange={(e) => {
                         setFieldValue("warehouse", e.target.value);
                         if (values.warehouse !== e.target.value) {
@@ -590,6 +584,7 @@ export default function OrderAddEditPage() {
                       showSkeleton={skeleton.customer}
                       options={filteredCustomerOptions}
                       searchable={true}
+                      onSearch={(search) => {fetchAgentCustomers(values, search);}}
                       onChange={handleChange}
                       error={touched.customer && (errors.customer as string)}
                     />
@@ -755,6 +750,7 @@ export default function OrderAddEditPage() {
                         ),
                       },
                     ],
+                    showNestedLoading: false,
                   }}
                 />
 

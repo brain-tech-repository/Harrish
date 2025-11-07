@@ -485,7 +485,7 @@ export default function OrderAddEditPage() {
               type="date"
               name="delivery_date"
               value={form.delivery_date}
-              numberMin={new Date().toISOString().split("T")[0]}
+              min={new Date().toISOString().split("T")[0]}
               onChange={handleChange}
               error={errors.delivery_date}
             />
