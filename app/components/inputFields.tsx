@@ -60,6 +60,8 @@ type Props = {
   selectedCountry?: { name: string; code?: string; flag?: string };
   /** When true and this is a multi-select, render selected values as chips inside the field */
   multiSelectChips?: boolean;
+  /** Callback function to fetch options dynamically based on search text. Called when user types in searchable dropdown */
+  onSearchChange?: (searchText: string) => void;
 };
 
 export default function InputFields({
@@ -95,6 +97,7 @@ export default function InputFields({
   integerOnly = false,
   setSelectedCountry,
   selectedCountry,
+  onSearchChange,
 }: Props) {
 
   const [dropdownProperties, setDropdownProperties] = useState({
@@ -108,6 +111,7 @@ export default function InputFields({
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pointerDownRef = useRef(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMulti = (options && options.length > 0 && typeof isSingle !== 'undefined' && isSingle === false) || (loading && isSingle === false);
   const isSingleSelect = (options && options.length > 0 && isSingle !== false) || (loading && isSingle !== false);
   const selectedValues: string[] = Array.isArray(value) ? value : [];
@@ -167,7 +171,35 @@ export default function InputFields({
     return label?.includes(search.toLowerCase());
   })) || [];
 
+  // Reset highlighted index when filtered options change
   useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [search, filteredOptions.length]);
+
+  // Debounced search callback
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Only call onSearchChange if searchable and callback is provided
+    if (isSearchable && onSearchChange && search !== '') {
+      searchTimeoutRef.current = setTimeout(() => {
+        onSearchChange(search);
+      }, 300); // 300ms debounce
+    }
+
+    // Cleanup
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]); // Only depend on search text, not the callback function
+
+useEffect(() => {
     const dropdown = dropdownRef.current;
     if (dropdown) {
       const { width, top, left, height } = dropdown.getBoundingClientRect();

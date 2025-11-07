@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment, ChangeEvent, useState, useEffect } from "react";
+import React, { Fragment, ChangeEvent, useState, useEffect, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import Table from "@/app/components/customTable";
 import Logo from "@/app/components/logo";
@@ -9,7 +9,8 @@ import { useRouter, useParams } from "next/navigation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
-import { createDelivery,deliveryByUuid,updateDelivery } from "@/app/services/agentTransaction";
+import {warehouseListGlobalSearch} from "@/app/services/allApi";
+import { createDelivery,deliveryByUuid,updateDelivery,agentOrderList } from "@/app/services/agentTransaction";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
@@ -39,13 +40,21 @@ interface DeliveryResponse {
     code: string;
     name: string;
   };
-  customer?: {
+  delivery?: {
     id: number;
     name: string;
   };
   comment?: string;
-  delivery_date?: string;
   details?: DeliveryDetail[];
+}
+
+interface WarehouseSearchResponse {
+  id: number;
+  uuid: string;
+  warehouse_code?: string;
+  warehouse_name?: string;
+  code?: string;
+  name?: string;
 }
 
 export default function OrderAddEditPage() {
@@ -60,15 +69,15 @@ export default function OrderAddEditPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     warehouse: "",
-    customer: "",
+    delivery: "",
     note: "",
-    delivery_date: new Date().toISOString().slice(0, 10),
     transactionType: "1",
     paymentTerms: "1",
     paymentTermsUnit: "1",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [searchedWarehouseOptions, setSearchedWarehouseOptions] = useState<Array<{value: string; label: string}>>([]);
 
   // Store UOM options for each row
   const [rowUomOptions, setRowUomOptions] = useState<Record<string, { value: string; label: string; price?: string }[]>>({});
@@ -101,9 +110,8 @@ export default function OrderAddEditPage() {
           // Set form data
           setForm({
             warehouse: data?.warehouse?.id ? String(data.warehouse.id) : "",
-            customer: data?.customer?.id ? String(data.customer.id) : "",
+            delivery: data?.delivery?.id ? String(data.delivery.id) : "",
             note: data?.comment || "",
-            delivery_date: data?.delivery_date ? new Date(data.delivery_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
             transactionType: "1",
             paymentTerms: "1",
             paymentTermsUnit: "1",
@@ -203,11 +211,30 @@ export default function OrderAddEditPage() {
     }
   };
 
+  // Handle warehouse search
+  const handleWarehouseSearch = useCallback(async (searchText: string) => {
+    try {
+      const response = await warehouseListGlobalSearch({ query: searchText });
+      
+      // Transform API response to options format
+      const options = response?.data?.map((warehouse: WarehouseSearchResponse) => ({
+        uuid: warehouse.uuid,
+        value: String(warehouse.id),
+        label: warehouse.warehouse_code + " - " + warehouse.warehouse_name 
+      })) || [];
+      
+      setSearchedWarehouseOptions(options);
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+      showSnackbar('Failed to search warehouses', 'error');
+    } finally {
+    }
+  }, [showSnackbar]); // Only recreate if showSnackbar changes
+
   // Validation schema
   const validationSchema = yup.object().shape({
     warehouse: yup.string().required("Warehouse is required"),
-    customer: yup.string().required("Customer is required"),
-    delivery_date: yup.string().required("Delivery date is required"),
+    delivery: yup.string().required("Delivery is required"),
   });
 
   // --- Calculate totals and VAT dynamically
@@ -293,7 +320,7 @@ export default function OrderAddEditPage() {
   const generatePayload = () => {
     return {
       warehouse_id: Number(form.warehouse),
-      customer_id: Number(form.customer),
+      customer_id: Number(form.delivery),
       gross_total: Number(grossTotal.toFixed(2)),
       discount: Number(discount.toFixed(2)),
       vat: Number(totalVat.toFixed(2)),
@@ -453,13 +480,14 @@ export default function OrderAddEditPage() {
               required
               name="warehouse"
               value={form.warehouse}
-              options={warehouseOptions}
+              options={searchedWarehouseOptions.length > 0 ? searchedWarehouseOptions : warehouseOptions}
               searchable={true}
+              onSearchChange={handleWarehouseSearch}
               onChange={(e) => {
                 const val = e.target.value;
                 handleChange(e);
                 // Clear customer when warehouse changes
-                setForm(prev => ({ ...prev, customer: "" }));
+                setForm(prev => ({ ...prev, delivery: "" }));
                 // Fetch customers for selected warehouse
                 if (val) {
                   fetchAgentCustomerOptions(val);
@@ -470,25 +498,16 @@ export default function OrderAddEditPage() {
             
             <InputFields
               required
-              label="Customer"
-              name="customer"
+              label="Delivery"
+              name="delivery"
               searchable={true}
-              value={form.customer}
+              value={form.delivery}
               options={agentCustomerOptions}
               onChange={handleChange}
-              error={errors.customer}
+              error={errors.delivery}
             />
             
-            <InputFields
-              required
-              label="Delivery Date"
-              type="date"
-              name="delivery_date"
-              value={form.delivery_date}
-              min={new Date().toISOString().split("T")[0]}
-              onChange={handleChange}
-              error={errors.delivery_date}
-            />
+           
            
 </div>
         {/* --- Table --- */}
