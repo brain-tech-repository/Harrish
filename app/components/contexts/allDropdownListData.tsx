@@ -543,7 +543,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     setLoading(false);
     try {
       // call subRegionList with an object matching the expected Params shape
-      const res = await subRegionList({ region_id: String(region_id) });
+      const res = await subRegionList({ region_id: String(region_id),page:"1",pageSize:"1000"  });
       const normalize = (r: unknown): AreaItem[] => {
         if (r && typeof r === 'object') {
           const obj = r as Record<string, unknown>;
@@ -630,7 +630,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     setLoading(false);
     try {
       // call routeList with warehouse_id
-      const res = await routeList({ warehouse_id: String(warehouse_id) });
+      const res = await routeList({ warehouse_id: String(warehouse_id),page:"1",pageSize:"1000"  });
       const normalize = (r: unknown): RouteItem[] => {
         if (r && typeof r === 'object') {
           const obj = r as Record<string, unknown>;
@@ -652,7 +652,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     setLoading(false);
     try {
       // call getWarehouse with an object matching the expected Params shape
-      const res = await getWarehouse({ area_id: String(area_id) });
+      const res = await getWarehouse({ area_id: String(area_id),page:"1",pageSize:"1000"  });
       const normalize = (r: unknown): WarehouseItem[] => {
         if (r && typeof r === 'object') {
           const obj = r as Record<string, unknown>;
@@ -674,7 +674,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     setLoading(false);
     try {
       // call regionList with company_id
-      const res = await regionList({ company_id: String(company_id) });
+      const res = await regionList({ company_id: String(company_id),page:"1",pageSize:"1000" });
       const normalize = (r: unknown): RegionItem[] => {
         if (r && typeof r === 'object') {
           const obj = r as Record<string, unknown>;

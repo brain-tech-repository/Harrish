@@ -827,7 +827,7 @@ function getRandomNumber(count:number) {
                                         data={[
                                             {
                                                 key: "Warehouse Type",
-                                                value: "Agent Warehouse",
+                                                value: item?.warehouse_type,
                                             },
                                             { key: "TIN No.", value: item?.tin_no || '-' },
                                             {
