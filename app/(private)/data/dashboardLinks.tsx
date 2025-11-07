@@ -284,7 +284,7 @@ export const initialLinkData: SidebarDataType[] = [
                     {
                         isActive: false,
                         href: "/invoice",
-                        label: "Invoice",
+                        label: "Agent Customer Invoice",
                         leadingIcon: "hugeicons:invoice",
                         iconColor: "text-cyan-500"
                     },

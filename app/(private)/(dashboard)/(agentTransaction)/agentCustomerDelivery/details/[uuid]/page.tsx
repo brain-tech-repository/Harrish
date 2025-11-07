@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
               id: (index + 1).toString(),
               itemCode: detail.item?.code || "-",
               itemName: detail.item?.name || "-",
-              UOM: typeof detail.uom === 'string' ? detail.uom : detail.uom.toString(),
+              UOM: detail.uom ? (typeof detail.uom === 'string' ? detail.uom : detail.uom.toString()) : "-",
               Quantity: detail.quantity?.toString() || "0",
               Price: detail.item_price || "0",
               Excise: detail.excise || "0",

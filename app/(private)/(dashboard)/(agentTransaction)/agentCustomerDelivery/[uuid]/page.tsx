@@ -57,6 +57,7 @@ export default function OrderAddEditPage() {
   
   const uuid = params?.uuid as string | undefined;
   const isEditMode = uuid !== undefined && uuid !== "add";
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     warehouse: "",
     customer: "",
@@ -160,7 +161,28 @@ export default function OrderAddEditPage() {
           }
         } catch (error) {
           console.error("Error fetching delivery data:", error);
-          showSnackbar("Failed to fetch delivery details", "error");
+          
+          // Extract error message from API response
+          let errorMessage = "Failed to fetch delivery details";
+          
+          if (error && typeof error === 'object') {
+            // Check for error message in response
+            if ('response' in error && error.response && typeof error.response === 'object') {
+              const response = error.response as { data?: { message?: string } };
+              if (response.data?.message) {
+                errorMessage = response.data.message;
+              }
+            } else if ('data' in error && error.data && typeof error.data === 'object') {
+              const data = error.data as { message?: string };
+              if (data.message) {
+                errorMessage = data.message;
+              }
+            } else if ('message' in error && typeof error.message === 'string') {
+              errorMessage = error.message;
+            }
+          }
+          
+          showSnackbar(errorMessage, "error");
         } finally {
           setLoading(false);
         }
@@ -294,6 +316,8 @@ export default function OrderAddEditPage() {
 
   // --- On Submit
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    
     try {
       // Validate form using yup schema
       await validationSchema.validate(form, { abortEarly: false });
@@ -306,21 +330,35 @@ export default function OrderAddEditPage() {
         return;
       }
 
+      setIsSubmitting(true);
       const payload = generatePayload();
-      console.log("Final Payload:", payload);
       
+      let res;
       if (isEditMode && uuid) {
         // Update existing delivery
-        const response = await updateDelivery(uuid, payload);
-        console.log("API Response:", response);
-        showSnackbar("Delivery updated successfully!", "success");
+        res = await updateDelivery(uuid, payload);
       } else {
         // Create new delivery
-        const response = await createDelivery(payload);
-        console.log("API Response:", response);
-        showSnackbar("Delivery created successfully!", "success");
+        res = await createDelivery(payload);
       }
       
+      // Check if response contains an error
+      if (res?.error) {
+        showSnackbar(
+          res.data?.message || (isEditMode ? "Failed to update delivery" : "Failed to create delivery"),
+          "error"
+        );
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Success
+      showSnackbar(
+        isEditMode 
+          ? "Delivery updated successfully!" 
+          : "Delivery created successfully!", 
+        "success"
+      );
       router.push("/agentCustomerDelivery");
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -334,13 +372,33 @@ export default function OrderAddEditPage() {
         setErrors(formErrors);
       } else {
         console.error("Error saving delivery:", error);
-        showSnackbar(
-          isEditMode 
-            ? "Failed to update delivery. Please try again." 
-            : "Failed to create delivery. Please try again.", 
-          "error"
-        );
+        
+        // Extract error message from API response (similar to agentCustomer)
+        let errorMessage = isEditMode 
+          ? "Failed to update delivery. Please try again." 
+          : "Failed to create delivery. Please try again.";
+        
+        if (error && typeof error === 'object') {
+          // Check for error message in response
+          if ('response' in error && error.response && typeof error.response === 'object') {
+            const response = error.response as { data?: { message?: string } };
+            if (response.data?.message) {
+              errorMessage = response.data.message;
+            }
+          } else if ('data' in error && error.data && typeof error.data === 'object') {
+            const data = error.data as { message?: string };
+            if (data.message) {
+              errorMessage = data.message;
+            }
+          } else if ('message' in error && typeof error.message === 'string') {
+            errorMessage = error.message;
+          }
+        }
+        
+        showSnackbar(errorMessage, "error");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -649,12 +707,17 @@ export default function OrderAddEditPage() {
             type="button"
             className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
             onClick={() => router.push("/agentCustomerDelivery")}
+            disabled={isSubmitting}
           >
             Cancel
           </button>
           <SidebarBtn 
-            isActive={true} 
-            label={isEditMode ? "Update Delivery" : "Create Delivery"} 
+            isActive={!isSubmitting} 
+            label={
+              isSubmitting 
+                ? (isEditMode ? "Updating Delivery..." : "Creating Delivery...") 
+                : (isEditMode ? "Update Delivery" : "Create Delivery")
+            } 
             onClick={handleSubmit} 
           />
         </div>

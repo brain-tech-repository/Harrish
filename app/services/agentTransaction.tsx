@@ -290,3 +290,21 @@ export const deleteDelivery= async (uuid:string) => {
     return handleError(error);
   }
 };
+
+export const createInvoice = async (body: object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/invoices/add`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updateInvoice = async (uuid: string, body: object) => {
+  try {
+    const res = await API.put(`/api/agent_transaction/invoices/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
