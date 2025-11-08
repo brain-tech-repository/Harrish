@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
-import Warehouse from '../(private)/(dashboard)/(master)/warehouse/page';
+
 
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -3079,6 +3079,16 @@ export const editWarehouseStock = async (uuid: string, payload: object) => {
 export const getWarehouseStockById = async (uuid: string) => {
   try {
     const res = await API.get(`/api/settings/warehouse-stocks/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const projectList = async (params: Params) => {
+  try {
+    const res = await API.get(`api/settings/projects-list`, {params:params});
 
     return res.data;
   } catch (error: unknown) {

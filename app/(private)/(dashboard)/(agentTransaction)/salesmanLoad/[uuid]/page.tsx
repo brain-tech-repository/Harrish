@@ -157,6 +157,10 @@ export default function AddEditSalesmanLoad() {
         try {
           const res = await salesmanLoadHeaderById(String(loadUUID), {});
           const data = res?.data ?? res;
+          
+          const warehouseId = data?.warehouse?.id?.toString() || "";
+          const salesmanId = data?.salesman?.id?.toString() || "";
+          
           setForm({
             salesman_type: data?.salesman_type || "",
             warehouse: data?.warehouse?.id?.toString() || "",
