@@ -14,6 +14,7 @@ import { createDelivery,deliveryByUuid,updateDelivery,agentOrderList } from "@/a
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
+import AutoSuggestion from "@/app/components/autoSuggestion";
 import * as yup from "yup";
 
 // TypeScript interfaces
@@ -44,8 +45,8 @@ interface DeliveryResponse {
     id: number;
     name: string;
   };
-  delivery_date?: string;
   comment?: string;
+  delivery_date?: string;
   details?: DeliveryDetail[];
 }
 
@@ -119,7 +120,13 @@ export default function OrderAddEditPage() {
   const [orderOptions, setOrderOptions] = useState<Array<{value: string; label: string}>>([]);
   const [orderLoading, setOrderLoading] = useState(false);
   const [ordersById, setOrdersById] = useState<Record<string, OrderRow>>({});
-
+  const [filteredWarehouseOptions, setFilteredWarehouseOptions] = useState<{ label: string; value: string }[]>([]);
+  const [filteredOrderOptions, setFilteredOrderOptions] = useState<{ label: string; value: string }[]>([]);
+   const [skeleton, setSkeleton] = useState({
+      route: false,
+      customer: false,
+      item: false,
+    });
   // Store UOM options for each row
   const [rowUomOptions, setRowUomOptions] = useState<Record<string, { value: string; label: string; price?: string }[]>>({});
 
@@ -152,16 +159,14 @@ export default function OrderAddEditPage() {
           setForm({
             warehouse: data?.warehouse?.id ? String(data.warehouse.id) : "",
             delivery: data?.delivery?.id ? String(data.delivery.id) : "",
-            delivery_date: data?.delivery_date ? String(data.delivery_date) : "",
+            delivery_date: data?.delivery_date || "",
             note: data?.comment || "",
             transactionType: "1",
             paymentTerms: "1",
             paymentTermsUnit: "1",
           });
           
-          if (data?.warehouse?.id) {
-            await fetchAgentCustomerOptions(String(data.warehouse.id));
-          }
+          
           
           if (data?.details && Array.isArray(data.details) && data.details.length > 0) {
             const loadedItemData = data.details.map((detail: DeliveryDetail, index: number) => {
@@ -252,6 +257,34 @@ export default function OrderAddEditPage() {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
 
+    // When delivery_date changes, refetch orders using both warehouse and delivery_date
+    if (name === "delivery_date") {
+      if (form.warehouse) {
+        // Reset dependent order selection and table while fetching filtered orders
+        setForm((prev) => ({ ...prev, delivery: "" }));
+        setOrderOptions([]);
+        setOrdersById({});
+        setRowUomOptions({});
+        setItemData([
+          {
+            item_id: "",
+            itemName: "",
+            UOM: "",
+            uom_id: "",
+            Quantity: "1",
+            Price: "",
+            Excise: "",
+            Discount: "",
+            Net: "",
+            Vat: "",
+            Total: "",
+          },
+        ]);
+        fetchOrdersByWarehouse(String(form.warehouse), value);
+      }
+      return;
+    }
+
     // When an order (delivery) is selected, populate table rows from the order details
     if (name === "delivery" && value) {
       const selectedOrder = ordersById[value];
@@ -299,16 +332,12 @@ export default function OrderAddEditPage() {
         setRowUomOptions(newRowUomOptions);
         setItemData(loadedItemData);
 
-        // Optionally pre-fill note and delivery date from order if present
-        if (selectedOrder.comment || selectedOrder.delivery_date) {
-          setForm((prev) => ({
-            ...prev,
-            note: selectedOrder.comment || prev.note,
-            delivery_date: selectedOrder.delivery_date || prev.delivery_date,
-          }));
+        if (selectedOrder.comment) {
+          setForm((prev) => ({ ...prev, note: selectedOrder.comment || prev.note }));
         }
+        const orderDate = selectedOrder.delivery_date || "";
+        setForm(prev => ({ ...prev, delivery_date: orderDate }));
       } else {
-        // No details found; reset table to a single empty row
         setRowUomOptions({});
         setItemData([
           {
@@ -325,6 +354,8 @@ export default function OrderAddEditPage() {
             Total: "",
           },
         ]);
+        // Clear delivery_date if no details / invalid order
+  setForm(prev => ({ ...prev, delivery_date: "" }));
       }
     }
   };
@@ -348,20 +379,32 @@ export default function OrderAddEditPage() {
     } finally {
     }
   }, [showSnackbar]); // Only recreate if showSnackbar changes
+  const fetchWarehouse = async (searchQuery?: string) => {
+    const res = await warehouseListGlobalSearch({
+      query: searchQuery || "",
+      dropdown: "1",
+      per_page: "50"
+    });
 
-  // Fetch orders based on warehouse ID
-  const fetchOrdersByWarehouse = useCallback(async (warehouseId: string) => {
-    if (!warehouseId) {
-      setOrderOptions([]);
-      setOrdersById({});
+    if (res.error) {
+      showSnackbar(res.data?.message || "Failed to fetch customers", "error");
       return;
     }
-
+    const data = res?.data || [];
+    const options = data.map((warehouse: { id: number; warehouse_code: string; warehouse_name: string }) => ({
+      value: String(warehouse.id),
+      label:  warehouse.warehouse_code + " - " + warehouse.warehouse_name
+    }));
+    setFilteredWarehouseOptions(options);
+    return options;
+  }
+  const fetchOrdersByWarehouse = useCallback(async (warehouseId: string, deliveryDate?: string) => {
     try {
       setOrderLoading(true);
-      const response = await agentOrderList({ warehouse_id: warehouseId });
+      const params: Record<string, string> = { warehouse_id: warehouseId };
+      if (deliveryDate) params.delivery_date = deliveryDate;
+      const response = await agentOrderList(params);
 
-      // Normalize response: prefer response.data as array, else response directly
       const rows: OrderRow[] = Array.isArray(response?.data)
         ? (response.data as OrderRow[])
         : (Array.isArray(response) ? (response as OrderRow[]) : []);
@@ -371,7 +414,6 @@ export default function OrderAddEditPage() {
         label: `${order.order_code ?? ""} - ${order.customer_name ?? ""} - ${order.customer_code ?? ""}`,
       }));
 
-      // Keep a lookup of full orders for quick population on selection
       const byId: Record<string, OrderRow> = {};
       rows.forEach((o) => {
         byId[String(o.id)] = o;
@@ -480,7 +522,7 @@ export default function OrderAddEditPage() {
     return {
       warehouse_id: Number(form.warehouse),
       order_id: Number(form.delivery), // Changed to order_id since we're selecting orders
-      delivery_date: String(form.delivery_date), // Changed to order_id since we're selecting orders
+      delivery_date: form.delivery_date, // Changed to order_id since we're selecting orders
       gross_total: Number(grossTotal.toFixed(2)),
       discount: Number(discount.toFixed(2)),
       vat: Number(totalVat.toFixed(2)),
@@ -635,49 +677,53 @@ export default function OrderAddEditPage() {
 
         {/* --- Form Fields --- */}
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
-            <InputFields
-              label="Warehouse"
-              required
-              name="warehouse"
-              value={form.warehouse}
-              options={searchedWarehouseOptions}
-              searchable={true}
-              onSearchChange={handleWarehouseSearch}
-              onChange={(e) => {
-                const val = e.target.value;
-                handleChange(e);
-                setForm((prev) => ({ ...prev, delivery: "" }));
-                setOrderOptions([]);
-                setOrdersById({});
-                if (val) {
-                  fetchOrdersByWarehouse(val);
-                }
-              }}
-              error={errors.warehouse}
-            />
+           
+            <AutoSuggestion
+                                  required
+                                  label="Warehouse"
+                                  name="warehouse"
+                                  placeholder="Search warehouse"
+                                  onSearch={(q) => fetchWarehouse(q)}
+                                  initialValue={filteredWarehouseOptions.find(o => o.value === String(form.warehouse))?.label || ""}
+                                  onSelect={(opt) => {
+                                    if (form.warehouse !== opt.value) {
+                                      setForm((prev) => ({ ...prev, warehouse: opt.value }));
+                                      setSkeleton((prev) => ({ ...prev, customer: true }));
+                                      setFilteredOrderOptions([]);
+                                      fetchOrdersByWarehouse?.(String(opt.value));
+                                    } else {
+                                      setForm((prev) => ({ ...prev, warehouse: opt.value }));
+                                    }
+                                  }}
+                                  onClear={() => {
+                                    setForm((prev) => ({ ...prev, warehouse: "" }));
+                                    setFilteredOrderOptions([]);
+                                    setSkeleton((prev) => ({ ...prev, customer: false }));
+                                  }}
+                                  error={
+                                    (errors.warehouse as string)
+                                  }
+                                />
             
             <InputFields
               required
-              label="Delivery"
+              label="Delivery Date"
+              name="delivery_date"
+              type="date"
+              value={form.delivery_date}
+              onChange={handleChange}
+              error={errors.delivery_date}
+            />
+            <InputFields
+              required
+              label="Customer"
               name="delivery"
               searchable={true}
               value={form.delivery}
               options={orderOptions}
               onChange={handleChange}
               error={errors.delivery}
-              disabled={!form.warehouse || orderLoading}
-            />
-            <InputFields
-              required
-              type="date"
-              label="Delivery Date"
-              name="delivery_date"
-              value={form.delivery_date}
-              onChange={handleChange}
-              error={errors.delivery_date}
-              min={new Date().toISOString().split("T")[0]}
-              disabled={!form.delivery}
-              
+              disabled={!form.warehouse && !form.delivery_date}
             />
             
            
@@ -697,6 +743,7 @@ export default function OrderAddEditPage() {
                   <InputFields
                     label=""
                     name="itemName"
+                    disabled={!form.delivery}
                     searchable={true}
                     options={itemOptions}
                     value={row.item_id}
@@ -800,9 +847,7 @@ export default function OrderAddEditPage() {
                           recalculateItem(Number(row.idx), "Quantity", value);
                         }
                       }}
-                    // onChange={(e) =>
-                    //   recalculateItem(Number(row.idx), "Quantity", e.target.value)
-                    // }
+                    
                   />
                   </div>
                 ),
