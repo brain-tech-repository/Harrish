@@ -40,7 +40,6 @@ export default function AutoSuggestion({
   onSelect,
   minSearchLength = 1,
   debounceMs = 500,
-  className = "w-full",
   initialValue = "",
   renderOption,
   noOptionsMessage = "No options",
@@ -62,12 +61,15 @@ export default function AutoSuggestion({
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState<number>(-1);
   const [selectedOptions, setSelectedOptions] = useState<Option[]>(initialSelected || []);
+  // for single-select mode, keep a ref to the option that produced the current input value
+  const selectedSingleRef = useRef<Option | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dropdownProps, setDropdownProps] = useState<{ left: number; top: number; width: number }>({ left: 0, top: 0, width: 0 });
   const debounceRef = useRef<number | null>(null);
   const onSearchRef = useRef(onSearch);
   const onClearRef = useRef(onClear);
+  const prevQueryRef = useRef<string>(initialValue || "");
   // when we programmatically set the query (for example after selecting an option),
   // we want to avoid retriggering the search effect and reopening the dropdown.
   const skipSearchRef = useRef(false);
@@ -81,6 +83,27 @@ export default function AutoSuggestion({
     onClearRef.current = onClear;
   }, [onClear]);
 
+  // When parent changes the `initialValue` prop (for example to clear the field),
+  // update internal query state accordingly. Use skipSearchRef to avoid
+  // re-triggering the search effect and reopening the dropdown when this is
+  // a programmatic update coming from outside.
+  useEffect(() => {
+    if (initialValue === undefined) return;
+    if (initialValue === query) return;
+    // mark to skip the search effect which would otherwise run for this new query
+    skipSearchRef.current = true;
+    setQuery(initialValue);
+    // if clearing from outside, also clear selectedSingleRef and notify onClear
+    if (initialValue === "") {
+      // Clear remembered selection when parent explicitly clears the value.
+      // Do NOT call onClear here — parent already knows it cleared the value and
+      // may perform side-effects (like clearing related data). Avoid double-calling
+      // onClear to prevent unintended cascading clears.
+      selectedSingleRef.current = null;
+    }
+  // intentionally depend on initialValue only
+  }, [initialValue]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
@@ -88,6 +111,10 @@ export default function AutoSuggestion({
   }, []);
 
   useEffect(() => {
+    const prevQuery = prevQueryRef.current ?? "";
+    const isDeletion = (query ?? "").length < prevQuery.length;
+    prevQueryRef.current = query ?? "";
+
     if ((query ?? "").length < minSearchLength) {
       setOptions([]);
       setOpen(false);
@@ -105,22 +132,28 @@ export default function AutoSuggestion({
       return;
     }
 
-    // show loading state and ensure dropdown is open immediately so
-    // the user sees the "Loading..." indicator even for the first letter
-    setLoading(true);
-    setOpen(true);
+    // For deletions (backspace), avoid immediate UI churn — don't open the
+    // dropdown or show loading until the debounced search actually runs.
+    if (!isDeletion) {
+      // show loading state and ensure dropdown is open immediately so
+      // the user sees the "Loading..." indicator even for the first letter
+      setLoading(true);
+      setOpen(true);
+    }
+
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       (async () => {
         try {
+          // when the debounced search starts, show loading and open dropdown
+          setLoading(true);
+          setOpen(true);
           // use the stable ref to call the latest onSearch without making it a dependency
           const res = await onSearchRef.current(query);
           setOptions(Array.isArray(res) ? res : []);
-          setOpen(true);
           setHighlight(-1);
         } catch (err) {
           setOptions([]);
-          setOpen(true);
           setHighlight(-1);
           // swallow error (caller can surface)
         } finally {
@@ -163,13 +196,50 @@ export default function AutoSuggestion({
   }, [open, options.length]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Backspace: allow normal behavior (no special clearing on programmatic set)
+    // Backspace handling should work even when the dropdown is closed.
+    if (e.key === "Backspace") {
+      const input = inputRef.current;
+      // multi-select: if input empty and we have selected tags, remove the last tag
+      if (multiple) {
+        if ((input?.value ?? "") === "" && selectedOptions.length > 0) {
+          e.preventDefault();
+          setSelectedOptions(prev => {
+            const next = prev.slice(0, -1);
+            try { onChangeSelected && onChangeSelected(next); } catch (err) {}
+            return next;
+          });
+          return;
+        }
+        // allow default editing behavior otherwise
+      } else {
+        // single-select: if current query equals selected label, clear it entirely
+        if (selectedSingleRef.current && query === selectedSingleRef.current.label) {
+          const selStart = input?.selectionStart ?? 0;
+          const selEnd = input?.selectionEnd ?? 0;
+          const fullSelected = selStart === 0 && selEnd === query.length;
+          const caretAtEnd = selStart === selEnd && selStart === query.length;
+          if (fullSelected || caretAtEnd) {
+            e.preventDefault();
+            selectedSingleRef.current = null;
+            setQuery("");
+            setOptions([]);
+            setOpen(false);
+            try { onClearRef.current && onClearRef.current(); } catch (err) {}
+            return;
+          }
+        }
+      }
+    }
+
+    // If dropdown is closed, only allow ArrowDown to open it; other keys handled above
     if (!open) {
       if (e.key === "ArrowDown") {
         setOpen(true);
       }
+      // still allow other keys to do default behavior when closed
       return;
     }
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHighlight(h => Math.min(h + 1, options.length - 1));
@@ -209,6 +279,8 @@ export default function AutoSuggestion({
       // because the label length usually meets minSearchLength
       skipSearchRef.current = true;
       setQuery(opt.label);
+      // remember this option as the one that produced the input value
+      selectedSingleRef.current = opt;
       setOpen(false);
       setOptions([]);
       setHighlight(-1);

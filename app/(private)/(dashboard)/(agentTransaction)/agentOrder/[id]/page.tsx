@@ -24,7 +24,7 @@ interface FormData {
   item_code: string,
   name: string,
   description: string,
-  uom: {
+  item_uoms: {
     id: number,
     item_id: number,
     uom_type: string,
@@ -88,7 +88,7 @@ export default function OrderAddEditPage() {
       .test("is-date", "Delivery date must be a valid date", (val) => {
         return Boolean(val && !Number.isNaN(new Date(val).getTime()));
       }),
-    note: Yup.string().required("Note is required").max(1000, "Note is too long"),
+    note: Yup.string().max(1000, "Note is too long"),
     items: Yup.array().of(itemRowSchema),
   });
 
@@ -196,9 +196,9 @@ export default function OrderAddEditPage() {
     }
     const data = res?.data || [];
     setOrderData(data);
-    const options = data.map((item: { id: number; name: string; item_code: string; }) => ({
+    const options = data.map((item: { id: number; name: string; code: string; }) => ({
       value: String(item.id),
-      label: item.item_code + " - " + item.name
+      label: item.code + " - " + item.name
     }));
     setItemsOptions(options);
     setSkeleton({ ...skeleton, item: false });
@@ -216,7 +216,7 @@ export default function OrderAddEditPage() {
       codeGeneratedRef.current = true;
       (async () => {
         const res = await genearateCode({
-          model_name: "agent_customers",
+          model_name: "order",
         });
         if (res?.code) {
           setCode(res.code);
@@ -228,7 +228,21 @@ export default function OrderAddEditPage() {
 
   const recalculateItem = async (index: number, field: string, value: string, values?: FormikValues) => {
     const newData = [...itemData];
-    const item: ItemData = newData[index];
+    // Defensive: if index is out of bounds, create missing rows so we never assign to undefined
+    while (newData.length <= index) {
+      newData.push({
+        item_id: "",
+        UOM: [],
+        Quantity: "1",
+        Price: "",
+        Excise: "",
+        Discount: "",
+        Net: "",
+        Vat: "",
+        Total: "",
+      } as ItemData);
+    }
+    const item: ItemData = newData[index] as ItemData;
     (item as any)[field] = value;
 
     // If user selects an item, update UI immediately and show skeletons while fetching price/UOM
@@ -239,7 +253,7 @@ export default function OrderAddEditPage() {
       item.Price = "-";
       setItemData(newData);
       setItemLoading((prev) => ({ ...prev, [index]: { uom: true } }));
-      item.UOM = orderData.find((order: FormData) => order.id.toString() === item.item_id)?.uom?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
+      item.UOM = orderData.find((order: FormData) => order.id.toString() === item.item_id)?.item_uoms?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
       setItemLoading((prev) => ({ ...prev, [index]: { uom: false } }));
     }
 
@@ -266,7 +280,19 @@ export default function OrderAddEditPage() {
     item.gross = gross.toFixed(2);
     item.preVat = preVat.toFixed(2);
 
-    setItemData(newData);
+    // sanitize array: ensure no null/undefined elements
+    const sanitized = newData.map((r) => r ?? {
+      item_id: "",
+      UOM: [],
+      Quantity: "1",
+      Price: "",
+      Excise: "",
+      Discount: "",
+      Net: "",
+      Vat: "",
+      Total: "",
+    } as ItemData);
+    setItemData(sanitized);
     // validate this row after updating; if we just changed the item selection, skip UOM required check
     if (field === "item_id") {
       validateRow(index, newData[index], { skipUom: true });
@@ -448,9 +474,9 @@ export default function OrderAddEditPage() {
       return;
     }
     const data = res?.data || [];
-    const options = data.map((customer: { id: number; osa_code: string; business_name: string }) => ({
+    const options = data.map((customer: { id: number; osa_code: string; name: string }) => ({
       value: String(customer.id),
-      label: customer.osa_code + " - " + customer.business_name
+      label: customer.osa_code + " - " + customer.name
     }));
     setFilteredCustomerOptions(options);
     setSkeleton({ ...skeleton, customer: false });
@@ -524,13 +550,14 @@ export default function OrderAddEditPage() {
         >
           {({ values, touched, errors, setFieldValue, handleChange, submitForm, isSubmitting }: FormikProps<FormikValues>) => {
             // // Log Formik validation errors to console for easier debugging
-            // useEffect(() => {
-            //   if (errors && Object.keys(errors).length > 0) {
-            //     console.warn("Formik validation errors:", errors);
-            //   }
-            //   console.log("Current Formik errors:", errors);
-            //   console.log("Current Formik errors:", touched.comment);
-            // }, [errors]);
+            useEffect(() => {
+              if (errors && Object.keys(errors).length > 0) {
+                console.warn("Formik validation errors:", errors);
+              }
+              console.log("Current Formik errors:", errors);
+              console.log("Current Formik errors:", touched.comment);
+              console.log(values, "values")
+            }, [errors]);
 
             return (
               <>
@@ -647,9 +674,9 @@ export default function OrderAddEditPage() {
                           const err = itemErrors[idx]?.item_id;
                           // Filter out items that are already selected in other rows
                           const selectedIds = itemData.map((r, i) => (i === idx ? null : r.item_id)).filter(Boolean) as string[];
-                          const filteredOptions = itemsOptions.filter(opt => (
-                            opt.value === row.item_id || !selectedIds.includes(opt.value)
-                          ));
+                          // const filteredOptions = itemsOptions.filter(opt => (
+                          //   opt.value === row.item_id || !selectedIds.includes(opt.value)
+                          // ));
                           return (
                             <div>
                               <AutoSuggestion
@@ -804,7 +831,6 @@ export default function OrderAddEditPage() {
                       </div>
                       <div className="flex flex-col justify-end gap-[20px] w-full lg:w-[400px]">
                         <InputFields
-                          required
                           label="Note"
                           type="textarea"
                           name="note"
