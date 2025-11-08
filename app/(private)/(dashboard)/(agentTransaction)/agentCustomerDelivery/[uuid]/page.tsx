@@ -108,7 +108,7 @@ export default function OrderAddEditPage() {
   const [form, setForm] = useState({
     warehouse: "",
     delivery: "",
-    delivery_date: "",
+    delivery_date: new Date().toISOString().split("T")[0],
     note: "",
     transactionType: "1",
     paymentTerms: "1",
@@ -633,8 +633,8 @@ export default function OrderAddEditPage() {
   };
 
   const keyValueData = [
-    { key: "Gross Total", value: `AED ${grossTotal.toFixed(2)}` },
-    { key: "Discount", value: `AED ${discount.toFixed(2)}` },
+    // { key: "Gross Total", value: `AED ${grossTotal.toFixed(2)}` },
+    // { key: "Discount", value: `AED ${discount.toFixed(2)}` },
     { key: "Net Total", value: `AED ${netAmount.toFixed(2)}` },
     { key: "VAT", value: `AED ${totalVat.toFixed(2)}` },
     { key: "Delivery Charges", value: "AED 0.00" },
@@ -660,11 +660,11 @@ export default function OrderAddEditPage() {
         <div className="flex justify-between mb-10 flex-wrap gap-[20px]">
           <div className="flex flex-col gap-[10px]">
             <Logo type="full" />
-            <span className="text-primary font-normal text-[16px]">
+            {/* <span className="text-primary font-normal text-[16px]">
               Emma-Köhler-Allee 4c, Germering - 13907
-            </span>
+            </span> */}
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col items-end">
             <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
               DELIVERY
             </span>
@@ -679,40 +679,30 @@ export default function OrderAddEditPage() {
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
            
             <AutoSuggestion
-                                  required
-                                  label="Warehouse"
-                                  name="warehouse"
-                                  placeholder="Search warehouse"
-                                  onSearch={(q) => fetchWarehouse(q)}
-                                  initialValue={filteredWarehouseOptions.find(o => o.value === String(form.warehouse))?.label || ""}
-                                  onSelect={(opt) => {
-                                    if (form.warehouse !== opt.value) {
-                                      setForm((prev) => ({ ...prev, warehouse: opt.value }));
-                                      setSkeleton((prev) => ({ ...prev, customer: true }));
-                                      setFilteredOrderOptions([]);
-                                      fetchOrdersByWarehouse?.(String(opt.value));
-                                    } else {
-                                      setForm((prev) => ({ ...prev, warehouse: opt.value }));
-                                    }
-                                  }}
-                                  onClear={() => {
-                                    setForm((prev) => ({ ...prev, warehouse: "" }));
-                                    setFilteredOrderOptions([]);
-                                    setSkeleton((prev) => ({ ...prev, customer: false }));
-                                  }}
-                                  error={
-                                    (errors.warehouse as string)
-                                  }
-                                />
-            
-            <InputFields
               required
-              label="Delivery Date"
-              name="delivery_date"
-              type="date"
-              value={form.delivery_date}
-              onChange={handleChange}
-              error={errors.delivery_date}
+              label="Warehouse"
+              name="warehouse"
+              placeholder="Search warehouse"
+              onSearch={(q) => fetchWarehouse(q)}
+              initialValue={filteredWarehouseOptions.find(o => o.value === String(form.warehouse))?.label || ""}
+              onSelect={(opt) => {
+                if (form.warehouse !== opt.value) {
+                  setForm((prev) => ({ ...prev, warehouse: opt.value }));
+                  setSkeleton((prev) => ({ ...prev, customer: true }));
+                  setFilteredOrderOptions([]);
+                  fetchOrdersByWarehouse?.(String(opt.value));
+                } else {
+                  setForm((prev) => ({ ...prev, warehouse: opt.value }));
+                }
+              }}
+              onClear={() => {
+                setForm((prev) => ({ ...prev, warehouse: "" }));
+                setFilteredOrderOptions([]);
+                setSkeleton((prev) => ({ ...prev, customer: false }));
+              }}
+              error={
+                (errors.warehouse as string)
+              }
             />
             <InputFields
               required
@@ -725,9 +715,15 @@ export default function OrderAddEditPage() {
               error={errors.delivery}
               disabled={!form.warehouse && !form.delivery_date}
             />
-            
-           
-           
+            <InputFields
+              required
+              label="Delivery Date"
+              name="delivery_date"
+              type="date"
+              value={form.delivery_date}
+              onChange={handleChange}
+              error={errors.delivery_date}
+            />
 </div>
         {/* --- Table --- */}
         <Table

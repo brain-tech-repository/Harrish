@@ -11,6 +11,8 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { agentOrderList, changeStatusAgentOrder } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import { filter } from "framer-motion/client";
 
 const columns = [
     { key: "created_at", label: "Order Date", showByDefault: true, render: (row: TableDataType) => <span className="font-bold cursor-pointer">{row.created_at.split("T")[0]}</span> },
@@ -61,13 +63,16 @@ const columns = [
     { key: "order_source", label: "Order Source", render: (row: TableDataType) => row.order_source || "-" },
     { key: "delivery_date", label: "Delivery Date", showByDefault: true, render: (row: TableDataType) => row.delivery_date || "-" },
     { key: "comment", label: "Comment", render: (row: TableDataType) => row.comment || "-" },
-    { key: "status", label: "Status", showByDefault: true, render: (row: TableDataType) => (
-        <OrderStatus status={row.status} />
-    )},
+    {
+        key: "status", label: "Status", showByDefault: true, render: (row: TableDataType) => (
+            <OrderStatus status={row.status} />
+        )
+    },
 ];
 
 export default function CustomerInvoicePage() {
     const { setLoading } = useLoading();
+    const { customerSubCategoryOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
 
@@ -123,6 +128,45 @@ export default function CustomerInvoicePage() {
         return res;
     }
 
+    const filterBy = useCallback(
+        async (
+            payload: Record<string, string | number | null>,
+            pageSize: number
+        ): Promise<listReturnType> => {
+            let result;
+            setLoading(true);
+            try {
+                const params: Record<string, string> = { per_page: pageSize.toString() };
+                Object.keys(payload || {}).forEach((k) => {
+                    const v = payload[k as keyof typeof payload];
+                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                        params[k] = String(v);
+                    }
+                });
+                result = await agentOrderList(params);
+            } finally {
+                setLoading(false);
+            }
+
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
+                return {
+                    data: result.data || [],
+                    total: pagination.totalPages || result.pagination?.totalPages || 0,
+                    totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+                    currentPage: pagination.current_page || result.pagination?.currentPage || 0,
+                    pageSize: pagination.limit || pageSize,
+                };
+            }
+        },
+        [setLoading]
+    );
+
+    useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [customerSubCategoryOptions, routeOptions, warehouseOptions, channelOptions]);
+
 
     return (
         <>
@@ -130,7 +174,7 @@ export default function CustomerInvoicePage() {
                 <Table
                     refreshKey={refreshKey}
                     config={{
-                        api: { list: fetchOrders },
+                        api: { list: fetchOrders, filterBy: filterBy },
                         header: {
                             title: "Customer Orders",
                             threeDot: [
@@ -139,7 +183,7 @@ export default function CustomerInvoicePage() {
                                     label: "Inactive",
                                     showOnSelect: true,
                                     showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if(!selectedRow || selectedRow.length === 0) return false;
+                                        if (!selectedRow || selectedRow.length === 0) return false;
                                         const status = selectedRow?.map((id) => data[id].status).map(String);
                                         return status?.includes("1") || false;
                                     },
@@ -147,7 +191,7 @@ export default function CustomerInvoicePage() {
                                         const status: string[] = [];
                                         const ids = selectedRow?.map((id) => {
                                             const currentStatus = data[id].status;
-                                            if(!status.includes(currentStatus)){
+                                            if (!status.includes(currentStatus)) {
                                                 status.push(currentStatus);
                                             }
                                             return data[id].uuid;
@@ -160,7 +204,7 @@ export default function CustomerInvoicePage() {
                                     label: "Active",
                                     showOnSelect: true,
                                     showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if(!selectedRow || selectedRow.length === 0) return false;
+                                        if (!selectedRow || selectedRow.length === 0) return false;
                                         const status = selectedRow?.map((id) => data[id].status).map(String);
                                         return status?.includes("0") || false;
                                     },
@@ -168,7 +212,7 @@ export default function CustomerInvoicePage() {
                                         const status: string[] = [];
                                         const ids = selectedRow?.map((id) => {
                                             const currentStatus = data[id].status;
-                                            if(!status.includes(currentStatus)){
+                                            if (!status.includes(currentStatus)) {
                                                 status.push(currentStatus);
                                             }
                                             return data[id].uuid;
@@ -179,6 +223,47 @@ export default function CustomerInvoicePage() {
                             ],
                             searchBar: false,
                             columnFilter: true,
+                            filterByFields: [
+                                {
+                                    key: "start_date",
+                                    label: "Start Date",
+                                    type: "date"
+                                },
+                                {
+                                    key: "end_date",
+                                    label: "End Date",
+                                    type: "date"
+                                },
+                                {
+                                    key: "warehouse",
+                                    label: "Warehouse",
+                                    isSingle: false,
+                                    multiSelectChips: true,
+                                    options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+                                },
+                                {
+                                    key: "route_id",
+                                    label: "Route",
+                                    isSingle: false,
+                                    multiSelectChips: true,
+                                    options: Array.isArray(routeOptions) ? routeOptions : [],
+                                },
+                                {
+                                    key: "salesman_id",
+                                    label: "Salesman",
+                                    isSingle: false,
+                                    multiSelectChips: true,
+                                    options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                                },
+                                {
+                                    key: "customer_id",
+                                    label: "Customer",
+                                    type: "select",
+                                    options: Array.isArray(agentCustomerOptions) ? agentCustomerOptions : [],
+                                    isSingle: false,
+                                    multiSelectChips: true,
+                                }
+                            ],
                             actions: [
                                 // <SidebarBtn
                                 //     key={0}

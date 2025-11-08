@@ -574,17 +574,17 @@ function TableBody() {
         if (!api?.list) {
             setDisplayedData(tableData.slice(startIndex, endIndex));
 
-            setTimeout(()=>{
-        setNestedLoading(false)
+            setTimeout(() => {
+                setNestedLoading(false)
 
-            },2000)
-            
+            }, 2000)
+
         } else {
             setDisplayedData(tableData);
-           setTimeout(()=>{
-        setNestedLoading(false)
+            setTimeout(() => {
+                setNestedLoading(false)
 
-            },2000)
+            }, 2000)
 
         }
     }, [tableDetails]);
@@ -618,7 +618,7 @@ function TableBody() {
     };
 
     return (
-        <>{(config.showNestedLoading && nestedLoading) ? <CustomTableSkelton/> : <>
+        <>{(config.showNestedLoading && nestedLoading) ? <CustomTableSkelton /> : <>
             <div
                 className="overflow-x-auto border-b-[1px] border-[#E9EAEB] scrollbar-thin scrollbar-thumb-[#D5D7DA] scrollbar-track-transparent"
                 style={
@@ -764,8 +764,8 @@ function TableBody() {
                                                         key={index}
                                                         width={col.width}
                                                         className={`px-[24px] py-[12px] bg-white ${col.sticky ? "z-10 md:sticky" : ""} ${col.sticky === "left"
-                                                                ? "left-0"
-                                                                : ""
+                                                            ? "left-0"
+                                                            : ""
                                                             } ${col.sticky === "right"
                                                                 ? "right-0"
                                                                 : ""
@@ -838,8 +838,8 @@ function TableBody() {
                     No Column Selected
                 </div>
             )}
-            </>}
-            
+        </>}
+
         </>
     );
 }
@@ -1147,8 +1147,8 @@ function PaginationBtn({
     return (
         <div
             className={`min-w-[40px] h-[40px] rounded-[8px] p-[12px] flex items-center justify-center cursor-pointer ${isActive
-                    ? "bg-[#FFF0F2] text-[#EA0A2A]"
-                    : "bg-tranparent text-[#717680]"
+                ? "bg-[#FFF0F2] text-[#EA0A2A]"
+                : "bg-tranparent text-[#717680]"
                 }`}
             onClick={onClick}
         >
@@ -1229,14 +1229,14 @@ function FilterBy() {
                 const totalRecords = (resolved as any).totalRecords ?? (resolved as any).total ?? 0;
                 const pageSize = resolved.pageSize || config.pageSize || defaultPageSize;
                 const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalRecords / pageSize)) : (resolved.total ?? 1);
-                        setTableDetails({
-                            data: resolved.data || [],
-                            total: totalPages,
-                            totalRecords: totalRecords,
-                            currentPage: resolved.currentPage ?? 0,
-                            pageSize: pageSize,
-                        });
-                        setAppliedFilters(true);
+                setTableDetails({
+                    data: resolved.data || [],
+                    total: totalPages,
+                    totalRecords: totalRecords,
+                    currentPage: resolved.currentPage ?? 0,
+                    pageSize: pageSize,
+                });
+                setAppliedFilters(true);
             } catch (err) {
                 console.error("Filter API error", err);
             }
@@ -1274,7 +1274,7 @@ function FilterBy() {
             cleared[f.key] = f.isSingle === false ? [] : "";
         });
         setFilters(cleared);
-    setAppliedFilters(false);
+        setAppliedFilters(false);
 
         // If API exists, call it with cleared payload to refresh table
         if (config.api?.filterBy) {
@@ -1315,10 +1315,10 @@ function FilterBy() {
                                     <span>Filter</span>
                                     <span>
                                         {activeFilterCount > 0 && (
-                                        <span className="inline-flex text-sm items-center justify-center px-2 py-1 text-xs font-semibold text-white bg-gray-800 rounded-full">{activeFilterCount}</span>
-                                    )}
+                                            <span className="inline-flex text-sm items-center justify-center px-2 py-1 text-xs font-semibold text-white bg-gray-800 rounded-full">{activeFilterCount}</span>
+                                        )}
                                     </span>
-                                    
+
                                 </div>
                             } className="h-[34px]" />
 
@@ -1397,7 +1397,23 @@ function FilterBy() {
                     <span className="font-medium">{(tableDetails?.totalRecords ?? tableDetails?.data?.length ?? 0)} Results Found</span>
                     <button
                         type="button"
-                        onClick={async () => { await clearAll(); setShowDropdown(false); }}
+                        onClick={async () => {
+                            await clearAll(); setShowDropdown(false); if (config.api?.list) {
+                                const result = await config.api.list(
+                                    1,
+                                    config.pageSize || defaultPageSize
+                                );
+                                const resolvedResult =
+                                    result instanceof Promise ? await result : result;
+                                const { data, total, currentPage } = resolvedResult;
+                                setTableDetails({
+                                    data,
+                                    total,
+                                    currentPage: currentPage - 1,
+                                    pageSize: config.pageSize || defaultPageSize,
+                                });
+                            }
+                        }}
                         className="ml-2 underline text-gray-600"
                     >
                         Clear Filter

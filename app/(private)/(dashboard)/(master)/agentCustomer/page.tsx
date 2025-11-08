@@ -283,42 +283,7 @@ export default function AgentCustomer() {
         },
         []
     );
-
-    const filterBy = useCallback(
-        async (
-            payload: Record<string, string | number | null>,
-            pageSize: number
-        ): Promise<listReturnType> => {
-            let result;
-            setLoading(true);
-            try {
-                const params: Record<string, string> = { per_page: pageSize.toString() };
-                Object.keys(payload || {}).forEach((k) => {
-                    const v = payload[k as keyof typeof payload];
-                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-                        params[k] = String(v);
-                    }
-                });
-                result = await agentCustomerList(params);
-            } finally {
-                setLoading(false);
-            }
-
-            if (result?.error) throw new Error(result.data?.message || "Filter failed");
-            else {
-                const pagination = result.pagination?.pagination || result.pagination || {};
-                return {
-                    data: result.data || [],
-                    total: pagination.totalPages || result.pagination?.totalPages || 0,
-                    totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
-                    currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-                    pageSize: pagination.limit || pageSize,
-                };
-            }
-        },
-        [setLoading]
-    );
-
+    
     useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [customerSubCategoryOptions, routeOptions, warehouseOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, routeId]);
@@ -331,8 +296,7 @@ export default function AgentCustomer() {
                     config={{
                         api: {
                             list: fetchAgentCustomers,
-                            search: search,
-                            filterBy: filterBy
+                            search: search
                         },
                         header: {
                             title: "Agent Customer",
@@ -402,49 +366,6 @@ export default function AgentCustomer() {
                             ],
                             searchBar: false,
                             columnFilter: true,
-                            filterByFields: [
-                                {
-                                    key: "date_change",
-                                    label: "Date Range",
-                                    type: "dateChange"
-                                },
-                                {
-                                    key: "warehouse",
-                                    label: "Warehouse",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-                                },
-                                {
-                                    key: "route_id",
-                                    label: "Route",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(routeOptions) ? routeOptions : [],
-                                },
-                                {
-                                    key: "outlet_channel_id",
-                                    label: "Outlet Channel",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(channelOptions) ? channelOptions : [],
-                                },
-                                {
-                                    key: "category_id",
-                                    label: "Category",
-                                    type: "select",
-                                    options: Array.isArray(itemCategoryOptions) ? itemCategoryOptions : [],
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                },
-                                {
-                                    key: "subcategory_id",
-                                    label: "Subcategory",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(customerSubCategoryOptions) ? customerSubCategoryOptions : [],
-                                },
-                            ],
                             actions: [
                                 <SidebarBtn
                                     key={0}
