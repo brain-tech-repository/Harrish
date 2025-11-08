@@ -1411,10 +1411,9 @@ export const updateSalesmanStatus = async (body: object) => {
 
 export const projectList = async (params: Params) => {
   try {
-    const res = await API.get("/api/settings/projects-list", {
+    const res = await API.get(`/api/settings/projects-list`, {
       params: params,
     });
-
     return res.data;
   } catch (error) {
     console.error("Project List failed ❌", error);
@@ -3079,16 +3078,6 @@ export const editWarehouseStock = async (uuid: string, payload: object) => {
 export const getWarehouseStockById = async (uuid: string) => {
   try {
     const res = await API.get(`/api/settings/warehouse-stocks/${uuid}`);
-
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const projectList = async (params: Params) => {
-  try {
-    const res = await API.get(`api/settings/projects-list`, {params:params});
 
     return res.data;
   } catch (error: unknown) {

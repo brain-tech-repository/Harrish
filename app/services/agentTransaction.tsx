@@ -130,17 +130,6 @@ export const editNewCustomer = async (uuid: string, payload: object) => {
 };
 
 
-// Agent Customer Order
-export const agentOrderList = async (params: Params) => {
-  try {
-    const res = await API.get(`/api/agent_transaction/orders/list`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-
 type SalesmanUnloadParams = {
   start_date?: string;
   end_date?: string;

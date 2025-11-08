@@ -32,6 +32,7 @@ export default function AddEditSalesmanLoad() {
     fetchSalesmanByRouteOptions,
     projectOptions,
   } = useAllDropdownListData();
+  console.log(useAllDropdownListData())
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
@@ -157,10 +158,10 @@ export default function AddEditSalesmanLoad() {
         try {
           const res = await salesmanLoadHeaderById(String(loadUUID), {});
           const data = res?.data ?? res;
-          
+
           const warehouseId = data?.warehouse?.id?.toString() || "";
           const salesmanId = data?.salesman?.id?.toString() || "";
-          
+
           setForm({
             salesman_type: data?.salesman_type || "",
             warehouse: data?.warehouse?.id?.toString() || "",
@@ -287,9 +288,9 @@ export default function AddEditSalesmanLoad() {
         warehouse_id: Number(form.warehouse),
         route_id: Number(form.route),
         salesman_id: Number(form.salesman),
-        salesman_type: String(form.salesman_type),
+        salesman_type: Number(form.salesman_type),
         project_type:
-          form.salesman_type == "Project" ? Number(form.project_type) : null,
+          form.salesman_type == "6" ? Number(form.project_type) : null,
         details: itemData
           .filter((i) => i.Quantity && Number(i.Quantity) > 0)
           .map((i) => ({
@@ -404,29 +405,29 @@ export default function AddEditSalesmanLoad() {
         {/* --- Form Fields --- */}
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
           <div className="flex flex-col w-full sm:w-[30%]">
-                      <InputFields
-                        label="Salesman Type"
-                        name="salesman_type"
-                        value={form.salesman_type}
-                        options={salesmanTypeOptions}
-                        onChange={(e) => handleChange("salesman_type", e.target.value)}
-                      />
-                      {errors.salesman_type && (
-                        <p className="text-red-500 text-sm">{errors.salesman_type}</p>
-                      )}
-                    </div>
-          
-                    {/* Show Project List only when salesman_type id = 36 */}
-                    {form.salesman_type === "6" && (
-                      <div className="flex flex-col w-full sm:w-[30%]">
-                        <InputFields
-                          label="Project List"
-                          value={form.project_type}
-                          options={projectOptions}
-                          onChange={(e) => handleChange("project_type", e.target.value)}
-                        />
-                      </div>
-                    )}
+            <InputFields
+              label="Salesman Type"
+              name="salesman_type"
+              value={form.salesman_type}
+              options={salesmanTypeOptions}
+              onChange={(e) => handleChange("salesman_type", e.target.value)}
+            />
+            {errors.salesman_type && (
+              <p className="text-red-500 text-sm">{errors.salesman_type}</p>
+            )}
+          </div>
+
+          {/* Show Project List only when salesman_type id = 36 */}
+          {form.salesman_type === "6" && (
+            <div className="flex flex-col w-full sm:w-[30%]">
+              <InputFields
+                label="Project List"
+                value={form.project_type}
+                options={projectOptions}
+                onChange={(e) => handleChange("project_type", e.target.value)}
+              />
+            </div>
+          )}
           <InputFields
             label="Warehouse"
             name="warehouse"
@@ -471,7 +472,7 @@ export default function AddEditSalesmanLoad() {
 
         {/* --- Table --- */}
         <div>
-          
+
         </div>
         <Table
           data={itemData.map((row, idx) => ({ ...row, idx: idx.toString() }))}

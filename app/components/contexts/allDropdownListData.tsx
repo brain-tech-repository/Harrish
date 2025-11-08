@@ -478,6 +478,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.osa_code && c.name ? `${c.osa_code} - ${c.name}` : (c.name ?? '')
   }))
+  console.log(projectOptions)
 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => ({
   value: String(c.id ?? ""),
@@ -864,8 +865,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         submenuList(),
         permissionList(),
         labelList(),
-        projectList({}),
         roleList(),
+        projectList({}),
       ]);
 
 
