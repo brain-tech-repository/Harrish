@@ -1024,6 +1024,14 @@ function TableFooter() {
 
     async function handlePageChange(pageNo: number) {
         if (pageNo < 0 || pageNo > totalPages - 1) return;
+        // notify any filter UI to clear its local state when page changes
+        try {
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("customTable:clearFilters"));
+            }
+        } catch (err) {
+            // ignore if event dispatch fails in unusual environments
+        }
         if (api?.list) {
             const result = await api.list(pageNo + 1, pageSize);
             const resolvedResult =
@@ -1304,6 +1312,37 @@ function FilterBy() {
             }
         }
     };
+
+    // Reset only local filter UI state (used when external actions like pagination change)
+    const resetLocalFilters = () => {
+        const cleared: Record<string, string | string[]> = {};
+        (config.header?.filterByFields || []).forEach((f: FilterField) => {
+            cleared[f.key] = f.isSingle === false ? [] : "";
+        });
+        setFilters(cleared);
+        setAppliedFilters(false);
+    };
+
+    // listen for global clear filter signal (e.g., page change) and reset local filters
+    useEffect(() => {
+        const handler = () => {
+            try {
+                resetLocalFilters();
+                setShowDropdown(false);
+            } catch (err) {
+                // swallow errors from handler
+                console.warn('Failed to reset filter UI state', err);
+            }
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('customTable:clearFilters', handler as EventListener);
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('customTable:clearFilters', handler as EventListener);
+            }
+        };
+    }, [config.header?.filterByFields]);
 
     return (
         <div className="relative">

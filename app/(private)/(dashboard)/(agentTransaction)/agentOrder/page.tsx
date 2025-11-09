@@ -12,7 +12,6 @@ import { useLoading } from "@/app/services/loadingContext";
 import { agentOrderList, changeStatusAgentOrder } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { filter } from "framer-motion/client";
 
 const columns = [
     { key: "created_at", label: "Order Date", showByDefault: true, render: (row: TableDataType) => <span className="font-bold cursor-pointer">{row.created_at.split("T")[0]}</span> },
@@ -98,36 +97,6 @@ export default function CustomerInvoicePage() {
             };
         }, [setLoading, showSnackbar]);
 
-    // const searchInvoices = useCallback(async (): Promise<searchReturnType> => {
-    //     try {
-    //         setLoading(true);
-    //         return {
-    //             data: [],
-    //             currentPage: 1,
-    //             pageSize: 10,
-    //             total: 0,
-    //         };
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }, [setLoading]);
-
-    const handleStatusChange = async (order_ids: (string | number)[] | undefined, status: number) => {
-        if (!order_ids || order_ids.length === 0) return;
-        const res = await changeStatusAgentOrder({
-            order_ids,
-            status: Number(status)
-        });
-
-        if (res.error) {
-            showSnackbar(res.data.message || "Failed to update status", "error");
-            throw new Error(res.data.message);
-        }
-        setRefreshKey(refreshKey + 1);
-        showSnackbar("Status updated successfully", "success");
-        return res;
-    }
-
     const filterBy = useCallback(
         async (
             payload: Record<string, string | number | null>,
@@ -177,50 +146,6 @@ export default function CustomerInvoicePage() {
                         api: { list: fetchOrders, filterBy: filterBy },
                         header: {
                             title: "Customer Orders",
-                            threeDot: [
-                                {
-                                    icon: "lucide:radio",
-                                    label: "Inactive",
-                                    showOnSelect: true,
-                                    showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if (!selectedRow || selectedRow.length === 0) return false;
-                                        const status = selectedRow?.map((id) => data[id].status).map(String);
-                                        return status?.includes("1") || false;
-                                    },
-                                    onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                                        const status: string[] = [];
-                                        const ids = selectedRow?.map((id) => {
-                                            const currentStatus = data[id].status;
-                                            if (!status.includes(currentStatus)) {
-                                                status.push(currentStatus);
-                                            }
-                                            return data[id].uuid;
-                                        })
-                                        handleStatusChange(ids, Number(0));
-                                    },
-                                },
-                                {
-                                    icon: "lucide:radio",
-                                    label: "Active",
-                                    showOnSelect: true,
-                                    showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if (!selectedRow || selectedRow.length === 0) return false;
-                                        const status = selectedRow?.map((id) => data[id].status).map(String);
-                                        return status?.includes("0") || false;
-                                    },
-                                    onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                                        const status: string[] = [];
-                                        const ids = selectedRow?.map((id) => {
-                                            const currentStatus = data[id].status;
-                                            if (!status.includes(currentStatus)) {
-                                                status.push(currentStatus);
-                                            }
-                                            return data[id].uuid;
-                                        })
-                                        handleStatusChange(ids, Number(1));
-                                    },
-                                },
-                            ],
                             searchBar: false,
                             columnFilter: true,
                             filterByFields: [

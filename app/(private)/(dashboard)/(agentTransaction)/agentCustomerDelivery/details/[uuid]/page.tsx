@@ -289,10 +289,10 @@ export default function OrderDetailPage() {
               {/* Notes Section */}
               <div className="hidden flex-col justify-end gap-[20px] w-full lg:flex lg:w-[400px]">
                 <div className="flex flex-col space-y-[10px]">
-                  <div className="font-semibold text-[#181D27]">Customer Note</div>
-                  <div>
-                    Please deliver between 10 AM to 1 PM. Contact before delivery.
-                  </div>
+                  {deliveryData?.comment && <><div className="font-semibold text-[#181D27]">Customer Note</div>
+                    <div>
+                      {deliveryData?.comment}
+                    </div></>}
                 </div>
                 <div className="flex flex-col space-y-[10px]">
                   <div className="font-semibold text-[#181D27]">
