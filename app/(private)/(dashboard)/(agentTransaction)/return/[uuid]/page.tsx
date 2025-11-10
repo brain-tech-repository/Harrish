@@ -17,6 +17,12 @@ import * as yup from "yup";
 import { warehouseListGlobalSearch, routeList, agentCustomerList, getCompanyCustomers, itemGlobalSearch } from "@/app/services/allApi";
 
 // TypeScript interfaces
+interface Uom {
+  id: string;
+  name?: string;
+  price?: string;
+}
+
 interface DeliveryDetail {
   item?: {
     id: number;
@@ -359,7 +365,14 @@ const handleWarehouseSearch = async (searchText: string) => {
   try {
     const response = await warehouseListGlobalSearch({ query: searchText });
     const data = Array.isArray(response?.data) ? response.data : [];
-    return data.map((warehouse: any) => ({
+    interface Warehouse {
+      id: number;
+      code?: string;
+      warehouse_code?: string;
+      name?: string;
+      warehouse_name?: string;
+    }
+    return data.map((warehouse: Warehouse) => ({
       value: String(warehouse.id),
       label: `${warehouse.code || warehouse.warehouse_code || ""} - ${warehouse.name || warehouse.warehouse_name || ""}`,
       code: warehouse.code || warehouse.warehouse_code,
@@ -375,7 +388,14 @@ const handleRouteSearch = async (searchText: string) => {
   try {
     const response = await routeList({ warehouse_id: form.warehouse, search: searchText, per_page: "50" });
     const data = Array.isArray(response?.data) ? response.data : [];
-    return data.map((route: any) => ({
+    interface Route {
+      id: number;
+      route_code?: string;
+      code?: string;
+      route_name?: string;
+      name?: string;
+    }
+    return data.map((route: Route) => ({
       value: String(route.id),
       label: `${route.route_code || route.code || ""} - ${route.route_name || route.name || ""}`,
       code: route.route_code || route.code,
@@ -396,20 +416,34 @@ const handleCustomerSearch = async (searchText: string) => {
       response = await agentCustomerList({ route_id: form.route, search: searchText, per_page: "50" });
     }
     const data = Array.isArray(response?.data) ? response.data : [];
-    return data.map((customer: any) => {
+    interface CompanyCustomer {
+      id: number;
+      osa_code?: string;
+      business_name?: string;
+    }
+    interface AgentCustomer {
+      id: number;
+      osa_code?: string;
+      outlet_name?: string;
+      customer_name?: string;
+      name?: string;
+    }
+    return data.map((customer: CompanyCustomer | AgentCustomer) => {
       if (form.customer_type === "1") {
         // Company customer: show osa_code - business_name
+        const company = customer as CompanyCustomer;
         return {
-          value: String(customer.id),
-          label: `${customer.osa_code || ""} - ${customer.business_name || ""}`.trim(),
-          name: customer.business_name || "",
+          value: String(company.id),
+          label: `${company.osa_code || ""} - ${company.business_name || ""}`.trim(),
+          name: company.business_name || "",
         };
       } else {
         // Agent customer
+        const agent = customer as AgentCustomer;
         return {
-          value: String(customer.id),
-          label:  `${customer.osa_code || ""} - ${customer.outlet_name || ""}` ,
-          name: customer.outlet_name || customer.customer_name || customer.name || '',
+          value: String(agent.id),
+          label:  `${agent.osa_code || ""} - ${agent.outlet_name || ""}` ,
+          name: agent.outlet_name || agent.customer_name || agent.name || '',
         };
       }
     });
@@ -423,7 +457,20 @@ const handleItemSearch = async (searchText: string) => {
   try {
     const response = await itemGlobalSearch({ query: searchText });
     const data = Array.isArray(response?.data) ? response.data : [];
-    return data.map((item: any) => ({
+    interface Item {
+      id: number;
+      item_code?: string;
+      code?: string;
+      name?: string;
+      uom?: Uom[];
+      uoms?: Uom[];
+    }
+    interface Uom {
+      id: string;
+      name?: string;
+      price?: string;
+    }
+    return data.map((item: Item) => ({
       value: String(item.id),
       label: `${item.item_code || item.code || ""} - ${item.name || ""}`,
       code: item.item_code || item.code,
@@ -555,7 +602,7 @@ const handleItemSearch = async (searchText: string) => {
                         // Find selected item and set UOM options
                         const selectedItem = option;
                         if (selectedItem && selectedItem.uoms && selectedItem.uoms.length > 0) {
-                          const uomOpts = (selectedItem.uoms as any[]).map((uom: any) => ({
+                          const uomOpts = (selectedItem.uoms as Uom[]).map((uom: Uom) => ({
                             value: uom.id || "",
                             label: uom.name || "",
                             price: uom.price || "0"
