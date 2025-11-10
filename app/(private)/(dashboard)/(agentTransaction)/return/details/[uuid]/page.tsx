@@ -8,7 +8,7 @@ import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { deliveryByUuid } from "@/app/services/agentTransaction";
+import { returnByUuid } from "@/app/services/agentTransaction";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
@@ -114,7 +114,7 @@ export default function OrderDetailPage() {
       (async () => {
         try {
           setLoading(true);
-          const response = await deliveryByUuid(uuid);
+          const response = await returnByUuid(uuid);
           const data = response?.data ?? response;
           setDeliveryData(data);
           
@@ -166,17 +166,14 @@ export default function OrderDetailPage() {
             className="cursor-pointer"
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-            Delivery Details
+            Return Details
           </h1>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-[12px] relative">
           <div className="gap-[12px] hidden sm:flex">
-            <BorderIconButton 
-              icon="lucide:edit-2" 
-              onClick={() => router.push(`/agentCustomerDelivery/${uuid}`)}
-            />
+            
             <BorderIconButton icon="lucide:printer" />
             <BorderIconButton icon="lucide:mail" />
             <BorderIconButton icon="mdi:message-outline" />
@@ -211,7 +208,7 @@ export default function OrderDetailPage() {
 
           <div className="flex flex-col items-end">
             <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-              DELIVERY
+              Return
             </span>
             <span className="text-primary text-[14px] tracking-[10px] mb-3">
               #{deliveryData?.delivery_code || ""}

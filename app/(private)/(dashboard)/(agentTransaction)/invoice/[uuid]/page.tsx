@@ -5,14 +5,14 @@ import Table from "@/app/components/customTable";
 import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useRouter, useParams } from "next/navigation";
-import { ChangeEvent, useState, useEffect, Fragment, useCallback } from "react";
+import { ChangeEvent, useState, useEffect, Fragment, useCallback,useRef } from "react";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { createInvoice, updateInvoice, invoiceByUuid, deliveryList } from "@/app/services/agentTransaction";
-import { warehouseListGlobalSearch, routeList, getCompanyCustomers, agentCustomerList, itemList } from "@/app/services/allApi";
+import { warehouseListGlobalSearch, routeList, getCompanyCustomers, agentCustomerList, itemGlobalSearch, genearateCode, saveFinalCode } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import * as yup from "yup";
@@ -50,6 +50,8 @@ interface CustomerLike {
     outlet_name?: string;
     customer_name?: string;
     name?: string;
+    osa_code?: string;
+    business_name?: string;
 }
 
 interface DeliveryDetail {
@@ -77,6 +79,7 @@ interface Delivery {
 interface InvoiceItemRow {
     item_id: string;
     itemName: string;
+    itemLabel: string; // Store the display label separately
     UOM: string;
     uom_id: string;
     Quantity: string;
@@ -104,7 +107,11 @@ export default function InvoiceddEditPage() {
     const uuid = params?.uuid as string | undefined;
     const isEditMode = uuid !== undefined && uuid !== "add";
     const [isSubmitting, setIsSubmitting] = useState(false);
-
+    const [skeleton, setSkeleton] = useState({
+        route: false,
+        customer: false,
+        item: false,
+      });
     const [form, setForm] = useState({
         customerType: "",
         warehouse: "",
@@ -126,6 +133,7 @@ export default function InvoiceddEditPage() {
     const [itemData, setItemData] = useState<InvoiceItemRow[]>([{
         item_id: "",
         itemName: "",
+        itemLabel: "",
         UOM: "",
         uom_id: "",
         Quantity: "1",
@@ -145,7 +153,138 @@ export default function InvoiceddEditPage() {
     
     // Store full delivery data for auto-population
     const [deliveriesById, setDeliveriesById] = useState<Record<string, Delivery>>({});
+        // Control and optimize item search calls
+        const itemSearchCacheRef = useRef<Record<string, { ts: number; options: (Option & { uoms?: ItemUom[] })[] }>>({});
+        const lastItemSearchRef = useRef<string>("");
+        const [suppressItemSearch, setSuppressItemSearch] = useState(false);
+      const codeGeneratedRef = useRef(false);
+      const [code, setCode] = useState("");
+      useEffect(() => {
+        setLoading(true);
+        
+        if (isEditMode && uuid) {
+          // Fetch existing invoice data in edit mode
+          (async () => {
+            try {
+              const res = await invoiceByUuid(uuid);
+              const data = res?.data ?? res;
+              
+              if (res && !res.error && data) {
+                // Set form data
+                setForm({
+                  customerType: data.customer_type ? String(data.customer_type) : "",
+                  warehouse: data.warehouse_id ? String(data.warehouse_id) : "",
+                  warehouse_name: data.warehouse_code && data.warehouse_name 
+                    ? `${data.warehouse_code} - ${data.warehouse_name}` 
+                    : (data.warehouse_name || ""),
+                  route: data.route_id ? String(data.route_id) : "",
+                  route_name: data.route_code && data.route_name 
+                    ? `${data.route_code} - ${data.route_name}` 
+                    : (data.route_name || ""),
+                  customer: data.customer_id ? String(data.customer_id) : "",
+                  customer_name: data.customer_name || "",
+                  invoice_type: data.invoice_type !== undefined ? String(data.invoice_type) : "",
+                  invoice_date: data.invoice_date || new Date().toISOString().slice(0, 10),
+                  note: data.comment || "",
+                  transactionType: data.transaction_type ? String(data.transaction_type) : "1",
+                  paymentTerms: data.payment_terms ? String(data.payment_terms) : "1",
+                  paymentTermsUnit: data.payment_terms_unit ? String(data.payment_terms_unit) : "1",
+                });
 
+                // Set invoice code
+                if (data.invoice_code) {
+                  setCode(data.invoice_code);
+                }
+
+                // Set item data from details
+                if (data.details && Array.isArray(data.details) && data.details.length > 0) {
+                  const newRowUomOptions: Record<string, { value: string; label: string; price?: string }[]> = {};
+                  const newFullItemsData: Record<string, FullItem> = { ...fullItemsData };
+
+                  const loadedItems: InvoiceItemRow[] = data.details.map((detail: any, index: number) => {
+                    const itemId = String(detail.item_id ?? "");
+                    const uomId = String(detail.uom_id ?? "");
+                    
+                    const itemCode = detail.item_code || "";
+                    const itemName = detail.item_name || "";
+                    const itemLabel = itemCode && itemName ? `${itemCode} - ${itemName}` : itemName;
+                    const uomName = detail.uom_name || "";
+                    
+                    // Create UOM option from detail
+                    if (uomId && uomName) {
+                      newRowUomOptions[String(index)] = [{
+                        value: uomId,
+                        label: uomName,
+                        price: String(detail.item_price || detail.itemvalue || "0"),
+                      }];
+                      
+                      // Store item data
+                      if (itemId) {
+                        newFullItemsData[itemId] = {
+                          id: itemId,
+                          item_code: itemCode,
+                          name: itemName,
+                          uom: [{
+                            id: uomId,
+                            name: uomName,
+                            price: detail.item_price || detail.itemvalue,
+                          }],
+                        };
+                      }
+                    }
+
+                    const qty = Number(detail.quantity ?? 0);
+                    const price = Number(detail.item_price || detail.itemvalue || 0);
+                    const discount = Number(detail.discount ?? 0);
+                    const vat = Number(detail.vat ?? 0);
+                    const net = Number(detail.net_total ?? 0);
+                    const total = Number(detail.item_total || detail.gross_total || detail.total || 0);
+
+                    return {
+                      item_id: itemId,
+                      itemName: itemLabel,
+                      UOM: uomId,
+                      uom_id: uomId,
+                      Quantity: String(qty || 1),
+                      Price: price.toFixed(2),
+                      Excise: String(detail.excise || "0.00"),
+                      Discount: discount.toFixed(2),
+                      Net: net.toFixed(2),
+                      Vat: vat.toFixed(2),
+                      Total: total.toFixed(2),
+                    };
+                  });
+
+                  setFullItemsData(newFullItemsData);
+                  setRowUomOptions(newRowUomOptions);
+                  setItemData(loadedItems);
+                }
+              } else {
+                showSnackbar("Failed to load invoice data", "error");
+              }
+            } catch (error) {
+              console.error("Error fetching invoice:", error);
+              showSnackbar("Failed to load invoice data", "error");
+            } finally {
+              setLoading(false);
+            }
+          })();
+        } else if (!isEditMode && !codeGeneratedRef.current) {
+          // Only generate code in add mode, not in edit mode
+          codeGeneratedRef.current = true;
+          (async () => {
+            const res = await genearateCode({
+              model_name: "invoice",
+            });
+            if (res?.code) {
+              setCode(res.code);
+            }
+            setLoading(false);
+          })();
+        } else {
+          setLoading(false);
+        }
+      }, [isEditMode, uuid, setLoading, showSnackbar]);
     // Search functions for AutoSuggestion components
     const handleWarehouseSearch = useCallback(async (searchText: string) => {
         try {
@@ -212,11 +351,23 @@ export default function InvoiceddEditPage() {
                 });
             }
             const data: CustomerLike[] = Array.isArray(response?.data) ? (response.data as CustomerLike[]) : [];
-            const options: Option[] = data.map((customer) => ({
-                value: String(customer.id),
-                label: customer.outlet_name || customer.customer_name || customer.name || '',
-                name: customer.outlet_name || customer.customer_name || customer.name || '',
-            }));
+            const options: Option[] = data.map((customer) => {
+                if (form.customerType === "2") {
+                    // Show osa_code - business_name for company customer
+                    return {
+                        value: String(customer.id),
+                        label: `${customer.osa_code || ""} - ${customer.business_name || ""}`.trim(),
+                        name: customer.business_name || "",
+                    };
+                } else {
+                    // Agent customer
+                    return {
+                        value: String(customer.id),
+                        label:  `${customer.osa_code || ""} - ${customer.outlet_name || ""}` ,
+                        name: customer.outlet_name || customer.customer_name || customer.name || '',
+                    };
+                }
+            });
             return options;
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -226,10 +377,29 @@ export default function InvoiceddEditPage() {
     }, [form.route, form.customerType, showSnackbar]);
 
     const handleItemSearch = useCallback(async (searchText: string) => {
+        // Prevent searches while we're auto-populating items from a delivery selection
+        if (suppressItemSearch) return [];
+        // Avoid API calls for empty/very short queries
+        const qRaw = (searchText || "").trim();
+        if (qRaw.length < 1) return [];
+        const q = qRaw.toLowerCase();
+
+        // Return cached results if available (30s TTL)
+        const cached = itemSearchCacheRef.current[q];
+        const now = Date.now();
+        if (cached && now - cached.ts < 30_000) {
+            return cached.options;
+        }
+
+        // Skip duplicate back-to-back queries
+        if (lastItemSearchRef.current === q && cached) {
+            return cached.options;
+        }
+
         try {
-            const response = await itemList({ 
-                name: searchText,
-                per_page: "50"
+            const response = await itemGlobalSearch({ 
+                query: q,
+                
             });
             const data = Array.isArray(response?.data) ? (response.data as unknown[]) : [];
 
@@ -269,13 +439,16 @@ export default function InvoiceddEditPage() {
             if (Object.keys(itemsMap).length > 0) {
                 setFullItemsData(prev => ({ ...prev, ...itemsMap }));
             }
+            // Cache and return
+            itemSearchCacheRef.current[q] = { ts: now, options };
+            lastItemSearchRef.current = q;
             return options;
         } catch (error) {
             console.error('Error fetching items:', error);
             showSnackbar('Failed to search items', 'error');
             return [];
         }
-    }, [showSnackbar]);
+    }, [showSnackbar, suppressItemSearch]);
 
     const handleDeliverySearch = useCallback(async (searchText: string) => {
         if (!form.warehouse) {
@@ -313,9 +486,12 @@ export default function InvoiceddEditPage() {
 
     // Validation schema
     const validationSchema = yup.object().shape({
-        invoice_type: yup.string().required("Invoice type is required"),
+        invoice_type: yup.string().required("Invoice Type is required"),
+        invoice_date: yup.string().required("Invoice Date is required"),
         warehouse: yup.string().required("Warehouse is required"),
         customer: yup.string().required("Customer is required"),
+        customerType: yup.string().required("Customer Type is required"),
+        route: yup.string().required("Route is required"),
     });
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -352,6 +528,7 @@ export default function InvoiceddEditPage() {
             {
                 item_id: "",
                 itemName: "",
+                itemLabel: "",
                 UOM: "",
                 uom_id: "",
                 Quantity: "1",
@@ -371,6 +548,7 @@ export default function InvoiceddEditPage() {
                 {
                     item_id: "",
                     itemName: "",
+                    itemLabel: "",
                     UOM: "",
                     uom_id: "",
                     Quantity: "1",
@@ -417,21 +595,21 @@ export default function InvoiceddEditPage() {
         if (form.invoice_type === "0" && form.customer) {
             const selectedDelivery = deliveriesById[form.customer];
             if (selectedDelivery) {
-                // Support both flat *_id and nested objects with id
                 const maybeRouteId = selectedDelivery.route_id ?? selectedDelivery.route?.id;
                 const maybeSalesmanId = selectedDelivery.salesman_id ?? selectedDelivery.salesman?.id;
                 const maybeCustomerId = selectedDelivery.customer_id ?? selectedDelivery.customer?.id;
 
                 routeId = maybeRouteId !== undefined ? Number(maybeRouteId) : undefined;
                 salesmanId = maybeSalesmanId !== undefined ? Number(maybeSalesmanId) : undefined;
-                // Prefer explicit or nested customer id; fallback to existing form value
                 customerId = maybeCustomerId !== undefined ? Number(maybeCustomerId) : (form.customer ? Number(form.customer) : undefined);
             }
         } else {
-            // Direct invoice uses chosen customer and optional route from form
             customerId = form.customer ? Number(form.customer) : undefined;
             routeId = form.route ? Number(form.route) : undefined;
         }
+
+        const now = new Date();
+        const invoiceTime = now.toTimeString().split(' ')[0]; // Gets "HH:mm:ss"
 
         return {
             invoice_type: Number(form.invoice_type),
@@ -440,20 +618,23 @@ export default function InvoiceddEditPage() {
             customer_type: form.customerType ? Number(form.customerType) : undefined,
             route_id: routeId,
             salesman_id: salesmanId,
-            // invoice_date removed per new requirement
+            invoice_date: form.invoice_date,
+            invoice_time: invoiceTime,
             gross_total: Number(grossTotal.toFixed(2)),
             discount: Number(discount.toFixed(2)),
             vat: Number(totalVat.toFixed(2)),
-            total: Number(finalTotal.toFixed(2)),
+            net_total: Number(netAmount.toFixed(2)),
+            total_amount: Number(finalTotal.toFixed(2)),
             comment: form.note || "",
             transaction_type: Number(form.transactionType),
             payment_terms: Number(form.paymentTerms),
             payment_terms_unit: Number(form.paymentTermsUnit),
+            status:"1",
             details: itemData
                 .filter(item => item.item_id && item.uom_id)
                 .map((item) => ({
                     item_id: Number(item.item_id),
-                    uom_id: Number(item.uom_id),
+                    uom: Number(item.uom_id),
                     quantity: Number(item.Quantity) || 0,
                     item_price: Number(item.Price) || 0,
                     vat: Number(item.Vat) || 0,
@@ -502,6 +683,19 @@ export default function InvoiceddEditPage() {
                 );
                 setIsSubmitting(false);
                 return;
+            }
+
+            // Save the generated code after successful creation (add mode only)
+            if (!isEditMode && code) {
+                try {
+                    await saveFinalCode({
+                        reserved_code: code,
+                        model_name: "invoice",
+                    });
+                } catch (e) {
+                    // Optionally handle error, but don't block success
+                    console.error("Failed to save final code:", e);
+                }
             }
 
             // Success
@@ -554,6 +748,16 @@ export default function InvoiceddEditPage() {
         }
     };
 
+    // Helper to check if all required fields are filled
+const isFormReadyForItems = [
+  form.customerType,
+  form.route,
+  form.warehouse,
+  form.customer,
+  form.invoice_type,
+  form.invoice_date
+].every(Boolean);
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-[20px]">
@@ -564,7 +768,7 @@ export default function InvoiceddEditPage() {
                         onClick={() => router.back()}
                     />
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-                        {isEditMode ? "Edit Invoice" : "Add Invoice"}
+                        {isEditMode ? "Update Invoice" : "Add Invoice"}
                     </h1>
                 </div>
             </div>
@@ -579,10 +783,10 @@ export default function InvoiceddEditPage() {
 
                     <div className="flex flex-col">
                         <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-                            Invoice
+                            I n v o i c e
                         </span>
                         <span className="text-primary text-[14px] tracking-[10px]">
-                            #W1O20933
+                            #{code}
                         </span>
                     </div>
                 </div>
@@ -601,6 +805,15 @@ export default function InvoiceddEditPage() {
                         onChange={handleChange}
                         error={errors.invoice_type}
                     />
+                    <InputFields
+                    required
+                                label="Invoice Date"
+                                type="date"
+                                name="invoice_date"
+                                value={form.invoice_date}
+                                onChange={handleChange}
+                                error={errors.invoice_date}
+                            />
                     {form.invoice_type === "0" && (
                         <>
                             <AutoSuggestion
@@ -641,6 +854,8 @@ export default function InvoiceddEditPage() {
                                 initialValue={form.customer_name}
                                 onSearch={handleDeliverySearch}
                                 onSelect={(option: Option) => {
+                                    // Temporarily suppress item search calls while we auto-populate rows
+                                    setSuppressItemSearch(true);
                                     setForm(prev => ({
                                         ...prev,
                                         customer: option.value,
@@ -718,6 +933,7 @@ export default function InvoiceddEditPage() {
                                             return {
                                                 item_id: itemId,
                                                 itemName: itemLabel,
+                                                itemLabel: itemLabel,
                                                 UOM: uomId,
                                                 uom_id: uomId,
                                                 Quantity: String(qty || 1),
@@ -745,6 +961,7 @@ export default function InvoiceddEditPage() {
                                             {
                                                 item_id: "",
                                                 itemName: "",
+                                                itemLabel: "",
                                                 UOM: "",
                                                 uom_id: "",
                                                 Quantity: "1",
@@ -757,6 +974,8 @@ export default function InvoiceddEditPage() {
                                             },
                                         ]);
                                     }
+                                    // Re-enable item search shortly after rows are set to avoid AutoSuggestion remount spam
+                                    setTimeout(() => setSuppressItemSearch(false), 300);
                                 }}
                                 onClear={() => {
                                     setForm(prev => ({
@@ -770,6 +989,7 @@ export default function InvoiceddEditPage() {
                                         {
                                             item_id: "",
                                             itemName: "",
+                                            itemLabel: "",
                                             UOM: "",
                                             uom_id: "",
                                             Quantity: "1",
@@ -791,6 +1011,7 @@ export default function InvoiceddEditPage() {
                     {form.invoice_type === "1" && (
                         <>
                             <InputFields
+                            required
                                 label="Customer Type"
                                 name="customerType"
                                 value={form.customerType}
@@ -799,6 +1020,7 @@ export default function InvoiceddEditPage() {
                                     { label: "Company Customer", value: "2" },
                                 ]}
                                 onChange={handleChange}
+                                error={errors.customerType}
                             />
                             <AutoSuggestion
                                 required
@@ -835,6 +1057,7 @@ export default function InvoiceddEditPage() {
                                 error={errors.warehouse}
                             />
                             <AutoSuggestion
+                            required
                                 label="Route"
                                 name="route"
                                 placeholder="Search route..."
@@ -893,13 +1116,7 @@ export default function InvoiceddEditPage() {
                                 disabled={!form.route}
                                 noOptionsMessage={!form.route ? "Please select a route first" : "No customers found"}
                             />
-                            <InputFields
-                                label="Invoice Date"
-                                type="date"
-                                name="invoice_date"
-                                value={form.invoice_date}
-                                onChange={handleChange}
-                            />
+                            
                         </>
                     )}
                 </div>
@@ -915,17 +1132,18 @@ export default function InvoiceddEditPage() {
                                 render: (row) => (
                                     <div style={{ minWidth: '390px', maxWidth: '390px' }}>
                                         <AutoSuggestion
-                                            // key forces remount when item changes so initialValue is applied
-                                            key={`${row.idx}-${row.item_id || row.itemName}`}
+                                            // Use stable key to prevent remount and auto-open on delivery selection
+                                            key={`item-${row.idx}`}
                                             placeholder="Search item..."
-                                            initialValue={row.itemName}
+                                            initialValue={row.itemLabel}
                                             onSearch={handleItemSearch}
                                             onSelect={(option: Option & { uoms?: ItemUom[] }) => {
                                                 const selectedItemId = option.value;
                                                 const newData = [...itemData];
                                                 const index = Number(row.idx);
                                                 newData[index].item_id = selectedItemId;
-                                                newData[index].itemName = option.label;
+                                                newData[index].itemName = selectedItemId;
+                                                newData[index].itemLabel = option.label;
 
                                                 // Get the full item data to access UOMs
                                                 const selectedItem = fullItemsData[selectedItemId];
@@ -966,6 +1184,7 @@ export default function InvoiceddEditPage() {
                                                 const index = Number(row.idx);
                                                 newData[index].item_id = "";
                                                 newData[index].itemName = "";
+                                                newData[index].itemLabel = "";
                                                 newData[index].uom_id = "";
                                                 newData[index].UOM = "";
                                                 newData[index].Price = "0";
@@ -976,6 +1195,7 @@ export default function InvoiceddEditPage() {
                                                 });
                                                 setItemData(newData);
                                             }}
+                                            disabled={!isFormReadyForItems}
                                         />
                                     </div>
                                 ),
@@ -993,7 +1213,7 @@ export default function InvoiceddEditPage() {
                                                 name="UOM"
                                                 options={uomOptions}
                                                 value={row.uom_id}
-                                                disabled={uomOptions.length === 0}
+                                                disabled={uomOptions.length === 0 || !isFormReadyForItems}
                                                 onChange={(e) => {
                                                     const selectedUomId = e.target.value;
                                                     const selectedUom = uomOptions.find(uom => uom.value === selectedUomId);
@@ -1163,25 +1383,7 @@ export default function InvoiceddEditPage() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col justify-end gap-[20px] w-full lg:hidden lg:w-[400px]">
-                            <div className="flex flex-col space-y-[10px]">
-                                <div className="font-semibold text-[#181D27]">
-                                    Note
-                                </div>
-                                <div>
-                                    Lorem ipsum, dolor sit amet consectetur
-                                    adipisicing elit. Sed dolor enim voluptatem
-                                    harum delectus perferendis atque fugiat
-                                    commodi maxime beatae.
-                                </div>
-                            </div>
-                            <div className="flex flex-col space-y-[10px]">
-                                <div className="font-semibold text-[#181D27]">
-                                    Transaction Type
-                                </div>
-                                <div>Payment On Delivery.</div>
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
 
