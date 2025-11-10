@@ -195,7 +195,8 @@ export default function OrderDetailPage() {
             <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px] border-b md:border-b-0 pb-4 md:pb-0">
               <span>From (Seller)</span>
               <div className="flex flex-col space-y-[10px]">
-                <span className="font-semibold">{data?.warehouse_name || "-"}</span>
+                <span className="font-semibold">{data?.warehouse_code && data?.warehouse_name  
+                  ? `${data?.warehouse_code} - ${data?.warehouse_name } ` : "-"}</span>
                 <span>{data?.warehouse_address ?? ""} {data?.warehouse_address && ", "}</span>
                 <span>
                   {data?.warehouse_contact && <>Phone: {data?.warehouse_contact}</>} <br /> {data?.warehouse_email && <>Email: {data?.warehouse_email}</>}
@@ -209,7 +210,7 @@ export default function OrderDetailPage() {
             <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
               <span>To (Customer)</span>
               <div className="flex flex-col space-y-[10px]">
-                <span className="font-semibold">{data?.customer_name && <>{data?.customer_name}</>}</span>
+                <span className="font-semibold">{data?.customer_code && data?.customer_name  ? `${data?.customer_code} - ${data?.customer_name}` : "-"}</span>
                 <span>{data?.customer_street && ` ${data?.customer_street}`}</span>
                 <span>
                   {data?.customer_contact && `Phone: ${data?.customer_contact}`} <br /> {data?.customer_email && `Email: ${data?.customer_email}`}

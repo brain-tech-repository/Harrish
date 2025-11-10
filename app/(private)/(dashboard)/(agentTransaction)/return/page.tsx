@@ -301,6 +301,6 @@ export default function CustomerInvoicePage() {
                         pageSize: 10,
                     }}
                 />
-        </div>
-    );
+        </div>
+    );
 }

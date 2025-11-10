@@ -246,7 +246,7 @@ export default function OrderDetailPage() {
               <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px] border-b md:border-b-0 pb-4 md:pb-0">
                 <span>From (Seller)</span>
                 <div className="flex flex-col space-y-[10px]">
-                  <span className="font-semibold">{deliveryData?.warehouse_name || "-"}</span>
+                  <span className="font-semibold">{deliveryData?.warehouse_code } - {deliveryData?.warehouse_name}</span>
                   {/* <span>{deliveryData?.warehouse ?? ""} {deliveryData?.warehouse && ", "}</span> */}
                   <span>
                     {/* {deliveryData?.warehouse_contact && <>Phone: {deliveryData?.warehouse_contact}</>} <br /> {data?.warehouse_email && <>Email: {data?.warehouse_email}</>} */}
@@ -260,7 +260,7 @@ export default function OrderDetailPage() {
               <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
                 <span>To (Customer)</span>
                 <div className="flex flex-col space-y-[10px]">
-                  <span className="font-semibold">{deliveryData?.customer_name && deliveryData?.customer_name}</span>
+                  <span className="font-semibold">{deliveryData?.customer_code } - {deliveryData?.customer_name}</span>
                   {/* <span>{deliveryData?.customer_address && deliveryData?.customer_address}</span> */}
                   <span>
                     {/* {deliveryData?.customer_phone && <>Phone: {deliveryData?.customer_phone || "-"}</>} <br /> */}
@@ -274,13 +274,13 @@ export default function OrderDetailPage() {
             <div className="flex md:justify-end">
               <div className="text-primary-bold text-[14px] md:text-right">
                 <div>
-                  {deliveryData?.invoice_date && <>Invoice Date: <span className="font-bold">{deliveryData?.invoice_date ? new Date(deliveryData.invoice_date).toLocaleDateString() : "-"}</span></>}
+                  Invoice Date: <span className="font-bold">{deliveryData?.invoice_date ? new Date(deliveryData.invoice_date).toLocaleDateString() : "-"}</span>
                 </div>
                 <div className="mt-2">
-                  {deliveryData?.route_name && <>Route: <span className="font-bold">{deliveryData?.route_name || "-"} - {deliveryData?.route_name || "-"}</span></>}
+                  Route: <span className="font-bold">{deliveryData?.route_code || "-"} - {deliveryData?.route_name || "-"}</span>
                 </div>
                 <div className="mt-2">
-                  {deliveryData?.salesman_name && <>Salesman: <span className="font-bold">{deliveryData?.salesman_name || "-"}</span></>}
+                  Salesman: <span className="font-bold">{deliveryData?.salesman_name || "-"}</span>
                 </div>
               </div>
             </div>
