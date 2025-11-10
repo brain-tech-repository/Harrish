@@ -10,14 +10,13 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
-import { genearateCode, itemGlobalSearch, saveFinalCode, warehouseListGlobalSearch } from "@/app/services/allApi";
-import { addAgentOrder, addExchange, agentOrderList, deliveryList } from "@/app/services/agentTransaction";
+import { agentCustomerGlobalSearch, agentCustomerList, genearateCode, itemGlobalSearch, itemList, pricingHeaderGetItemPrice, saveFinalCode, warehouseList, warehouseListGlobalSearch } from "@/app/services/allApi";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import * as Yup from "yup";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
-import { toTitleCase } from "@/app/(private)/utils/text";
+import { addExchange } from "@/app/services/agentTransaction";
 
 interface FormData {
   id: number,
@@ -57,76 +56,12 @@ interface FormData {
   volume: number
 }
 
-interface OrderData {
-  id: number,
-  uuid: string,
-  order_code: string,
-  warehouse_id: number,
-  warehouse_code: string,
-  warehouse_name: string,
-  warehouse_email: string,
-  warehouse_number: string,
-  warehouse_address: string,
-  customer: {
-    id: number,
-    code: string,
-    name: string,
-    email: string,
-    contact_no: string,
-    town: string,
-    district: string,
-    landmark: string
-  };
-  route_id: number,
-  route_code: string,
-  route_name: string,
-  salesman_id: string,
-  salesman_code: string,
-  salesman_name: string,
-  delivery_date: string,
-  comment: string,
-  status: number,
-  created_at: string,
-  details: {
-    id: number,
-    uuid: string,
-    header_id: number,
-    order_code: string,
-    item_id: number,
-    item: {
-      id: number,
-      code: string,
-      name: string;
-      price: number;
-    };
-    uom_id: number,
-    uom_name: string,
-    item_price: number,
-    quantity: number,
-    vat: number,
-    discount: number,
-    gross_total: number,
-    net_total: number,
-    total: number,
-    item_uoms: {
-      id: number,
-      item_id: number,
-      uom_type: string,
-      name: string,
-      price: string,
-      is_stock_keeping: boolean,
-      upc: string,
-      enable_for: string
-    }[],
-  }[]
-}
-
 interface ItemData {
   item_id: string;
   item_name: string;
   // stored human-readable label for a selected item (used when server results don't include it)
   item_label?: string;
-  UOM: { label: string; value: string; price?: string }[];
+  UOM: { label: string; value: string }[];
   uom_id?: string;
   Quantity: string;
   Price: string;
@@ -135,10 +70,10 @@ interface ItemData {
   Net: string;
   Vat: string;
   Total: string;
-  [key: string]: string | { label: string; value: string; price?: string }[] | undefined;
+  [key: string]: string | { label: string; value: string }[] | undefined;
 }
 
-export default function DeliveryAddEditPage() {
+export default function ExchangeAddEditPage() {
   const itemRowSchema = Yup.object({
     item_id: Yup.string().required("Please select an item"),
     uom_id: Yup.string().required("Please select a UOM"),
@@ -150,7 +85,12 @@ export default function DeliveryAddEditPage() {
 
   const validationSchema = Yup.object({
     warehouse: Yup.string().required("Warehouse is required"),
-    delivery: Yup.string().required("Delivery is required"),
+    customer: Yup.string().required("Customer is required"),
+    delivery_date: Yup.string()
+      .required("Delivery date is required")
+      .test("is-date", "Delivery date must be a valid date", (val) => {
+        return Boolean(val && !Number.isNaN(new Date(val).getTime()));
+      }),
     note: Yup.string().max(1000, "Note is too long"),
     items: Yup.array().of(itemRowSchema),
   });
@@ -160,21 +100,20 @@ export default function DeliveryAddEditPage() {
   const { setLoading } = useLoading();
   const [skeleton, setSkeleton] = useState({
     route: false,
-    delivery: false,
+    customer: false,
     item: false,
   });
-  const [filteredDeliveryOptions, setFilteredDeliveryOptions] = useState<{ label: string; value: string }[]>([]);
+  const [filteredCustomerOptions, setFilteredCustomerOptions] = useState<{ label: string; value: string }[]>([]);
   const [filteredWarehouseOptions, setFilteredWarehouseOptions] = useState<{ label: string; value: string }[]>([]);
   const form = {
     warehouse: "",
     route: "",
-    delivery: "",
+    customer: "",
     note: "",
     delivery_date: new Date().toISOString().slice(0, 10),
   };
 
-  const [deliveryData, setDeliveryData] = useState<OrderData[]>([]);
-  const [searchedItem, setSearchedItem] = useState<FormData[] | null>(null);
+  const [exchangeData, setExchangeData] = useState<FormData[]>([]);
   const [itemsOptions, setItemsOptions] = useState<{ label: string; value: string }[]>([]);
   const [itemData, setItemData] = useState<ItemData[]>([
     {
@@ -262,18 +201,18 @@ export default function DeliveryAddEditPage() {
       return;
     }
     const data = res?.data || [];
-    setSearchedItem(data);
-    const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
-      value: String(item.id),
-      label: (item.code ?? item.item_code ?? item.erp_code ?? "") + " - " + (item.name ?? "")
-    }));
-    // Merge newly fetched options with existing ones so previously selected items remain available
-    setItemsOptions((prev: { label: string; value: string }[] = []) => {
-      const map = new Map<string, { label: string; value: string }>();
-      prev.forEach((o) => map.set(o.value, o));
-      options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
-      return Array.from(map.values());
-    });
+    setExchangeData(data);
+      const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
+        value: String(item.id),
+        label: (item.code ?? item.item_code ?? item.erp_code ?? "") + " - " + (item.name ?? "")
+      }));
+      // Merge newly fetched options with existing ones so previously selected items remain available
+      setItemsOptions((prev: { label: string; value: string }[] = []) => {
+        const map = new Map<string, { label: string; value: string }>();
+        prev.forEach((o) => map.set(o.value, o));
+        options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
+        return Array.from(map.values());
+      });
     setSkeleton({ ...skeleton, item: false });
     return options;
   };
@@ -281,9 +220,6 @@ export default function DeliveryAddEditPage() {
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
   useEffect(() => {
-    setSkeleton({ ...skeleton, item: true });
-    fetchItem("");
-
     // generate code
     if (!codeGeneratedRef.current) {
       codeGeneratedRef.current = true;
@@ -317,15 +253,15 @@ export default function DeliveryAddEditPage() {
         item.Quantity = "1";
         item.item_label = "";
       } else {
-        const selectedOrder = searchedItem?.find((order: FormData) => String(order.id) === value) ?? null;
-        item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
-        item.item_name = selectedOrder?.name ?? "";
-        item.UOM = selectedOrder?.item_uoms?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
-        item.uom_id = selectedOrder?.item_uoms?.[0]?.id ? String(selectedOrder.item_uoms[0].id) : "";
-        item.Price = selectedOrder?.item_uoms?.[0]?.price ? String(selectedOrder.item_uoms[0].price) : "";
+        const selectedExchange = exchangeData.find((exchange: FormData) => exchange.id.toString() === value);
+        item.item_id = selectedExchange ? String(selectedExchange.id || value) : value;
+        item.item_name = selectedExchange?.name ?? "";
+        item.UOM = selectedExchange?.item_uoms?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
+        item.uom_id = selectedExchange?.item_uoms?.[0]?.id ? String(selectedExchange.item_uoms[0].id) : "";
+        item.Price = selectedExchange?.item_uoms?.[0]?.price ? String(selectedExchange.item_uoms[0].price) : "";
         item.Quantity = "1";
         // persist a readable label
-        const computedLabel = selectedOrder ? `${selectedOrder.item_code ?? selectedOrder.erp_code ?? ''}${selectedOrder.item_code || selectedOrder.erp_code ? ' - ' : ''}${selectedOrder.name ?? ''}` : "";
+        const computedLabel = selectedExchange ? `${selectedExchange.item_code ?? selectedExchange.erp_code ?? ''}${selectedExchange.item_code || selectedExchange.erp_code ? ' - ' : ''}${selectedExchange.name ?? ''}` : "";
         item.item_label = computedLabel;
         // ensure the selected item is available in itemsOptions
         if (item.item_label) {
@@ -380,6 +316,30 @@ export default function DeliveryAddEditPage() {
     ]);
   };
 
+  // Add an item from the fetched exchangeData list into the itemData rows
+  const handleAddItemFromList = (exchange: FormData) => {
+    const newRow: ItemData = {
+      item_id: String(exchange.id ?? ""),
+      item_name: exchange.name ?? "",
+      item_label: `${exchange.item_code ?? exchange.erp_code ?? ""}${exchange.item_code || exchange.erp_code ? ' - ' : ''}${exchange.name ?? ''}`,
+      UOM: exchange.item_uoms?.map(uom => ({ label: uom.name, value: String(uom.id), price: uom.price })) || [],
+      uom_id: exchange.item_uoms?.[0]?.id ? String(exchange.item_uoms[0].id) : "",
+      Quantity: "1",
+      Price: exchange.item_uoms?.[0]?.price ? String(exchange.item_uoms[0].price) : "",
+      Excise: "0.00",
+      Discount: "0.00",
+      Net: "0.00",
+      Vat: "0.00",
+      Total: "0.00",
+    };
+    setItemData((prev) => [...prev, newRow]);
+    // ensure itemsOptions contains this selection so AutoSuggestion can show it
+    setItemsOptions((prev: { label: string; value: string }[] = []) => {
+      if (prev.some(o => o.value === String(exchange.id))) return prev;
+      return [...prev, { value: String(exchange.id), label: newRow.item_label as string }];
+    });
+  };
+
   const handleRemoveItem = (index: number) => {
     if (itemData.length <= 1) {
       setItemData([
@@ -425,15 +385,15 @@ export default function DeliveryAddEditPage() {
 
   const generatePayload = (values?: FormikValues) => {
     return {
-      order_code: code,
+      exchange_code: code,
       warehouse_id: Number(values?.warehouse) || null,
-      customer_id: Number(values?.customer_id) || null,
+      customer_id: Number(values?.customer) || null,
       delivery_date: values?.delivery_date || form.delivery_date,
-      // gross_total: Number(grossTotal.toFixed(2)),
+      gross_total: Number(grossTotal.toFixed(2)),
       vat: Number(totalVat.toFixed(2)),
       net_amount: Number(netAmount.toFixed(2)),
       total: Number(finalTotal.toFixed(2)),
-      // discount: Number(discount.toFixed(2)),
+      discount: Number(discount.toFixed(2)),
       comment: values?.note || "",
       status: 1,
       details: itemData.map((item, i) => ({
@@ -472,22 +432,22 @@ export default function DeliveryAddEditPage() {
       const res = await addExchange(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Exchange", "error");
-        console.error("Create Exchange error:", res);
+        console.error("Create exchange error:", res);
       } else {
         try {
           await saveFinalCode({
-            reserved_code: code,
-            model_name: "exchange",
+              reserved_code: code,
+              model_name: "exchange",
           });
         } catch (e) {
-          // Optionally handle error, but don't block success
+            // Optionally handle error, but don't block success
         }
         showSnackbar("Exchange created successfully", "success");
         router.push("/exchange");
       }
     } catch (err) {
       console.error(err);
-      showSnackbar("Failed to submit order", "error");
+      showSnackbar("Failed to submit exchange", "error");
     } finally {
       if (formikHelpers && typeof formikHelpers.setSubmitting === "function") {
         formikHelpers.setSubmitting(false);
@@ -504,28 +464,24 @@ export default function DeliveryAddEditPage() {
     // { key: "Delivery Charges", value: `AED ${toInternationalNumber(0.00)}` },
   ];
 
-  const fetchAgentDeliveries = async (values: FormikValues, search: string) => {
-    const res = await deliveryList({
+  const fetchAgentCustomers = async (values: FormikValues, search: string) => {
+    const res = await agentCustomerGlobalSearch({
       warehouse_id: values.warehouse,
       query: search || "",
       per_page: "10"
     });
     if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch Deliveries", "error");
-      setSkeleton({ ...skeleton, delivery: false });
+      showSnackbar(res.data?.message || "Failed to fetch customers", "error");
+      setSkeleton({ ...skeleton, customer: false });
       return;
     }
     const data = res?.data || [];
-    const options = data.map((delivery: { id: number; osa_code: string; customer_name: string, customer: { code: string, name: string }, delivery_code: string; }) => {
-      const capitalizedCustomerName = toTitleCase(String(delivery.customer?.name || ""));
-      return {
-        value: String(delivery.id),
-        label: `${delivery.delivery_code ? delivery.delivery_code : ""} (${delivery.customer?.code ? delivery.customer.code : ""} - ${capitalizedCustomerName})`,
-      };
-    });
-    setFilteredDeliveryOptions(options);
-    setDeliveryData(data);;
-    setSkeleton({ ...skeleton, delivery: false });
+    const options = data.map((customer: { id: number; osa_code: string; name: string }) => ({
+      value: String(customer.id),
+      label: customer.osa_code + " - " + customer.name
+    }));
+    setFilteredCustomerOptions(options);
+    setSkeleton({ ...skeleton, customer: false });
     return options;
   }
 
@@ -537,13 +493,13 @@ export default function DeliveryAddEditPage() {
     });
 
     if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch Warehouses", "error");
+      showSnackbar(res.data?.message || "Failed to fetch customers", "error");
       return;
     }
     const data = res?.data || [];
     const options = data.map((warehouse: { id: number; warehouse_code: string; warehouse_name: string }) => ({
       value: String(warehouse.id),
-      label: warehouse.warehouse_code + " - " + warehouse.warehouse_name
+      label:  warehouse.warehouse_code + " - " + warehouse.warehouse_name
     }));
     setFilteredWarehouseOptions(options);
     return options;
@@ -619,17 +575,17 @@ export default function DeliveryAddEditPage() {
                       onSelect={(opt) => {
                         if (values.warehouse !== opt.value) {
                           setFieldValue("warehouse", opt.value);
-                          setSkeleton((prev) => ({ ...prev, delivery: true }));
-                          setFieldValue("delivery", "");
+                          setSkeleton((prev) => ({ ...prev, customer: true }));
+                          setFieldValue("customer", "");
                         } else {
                           setFieldValue("warehouse", opt.value);
                         }
                       }}
                       onClear={() => {
                         setFieldValue("warehouse", "");
-                        setFieldValue("delivery", "");
-                        setFilteredDeliveryOptions([]);
-                        setSkeleton((prev) => ({ ...prev, delivery: false }));
+                        setFieldValue("customer", "");
+                        setFilteredCustomerOptions([]);
+                        setSkeleton((prev) => ({ ...prev, customer: false }));
                       }}
                       error={
                         touched.warehouse &&
@@ -640,55 +596,27 @@ export default function DeliveryAddEditPage() {
                   <div>
                     <AutoSuggestion
                       required
-                      label="Delivery"
-                      name="delivery"
-                      placeholder="Search delivery"
-                      onSearch={(q) => { return fetchAgentDeliveries(values, q) }}
-                      initialValue={filteredDeliveryOptions.find(o => o.value === String(values?.delivery))?.label || ""}
+                      label="Customer"
+                      name="customer"
+                      placeholder="Search customer"
+                      onSearch={(q) => {console.log("Searching customer:", q); return fetchAgentCustomers(values, q)}}
+                      initialValue={filteredCustomerOptions.find(o => o.value === String(values?.customer))?.label || ""}
                       onSelect={(opt) => {
-                        console.log("selected delivery", opt.value);
-                        if (values.delivery !== opt.value) {
-                          setFieldValue("delivery", opt.value);
-                          // find the selected delivery and map its details to the ItemData shape
-                          const currentDelivery = deliveryData.find(o => String(o.id) === opt.value);
-                          setFieldValue("customer_id", currentDelivery?.customer.id || "");
-                          console.log("Selected delivery:", currentDelivery);
-                          const details = currentDelivery?.details ?? [];
-                          const mapped = details.map(d => {
-                            const qty = Number(d.quantity || 0);
-                            const price = Number(d.item_price || 0);
-                            const computedTotal = d.total != null ? Number(d.total) : qty * price;
-                            const computedVat = d.vat != null ? Number(d.vat) : 0;
-                            const preVat = computedTotal - computedVat;
-                            return {
-                              item_id: String(d.item.id ?? ""),
-                              item_name: d.item.name ?? "",
-                              item_label: `${d.item.code ?? ""}${d.item.code ? ' - ' : ''}${d.item.name ?? ""}`,
-                              UOM: d.item_uoms ? d.item_uoms.map((uom: any) => ({ label: uom.name ?? "", value: String(uom.id), price: String(uom.price ?? "") })) : [],
-                              uom_id: d.uom_id ? String(d.uom_id) : "",
-                              Quantity: String(d.quantity ?? "1"),
-                              Price: d.item_price != null ? String(d.item_price) : "0.00",
-                              Excise: String((d as any).excise ?? "0.00"),
-                              Discount: String(d.discount ?? "0.00"),
-                              Net: String(d.net_total ?? d.net_total ?? computedTotal - computedVat),
-                              Vat: String(computedVat.toFixed ? computedVat.toFixed(2) : String(computedVat)),
-                              Total: String(computedTotal.toFixed ? computedTotal.toFixed(2) : String(computedTotal)),
-                              preVat: String(preVat.toFixed ? preVat.toFixed(2) : String(preVat)),
-                            } as ItemData;
-                          });
-                          setItemData(mapped.length ? mapped : [{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
+                        if (values.customer !== opt.value) {
+                          setFieldValue("customer", opt.value);
+                        } else {
+                          setFieldValue("customer", opt.value);
                         }
                       }}
                       onClear={() => {
-                        setFieldValue("delivery", "");
-                        setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
+                        setFieldValue("customer", "");
                       }}
                       disabled={values.warehouse === ""}
-                      error={touched.delivery && (errors.delivery as string)}
+                      error={touched.customer && (errors.customer as string)}
                       className="w-full"
                     />
                   </div>
-                  {/* <div>
+                  <div>
                     <InputFields
                       required
                       label="Delivery Date"
@@ -698,9 +626,11 @@ export default function DeliveryAddEditPage() {
                       min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
                       onChange={handleChange}
                     />
-                  </div> */}
+                  </div>
                 </div>
 
+                <div className="mt-6 mb-6">
+                <h3 className="text-[16px] font-semibold mb-2">Return</h3>
                 <Table
                   data={itemData.map((row, idx) => ({
                     ...row,
@@ -717,6 +647,7 @@ export default function DeliveryAddEditPage() {
                     PreVat: String(row.PreVat ?? ""),
                   }))}
                   config={{
+                    showNestedLoading: false,
                     columns: [
                       {
                         key: "item_id",
@@ -729,10 +660,8 @@ export default function DeliveryAddEditPage() {
                           // Find the option for the current row (if still present) and fall back to stored label
                           // so the selection remains visible even when the option isn't returned by a search.
                           const matchedOption = itemsOptions.find((o) => o.value === row.item_id);
-                          const fallbackOption = row.item_label ? { value: row.item_id, label: row.item_label } : undefined;
-                          const selectedOpt = matchedOption ?? fallbackOption;
-                          const initialLabel = selectedOpt?.label ?? "";
-                          // console.log(row);
+                          const initialLabel = matchedOption?.label ?? (row.item_label as string) ?? "";
+                          console.log(row);
                           return (
                             <div>
                               <AutoSuggestion
@@ -741,7 +670,6 @@ export default function DeliveryAddEditPage() {
                                 placeholder="Search item"
                                 onSearch={(q) => fetchItem(q)}
                                 initialValue={initialLabel}
-                                selectedOption={selectedOpt ?? null}
                                 onSelect={(opt) => {
                                   if (opt.value !== row.item_id) {
                                     recalculateItem(Number(row.idx), "item_id", opt.value);
@@ -750,7 +678,7 @@ export default function DeliveryAddEditPage() {
                                 onClear={() => {
                                   recalculateItem(Number(row.idx), "item_id", "");
                                 }}
-                                disabled={!values.delivery}
+                                disabled={!values.customer}
                                 error={err && err}
                                 className="w-full"
                               />
@@ -775,7 +703,7 @@ export default function DeliveryAddEditPage() {
                                 width="max-w-[150px]"
                                 options={options}
                                 searchable={true}
-                                disabled={options.length === 0 || !values.delivery}
+                                disabled={options.length === 0 || !values.customer}
                                 showSkeleton={Boolean(itemLoading[idx]?.uom)}
                                 onChange={(e) => {
                                   recalculateItem(Number(row.idx), "uom_id", e.target.value)
@@ -804,7 +732,7 @@ export default function DeliveryAddEditPage() {
                                 // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={!row.uom_id || !values.delivery}
+                                disabled={ !row.uom_id || !values.customer}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement).value;
                                   const intPart = raw.split('.')[0];
@@ -832,7 +760,7 @@ export default function DeliveryAddEditPage() {
                           if (!price || price === "" || price === "0" || price === "-") {
                             return <span className="text-gray-400">-</span>;
                           }
-                          return <span>{toInternationalNumber(price)}</span>;
+                          return <span>{price}</span>;
                         }
                       },
                       // { key: "excise", label: "Excise", render: (row) => <span>{toInternationalNumber(row.Excise) || "0.00"}</span> },
@@ -861,9 +789,51 @@ export default function DeliveryAddEditPage() {
                         ),
                       },
                     ],
-                    showNestedLoading: false,
                   }}
                 />
+                </div>
+
+                {/* --- Available items list (table) --- */}
+                <div className="mt-6 mb-6">
+                  <h3 className="text-[16px] font-semibold mb-2">Collect</h3>
+                  <Table
+                    data={(exchangeData || []).map((it: any) => ({
+                      id: String(it.id ?? ""),
+                      code: it.item_code ?? it.erp_code ?? "",
+                      name: it.name ?? "",
+                      brand: it.brand ?? "",
+                      uom_count: Array.isArray(it.item_uoms) ? it.item_uoms.length : 0,
+                      price: it.item_uoms && it.item_uoms[0] ? String(it.item_uoms[0].price) : "",
+                      raw: it,
+                    }))}
+                    config={{
+                      showNestedLoading: false,
+                      columns: [
+                        { key: "code", label: "Code", width: 150, render: (r) => <span>{r.code}</span> },
+                        { key: "name", label: "Name", width: 300, render: (r) => <span>{r.name}</span> },
+                        { key: "brand", label: "Brand", render: (r) => <span>{r.brand}</span> },
+                        { key: "uom_count", label: "UOMs", align: "center", render: (r) => <span>{r.uom_count}</span> },
+                        { key: "price", label: "Price", align: "right", render: (r) => <span>{r.price || '-'}</span> },
+                        {
+                          key: "action",
+                          label: "",
+                          render: (r) => (
+                            <button
+                              type="button"
+                              className="text-primary text-sm"
+                              onClick={() => {
+                                const original = exchangeData.find((o: any) => String(o.id) === String(r.id));
+                                if (original) handleAddItemFromList(original as FormData);
+                              }}
+                            >
+                              Add
+                            </button>
+                          ),
+                        },
+                      ],
+                    }}
+                  />
+                </div>
 
                 {/* --- Summary --- */}
                 <div className="flex justify-between text-primary gap-0 mb-10">
@@ -908,7 +878,6 @@ export default function DeliveryAddEditPage() {
                 </div>
 
                 {/* --- Buttons --- */}
-                <hr className="text-[#D5D7DA]" />
                 <div className="flex justify-end gap-4 mt-6">
                   <button
                     type="button"

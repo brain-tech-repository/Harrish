@@ -11,7 +11,7 @@ import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
 import { genearateCode, itemGlobalSearch, saveFinalCode, warehouseListGlobalSearch } from "@/app/services/allApi";
-import { addAgentOrder, agentOrderList } from "@/app/services/agentTransaction";
+import { addAgentOrder, agentOrderList, createDelivery } from "@/app/services/agentTransaction";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import * as Yup from "yup";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -274,9 +274,6 @@ export default function DeliveryAddEditPage() {
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
   useEffect(() => {
-    setSkeleton({ ...skeleton, item: true });
-    fetchItem("");
-
     // generate code
     if (!codeGeneratedRef.current) {
       codeGeneratedRef.current = true;
@@ -462,7 +459,7 @@ export default function DeliveryAddEditPage() {
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
       console.log("Submitting payload:", payload);
-      const res = await addAgentOrder(payload);
+      const res = await createDelivery(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Delivery", "error");
         console.error("Create Delivery error:", res);
@@ -621,6 +618,7 @@ export default function DeliveryAddEditPage() {
                       onClear={() => {
                         setFieldValue("warehouse", "");
                         setFieldValue("delivery", "");
+                        setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                         setFilteredDeliveryOptions([]);
                         setSkeleton((prev) => ({ ...prev, delivery: false }));
                       }}

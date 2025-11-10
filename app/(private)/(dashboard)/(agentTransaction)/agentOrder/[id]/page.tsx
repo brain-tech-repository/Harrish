@@ -220,9 +220,6 @@ export default function OrderAddEditPage() {
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
   useEffect(() => {
-    setSkeleton({ ...skeleton, item: true });
-    fetchItem("");
-
     // generate code
     if (!codeGeneratedRef.current) {
       codeGeneratedRef.current = true;
@@ -554,6 +551,7 @@ export default function OrderAddEditPage() {
                       onSelect={(opt) => {
                         if (values.warehouse !== opt.value) {
                           setFieldValue("warehouse", opt.value);
+                          setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                           setSkeleton((prev) => ({ ...prev, customer: true }));
                           setFieldValue("customer", "");
                         } else {

@@ -230,14 +230,7 @@ export default function CustomerInvoicePage() {
                                     router.push(
                                         `/exchange/details/${row.uuid}`
                                     ),
-                            },
-                            {
-                                icon: "lucide:edit-2",
-                                onClick: (row: TableDataType) =>
-                                    router.push(
-                                        `/exchange/${row.uuid}`
-                                    ),
-                            },
+                            }
                         ],
                         pageSize: 10,
                     }}
