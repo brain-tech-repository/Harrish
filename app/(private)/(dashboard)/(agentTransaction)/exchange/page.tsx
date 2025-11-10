@@ -44,47 +44,64 @@ const columns = [
     { key: "delivery_code", label: "Delivery Code",showByDefault: true },
     // { key: "order_code", label: "Order Code",showByDefault: true },
     {
-        key: "warehouse_name",
+        key: "warehouse",
         label: "Warehouse Name",
         showByDefault: true,
         render: (row: TableDataType) => {
-            const code = row.warehouse_code ?? "";
-            const name = row.warehouse_name ?? "";
+            const wh = row.warehouse;
+            let code = "";
+            let name = "";
+
+            if (typeof wh === "string") {
+                code = wh;
+            } else if (wh && typeof wh === "object") {
+                code = (wh as {code: string}).code ?? "";
+                name = (wh as {name: string}).name ?? "";
+            }
+
             if (!code && !name) return "-";
             return `${code}${code && name ? " - " : ""}${name}`;
         },
     },
     {
-        key: "customer_name",
+        key: "customer",
         label: "Customer Name",
         showByDefault: true,
         render: (row: TableDataType) => {
-            const code = row.customer_code ?? "";
-            const name = row.customer_name ?? "";
+            const wh = row.customer;
+            let code = "";
+            let name = "";
+            if (typeof wh === "string") {
+                code = wh;
+            } else if (wh && typeof wh === "object") {
+                code = (wh as {code: string}).code ?? "";
+                name = (wh as {name: string}).name ?? "";
+            }
+
             if (!code && !name) return "-";
             return `${code}${code && name ? " - " : ""}${name}`;
         },
     },
-    {
-        key: "salesman_name",
-        label: "Salesman Name",
-        render: (row: TableDataType) => {
-            const code = row.salesman_code ?? "";
-            const name = row.salesman_name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        },
-    },
-    {
-        key: "route_name",
-        label: "Route Name",
-        render: (row: TableDataType) => {
-            const code = row.route_code ?? "";
-            const name = row.route_name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        },
-    },
+    // {
+    //     key: "salesman",
+    //     label: "Salesman Name",
+    //     render: (row: TableDataType) => {
+    //         const code = row.salesman_code ?? "";
+    //         const name = row.salesman_name ?? "";
+    //         if (!code && !name) return "-";
+    //         return `${code}${code && name ? " - " : ""}${name}`;
+    //     },
+    // },
+    // {
+    //     key: "route",
+    //     label: "Route Name",
+    //     render: (row: TableDataType) => {
+    //         const code = row.route_code ?? "";
+    //         const name = row.route_name ?? "";
+    //         if (!code && !name) return "-";
+    //         return `${code}${code && name ? " - " : ""}${name}`;
+    //     },
+    // },
     // { key: "Invoice_type", label: "Invoice Type" },
     // { key: "Invoice_no", label: "Invoice No" },
     // { key: "sap_id", label: "SAP ID" },

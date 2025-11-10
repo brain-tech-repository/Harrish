@@ -389,3 +389,57 @@ export const createReturn = async (body: object) => {
     return handleError(error);
   }
 };
+
+export const exchangeList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/exchanges/list`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exchangeByUUID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/exchanges/show/${uuid}`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const addExchange = async (body: object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/exchanges/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deleteExchange = async (uuid: string) => {
+  try {
+    const res = await API.delete(`/api/agent_transaction/exchange/delete/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exchangeUpdateStatus = async (body: string) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/exchanges/updatestatus`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportExchangeData = async (body: string) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/exchanges/export`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

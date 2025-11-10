@@ -825,7 +825,7 @@ export default function DeliveryAddEditPage() {
                           if (!price || price === "" || price === "0" || price === "-") {
                             return <span className="text-gray-400">-</span>;
                           }
-                          return <span>{price}</span>;
+                          return <span>{toInternationalNumber(price)}</span>;
                         }
                       },
                       // { key: "excise", label: "Excise", render: (row) => <span>{toInternationalNumber(row.Excise) || "0.00"}</span> },
