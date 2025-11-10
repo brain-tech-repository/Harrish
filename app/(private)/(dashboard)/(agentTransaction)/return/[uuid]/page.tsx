@@ -127,7 +127,7 @@ export default function OrderAddEditPage() {
               
               const selectedItem = itemOptions.find(item => item.value === itemId);
               if (selectedItem && selectedItem.uoms && selectedItem.uoms.length > 0) {
-                const uomOpts = (selectedItem.uoms as any[]).map((uom: any) => ({
+                const uomOpts = (selectedItem.uoms as Uom[]).map((uom: Uom) => ({
                   value: uom.id || "",
                   label: uom.name || "",
                   price: uom.price || "0"
