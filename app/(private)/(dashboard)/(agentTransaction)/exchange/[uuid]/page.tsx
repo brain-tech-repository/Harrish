@@ -194,7 +194,7 @@ export default function ExchangeAddEditPage() {
 
   // Function for fetching Item
   const fetchItem = async (searchTerm: string) => {
-    const res = await itemGlobalSearch({ per_page: "10", query: searchTerm });
+    const res = await itemGlobalSearch({ perPage: "10", query: searchTerm });
     if (res.error) {
       showSnackbar(res.data?.message || "Failed to fetch items", "error");
       setSkeleton({ ...skeleton, item: false });

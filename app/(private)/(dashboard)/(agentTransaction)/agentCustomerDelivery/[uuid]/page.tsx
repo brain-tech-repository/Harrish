@@ -255,7 +255,22 @@ export default function DeliveryAddEditPage() {
       return;
     }
     const data = res?.data || [];
-    setSearchedItem(data);
+    
+    // sets the price directly in the item_uoms
+    const updatedData = data.map((item: any) => {
+      const item_uoms = item?.item_uoms ? item?.item_uoms?.map((uom: any) => {
+        if (uom?.uom_type === "primary") {
+          return { ...uom, price: item.pricing?.auom_pc_price }
+        } else if (uom?.uom_type === "secondary") {
+          return { ...uom, price: item.pricing?.buom_ctn_price }
+        }
+      }) : item?.item_uoms;
+      return { ...item, item_uoms}
+    })
+
+    // console.log(updatedData);
+
+    setSearchedItem(updatedData);
     const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
       value: String(item.id),
       label: (item.code ?? item.item_code ?? item.erp_code ?? "") + " - " + (item.name ?? "")
@@ -458,7 +473,7 @@ export default function DeliveryAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      console.log("Submitting payload:", payload);
+      // console.log("Submitting payload:", payload);
       const res = await createDelivery(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Delivery", "error");
@@ -637,13 +652,13 @@ export default function DeliveryAddEditPage() {
                       onSearch={(q) => { return fetchAgentDeliveries(values, q) }}
                       initialValue={filteredDeliveryOptions.find(o => o.value === String(values?.delivery))?.label || ""}
                       onSelect={(opt) => {
-                        console.log("selected delivery", opt.value);
+                        // console.log("selected delivery", opt.value);
                         if (values.delivery !== opt.value) {
                           setFieldValue("delivery", opt.value);
                           // find the selected delivery and map its details to the ItemData shape
                           const currentDelivery = deliveryData.find(o => String(o.id) === opt.value);
                           setFieldValue("customer_id", currentDelivery?.customer_id || "");
-                          console.log("Selected delivery:", currentDelivery);
+                          // console.log("Selected delivery:", currentDelivery);
                           const details = currentDelivery?.details ?? [];
                           const mapped = details.map(d => {
                             const qty = Number(d.quantity || 0);

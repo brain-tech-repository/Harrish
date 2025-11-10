@@ -34,6 +34,10 @@ interface FormData {
     upc: string,
     enable_for: string
   }[],
+  pricing: {
+    buom_ctn_price: string,
+    auom_pc_price: string
+  },
   brand: string,
   image: string,
   category: {
@@ -201,18 +205,33 @@ export default function OrderAddEditPage() {
       return;
     }
     const data = res?.data || [];
-    setOrderData(data);
-      const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
-        value: String(item.id),
-        label: (item.code ?? item.item_code ?? item.erp_code ?? "") + " - " + (item.name ?? "")
-      }));
-      // Merge newly fetched options with existing ones so previously selected items remain available
-      setItemsOptions((prev: { label: string; value: string }[] = []) => {
-        const map = new Map<string, { label: string; value: string }>();
-        prev.forEach((o) => map.set(o.value, o));
-        options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
-        return Array.from(map.values());
-      });
+
+    // sets the price directly in the item_uoms
+    const updatedData = data.map((item: any) => {
+      const item_uoms = item?.item_uoms ? item?.item_uoms?.map((uom: any) => {
+        if (uom?.uom_type === "primary") {
+          return { ...uom, price: item.pricing?.auom_pc_price }
+        } else if (uom?.uom_type === "secondary") {
+          return { ...uom, price: item.pricing?.buom_ctn_price }
+        }
+      }) : item?.item_uoms;
+      return { ...item, item_uoms}
+    })
+
+    // console.log(updatedData);
+
+    setOrderData(updatedData);
+    const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
+      value: String(item.id),
+      label: (item.code ?? item.item_code ?? item.erp_code ?? "") + " - " + (item.name ?? "")
+    }));
+    // Merge newly fetched options with existing ones so previously selected items remain available
+    setItemsOptions((prev: { label: string; value: string }[] = []) => {
+      const map = new Map<string, { label: string; value: string }>();
+      prev.forEach((o) => map.set(o.value, o));
+      options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
+      return Array.from(map.values());
+    });
     setSkeleton({ ...skeleton, item: false });
     return options;
   };
@@ -254,6 +273,7 @@ export default function OrderAddEditPage() {
         item.item_label = "";
       } else {
         const selectedOrder = orderData.find((order: FormData) => order.id.toString() === value);
+        console.log(selectedOrder);
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
         item.UOM = selectedOrder?.item_uoms?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
@@ -404,7 +424,7 @@ export default function OrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      console.log("Submitting payload:", payload);
+      // console.log("Submitting payload:", payload);
       const res = await addAgentOrder(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create order", "error");
@@ -412,11 +432,11 @@ export default function OrderAddEditPage() {
       } else {
         try {
           await saveFinalCode({
-              reserved_code: code,
-              model_name: "agent_order_headers",
+            reserved_code: code,
+            model_name: "agent_order_headers",
           });
         } catch (e) {
-            // Optionally handle error, but don't block success
+          // Optionally handle error, but don't block success
         }
         showSnackbar("Order created successfully", "success");
         router.push("/agentOrder");
@@ -475,7 +495,7 @@ export default function OrderAddEditPage() {
     const data = res?.data || [];
     const options = data.map((warehouse: { id: number; warehouse_code: string; warehouse_name: string }) => ({
       value: String(warehouse.id),
-      label:  warehouse.warehouse_code + " - " + warehouse.warehouse_name
+      label: warehouse.warehouse_code + " - " + warehouse.warehouse_name
     }));
     setFilteredWarehouseOptions(options);
     return options;
@@ -551,7 +571,6 @@ export default function OrderAddEditPage() {
                       onSelect={(opt) => {
                         if (values.warehouse !== opt.value) {
                           setFieldValue("warehouse", opt.value);
-                          setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                           setSkeleton((prev) => ({ ...prev, customer: true }));
                           setFieldValue("customer", "");
                         } else {
@@ -562,6 +581,7 @@ export default function OrderAddEditPage() {
                         setFieldValue("warehouse", "");
                         setFieldValue("customer", "");
                         setFilteredCustomerOptions([]);
+                        setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                         setSkeleton((prev) => ({ ...prev, customer: false }));
                       }}
                       error={
@@ -576,7 +596,7 @@ export default function OrderAddEditPage() {
                       label="Customer"
                       name="customer"
                       placeholder="Search customer"
-                      onSearch={(q) => {console.log("Searching customer:", q); return fetchAgentCustomers(values, q)}}
+                      onSearch={(q) => { return fetchAgentCustomers(values, q) }}
                       initialValue={filteredCustomerOptions.find(o => o.value === String(values?.customer))?.label || ""}
                       onSelect={(opt) => {
                         if (values.customer !== opt.value) {
@@ -587,6 +607,7 @@ export default function OrderAddEditPage() {
                       }}
                       onClear={() => {
                         setFieldValue("customer", "");
+                        setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                       }}
                       disabled={values.warehouse === ""}
                       error={touched.customer && (errors.customer as string)}
@@ -635,7 +656,7 @@ export default function OrderAddEditPage() {
                           // so the selection remains visible even when the option isn't returned by a search.
                           const matchedOption = itemsOptions.find((o) => o.value === row.item_id);
                           const initialLabel = matchedOption?.label ?? (row.item_label as string) ?? "";
-                          console.log(row);
+                          // console.log(row);
                           return (
                             <div>
                               <AutoSuggestion
@@ -706,7 +727,7 @@ export default function OrderAddEditPage() {
                                 // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={ !row.uom_id || !values.customer}
+                                disabled={!row.uom_id || !values.customer}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement).value;
                                   const intPart = raw.split('.')[0];

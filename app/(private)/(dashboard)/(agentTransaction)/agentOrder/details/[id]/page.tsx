@@ -10,10 +10,12 @@ import { Fragment, useEffect, useRef, useState, RefObject } from "react";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { getAgentOrderById } from "@/app/services/allApi";
+import { downloadFile, getAgentOrderById } from "@/app/services/allApi";
 import KeyValueData from "@/app/components/keyValueData";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import PrintButton from "@/app/components/printButton";
+import { agentOrderExport } from "@/app/services/agentTransaction";
+import { format } from "path/win32";
 
 const columns = [
   { key: "index", label: "#" },
@@ -309,7 +311,15 @@ export default function OrderDetailPage() {
             leadingIcon={"lucide:download"}
             leadingIconSize={20}
             label="Download"
-            onClick={async () => {}}
+            onClick={async () => {
+              const res = await agentOrderExport({uuid: UUID,format:"csv"});
+              if(res.error){
+                showSnackbar(res.error.message || "Failed to export order", "error");
+              } else {
+                const downloadUrl = res.data?.download_url;
+                downloadFile(downloadUrl || "", `order_${data?.order_code || UUID}.csv`);
+              }
+            }}
           />
           <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
         </div>
