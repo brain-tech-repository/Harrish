@@ -370,12 +370,13 @@ function TableHeader() {
             config.pageSize || defaultPageSize
         );
         const resolvedResult =
-            result instanceof Promise ? await result : result;
-        const { data, pageSize } = resolvedResult;
+            result instanceof Promise ? await result : result;  
+        const { data, pageSize, total, currentPage } = resolvedResult;
+        console.log(resolvedResult);
         setTableDetails({
             data,
-            total: 0,
-            currentPage: 0,
+            total: total || 0,
+            currentPage: currentPage || 1,
             pageSize: pageSize || defaultPageSize,
         });
     }

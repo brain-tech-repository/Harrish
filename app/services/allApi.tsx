@@ -646,6 +646,18 @@ export const getCompanyCustomers = async (params?: Params) => {
   }
 };
 
+export const companyCustomersGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/companycustomer/global-search", {
+      params: params,
+    });
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const addCompanyCustomers = async (body: object) => {
   try {
     const res = await API.post("/api/master/companycustomer/create", body);
@@ -658,7 +670,7 @@ export const addCompanyCustomers = async (body: object) => {
 
 export const getCompanyCustomerById = async (id: string) => {
   try {
-    const res = await API.get(`/api/master/companycustomer/${id}`);
+    const res = await API.get(`/api/master/companycustomer/show/${id}`);
 
     return res.data;
   } catch (error: unknown) {

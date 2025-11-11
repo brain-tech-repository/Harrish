@@ -36,6 +36,7 @@ interface DeliveryDetail {
 interface DeliveryData {
   delivery_code?: string;
   delivery_date?: string;
+  comment?: string;
   customer?: {
     name?: string;
     code?: string;
@@ -270,9 +271,9 @@ export default function OrderDetailPage() {
               <span>To (Customer)</span>
               <div className="flex flex-col space-y-[10px]">
                 <span className="font-semibold">
-                  {deliveryData?.customer?.code && deliveryData?.customer?.name
-                    ? `${deliveryData?.customer?.code} - ${deliveryData?.customer?.name}`
-                    : "-"}
+                  {deliveryData?.customer?.code ? deliveryData?.customer?.code : ""}
+                  {deliveryData?.customer?.code && deliveryData?.customer?.name ? " - " : ""}
+                  {deliveryData?.customer?.name ? `${deliveryData?.customer?.name}` : ""}
                 </span>
                 {hasValue(deliveryData?.customer?.town) && (
                   <span>Town: {deliveryData?.customer?.town}</span>
@@ -283,17 +284,16 @@ export default function OrderDetailPage() {
                 {hasValue(deliveryData?.customer?.district) && (
                   <span>District: {deliveryData?.customer?.district}</span>
                 )}
-                {(hasValue(deliveryData?.customer?.contact_no) || hasValue(deliveryData?.customer?.email)) && (
+                {
                   <span>
-                    {hasValue(deliveryData?.customer?.contact_no) && (
+                    {deliveryData?.customer?.contact_no && (
                       <>Phone: {deliveryData?.customer?.contact_no}</>
                     )}
-                    {hasValue(deliveryData?.customer?.contact_no) && hasValue(deliveryData?.customer?.email) && <br />}
-                    {hasValue(deliveryData?.customer?.email) && (
-                      <>Email: {deliveryData?.customer?.email}</>
+                    {deliveryData?.customer?.email && (
+                      <>Phone: {deliveryData?.customer?.email}</>
                     )}
                   </span>
-                )}
+                }
               </div>
             </div>
           </div>
@@ -380,12 +380,12 @@ export default function OrderDetailPage() {
 
               {/* Notes (Mobile) */}
               <div className="flex flex-col justify-end gap-[20px] w-full lg:hidden lg:w-[400px]">
-                <div className="flex flex-col space-y-[10px]">
+                {deliveryData?.comment && <div className="flex flex-col space-y-[10px]">
                   <div className="font-semibold text-[#181D27]">Customer Note</div>
                   <div>
-                    Please deliver between 10 AM to 1 PM. Contact before delivery.
+                    {deliveryData?.comment || ""}
                   </div>
-                </div>
+                </div>}
                 <div className="flex flex-col space-y-[10px]">
                   <div className="font-semibold text-[#181D27]">
                     Payment Method

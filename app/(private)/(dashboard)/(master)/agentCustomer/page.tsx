@@ -82,27 +82,27 @@ export default function AgentCustomer() {
 
             showByDefault: true,
         },
-        {
-            key: "subcategory",
-            label: "Customer Sub Category",
-            render: (row: TableDataType) =>
-                typeof row.subcategory === "object" &&
-                    row.subcategory !== null &&
-                    "customer_sub_category_name" in row.subcategory
-                    ? (row.subcategory as { customer_sub_category_name?: string })
-                        .customer_sub_category_name || "-"
-                    : "-",
-            filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(customerSubCategoryOptions) ? customerSubCategoryOptions : [], // [{ value, label }]
-                onSelect: (selected) => {
-                    setSelectedSubCategoryId((prev) => prev === selected ? "" : (selected as string));
-                },
-                selectedValue: selectedSubCategoryId,
-            },
+        // {
+        //     key: "subcategory",
+        //     label: "Customer Sub Category",
+        //     render: (row: TableDataType) =>
+        //         typeof row.subcategory === "object" &&
+        //             row.subcategory !== null &&
+        //             "customer_sub_category_name" in row.subcategory
+        //             ? (row.subcategory as { customer_sub_category_name?: string })
+        //                 .customer_sub_category_name || "-"
+        //             : "-",
+        //     filter: {
+        //         isFilterable: true,
+        //         width: 320,
+        //         options: Array.isArray(customerSubCategoryOptions) ? customerSubCategoryOptions : [], // [{ value, label }]
+        //         onSelect: (selected) => {
+        //             setSelectedSubCategoryId((prev) => prev === selected ? "" : (selected as string));
+        //         },
+        //         selectedValue: selectedSubCategoryId,
+        //     },
 
-        },
+        // },
         { key: "landmark", label: "Landmark" },
         { key: "district", label: "District" },
         { key: "street", label: "Street" },
@@ -278,22 +278,20 @@ export default function AgentCustomer() {
             }
             setLoading(false);
             if (result.error) throw new Error(result.data.message);
-            else {
-                if (columnName) {
-                    return {
-                        data: result.data || [],
-                        total: result.pagination.pagination.totalPages || 0,
-                        currentPage: result.pagination.pagination.current_page || 0,
-                        pageSize: result.pagination.pagination.limit || pageSize,
-                    };
-                }
-                return {
-                    data: result.data || [],
-                    total: result.pagination.pagination.totalPages || 0,
-                    currentPage: result.pagination.pagination.current_page || 0,
-                    pageSize: result.pagination.pagination.limit || pageSize,
-                };
-            }
+            // if (columnName) {
+            //     return {
+            //         data: result.data || [],
+            //         total: result.pagination.pagination.totalPages || 0,
+            //         currentPage: result.pagination.pagination.current_page || 0,
+            //         pageSize: result.pagination.pagination.limit || pageSize,
+            //     };
+            // }
+            return {
+                data: result.data || [],
+                total: result.pagination?.last_page || 0,
+                currentPage: result.pagination?.current_page || 0,
+                pageSize: result.pagination?.per_page || pageSize,
+            };
         },
         []
     );
