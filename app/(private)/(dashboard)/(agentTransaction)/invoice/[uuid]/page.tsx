@@ -1345,6 +1345,7 @@ const isFormReadyForItems = [
                                 ),
                             },
                         ],
+                        showNestedLoading: false,
                     }}
                 />
 
