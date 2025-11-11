@@ -8,12 +8,13 @@ import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import { deliveryByUuid } from "@/app/services/agentTransaction";
+import { agentDeliveryExport, deliveryByUuid } from "@/app/services/agentTransaction";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import PrintButton from "@/app/components/printButton";
+import { downloadFile } from "@/app/services/allApi";
 
 interface DeliveryDetail {
   id: number;
@@ -154,6 +155,21 @@ export default function OrderDetailPage() {
     { key: "Vat", value: `AED ${deliveryData?.vat || "0.00"}` },
     { key: "Delivery Charges", value: `AED ${deliveryData?.delivery_charges || "0.00"}` },
   ];
+
+  const exportFile = async () => {
+    try {
+      const response = await agentDeliveryExport({ uuid: uuid, format: "csv" });
+      if (response && typeof response === 'object' && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      showSnackbar("Failed to download warehouse data", "error");
+    } finally {
+    }
+  };
 
   const printRef = React.useRef<HTMLDivElement>(null);
 
@@ -344,6 +360,7 @@ export default function OrderDetailPage() {
               leadingIcon={"lucide:download"}
               leadingIconSize={20}
               label="Download"
+              onClick={exportFile}
             />
             <PrintButton targetRef={printRef as React.RefObject<HTMLDivElement>} />
           </div>
