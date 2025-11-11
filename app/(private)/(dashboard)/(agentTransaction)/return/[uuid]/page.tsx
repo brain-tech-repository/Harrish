@@ -502,9 +502,9 @@ const handleItemSearch = async (searchText: string) => {
         <div className="flex justify-between mb-10 flex-wrap gap-[20px]">
           <div className="flex flex-col gap-[10px]">
             <Logo type="full" />
-            <span className="text-primary font-normal text-[16px]">
+            {/* <span className="text-primary font-normal text-[16px]">
               Emma-Köhler-Allee 4c, Germering - 13907
-            </span>
+            </span> */}
           </div>
           <div className="flex flex-col">
             <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">

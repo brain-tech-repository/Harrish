@@ -41,7 +41,7 @@ interface RoleFormValues {
 
 const RoleSchema = Yup.object().shape({
   name: Yup.string().required("Role Name is required."),
-  labels: Yup.array().of(Yup.string()).required("At least one label is required."),
+  labels: Yup.array().of(Yup.string()).min(1, "At least one label is required."),
   status: Yup.string().optional(),
 });
 
@@ -303,7 +303,7 @@ export default function AddEditRole() {
         validationSchema={RoleSchema}
         onSubmit={handleSubmit}
       >
-        {({ handleSubmit, isSubmitting, values, setFieldValue, errors, touched }) => (
+    {({ handleSubmit, isSubmitting, values, setFieldValue, errors, touched, setFieldTouched }) => (
           <Form onSubmit={handleSubmit}>
             <div className="bg-white rounded-2xl mb-6">
               {/* <h2 className="text-lg font-medium text-gray-800 mb-4">
@@ -329,7 +329,8 @@ export default function AddEditRole() {
                       isSingle={false}
                       options={labelOptions}
                       onChange={(e) => setFieldValue("labels", e.target.value)}
-                      error={touched.labels && (Array.isArray(errors.labels) ? errors.labels.join(", ") : errors.labels)}
+                      onBlur={() => setFieldTouched && setFieldTouched('labels', true)}
+                      error={touched.labels ? (Array.isArray(errors.labels) ? (errors.labels as string[]).join(", ") : (errors.labels as string)) : undefined}
                     />
                   </div>
                   <div>
