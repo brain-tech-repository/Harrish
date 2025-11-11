@@ -518,6 +518,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "mi:settings",
                 iconColor: "text-green-500",
             },
+            {
+                isActive: false,
+                href: "/settings/approval",
+                label: "Approval Settings",
+                leadingIcon: "mi:settings",
+                iconColor: "text-green-500",
+            }
         ],
     },
 ];
