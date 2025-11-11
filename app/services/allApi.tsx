@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 import { APIFormData } from "./merchandiserApi";
+import { useRouter } from "next/navigation";
 
 
 export const API = axios.create({
@@ -24,8 +25,14 @@ API.interceptors.request.use(
 );
 
 export function handleError(error: unknown) {
+  // const router = useRouter()
+
   if (axios.isAxiosError(error) && error.response) {
-    console?.error("API Error:", error?.response.data);
+    console?.error("API Error:",error, error?.response.data);
+    if(error.status === 401){
+      // router.push('/login')
+      window.location.reload();
+    }
     return { error: true, data: error.response.data };
   } else if (error instanceof Error) {
     console.error("Request Error:", error.message);
