@@ -182,7 +182,7 @@ export const salesmanUnloadHeaderUpdate = async (uuid: string, body: object) => 
 
 export const capsCollectionList = async (params: Params) => {
   try {
-    const res = await API.get("/api/agent_transaction/capscollection/list", { params });
+    const res = await API.get("/api/agent_transaction/collections/list", { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -292,6 +292,15 @@ export const deliveryList = async (params: Params) => {
 export const deliveryByUuid = async (uuid: string) => {
   try {
     const res = await API.get(`/api/agent_transaction/agent-delivery/${uuid}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentDeliveryExport = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/agent-delivery/exportall`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

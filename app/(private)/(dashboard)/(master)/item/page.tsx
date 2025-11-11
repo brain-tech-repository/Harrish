@@ -25,8 +25,8 @@ interface LocalTableDataType {
     id?: number | string;
     erp_code?: string;
     name?: string;
-    category?: { name?: string };
-    uom?: Array<{ name?: string; uom_type?: string; price?: string }>;
+    item_category?: { category_name?: string };
+    item_uoms?: Array<{ name?: string; uom_type?: string; uom_price?: string }>;
     status?: number | string;
 }
 
@@ -43,40 +43,40 @@ const columns = [
   },
   { key: "name", label: "Name" },
   {
-    key: "category",
+    key: "item_category",
     label: "Category",
-    render: (row: LocalTableDataType) => row.category?.name || "-",
+    render: (row: LocalTableDataType) => row.item_category?.category_name || "-",
   },
   {
-    key: "uom",
+    key: "item_uoms",
     label: "Base UOM",
     render: (row: LocalTableDataType) => {
-      if (!row.uom || row.uom.length === 0) return "-";
-      return row.uom[0]?.name ?? "-"; // ✔️ Base UOM
+      if (!row.item_uoms || row.item_uoms.length === 0) return "-";
+      return row.item_uoms[0]?.name ?? "-"; // ✔️ Base UOM
     },
   },
   {
-    key: "uom",
+    key: "item_uoms",
     label: "Base UOM Price",
     render: (row: LocalTableDataType) => {
-      if (!row.uom || row.uom.length === 0) return "-";
-      return row.uom[0]?.price ?? "-"; // ✔️ Base UOM Price
+      if (!row.item_uoms || row.item_uoms.length === 0) return "-";
+      return row.item_uoms[0]?.uom_price ?? "-"; // ✔️ Base UOM Price
     },
   },
   {
-    key: "uom",
+    key: "item_uoms",
     label: "Secondary UOM",
     render: (row: LocalTableDataType) => {
-      if (!row.uom || row.uom.length < 2) return "-";
-      return row.uom[1]?.name ?? "-"; // ✔️ Secondary UOM
+      if (!row.item_uoms || row.item_uoms.length < 2) return "-";
+      return row.item_uoms[1]?.name ?? "-"; // ✔️ Secondary UOM
     },
   },
   {
-    key: "uom",
+    key: "item_uoms",
     label: "Secondary UOM Price",
     render: (row: LocalTableDataType) => {
-      if (!row.uom || row.uom.length < 2) return "-";
-      return row.uom[1]?.price ?? "-"; // ✔️ Secondary UOM Price
+      if (!row.item_uoms || row.item_uoms.length < 2) return "-";
+      return row.item_uoms[1]?.uom_price ?? "-"; // ✔️ Secondary UOM Price
     },
   },
   {
