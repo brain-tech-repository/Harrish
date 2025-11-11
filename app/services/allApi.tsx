@@ -40,7 +40,7 @@ export const downloadFile = (fileurl: string, type?: string): void => {
   const n = fileurl.lastIndexOf("/");
   const final_url = fileurl.substring(n + 1);
   const link = document.createElement("a");
-  link.setAttribute("target", "_blank");
+  link.setAttribute("target", "");
   link.setAttribute("href", fileurl);
   link.setAttribute("download", final_url);
   document.body.appendChild(link);
@@ -2696,16 +2696,10 @@ export const submenuGenerateCode = async (params?: Params) => {
   }
 };
 
-export const exportRoutesCSV = async (
-  params?: Params
-): Promise<Blob | null> => {
+export const exportRoutes = async (params?: Params) => {
   try {
-    const res = await API.post(
-      `/api/master/route/export`,
-      { params }, // 👈 send your params inside a body object
-      { responseType: "blob" } // 👈 ensures file is returned as Blob
-    );
-    return res.data; // this will be a Blob
+    const res = await API.get(`/api/master/route/export`, { params });
+    return res.data; 
   } catch (error: unknown) {
     handleError(error);
     return null;

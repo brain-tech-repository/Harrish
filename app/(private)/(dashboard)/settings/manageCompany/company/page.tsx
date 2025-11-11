@@ -124,7 +124,6 @@ const columns = [
     { key: "selling_currency", label: "Selling Currency"},
     { key: "vat", label: "VAT"},
     { key: "module_access", label: "Module Access"},
-    { key: "service_type", label: "Service Type"},
     {
         key: "status",
         label: "Status",

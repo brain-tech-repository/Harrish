@@ -12,8 +12,9 @@ import {
     routeList,
     deleteRoute,
     routeGlobalSearch,
-    exportRoutesCSV,
     routeStatusUpdate,
+    downloadFile,
+    exportRoutes,
 } from "@/app/services/allApi";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -33,103 +34,103 @@ export default function Route() {
     const { showSnackbar } = useSnackbar();
 
     const columns = [
-    {
-        key: "route_code",
-        label: "Route Code",
-        render: (data: TableDataType) => (
-            <span className="font-semibold text-[#181D27] text-[14px]">
-                {" "}
-                {data.route_code ? data.route_code : "-"}{" "}
-            </span>
-        ),
-    },
-    {
-        key: "route_name",
-        label: "Route Name",
-        isSortable: true,
-        render: (data: TableDataType) =>
-            data.route_name ? data.route_name : "-",
-    },
-    {
-        key: "getrouteType",
-        label: "Route Type",
-        render: (data: TableDataType) => {
-            const typeObj = data.getrouteType
-                ? JSON.parse(JSON.stringify(data.getrouteType))
-                : null;
-            return typeObj?.name ? typeObj.name : "-";
+        {
+            key: "route_code",
+            label: "Route Code",
+            render: (data: TableDataType) => (
+                <span className="font-semibold text-[#181D27] text-[14px]">
+                    {" "}
+                    {data.route_code ? data.route_code : "-"}{" "}
+                </span>
+            ),
         },
-        // filter: {
-        //     isFilterable: true,
-        //     render: (data: TableDataType[]) => (
-        //         <>
-        //             {" "}
-        //             {data.map((row, index) => {
-        //                 const typeObj = row.route_Type
-        //                     ? JSON.parse(JSON.stringify(row.route_Type))
-        //                     : null;
-        //                 return (
-        //                     <div
-        //                         key={index}
-        //                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
-        //                     >
-        //                         {" "}
-        //                         <span className="font-[500] text-[#181D27]">
-        //                             {" "}
-        //                             {typeObj?.route_type_name
-        //                                 ? typeObj.route_type_name
-        //                                 : "-"}{" "}
-        //                         </span>{" "}
-        //                     </div>
-        //                 );
-        //             })}{" "}
-        //         </>
-        //     ),
-        // },
-        width: 218,
-    },
-    {
-        key: "warehouse",
-        label: "Warehouse",
-        width: 218,
-        render: (data: TableDataType) =>
-            typeof data.warehouse === "object" && data.warehouse !== null
-                ? (data.warehouse as { code?: string }).code
-                : "-",
-        filter: {
-            isFilterable: true,
-            width: 320,
-            options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-            onSelect: (selected: string | string[]) => {
-                setWarehouseId((prev) => prev === selected ? "" : (selected as string));
+        {
+            key: "route_name",
+            label: "Route Name",
+            isSortable: true,
+            render: (data: TableDataType) =>
+                data.route_name ? data.route_name : "-",
+        },
+        {
+            key: "getrouteType",
+            label: "Route Type",
+            render: (data: TableDataType) => {
+                const typeObj = data.getrouteType
+                    ? JSON.parse(JSON.stringify(data.getrouteType))
+                    : null;
+                return typeObj?.name ? typeObj.name : "-";
+            },
+            // filter: {
+            //     isFilterable: true,
+            //     render: (data: TableDataType[]) => (
+            //         <>
+            //             {" "}
+            //             {data.map((row, index) => {
+            //                 const typeObj = row.route_Type
+            //                     ? JSON.parse(JSON.stringify(row.route_Type))
+            //                     : null;
+            //                 return (
+            //                     <div
+            //                         key={index}
+            //                         className="flex items-center gap-[8px] px-[14px] py-[10px] hover:bg-[#FAFAFA] text-[14px]"
+            //                     >
+            //                         {" "}
+            //                         <span className="font-[500] text-[#181D27]">
+            //                             {" "}
+            //                             {typeObj?.route_type_name
+            //                                 ? typeObj.route_type_name
+            //                                 : "-"}{" "}
+            //                         </span>{" "}
+            //                     </div>
+            //                 );
+            //             })}{" "}
+            //         </>
+            //     ),
+            // },
+            width: 218,
+        },
+        {
+            key: "warehouse",
+            label: "Warehouse",
+            width: 218,
+            render: (data: TableDataType) =>
+                typeof data.warehouse === "object" && data.warehouse !== null
+                    ? (data.warehouse as { code?: string }).code
+                    : "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setWarehouseId((prev) => prev === selected ? "" : (selected as string));
+                },
             },
         },
-    },
-    {
-        key: "vehicle",
-        label: "Vehicle",
-        render: (data: TableDataType) => {
-            const vehicleObj =
-                typeof data.vehicle === "string"
-                    ? JSON.parse(data.vehicle)
-                    : data.vehicle;
-            return vehicleObj?.code ? vehicleObj.code : "-";
+        {
+            key: "vehicle",
+            label: "Vehicle",
+            render: (data: TableDataType) => {
+                const vehicleObj =
+                    typeof data.vehicle === "string"
+                        ? JSON.parse(data.vehicle)
+                        : data.vehicle;
+                return vehicleObj?.code ? vehicleObj.code : "-";
+            },
         },
-    },
-    {
-        key: "status",
-        label: "Status",
-        render: (row: TableDataType) => (
-            <StatusBtn
-                isActive={
-                    row.status && row.status.toString() === "0" ? false : true
-                }
-            />
-        ),
-    },
-];
+        {
+            key: "status",
+            label: "Status",
+            render: (row: TableDataType) => (
+                <StatusBtn
+                    isActive={
+                        row.status && row.status.toString() === "0" ? false : true
+                    }
+                />
+            ),
+        },
+    ];
 
-useEffect(() => {
+    useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [warehouseId]);
 
@@ -230,30 +231,17 @@ useEffect(() => {
         }
     };
 
-    const handleDownloadCSV = async () => {
+    const exportFile = async (format: string) => {
         try {
-            const blob = await exportRoutesCSV({ format: "csv" });
-            if (!blob) {
-                showSnackbar("No file received ❌", "error");
-                return;
+            const response = await exportRoutes({ format });
+            if (response && typeof response === 'object' && response.url) {
+                await downloadFile(response.url);
+                showSnackbar("File downloaded successfully ", "success");
+            } else {
+                showSnackbar("Failed to get download URL", "error");
             }
-
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "routes.csv"; // 👈 downloaded filename
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-
-            showSnackbar("Route exported successfully ✅", "success");
         } catch (error) {
-            console.error("Export failed ❌:", error);
-            showSnackbar("Failed to export Route ❌", "error");
-        } finally {
-            setShowDeletePopup(false);
-            setSelectedRowId(undefined);
+            showSnackbar("Failed to download warehouse data", "error");
         }
     };
 
@@ -273,17 +261,18 @@ useEffect(() => {
                                 {
                                     icon: "gala:file-document",
                                     label: "Export CSV",
-                                    onClick: handleDownloadCSV,
+                                    onClick: () => exportFile("csv")
                                 },
                                 {
                                     icon: "gala:file-document",
                                     label: "Export Excel",
+                                    onClick: () => exportFile("xlsx")
                                 },
                                 {
                                     icon: "lucide:radio",
                                     label: "Inactive",
                                     showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if(!selectedRow || selectedRow.length === 0) return false;
+                                        if (!selectedRow || selectedRow.length === 0) return false;
                                         const status = selectedRow?.map((id) => data[id].status).map(String);
                                         return status?.includes("1") || false;
                                     },
@@ -291,7 +280,7 @@ useEffect(() => {
                                         const status: string[] = [];
                                         const ids = selectedRow?.map((id) => {
                                             const currentStatus = data[id].status;
-                                            if(!status.includes(currentStatus)){
+                                            if (!status.includes(currentStatus)) {
                                                 status.push(currentStatus);
                                             }
                                             return data[id].id;
@@ -303,7 +292,7 @@ useEffect(() => {
                                     icon: "lucide:radio",
                                     label: "Active",
                                     showWhen: (data: TableDataType[], selectedRow?: number[]) => {
-                                        if(!selectedRow || selectedRow.length === 0) return false;
+                                        if (!selectedRow || selectedRow.length === 0) return false;
                                         const status = selectedRow?.map((id) => data[id].status).map(String);
                                         return status?.includes("0") || false;
                                     },
@@ -311,7 +300,7 @@ useEffect(() => {
                                         const status: string[] = [];
                                         const ids = selectedRow?.map((id) => {
                                             const currentStatus = data[id].status;
-                                            if(!status.includes(currentStatus)){
+                                            if (!status.includes(currentStatus)) {
                                                 status.push(currentStatus);
                                             }
                                             return data[id].id;
