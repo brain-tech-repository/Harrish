@@ -634,7 +634,7 @@ export default function OrderAddEditPage() {
               if (errors.warehouse) setErrors(prev => ({ ...prev, warehouse: "" }));
               // fetch customers for selected warehouse
               try {
-                await fetchAgentCustomerOptions(option.value);
+                fetchAgentCustomerOptions(option.value);
               } catch (e) {
                 // ignore fetch errors here
               }

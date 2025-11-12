@@ -871,9 +871,9 @@ export default function AddEditItem() {
 
       case 3:
         return (
-          <div className="flex flex-col md:flex-row gap-6 bg-white rounded-2xl shadow ">
+          <div className="flex flex-col xl:flex-row gap-6 bg-white rounded-2xl shadow ">
             {/* Left: Add UOM Form */}
-            <ContainerCard className="h-[100%] w-1/4" margin="0" >
+            <ContainerCard className="h-[100%] w-full xl:w-5/12" margin="0" >
                <div >
               <h2 className="text-xl font-bold mb-4">Add UOM</h2>
               {/* Use 2 columns in grid here */}
@@ -983,7 +983,7 @@ export default function AddEditItem() {
 
 
             {/* Right: UOM List */}
-            <div className="flex-1 w-full p-6">
+            <div className="w-full xl:w-7/12 p-6">
               <h2 className="text-xl font-bold mb-4">UOM List</h2>
               <Table
                 data={uomList.map((row, idx) => ({
@@ -991,6 +991,7 @@ export default function AddEditItem() {
                   idx: idx.toString(),
                 }))}
                 config={{
+                  showNestedLoading: false,
                   columns: [
                     { key: "uom", label: "UOM" },
                     { key: "uomType", label: "UOM Type" },
