@@ -7,9 +7,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
-import Table, { TableDataType,listReturnType ,searchReturnType} from "@/app/components/customTable";
+import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { routeTypeList, deleteRouteTypeById ,routeGlobalSearch} from "@/app/services/allApi";
+import { routeTypeList, deleteRouteTypeById } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -81,29 +81,7 @@ export default function RouteType() {
       []
     );
   
-    const searchRouteType = useCallback(
-      async (
-        searchQuery: string,
-        pageSize: number
-      ): Promise<searchReturnType> => {
-        setLoading(true);
-        const result = await routeGlobalSearch({
-          query: searchQuery,
-          per_page: pageSize.toString(),
-        });
-        setLoading(false);
-        if (result.error) throw new Error(result.data.message);
-        else {
-          return {
-            data: result.data || [],
-            total: result.pagination.totalPages,
-            currentPage: result.pagination.page ,
-            pageSize: result.pagination.limit ,
-          };
-        }
-      },
-      []
-    );
+  // global search removed: use column filters and list API only
 
   return (
     <>
@@ -114,7 +92,7 @@ export default function RouteType() {
         <Table
          
           config={{
-            api:{  list:fetchRouteTypes, search:searchRouteType },
+            api:{ list: fetchRouteTypes },
             header: {
               
               title: "Route Type",
@@ -159,7 +137,8 @@ export default function RouteType() {
                   )}
                 </div>
               ],
-              searchBar: true,
+              // disable global search bar (use column filters only)
+              searchBar: false,
               columnFilter: true,
               actions: [
                 <SidebarBtn

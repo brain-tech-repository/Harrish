@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import BorderIconButton from "@/app/components/borderIconButton";
-import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
+import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { regionList, deleteRegion, regionGlobalSearch } from "@/app/services/allApi";
+import { regionList, deleteRegion } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -94,29 +94,7 @@ const tableData: TableDataType[] = regions.map((s) => ({
     []
   );
 
-  const searchRegions = useCallback(
-    async (
-      searchQuery: string,
-      pageSize: number
-    ): Promise<searchReturnType> => {
-      setLoading(true);
-      const result = await regionGlobalSearch({
-        query: searchQuery,
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (result.error) throw new Error(result.data.message);
-      else {
-        return {
-          data: result.data || [],
-          total: result.pagination.pagination.totalPages || 0,
-          currentPage: result.pagination.pagination.current_page || 0,
-          pageSize: result.pagination.pagination.limit || pageSize,
-        };
-      }
-    },
-    []
-  );
+  // global search removed: use column filters and list API only
 
   const handleConfirmDelete = async () => {
     if (!selectedRow?.id) return;
@@ -145,7 +123,6 @@ const tableData: TableDataType[] = regions.map((s) => ({
           config={{
             api: {
               list: fetchRegions,
-              search: searchRegions,
             },
             header: {
               title: "Region",
@@ -190,7 +167,8 @@ const tableData: TableDataType[] = regions.map((s) => ({
                   )}
                 </div>
               ],
-              searchBar: true,
+              // disable global search bar (use column filters only)
+              searchBar: false,
               columnFilter: true,
               actions: [
                 <SidebarBtn

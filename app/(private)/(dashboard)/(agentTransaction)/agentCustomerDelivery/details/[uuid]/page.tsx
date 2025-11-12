@@ -1,5 +1,4 @@
 "use client";
-
 import BorderIconButton from "@/app/components/borderIconButton";
 import ContainerCard from "@/app/components/containerCard";
 import CustomDropdown from "@/app/components/customDropdown";
@@ -7,8 +6,9 @@ import Table from "@/app/components/customTable";
 import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 import { agentDeliveryExport, deliveryByUuid } from "@/app/services/agentTransaction";
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
@@ -70,6 +70,7 @@ interface DeliveryData {
   net_amount?: string;
   excise?: string;
   vat?: string;
+  preVat?: string;
   delivery_charges?: string;
   total?: string;
 }
@@ -89,22 +90,29 @@ interface TableRow {
   [key: string]: string;
 }
 
-const dropdownDataList = [
-  { icon: "humbleicons:radio", label: "Mark as Pending", iconWidth: 20 },
-];
-
 const columns = [
   { key: "id", label: "#", width: 60 },
-  { key: "itemCode", label: "Product Code" },
   { key: "itemName", label: "Product Name", width: 250 },
   { key: "name", label: "UOM" },
   { key: "Quantity", label: "Quantity" },
-  { key: "Price", label: "Price" },
+  {
+    key: "Price",
+    label: "Price",
+    render: (value: any) => <>{toInternationalNumber(Number(value.Price || 0)) || "0.00"}</>,
+  },
   { key: "Excise", label: "Excise" },
-  { key: "Discount", label: "Discount" },
-  { key: "Net", label: "Net" },
-  { key: "Vat", label: "Vat" },
-  { key: "Total", label: "Total" },
+  {
+    key: "Discount",
+    label: "Discount",
+    render: (value: any) => <>{toInternationalNumber(Number(value.Discount || 0)) || "0.00"}</>,
+  },
+  {
+    key: "Net",
+    label: "Net",
+    render: (value: any) => <>{toInternationalNumber(Number(value.Net || 0)) || "0.00"}</>,
+  },
+  { key: "Vat", label: "Vat", render: (value: any) => <>{toInternationalNumber(Number(value.Vat || 0)) || "0.00"}</> },
+  { key: "Total", label: "Total", render: (value: any) => <>{toInternationalNumber(Number(value.Total || 0)) || "0.00"}</> },
 ];
 
 export default function OrderDetailPage() {
@@ -137,7 +145,7 @@ export default function OrderDetailPage() {
               name: detail.uom_name || "-", // Fixed: use uom_name from API
               Quantity: detail.quantity?.toString() || "0",
               Price: detail.item_price || "0",
-              Excise: detail.excise || "0",
+              // Excise: detail.excise || "0",
               Discount: detail.discount || "0",
               Net: detail.net_total || "0",
               Vat: detail.vat || "0",
@@ -157,24 +165,62 @@ export default function OrderDetailPage() {
 
   // Helper function to check if value exists and is not null/empty
   const hasValue = (value: any) => {
-    return value !== null && value !== undefined && value !== "" && value !== "0" && value !== "0.00";
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") {
+      const v = value.trim().toLowerCase();
+      return v !== "" && v !== "0" && v !== "0.00" && v !== "null" && v !== "undefined";
+    }
+    if (typeof value === "number") {
+      return !isNaN(value);
+    }
+    return true;
   };
 
-  // Build key-value data dynamically based on available values
+  // Calculate totals from details if API doesn't provide them
+  const calculatedGrossTotal = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.net_total ?? item.total ?? 0),
+    0
+  ) ?? 0;
+
+  const calculatedVat = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.vat ?? 0),
+    0
+  ) ?? 0;
+
+  const calculatedTotal = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.total ?? 0),
+    0
+  ) ?? 0;
+
+  // Prefer API values, fall back to calculated values
+  const grossTotal = Number(deliveryData?.gross_total ?? calculatedGrossTotal ?? 0);
+  const vatTotal = Number(deliveryData?.vat ?? calculatedVat ?? 0);
+  const netTotal = Number(deliveryData?.net_total ?? deliveryData?.net_amount ?? grossTotal ?? 0);
+  const finalTotal = Number(deliveryData?.total ?? calculatedTotal ?? 0);
+
+  // Calculate Pre Vat: use API value or compute from net_total - vat
+  const computedPreVat = (() => {
+    if (deliveryData?.preVat !== undefined && deliveryData?.preVat !== null) {
+      return Number(deliveryData.preVat);
+    }
+    if (netTotal > 0 && vatTotal > 0) {
+      return netTotal - vatTotal;
+    }
+    return 0;
+  })();
+
+  // Always show these fields (not conditionally hidden)
   const keyValueData = [
-    hasValue(deliveryData?.gross_total) && { key: "Gross Total", value: `AED ${deliveryData?.gross_total}` },
-    // hasValue(deliveryData?.discount) && { key: "Discount", value: `AED ${deliveryData?.discount}` },
-    hasValue(deliveryData?.net_total || deliveryData?.net_amount) && { 
-      key: "Net Total", 
-      value: `AED ${deliveryData?.net_total || deliveryData?.net_amount || "0.00"}` 
+    { key: "Gross Total", value: `AED ${toInternationalNumber(grossTotal)}` },
+    { key: "VAT", value: `AED ${toInternationalNumber(vatTotal)}` },
+    { key: "Pre VAT", value: `AED ${toInternationalNumber(computedPreVat)}` },
+    (deliveryData?.delivery_charges) && {
+      key: "Delivery Charges",
+      value: `AED ${toInternationalNumber(Number(deliveryData?.delivery_charges ?? 0))}`,
     },
-    // hasValue(deliveryData?.excise) && { key: "Excise", value: `AED ${deliveryData?.excise}` },
-    hasValue(deliveryData?.vat) && { key: "Vat", value: `AED ${deliveryData?.vat}` },
-    hasValue(deliveryData?.delivery_charges) && { 
-      key: "Delivery Charges", 
-      value: `AED ${deliveryData?.delivery_charges}` 
-    },
-  ].filter(Boolean); // Remove null/false entries
+  ].filter(Boolean) as Array<{ key: string; value: string }>;
+
+  const targetRef = useRef<HTMLDivElement | null>(null);
 
   const exportFile = async () => {
     try {
@@ -191,7 +237,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const printRef = React.useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -214,6 +260,7 @@ export default function OrderDetailPage() {
           {/* Uncomment if needed */}
         </div>
       </div>
+      {/* < ref={targetRef}> */}
 
       {/* ---------- Order Info Card ---------- */}
       <div ref={printRef}>
@@ -360,23 +407,22 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              {/* Totals */}
-              <div className="flex flex-col gap-[10px] w-full lg:w-[350px] border-b-[1px] border-[#D5D7DA] lg:border-0 pb-[20px] lg:pb-0 mb-[20px] lg:mb-0">
-                {keyValueData.map((kv: any) => (
-                  <div key={kv.key} className="w-full">
-                    <div className="flex justify-between py-2">
-                      <span className="text-sm text-[#6B6F76]">{kv.key}</span>
-                      <span className="text-sm font-medium">{kv.value}</span>
-                    </div>
-                    <hr className="text-[#D5D7DA]" />
+            {/* Totals - Only show rows with values */}
+            <div className="flex flex-col gap-[10px] w-full lg:w-[350px] border-b-[1px] border-[#D5D7DA] lg:border-0 pb-[20px] lg:pb-0 mb-[20px] lg:mb-0">
+              {keyValueData.map((kv: any) => (
+                <div key={kv.key} className="w-full">
+                  <div className="flex justify-between py-2">
+                    <span className="text-sm text-[#6B6F76]">{kv.key}</span>
+                    <span className="text-sm font-medium">{kv.value}</span>
                   </div>
-                ))}
-                {/* <hr className="text-[#D5D7DA]" /> */}
-                <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
-                  <span>Total</span>
-                  <span>AED {deliveryData?.total || "0.00"}</span>
+                  <hr className="text-[#D5D7DA]" />
                 </div>
+              ))}
+              <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
+                <span>Total</span>
+                <span>AED {toInternationalNumber(finalTotal)}</span>
               </div>
+            </div>
 
               {/* Notes (Mobile) */}
               <div className="flex flex-col justify-end gap-[20px] w-full lg:hidden lg:w-[400px]">

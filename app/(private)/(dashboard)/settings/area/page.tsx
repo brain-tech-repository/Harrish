@@ -8,13 +8,11 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
   listReturnType,
-  searchReturnType,
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
   getArea,
-  subRegionListGlobalSearch,
   deleteArea,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
@@ -117,34 +115,7 @@ export default function SubRegion() {
     []
   );
 
-  // ✅ Search SubRegions
-  const searchSubRegions = useCallback(
-    async (
-      searchQuery: string,
-      pageSize: number
-    ): Promise<searchReturnType> => {
-      setLoading(true);
-      const result = await subRegionListGlobalSearch({
-        search: searchQuery,
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (result.error) throw new Error(result.data.message);
-      else {
-        const pagination =
-          result.pagination && result.pagination.pagination
-            ? result.pagination.pagination
-            : {};
-        return {
-          data: result.data || [],
-          total: pagination.totalPages || 10,
-          currentPage: pagination.current_page || 1,
-          pageSize: pagination.limit || pageSize,
-        };
-      }
-    },
-    []
-  );
+  // global search removed: use column filters and list API only
 
   useEffect(() => {
     setLoading(true);
@@ -158,7 +129,6 @@ export default function SubRegion() {
           config={{
             api: {
               list: fetchSubRegions,
-              search: searchSubRegions,
             },
             header: {
               title: "Area",

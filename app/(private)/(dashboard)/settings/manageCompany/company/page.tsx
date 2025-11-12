@@ -1,19 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
 
 import Table, {
     listReturnType,
     TableDataType,
-    searchReturnType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import {
-    companyList,
-    companyListGlobalSearch,
-} from "@/app/services/allApi";
+import { companyList } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import StatusBtn from "@/app/components/statusBtn2";
@@ -138,40 +133,7 @@ const CompanyPage = () => {
         [showSnackbar, setLoading]
     );
 
-    const searchCompanies = useCallback(
-            async (
-                searchQuery: string,
-                pageSize: number = 5,
-                columnName?: string
-            ): Promise<searchReturnType> => {
-                setLoading(true);
-                let result;
-                if (columnName && columnName !== "") {
-                    result = await companyList({
-                        per_page: pageSize.toString(),
-                        [columnName]: searchQuery
-                    });
-                } else {
-                    result = await companyListGlobalSearch({
-                        query: searchQuery,
-                        per_page: pageSize.toString(),
-                    });
-                }
-                setLoading(false);
-    
-                if (result.error) {
-                    throw new Error(result.data?.message || "Search failed");
-                }
-    
-                return {
-                    data: result.data || [],
-                    currentPage: result?.pagination?.current_page || 1,
-                    pageSize: result?.pagination?.per_page || pageSize,
-                    total: result?.pagination?.last_page || 1,
-                };
-            },
-            [setLoading]
-        );
+    // global search removed - using column filters and list API only
 
 
     return (
@@ -184,11 +146,11 @@ const CompanyPage = () => {
                         
                         api: {
                             list: fetchCompanies,
-                            search: searchCompanies,
                         },
                         header: {
                             title: "Company",
-                            searchBar: true,
+                            // disable global search bar (column filters remain)
+                            searchBar: false,
                             columnFilter: true,
                             actions: [
                                 <SidebarBtn
