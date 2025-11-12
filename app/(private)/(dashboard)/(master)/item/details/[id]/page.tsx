@@ -20,7 +20,7 @@ interface Item {
   item_code?: string;
   name?: string;
   description?: string;
-  brand?: string;
+  brand?: {name: string};
   image?: string;
   shelf_life?: string;
   commodity_goods_code?: string;
@@ -190,7 +190,7 @@ export default function Page() {
                     title="Item Information"
                     data={[
                       { key: "ERP Code", value: item?.erp_code || "-" },
-                      { key: "Brand", value: item?.brand || "-" },
+                      { key: "Brand", value: item?.brand?.name || "-" },
                       {
                         key: "Category",
                         value: item?.item_category?.category_name
@@ -281,7 +281,7 @@ export default function Page() {
                   columns: [
                     { key: "invoice_code", label: "Invoice Code" },
                     { key: "item_name", label: "Item Name", render: (row: TableDataType) => <>{row.item_code ? row.item_code : ""}{row.item_code && row.item_name ? " - " : ""}{row.item_name ? row.item_name : ""}</>},
-                    { key: "uom", label: "UOM" },
+                    { key: "uom", label: "UOM", render: (row: TableDataType) => <>{ (typeof row?.uom === "object" && (row?.uom as {name: string})?.name) ?? row?.uom ?? row.uom_id}</>},
                     { key: "quantity", label: "Quantity" },
                     { key: "itemvalue", label: "Price" }
                   ],
@@ -314,7 +314,7 @@ export default function Page() {
                   columns: [
                     { key: "header_code", label: "Return Code" },
                     { key: "item_name", label: "Item Name", render: (row: TableDataType) => <>{row.item_code ? row.item_code : ""}{row.item_code && row.item_name ? " - " : ""}{row.item_name ? row.item_name : ""}</>},
-                    { key: "uom_id", label: "UOM" },
+                    { key: "uom_id", label: "UOM", render: (row: TableDataType) => <>{ (typeof row?.uom_id === "object" && (row?.uom_id as {name: string})?.name) ?? row?.uom ?? row.uom_id}</>},
                     { key: "item_quantity", label: "Quantity" },
                     { key: "item_price", label: "Price" }
                   ],

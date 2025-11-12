@@ -25,6 +25,7 @@ interface DropdownItem {
 interface LocalTableDataType {
   id?: number | string;
   erp_code?: string;
+  code?: string;
   name?: string;
   item_category?: { category_name?: string };
   item_uoms?: Array<{ name?: string; uom_type?: string; uom_price?: string }>;
@@ -37,7 +38,8 @@ const dropdownDataList: DropdownItem[] = [
 ];
 
 const columns = [
-  { key: "name", label: "Name", render: (row: LocalTableDataType) => row.erp_code + " - " + row.name || "-" },
+  { key: "erp_code", label: "ERP Code", render: (row: LocalTableDataType) => row.erp_code || "-" },
+  { key: "name", label: "Name", render: (row: LocalTableDataType) => row.code + " - " + row.name || "-" },
   {
     key: "item_category",
     label: "Category",
