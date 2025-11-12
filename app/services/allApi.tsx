@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 import { APIFormData } from "./merchandiserApi";
+import { useRouter } from "next/navigation";
 
 
 export const API = axios.create({
@@ -24,8 +25,14 @@ API.interceptors.request.use(
 );
 
 export function handleError(error: unknown) {
+  // const router = useRouter()
+
   if (axios.isAxiosError(error) && error.response) {
-    console?.error("API Error:", error?.response.data);
+    console?.error("API Error:",error, error?.response.data);
+    if(error.status === 401){
+      // router.push('/login')
+      window.location.reload();
+    }
     return { error: true, data: error.response.data };
   } else if (error instanceof Error) {
     console.error("Request Error:", error.message);
@@ -658,6 +665,18 @@ export const getCompanyCustomers = async (params?: Params) => {
   }
 };
 
+export const companyCustomersGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/companycustomer/global-search", {
+      params: params,
+    });
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const addCompanyCustomers = async (body: object) => {
   try {
     const res = await API.post("/api/master/companycustomer/create", body);
@@ -670,7 +689,7 @@ export const addCompanyCustomers = async (body: object) => {
 
 export const getCompanyCustomerById = async (id: string) => {
   try {
-    const res = await API.get(`/api/master/companycustomer/${id}`);
+    const res = await API.get(`/api/master/companycustomer/show/${id}`);
 
     return res.data;
   } catch (error: unknown) {
@@ -1926,6 +1945,15 @@ export const itemList = async (params?: Params) => {
 export const itemGlobalSearch = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/items/global-search", { params: params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemExport = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/items/export", { params: params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
