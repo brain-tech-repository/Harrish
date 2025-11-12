@@ -109,7 +109,7 @@ export const companyById = async (id: string) => {
 
 export const updateCompany = async (id: string, data: object) => {
   try {
-    const res = await API.put(`/api/master/company/company/${id}`, data);
+    const res = await APIFormData.put(`/api/master/company/company/${id}`, data);
 
     return res.data;
   } catch (error: unknown) {
@@ -147,7 +147,7 @@ export const logout = async () => {
 
 export const addCompany = async (data: FormData | Record<string, string>) => {
   try {
-    const res = await API.post("/api/master/company/add_company", data);
+    const res = await APIFormData.post("/api/master/company/add_company", data);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

@@ -13,8 +13,8 @@ import { categoryType } from "./page";
 import { useState, useRef, useEffect } from "react";
 
 export default function CreateUpdate({
-    
-type,
+
+    type,
     updateItemCategoryData,
     onClose,
     onRefresh
@@ -28,7 +28,7 @@ type,
 
     // Code logic
     const [isOpen, setIsOpen] = useState(false);
-    const [codeMode, setCodeMode] = useState<'auto'|'manual'>('auto');
+    const [codeMode, setCodeMode] = useState<'auto' | 'manual'>('auto');
     const [prefix, setPrefix] = useState('');
     const codeGeneratedRef = useRef(false);
     const [code, setCode] = useState("");
@@ -130,7 +130,7 @@ type,
                             value={updateItemCategoryData?.id?.toString() || ""}
                             label="Category Id"
                             disabled={true}
-                            onChange={() => {}}
+                            onChange={() => { }}
                         />
                     </>
                 )}
@@ -147,7 +147,7 @@ type,
                     />
                     <IconButton
                         bgClass="white"
-                         className="  cursor-pointer text-[#252B37] pt-12"
+                        className="  cursor-pointer text-[#252B37] pt-12"
                         icon="mi:settings"
                         onClick={() => setIsOpen(true)}
                     />
@@ -168,46 +168,46 @@ type,
                     />
                 </div>
 
-              <div>
-              <div>
-                    <InputFields
-                    required
-                    id="categoryName"
-                    name="categoryName"
-                    value={formik.values.categoryName}
-                    label="Category Name"
-                    error={formik.errors.categoryName}
-                    onChange={formik.handleChange}
-                />
-                {formik.touched.categoryName && formik.errors.categoryName && (
-                    <span className="text-xs text-red-500">
-                        {formik.errors.categoryName}
-                    </span>
-                )}
-              </div>
-                
-              </div>
+                <div>
+                    <div>
+                        <InputFields
+                            required
+                            id="categoryName"
+                            name="categoryName"
+                            value={formik.values.categoryName}
+                            label="Category Name"
+                            error={formik.errors.categoryName}
+                            onChange={formik.handleChange}
+                        />
+                        {formik.touched.categoryName && formik.errors.categoryName && (
+                            <span className="text-xs text-red-500">
+                                {formik.errors.categoryName}
+                            </span>
+                        )}
+                    </div>
 
-               <InputFields
-                                required
-                                label="Status"
-                                name="status"
-                                value={String(formik.values.status)}
-                                options={[
-                                  { value: "1", label: "Active" },
-                                  { value: "0", label: "Inactive" },
-                                ]}
-                                onChange={(e) => formik.setFieldValue("status", e.target.value)}
-                                type="radio"
-                                error={
-                                  formik.touched.status && formik.errors.status
-                                    ? formik.errors.status
-                                    : false
-                                }
-                              />
-                              {formik.touched.status && formik.errors.status ? (
-                                <span className="text-xs text-red-500">{formik.errors.status}</span>
-                              ) : null}
+                </div>
+
+                <InputFields
+                    required
+                    label="Status"
+                    name="status"
+                    value={String(formik.values.status)}
+                    options={[
+                        { value: "1", label: "Active" },
+                        { value: "0", label: "Inactive" },
+                    ]}
+                    onChange={(e) => formik.setFieldValue("status", e.target.value)}
+                    type="radio"
+                    error={
+                        formik.touched.status && formik.errors.status
+                            ? formik.errors.status
+                            : false
+                    }
+                />
+                {formik.touched.status && formik.errors.status ? (
+                    <span className="text-xs text-red-500">{formik.errors.status}</span>
+                ) : null}
 
                 <div className="flex justify-between gap-[8px] mt-[50px]">
                     <div></div>

@@ -65,20 +65,6 @@ export const initialLinkData: SidebarDataType[] = [
       },
       {
         isActive: false,
-        href: "/settings/bank",
-        label: "Bank",
-        leadingIcon: "mdi:bank",
-        iconColor: "text-yellow-400",
-      },
-      {
-        isActive: false,
-        href: "/settings/warehouseStock",
-        label: "Warehouse Stock",
-        leadingIcon: "tabler:building-warehouse",
-        iconColor: "text-green-500",
-      },
-      {
-        isActive: false,
         href: "#",
         label: "Manage Company",
         leadingIcon: "fa-regular:building",
@@ -153,7 +139,6 @@ export const initialLinkData: SidebarDataType[] = [
           },
         ],
       },
-
       {
         isActive: false,
         href: "#",
@@ -223,6 +208,20 @@ export const initialLinkData: SidebarDataType[] = [
             iconColor: "text-cyan-500",
           },
         ],
+      },
+      {
+        isActive: false,
+        href: "/settings/bank",
+        label: "Bank",
+        leadingIcon: "mdi:bank",
+        iconColor: "text-yellow-400",
+      },
+      {
+        isActive: false,
+        href: "/settings/warehouseStock",
+        label: "Warehouse Stock",
+        leadingIcon: "tabler:building-warehouse",
+        iconColor: "text-green-500",
       },
       {
         isActive: false,
