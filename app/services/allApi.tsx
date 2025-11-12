@@ -3260,3 +3260,23 @@ export const getWarehouseStockById = async (uuid: string) => {
     return handleError(error);
   }
 };
+
+export const userEmailVerification = async (query: string) => {
+  try {
+    const res = await API.get(`/api/master/auth/checkEmail?query=${query}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const userListGlobalSearch = async (params: Params) => {
+  try {
+    const res = await API.get("/api/settings/user/global-search", { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
