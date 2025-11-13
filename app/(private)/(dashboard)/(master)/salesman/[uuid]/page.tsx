@@ -63,91 +63,7 @@ interface contactCountry {
 }
 
 // ✅ Validation Schema
-const SalesmanSchema = Yup.object().shape({
-  name: Yup.string().required("Name is required"),
-  type: Yup.string().required("Type is required"),
-  designation: Yup.string().required("Designation is required"),
-  contact_no: Yup.string()
-    .required("Owner Contact number is required")
-    .matches(/^[0-9]+$/, "Only numbers are allowed")
-    .min(9, "Must be at least 9 digits")
-    .max(10, "Must be at most 10 digits"),
-  password: Yup.string()
-    .required("Password is required")
-    .min(12, "Password must be at least 12 characters long")
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{12,}$/,
-      "Password must include uppercase, lowercase, number, and special character"
-    ),
-  warehouse_id: Yup.mixed()
-    .required("Warehouse is required")
-    .test("warehouse-type", "Invalid warehouse format", function (value) {
-      const { type } = this.parent;
 
-      // ✅ When Project type (6), must be array with at least one item
-      if (type === "6") {
-        return Array.isArray(value) && value.length > 0;
-      }
-
-      // ✅ For other types, must be a non-empty string
-      return typeof value === "string" && value.trim() !== "";
-    }),
-  email: Yup.string().required("Email is required").email("Invalid email"),
-});
-
-// ✅ Step-wise validation
-const stepSchemas = [
-  Yup.object({
-    name: Yup.string().required("Name is required"),
-    type: Yup.string().required("Type is required"),
-    designation: Yup.string().required("Designation is required"),
-     warehouse_id: Yup.mixed()
-    .required("Warehouse is required")
-    .test("warehouse-type", "Invalid warehouse format", function (value) {
-      const { type } = this.parent;
-
-      // ✅ When Project type (6), must be array with at least one item
-      if (type === "6") {
-        return Array.isArray(value) && value.length > 0;
-      }
-
-      // ✅ For other types, must be a non-empty string
-      return typeof value === "string" && value.trim() !== "";
-    }),
-  }),
-  Yup.object({
-    contact_no: Yup.string()
-      .required("Contact number is required")
-      .matches(/^[0-9]+$/, "Only numbers are allowed")
-      .min(9, "Must be at least 9 digits")
-      .max(13, "Must be at most 13 digits"),
-    password: Yup.string()
-      .required("Password is required")
-      .min(12, "Password must be at least 12 characters long")
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{12,}$/,
-        "Password must include uppercase, lowercase, number, and special character"
-      ),
-    email: Yup.string().required("Email is required").email("Invalid email"),
-  }),
-  Yup.object({
-    status: Yup.string().required("Status is required"),
-    is_block: Yup.string(),
-    cashier_description_block: Yup.string(),
-    invoice_block: Yup.string(),
-  }).test(
-    "only-one-block",
-    "Select only one: Is Block, Cashier Description Block, or Invoice Block",
-    (values) => {
-      const selected = [
-        values.is_block,
-        values.cashier_description_block,
-        values.invoice_block,
-      ].filter((v) => v === "1");
-      return selected.length <= 1;
-    }
-  ),
-];
 
 type props = {
   selectedCountry: { name: string; code?: string; flag?: string };
@@ -201,6 +117,103 @@ export default function AddEditSalesman() {
     { id: 2, label: "Contact & Login" },
     { id: 3, label: "Additional Info" },
   ];
+  const SalesmanSchema = Yup.object().shape({
+  name: Yup.string().required("Name is required"),
+  type: Yup.string().required("Type is required"),
+  designation: Yup.string().required("Designation is required"),
+  contact_no: Yup.string()
+    .required("Owner Contact number is required")
+    .matches(/^[0-9]+$/, "Only numbers are allowed")
+    .min(9, "Must be at least 9 digits")
+    .max(10, "Must be at most 10 digits"),
+  password: Yup.string()
+      .when([], {
+        is: () => !isEditMode, // ❗ only require password if NOT editing
+        then: (schema) =>
+          schema
+            .required("Password is required")
+            .min(12, "Password must be at least 12 characters long")
+            .matches(
+              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{12,}$/,
+              "Password must include uppercase, lowercase, number, and special character"
+            ),
+        otherwise: (schema) => schema.notRequired(), // ❗ skip validation on edit
+      }),
+  warehouse_id: Yup.mixed()
+    .required("Warehouse is required")
+    .test("warehouse-type", "Invalid warehouse format", function (value) {
+      const { type } = this.parent;
+
+      // ✅ When Project type (6), must be array with at least one item
+      if (type === "6") {
+        return Array.isArray(value) && value.length > 0;
+      }
+
+      // ✅ For other types, must be a non-empty string
+      return typeof value === "string" && value.trim() !== "";
+    }),
+  email: Yup.string().required("Email is required").email("Invalid email"),
+});
+
+// ✅ Step-wise validation
+const stepSchemas = [
+  Yup.object({
+    name: Yup.string().required("Name is required"),
+    type: Yup.string().required("Type is required"),
+    designation: Yup.string().required("Designation is required"),
+     warehouse_id: Yup.mixed()
+    .required("Warehouse is required")
+    .test("warehouse-type", "Invalid warehouse format", function (value) {
+      const { type } = this.parent;
+
+      // ✅ When Project type (6), must be array with at least one item
+      if (type === "6") {
+        return Array.isArray(value) && value.length > 0;
+      }
+
+      // ✅ For other types, must be a non-empty string
+      return typeof value === "string" && value.trim() !== "";
+    }),
+  }),
+  Yup.object({
+    contact_no: Yup.string()
+      .required("Contact number is required")
+      .matches(/^[0-9]+$/, "Only numbers are allowed")
+      .min(9, "Must be at least 9 digits")
+      .max(13, "Must be at most 13 digits"),
+    password: Yup.string()
+      .when([], {
+        is: () => !isEditMode, // ❗ only require password if NOT editing
+        then: (schema) =>
+          schema
+            .required("Password is required")
+            .min(12, "Password must be at least 12 characters long")
+            .matches(
+              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?]).{12,}$/,
+              "Password must include uppercase, lowercase, number, and special character"
+            ),
+        otherwise: (schema) => schema.notRequired(), // ❗ skip validation on edit
+      }),
+    email: Yup.string().required("Email is required").email("Invalid email"),
+  }),
+  Yup.object({
+    status: Yup.string().required("Status is required"),
+    is_block: Yup.string(),
+    cashier_description_block: Yup.string(),
+    invoice_block: Yup.string(),
+  }).test(
+    "only-one-block",
+    "Select only one: Is Block, Cashier Description Block, or Invoice Block",
+    (values) => {
+      const selected = [
+        values.is_block,
+        values.cashier_description_block,
+        values.invoice_block,
+      ].filter((v) => v === "1");
+      return selected.length <= 1;
+    }
+  ),
+];
 
   const {
     currentStep,
@@ -255,7 +268,7 @@ export default function AddEditSalesman() {
               sub_type: d.project_type?.id?.toString() || "",
               designation: d.designation || "",
               route_id: d.route?.id?.toString() || "",
-              password: d.password, // password is not returned from API → leave empty
+              password: "", // password is not returned from API → leave empty
               contact_no: d.contact_no || "",
               warehouse_id:d.salesman_type?.id?.toString() ==="6" ? idsWareHouses: d.warehouses?.[0]?.id?.toString() ,
               is_block: d.is_block?.toString() || "0",
@@ -562,7 +575,7 @@ export default function AddEditSalesman() {
               </div>
               <div>
                 <CustomPasswordInput
-                  required
+                  required={!isEditMode}
                   label="Password"
                   value={values.password}
                   onChange={(e) => setFieldValue("password", e.target.value)}

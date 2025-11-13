@@ -1772,9 +1772,9 @@ export const getSalesmanById = async (uuid: string) => {
   }
 };
 
-export const getSalesmanBySalesId = async (uuid: string) => {
+export const getSalesmanBySalesId = async (uuid: string,query:{from:string,to:string}) => {
   try {
-    const res = await API.get(`/api/master/salesmen/salespersalesman/${uuid}`);
+    const res = await API.get(`/api/master/salesmen/salespersalesman/${uuid}?from=${query.from}&to=${query.to}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1783,7 +1783,7 @@ export const getSalesmanBySalesId = async (uuid: string) => {
 
 export const getOrderOfSalesmen= async (uuid: string,query:{from:string,to:string}) => {
   try {
-    const res = await API.get(`/api/master/salesmen/orderpersalesman/${uuid}?from=2025-11-01?to=2025-11-12"`);
+    const res = await API.get(`/api/master/salesmen/orderpersalesman/${uuid}?from=${query.from}&to=${query.to}`);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

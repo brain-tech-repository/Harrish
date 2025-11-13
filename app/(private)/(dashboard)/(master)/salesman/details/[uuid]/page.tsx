@@ -13,10 +13,12 @@ import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 // import Role from "./role/page";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
-import Table, { configType, searchReturnType, TableDataType } from "@/app/components/customTable";
+import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import { exportInvoice } from "@/app/services/agentTransaction";
+import { useLoading } from "@/app/services/loadingContext";
+import Popup from "@/app/components/popUp";
 
 // import Attendance from "./attendance/page";
 
@@ -42,6 +44,10 @@ interface Salesman {
     warehouse_code?: string;
     warehouse_name?: string;
   };
+  warehouses?: {
+    warehouse_code?: string;
+    warehouse_name?: string;
+  }[];
   device_no?: string;
   username?: string;
   contact_no?: string;
@@ -63,6 +69,8 @@ export default function Page() {
   const { id, tabName } = useParams();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setLoading: setGlobalLoading } = useLoading();
+  const [openPopup, setOpenPopup] = useState(false);
 
   const { showSnackbar } = useSnackbar();
   // const onTabClick = (index: number) => {
@@ -125,7 +133,12 @@ export default function Page() {
     { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
 
   ];
-
+ const warehouseColumns: configType["columns"] = [
+  {
+    key: "warehouse_code",
+    label: "Warehouses",
+    render: (row: TableDataType) => `${row.warehouse_code}-${row.warehouse_name}` || "-",
+  }]
  
  const orderColumns: configType["columns"] = [
   {
@@ -226,7 +239,8 @@ export default function Page() {
       pageNo: number = 1,
       pageSize: number = 50
     ): Promise<searchReturnType> => {
-      const result = await getSalesmanBySalesId(uuid);
+      
+      const result = await getSalesmanBySalesId(uuid,{from:"",to:""});
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
@@ -245,7 +259,7 @@ export default function Page() {
       pageNo: number = 1,
       pageSize: number = 50
     ): Promise<searchReturnType> => {
-      const result = await getOrderOfSalesmen(uuid,{from:"2025-11-01",to:"2025-11-12"});
+      const result = await getOrderOfSalesmen(uuid,{from:"",to:""});
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
@@ -282,6 +296,7 @@ export default function Page() {
     if (!uuid) return;
 
     const fetchSalesmanDetails = async () => {
+      setGlobalLoading(true);
       setLoading(true);
       try {
         const res = await getSalesmanById(uuid);
@@ -293,6 +308,8 @@ export default function Page() {
           return;
         }
         setSalesman(res.data);
+
+        setGlobalLoading(false);
       } catch (error) {
         showSnackbar("Unable to fetch Salesman Details", "error");
       } finally {
@@ -319,7 +336,75 @@ export default function Page() {
     { key: "order", label: "Order" },
   ];
 
+const filterBy = useCallback(
+        async (
+            payload: Record<string, string | number | null>,
+            pageSize: number
+        ): Promise<listReturnType> => {
+            let result;
+            setLoading(true);
+            try {
+                const params: Record<string, string> = { per_page: pageSize.toString() };
+                Object.keys(payload || {}).forEach((k) => {
+                    const v = payload[k as keyof typeof payload];
+                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                        params[k] = String(v);
+                    }
+                });
+                result = await getOrderOfSalesmen(uuid,{from:params.start_date,to:params.end_date});
+            } finally {
+                setLoading(false);
+            }
 
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
+                return {
+                    data: result.data || [],
+                    total: pagination.totalPages || result.pagination?.totalPages || 0,
+                    totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+                    currentPage: pagination.page || result.pagination?.page || 0,
+                    pageSize: pagination.limit || pageSize,
+                };
+            }
+        },
+        [setLoading]
+    );
+
+    const filterBySalesmen = useCallback(
+        async (
+            payload: Record<string, string | number | null>,
+            pageSize: number
+        ): Promise<listReturnType> => {
+            let result;
+            setLoading(true);
+            try {
+                const params: Record<string, string> = { per_page: pageSize.toString() };
+                Object.keys(payload || {}).forEach((k) => {
+                    const v = payload[k as keyof typeof payload];
+                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                        params[k] = String(v);
+                    }
+                });
+                result = await getSalesmanBySalesId(uuid,{from:params.start_date,to:params.end_date});
+            } finally {
+                setLoading(false);
+            }
+
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
+                return {
+                    data: result.data || [],
+                    total: pagination.totalPages || result.pagination?.totalPages || 0,
+                    totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+                    currentPage: pagination.page || result.pagination?.currentPage || 0,
+                    pageSize: pagination.limit || pageSize,
+                };
+            }
+        },
+        [setLoading]
+    );
   // useEffect(() => {
   //   if (!tabName) {
   //     setActiveTab(0); // default tab
@@ -328,6 +413,9 @@ export default function Page() {
   //     setActiveTab(foundIndex !== -1 ? foundIndex : 0);
   //   }
   // }, [tabName]);
+  const viewPopuop = () => {
+    setOpenPopup(true);
+  }
 
   return (
     <>
@@ -399,7 +487,8 @@ export default function Page() {
               { key: "Contact No", value: salesman?.contact_no || "-" },
               {
                 key: "Warehouse",
-                value: salesman?.warehouse?.warehouse_name || "-",
+                value: <span className="hover:text-red-500 cursor-pointer">View Warehouses</span>,
+                onClick: viewPopuop
               },
               {
                 key: "Route",
@@ -409,7 +498,7 @@ export default function Page() {
               {
                 key: "Forcefull Login",
                 value:
-                  salesman?.forceful_login === 1 ||
+                 
                     salesman?.forceful_login === "1"
                     ? "Yes"
                     : "No",
@@ -417,17 +506,17 @@ export default function Page() {
               {
                 key: "Is Block",
                 value:
-                  salesman?.is_block === 1 || salesman?.is_block === "1"
+                  salesman?.is_block === "1"
                     ? "Yes"
                     : "No",
               },
               { key: "Block Date From", value: salesman?.block_date_from || "-" },
               { key: "Block Date To", value: salesman?.block_date_to || "-" },
-              { key: "cashier Description Block", value: salesman?.cashier_description_block || "-" },
+              { key: "cashier Description Block", value: salesman?.cashier_description_block == "1"?"Yes":"No"},
               {
                 key: "Invoice Block",
                 value:
-                  salesman?.invoice_block === 1 ||
+                
                     salesman?.invoice_block === "1"
                     ? "Yes"
                     : "No",
@@ -456,10 +545,23 @@ export default function Page() {
               config={{
                 api: {
                   // search: searchCustomerById,
-                  list: salesBySalesman
+                  list: salesBySalesman,
+                 filterBy:filterBySalesmen
                 },
                 header: {
-                  searchBar: false
+                  searchBar: false,
+                  filterByFields: [
+                                {
+                                    key: "start_date",
+                                    label: "Start Date",
+                                    type: "date"
+                                },
+                                {
+                                    key: "end_date",
+                                    label: "End Date",
+                                    type: "date"
+                                }
+                            ]
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },
@@ -492,10 +594,23 @@ export default function Page() {
               config={{
                 api: {
                   // search: searchCustomerById,
-                  list: orderBySalesman
+                  list: orderBySalesman,
+                  filterBy:filterBy
                 },
                 header: {
-                  searchBar: false
+                  searchBar: false,
+                  filterByFields: [
+                                {
+                                    key: "start_date",
+                                    label: "Start Date",
+                                    type: "date"
+                                },
+                                {
+                                    key: "end_date",
+                                    label: "End Date",
+                                    type: "date"
+                                }
+                            ]
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },
@@ -519,6 +634,26 @@ export default function Page() {
 
         </ContainerCard>
       )}
+
+      <Popup isOpen={openPopup}  onClose={() => {setOpenPopup(false);}} >
+      <div className="flex flex-col h-full">
+            <Table
+                data={salesman?.warehouses || []}
+
+              config={{
+                showNestedLoading: true,
+                footer: { nextPrevBtn: true, pagination: true },
+                columns: warehouseColumns,
+                table: {
+                  height: 500,
+                },
+                rowSelection: false,
+               
+                pageSize: 50,
+              }}
+            />
+          </div>
+      </Popup>
     </>
   );
 }
