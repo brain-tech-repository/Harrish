@@ -98,6 +98,7 @@ const columns = [
     {
         key: "status",
         label: "Status",
+        isSortable: true,
         render: (row: TableDataType) => (
             <StatusBtn isActive={row.status === "1" ? true : false} />
         )},

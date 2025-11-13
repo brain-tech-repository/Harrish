@@ -110,6 +110,7 @@ const columns = [
   {
     key: "status",
     label: "Status",
+    isSortable: true,
     render: (row: TableDataType) => (
       <StatusBtn isActive={String(row.status) === "1"} />
     ),
@@ -155,27 +156,32 @@ export default function VehiclePage() {
     []
   );
 
-  const searchVehicle = useCallback(
-    async (
-      searchQuery: string,
-    ): Promise<searchReturnType> => {
-      setLoading(true);
-      const result = await vehicleGlobalSearch({
-        search: searchQuery,
-        // per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (result.error) throw new Error(result.data.message);
-      const pagination = result.pagination && result.pagination.pagination ? result.pagination.pagination : {};
-      return {
-        data: result.data || [],
-        total: pagination.totalPages || 10,
-        currentPage: pagination.current_page || 1,
-        pageSize: pagination.limit || 10,
-      };
-    },
-    []
-  );
+         const searchVehicle = useCallback(
+             async (
+                 search: string,
+                 pageSize: number = 50
+             ): Promise<listReturnType> => {
+                 try {
+                   setLoading(true);
+                     const listRes = await vehicleGlobalSearch({
+                         search,
+                         per_page: pageSize.toString()
+                     });
+                     setLoading(false);
+                     return {
+                         data: listRes.data || [],
+                         total: listRes.pagination.totalPages ,
+                         currentPage: listRes.pagination.page ,
+                         pageSize: listRes.pagination.limit ,
+                     };
+                 } catch (error: unknown) {
+                     console.error("API Error:", error);
+                     setLoading(false);
+                     throw error;
+                 }
+             },
+             []
+         );
 
   const exportFile = async (format: string) => {
     try {

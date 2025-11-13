@@ -392,6 +392,15 @@ export const agentOrderExport = async (params: Params) => {
   }
 };
 
+export const agentReturnExport = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/returns/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const deleteAgentOrder = async (uuid: string) => {
   try {
     const res = await API.delete(`/api/agent_transaction/orders/${uuid}`);

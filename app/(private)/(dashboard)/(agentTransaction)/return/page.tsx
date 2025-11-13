@@ -16,6 +16,8 @@ import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { returnList } from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
+import { downloadFile } from "@/app/services/allApi";
+import { agentReturnExport } from "@/app/services/agentTransaction";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 const dropdownDataList = [
@@ -55,6 +57,7 @@ const columns = [
    {
            key: "status",
            label: "Status",
+           isSortable: true,
            render: (row: TableDataType) => {
                // Treat status 1 or 'active' (case-insensitive) as active
                const isActive =
@@ -168,6 +171,21 @@ export default function CustomerInvoicePage() {
                 [setLoading]
             );
 
+                const exportFile = async () => {
+                    try {
+                        const response = await agentReturnExport({ format: "csv" });
+                        if (response && typeof response === 'object' && response.download_url) {
+                            await downloadFile(response.download_url);
+                            showSnackbar("File downloaded successfully ", "success");
+                        } else {
+                            showSnackbar("Failed to get download URL", "error");
+                        }
+                    } catch (error) {
+                        showSnackbar("Failed to download return data", "error");
+                    } finally {
+                    }
+                };
+
     return (
         <div className="flex flex-col h-full">
                 {/* 🔹 Table Section */}
@@ -259,14 +277,15 @@ export default function CustomerInvoicePage() {
                             ],
                             searchBar: false,
                             actions: [
-                            //   <SidebarBtn
-                            //       key={0}
-                            //       href="#"
-                            //       isActive
-                            //       leadingIcon="mdi:download"
-                            //       label="Download"
-                            //       labelTw="hidden lg:block"
-                            //   />,
+                              <SidebarBtn
+                                  key={0}
+                                  href="#"
+                                  isActive
+                                  leadingIcon="mdi:download"
+                                  label="Download"
+                                  labelTw="hidden lg:block"
+                                  onClick={exportFile}
+                              />,
                               <SidebarBtn
                                   key={1}
                                   href="/return/add"

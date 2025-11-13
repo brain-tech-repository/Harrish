@@ -26,7 +26,7 @@ type WarehouseRow = TableDataType & {
   street?: string;
   branch_id?: string;
   town_village?: string;
-  region?: {name?:string;}
+  region?: {code?:string; name?:string; region_name?: string;}
   company?:{company_code?:string; company_name?:string};
   city?: string;
   location?: string;
@@ -45,7 +45,7 @@ type WarehouseRow = TableDataType & {
   status?: string | boolean | number;
   company_customer_id?:{customer_name: string};
   region_id?:{ region_name:string};
-  area?: {name:string};
+  area?: {code?:string; area_code?:string; area_name?:string; name:string};
 };
 
 const columns = [
@@ -84,13 +84,21 @@ const columns = [
     label: 'Region',
     showByDefault: true,
     key: 'region',
-    render: (row: WarehouseRow) => row.region?.name || '-',
+     render: (row: WarehouseRow) => {
+        const code = row.region?.code || "";
+        const name =  row.region?.name || row.region?.region_name ||  '-';
+        return `${code}${code && name ? " - " : ""}${name}`;
+      }
   },
   {
     label: 'Area',
     showByDefault: true,
     key: 'area',
-    render: (row: WarehouseRow) => row.area?.name || '-',
+    render: (row: WarehouseRow) => {
+        const code = row.area?.code || row.area?.area_code || "";
+        const name =  row.area?.name || row.area?.area_name ||  '-';
+        return `${code}${code && name ? " - " : ""}${name}`;
+      }
   },
   // { key: "sub_region_id", label: "Sub Region"},
   { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-",showByDefault: true, },
@@ -113,6 +121,7 @@ const columns = [
     key: "status",
     label: "Status",
     showByDefault: true,
+    isSortable: true,
     render: (row: WarehouseRow) => {
       const value = row.status;
       const strValue = value != null ? String(value) : "";
@@ -155,7 +164,7 @@ export default function Warehouse() {
       street?: string;
       branch_id?: string;
       town_village?: string;
-      region?: {region_name?:string;}
+      region?: {code?:string; region_name?:string;}
       get_company_customer?: {owner_name?:string};
       city?: string;
       location?: string;

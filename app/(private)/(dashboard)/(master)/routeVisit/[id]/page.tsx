@@ -6,7 +6,7 @@ import StepperForm, {
   useStepperForm,
 } from "@/app/components/stepperForm";
 import {
-  agentCustomerFilteredList,
+  getAgentCusByRoute,
   agentCustomerList,
   companyList,
   getRouteVisitDetails,
@@ -27,6 +27,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as yup from "yup";
 import Table from "./toggleTable";
+
 
 // Types for API responses
 type Company = {
@@ -63,6 +64,14 @@ type Customer = {
   id: number;
   owner_name: string;
   osa_code: string;
+};
+
+type Merchandiser = {
+  id: number;
+  osa_code?: string;
+  name?: string;
+  full_name?: string;
+  label?: string;
 };
 
 type RouteVisitDetails = {
@@ -202,7 +211,7 @@ export default function AddEditRouteVisit() {
   });
 
   // Step-specific validation schemas
-  const stepSchemas = [
+  const stepSchemas: yup.ObjectSchema<Record<string, unknown>>[] = [
     // Step 1: Route Details validation
     yup.object().shape({
       region: validationSchema.fields.region,
@@ -213,15 +222,15 @@ export default function AddEditRouteVisit() {
       from_date: validationSchema.fields.from_date,
       to_date: validationSchema.fields.to_date,
       status: validationSchema.fields.status,
-    }),
+  }) as yup.ObjectSchema<Record<string, unknown>>,
     // Step 2: Customer Schedule validation
     yup.object().shape({
       salesman_type: validationSchema.fields.salesman_type,
-    }),
+  }) as yup.ObjectSchema<Record<string, unknown>>,
   ];
 
   // Build dynamic schema for step 1 based on salesman_type
-  const getStep1Schema = (salesmanType: string) => {
+  const getStep1Schema = (salesmanType: string): yup.ObjectSchema<Record<string, unknown>> => {
     if (salesmanType === "2") {
       // Merchandiser: require merchandiser, company, region
       return yup.object().shape({
@@ -231,7 +240,7 @@ export default function AddEditRouteVisit() {
         from_date: validationSchema.fields.from_date,
         to_date: validationSchema.fields.to_date,
         status: validationSchema.fields.status,
-      });
+  }) as yup.ObjectSchema<Record<string, unknown>>;
     }
 
     // Agent customer (default) - require company, region, area, warehouse, route
@@ -244,7 +253,7 @@ export default function AddEditRouteVisit() {
       from_date: validationSchema.fields.from_date,
       to_date: validationSchema.fields.to_date,
       status: validationSchema.fields.status,
-    });
+  }) as yup.ObjectSchema<Record<string, unknown>>;
   };
 
   // ✅ Fetch dropdowns
@@ -263,12 +272,12 @@ export default function AddEditRouteVisit() {
       setSkeleton({ ...skeleton, company: false });
       // Fetch merchandiser list for merchandiser dropdown
       try {
-        const merchRes: ApiResponse<any[]> = await merchandiserData();
-        const merchOpts = (merchRes?.data || merchRes || []) as any[];
+        const merchRes: ApiResponse<Merchandiser[]> = await merchandiserData();
+        const merchOpts = (merchRes?.data || merchRes || []) as Merchandiser[];
         setMerchandiserOptions(
-          merchOpts.map((m) => ({
+          merchOpts.map((m: Merchandiser) => ({
             value: String(m.id),
-            label: `${m?.osa_code ? `${m.osa_code} - ` : ""}${m?.name || m?.full_name || m?.label || String(m.id)}`,
+            label: `${m.osa_code ? `${m.osa_code} - ` : ""}${m.name || m.full_name || m.label || String(m.id)}`,
           })) || []
         );
       } catch (mErr) {
@@ -355,13 +364,25 @@ export default function AddEditRouteVisit() {
   };
 
   useEffect(() => {
+    // Only fetch customers if a route is selected
+    if (!form.route || !form.route.length) {
+      setCustomers([]);
+      return;
+    }
+    // Pass all selected route IDs as comma-separated string
+    const route_id = Array.isArray(form.route) && form.route.length > 0 ? form.route.join(",") : undefined;
+    if (!route_id) {
+      setCustomers([]);
+      return;
+    }
+
     const fetchCustomersForAgent = async () => {
       try {
         let res: ApiResponse<Customer[]> | null = null;
         if (isEditMode) {
-          res = await agentCustomerList({ type: form.salesman_type });
+          res = await getAgentCusByRoute(route_id);
         } else {
-          res = await agentCustomerFilteredList({ type: form.salesman_type });
+          res = await getAgentCusByRoute(route_id);
         }
         console.log("Fetched customers (agent):", res);
         setCustomers((res && res.data) || []);
@@ -382,6 +403,7 @@ export default function AddEditRouteVisit() {
           .replace(/\\\\/g, "")
           .replace(/^"+|"+$/g, "")
           .replace(/^'+|'+$/g, "");
+        // If getCustomerByMerchandiser also needs route_id, add it here as a param
         const res = await getCustomerByMerchandiser(normalizedId);
         console.log("Fetched customers (merchandiser):", res);
         // API might return array or { data: [] }
@@ -400,7 +422,7 @@ export default function AddEditRouteVisit() {
       // Agent customer path
       fetchCustomersForAgent();
     }
-  }, [form.salesman_type, form.merchandiser, form.company, form.region, isEditMode]);
+  }, [form.salesman_type, form.merchandiser, form.company, form.region, isEditMode, form.route]);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -582,7 +604,7 @@ export default function AddEditRouteVisit() {
   // ✅ Step navigation
   const handleNext = async () => {
     try {
-      let schema: any;
+  let schema: yup.ObjectSchema<Record<string, unknown>> | undefined;
       if (currentStep === 1) {
         schema = getStep1Schema(form.salesman_type);
       } else if (currentStep === 2) {
@@ -678,7 +700,7 @@ export default function AddEditRouteVisit() {
 
       console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
-      let res: ApiResponse<any>;
+  let res: ApiResponse<Record<string, unknown>>;
       if (isEditMode && visitId) {
         console.log("Updating existing route visit...");
         res = await updateRouteVisitDetails(payload);
@@ -689,10 +711,11 @@ export default function AddEditRouteVisit() {
 
       if (res?.error) {
         console.error("API Error:", res.error);
-        showSnackbar(
-          res?.data?.message || "Failed to save route visit",
-          "error"
-        );
+        let errorMsg = "Failed to save route visit";
+        if (res?.data && typeof res.data === "object" && "message" in res.data && typeof res.data.message === "string") {
+          errorMsg = res.data.message;
+        }
+        showSnackbar(errorMsg, "error");
       } else {
         showSnackbar(
           isEditMode
