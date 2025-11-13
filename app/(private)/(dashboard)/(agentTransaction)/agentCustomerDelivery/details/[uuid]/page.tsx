@@ -1,5 +1,4 @@
 "use client";
-
 import BorderIconButton from "@/app/components/borderIconButton";
 import ContainerCard from "@/app/components/containerCard";
 import CustomDropdown from "@/app/components/customDropdown";
@@ -7,8 +6,9 @@ import Table from "@/app/components/customTable";
 import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 import { agentDeliveryExport, deliveryByUuid } from "@/app/services/agentTransaction";
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
@@ -70,6 +70,7 @@ interface DeliveryData {
   net_amount?: string;
   excise?: string;
   vat?: string;
+  preVat?: string;
   delivery_charges?: string;
   total?: string;
 }
@@ -89,22 +90,23 @@ interface TableRow {
   [key: string]: string;
 }
 
-const dropdownDataList = [
-  { icon: "humbleicons:radio", label: "Mark as Pending", iconWidth: 20 },
-];
-
 const columns = [
   { key: "id", label: "#", width: 60 },
-  { key: "itemCode", label: "Product Code" },
-  { key: "itemName", label: "Product Name", width: 250 },
+  { key: "itemName", label: "Product Name", render: (value: any) => <>{value.itemCode ? value.itemCode : ""} {value.itemCode && value.itemName ? " - " : ""} {value.itemName ? value.itemName : ""}</> },
   { key: "name", label: "UOM" },
   { key: "Quantity", label: "Quantity" },
-  { key: "Price", label: "Price" },
-  { key: "Excise", label: "Excise" },
-  { key: "Discount", label: "Discount" },
-  { key: "Net", label: "Net" },
-  { key: "Vat", label: "Vat" },
-  { key: "Total", label: "Total" },
+  {
+    key: "Price",
+    label: "Price",
+    render: (value: any) => <>{toInternationalNumber(Number(value.Price || 0)) || "0.00"}</>,
+  },
+  {
+    key: "Net",
+    label: "Net",
+    render: (value: any) => <>{toInternationalNumber(Number(value.Net || 0)) || "0.00"}</>,
+  },
+  { key: "Vat", label: "Vat", render: (value: any) => <>{toInternationalNumber(Number(value.Vat || 0)) || "0.00"}</> },
+  { key: "Total", label: "Total", render: (value: any) => <>{toInternationalNumber(Number(value.Total || 0)) || "0.00"}</> },
 ];
 
 export default function OrderDetailPage() {
@@ -137,7 +139,7 @@ export default function OrderDetailPage() {
               name: detail.uom_name || "-", // Fixed: use uom_name from API
               Quantity: detail.quantity?.toString() || "0",
               Price: detail.item_price || "0",
-              Excise: detail.excise || "0",
+              // Excise: detail.excise || "0",
               Discount: detail.discount || "0",
               Net: detail.net_total || "0",
               Vat: detail.vat || "0",
@@ -157,24 +159,63 @@ export default function OrderDetailPage() {
 
   // Helper function to check if value exists and is not null/empty
   const hasValue = (value: any) => {
-    return value !== null && value !== undefined && value !== "" && value !== "0" && value !== "0.00";
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") {
+      const v = value.trim().toLowerCase();
+      return v !== "" && v !== "0" && v !== "0.00" && v !== "null" && v !== "undefined";
+    }
+    if (typeof value === "number") {
+      return !isNaN(value);
+    }
+    return true;
   };
 
-  // Build key-value data dynamically based on available values
+  // Calculate totals from details if API doesn't provide them
+  const calculatedGrossTotal = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.net_total ?? item.total ?? 0),
+    0
+  ) ?? 0;
+
+  const calculatedVat = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.vat ?? 0),
+    0
+  ) ?? 0;
+
+  const calculatedTotal = deliveryData?.details?.reduce(
+    (sum, item) => sum + Number(item.total ?? 0),
+    0
+  ) ?? 0;
+
+  // Prefer API values, fall back to calculated values
+  const grossTotal = Number(deliveryData?.gross_total ?? calculatedGrossTotal ?? 0);
+  const vatTotal = Number(deliveryData?.vat ?? calculatedVat ?? 0);
+  const netTotal = Number(deliveryData?.net_total ?? deliveryData?.net_amount ?? grossTotal ?? 0);
+  const finalTotal = Number(deliveryData?.total ?? calculatedTotal ?? 0);
+
+  // Calculate Pre Vat: use API value or compute from net_total - vat
+  const computedPreVat = (() => {
+    if (deliveryData?.preVat !== undefined && deliveryData?.preVat !== null) {
+      return Number(deliveryData.preVat);
+    }
+    if (netTotal > 0 && vatTotal > 0) {
+      return netTotal - vatTotal;
+    }
+    
+    return 0;
+  })();
+
+  // Always show these fields (not conditionally hidden)
   const keyValueData = [
-    hasValue(deliveryData?.gross_total) && { key: "Gross Total", value: `AED ${deliveryData?.gross_total}` },
-    // hasValue(deliveryData?.discount) && { key: "Discount", value: `AED ${deliveryData?.discount}` },
-    hasValue(deliveryData?.net_total || deliveryData?.net_amount) && { 
-      key: "Net Total", 
-      value: `AED ${deliveryData?.net_total || deliveryData?.net_amount || "0.00"}` 
+    { key: "Gross Total", value: `AED ${toInternationalNumber(grossTotal)}` },
+    { key: "VAT", value: `AED ${toInternationalNumber(vatTotal)}` },
+    { key: "Pre VAT", value: `AED ${toInternationalNumber(computedPreVat)}` },
+    (deliveryData?.delivery_charges) && {
+      key: "Delivery Charges",
+      value: `AED ${toInternationalNumber(Number(deliveryData?.delivery_charges ?? 0))}`,
     },
-    // hasValue(deliveryData?.excise) && { key: "Excise", value: `AED ${deliveryData?.excise}` },
-    hasValue(deliveryData?.vat) && { key: "Vat", value: `AED ${deliveryData?.vat}` },
-    hasValue(deliveryData?.delivery_charges) && { 
-      key: "Delivery Charges", 
-      value: `AED ${deliveryData?.delivery_charges}` 
-    },
-  ].filter(Boolean); // Remove null/false entries
+  ].filter(Boolean) as Array<{ key: string; value: string }>;
+
+  const targetRef = useRef<HTMLDivElement | null>(null);
 
   const exportFile = async () => {
     try {
@@ -191,7 +232,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const printRef = React.useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -214,6 +255,7 @@ export default function OrderDetailPage() {
           {/* Uncomment if needed */}
         </div>
       </div>
+      {/* < ref={targetRef}> */}
 
       {/* ---------- Order Info Card ---------- */}
       <div ref={printRef}>
@@ -223,115 +265,112 @@ export default function OrderDetailPage() {
               <Logo type="full" />
             </div>
 
-          <div className="flex flex-col items-end">
-            <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-              DELIVERY
-            </span>
-            <span className="text-primary text-[14px] tracking-[10px] mb-3">
-              #{deliveryData?.delivery_code || ""}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
+                DELIVERY
+              </span>
+              <span className="text-primary text-[14px] tracking-[10px] mb-3">
+                #{deliveryData?.delivery_code || ""}
+              </span>
+            </div>
           </div>
-        </div>
 
           <hr className="text-[#D5D7DA]" />
 
-        {/* ---------- Order Details Section (three equal columns) ---------- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-x-8 items-start">
-          {/* From (Seller) */}
-          <div>
-            <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px] border-b md:border-b-0 pb-4 md:pb-0">
-              <span>From (Seller)</span>
-              <div className="flex flex-col space-y-[10px]">
-                <span className="font-semibold">
-                  {deliveryData?.warehouse?.code && deliveryData?.warehouse?.name
-                    ? `${deliveryData?.warehouse?.code} - ${deliveryData?.warehouse?.name}`
-                    : "-"}
-                </span>
-                {hasValue(deliveryData?.warehouse?.address) && (
-                  <span>Address: {deliveryData?.warehouse?.address}</span>
-                )}
-                {(hasValue(deliveryData?.warehouse?.owner_number) || hasValue(deliveryData?.warehouse?.owner_email)) && (
-                  <span>
-                    {hasValue(deliveryData?.warehouse?.owner_number) && (
-                      <>Phone: {deliveryData?.warehouse?.owner_number}</>
-                    )}
-                    {hasValue(deliveryData?.warehouse?.owner_number) && hasValue(deliveryData?.warehouse?.owner_email) && <br />}
-                    {hasValue(deliveryData?.warehouse?.owner_email) && (
-                      <>Email: {deliveryData?.warehouse?.owner_email}</>
-                    )}
+          {/* ---------- Order Details Section (three equal columns) ---------- */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-x-8 items-start">
+            {/* From (Seller) */}
+            <div>
+              <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px] border-b md:border-b-0 pb-4 md:pb-0">
+                <span>From (Seller)</span>
+                <div className="flex flex-col space-y-[10px]">
+                  <span className="font-semibold">
+                    {deliveryData?.warehouse?.code && deliveryData?.warehouse?.name
+                      ? `${deliveryData?.warehouse?.code} - ${deliveryData?.warehouse?.name}`
+                      : "-"}
                   </span>
+                  {hasValue(deliveryData?.warehouse?.address) && (
+                    <span>Address: {deliveryData?.warehouse?.address}</span>
+                  )}
+                  {(hasValue(deliveryData?.warehouse?.owner_number) || hasValue(deliveryData?.warehouse?.owner_email)) && (
+                    <span>
+                      {hasValue(deliveryData?.warehouse?.owner_number) && (
+                        <>Phone: {deliveryData?.warehouse?.owner_number}</>
+                      )}
+                      {hasValue(deliveryData?.warehouse?.owner_number) && hasValue(deliveryData?.warehouse?.owner_email) && <br />}
+                      {hasValue(deliveryData?.warehouse?.owner_email) && (
+                        <>Email: {deliveryData?.warehouse?.owner_email}</>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* To (Customer) */}
+            <div>
+              <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
+                <span>To (Customer)</span>
+                <div className="flex flex-col space-y-[10px]">
+                  <span className="font-semibold">
+                    {deliveryData?.customer?.code ? deliveryData?.customer?.code : ""}
+                    {deliveryData?.customer?.code && deliveryData?.customer?.name ? " - " : ""}
+                    {deliveryData?.customer?.name ? `${deliveryData?.customer?.name}` : ""}
+                  </span>
+                  <span>
+                    {deliveryData?.customer?.town ? deliveryData?.customer?.town : ""}
+                    {deliveryData?.customer?.landmark && deliveryData?.customer?.town ? ", " : ""}
+                    {deliveryData?.customer?.landmark ? deliveryData?.customer?.landmark : ""}
+                    {deliveryData?.customer?.district ? deliveryData?.customer?.district : ""}
+                  </span>
+                  {
+                    <span>
+                      {deliveryData?.customer?.contact_no && (
+                        <>Phone: {deliveryData?.customer?.contact_no}</>
+                      )}
+                      {deliveryData?.customer?.email && (
+                        <>Phone: {deliveryData?.customer?.email}</>
+                      )}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Dates / meta - right column */}
+            <div className="flex md:justify-end">
+              <div className="text-primary-bold text-[14px] md:text-right">
+                {hasValue(deliveryData?.delivery_date) && deliveryData?.delivery_date && (
+                  <div>
+                    Delivery Date:{" "}
+                    <span className="font-bold">
+                      {new Date(deliveryData.delivery_date).toLocaleDateString('en-GB')}
+                    </span>
+                  </div>
+                )}
+                {(hasValue(deliveryData?.route?.code) || hasValue(deliveryData?.route?.name)) && (
+                  <div className="mt-2">
+                    Route:{" "}
+                    <span className="font-bold">
+                      {deliveryData?.route?.code && deliveryData?.route?.name
+                        ? `${deliveryData.route.code} - ${deliveryData.route.name}`
+                        : deliveryData?.route?.code || deliveryData?.route?.name}
+                    </span>
+                  </div>
+                )}
+                {(hasValue(deliveryData?.salesman?.code) || hasValue(deliveryData?.salesman?.name)) && (
+                  <div className="mt-2">
+                    Salesman:{" "}
+                    <span className="font-bold">
+                      {deliveryData?.salesman?.code && deliveryData?.salesman?.name
+                        ? `${deliveryData.salesman.code} - ${deliveryData.salesman.name}`
+                        : deliveryData?.salesman?.code || deliveryData?.salesman?.name}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-
-          {/* To (Customer) */}
-          <div>
-            <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
-              <span>To (Customer)</span>
-              <div className="flex flex-col space-y-[10px]">
-                <span className="font-semibold">
-                  {deliveryData?.customer?.code ? deliveryData?.customer?.code : ""}
-                  {deliveryData?.customer?.code && deliveryData?.customer?.name ? " - " : ""}
-                  {deliveryData?.customer?.name ? `${deliveryData?.customer?.name}` : ""}
-                </span>
-                {hasValue(deliveryData?.customer?.town) && (
-                  <span>Town: {deliveryData?.customer?.town}</span>
-                )}
-                {hasValue(deliveryData?.customer?.landmark) && (
-                  <span>Landmark: {deliveryData?.customer?.landmark}</span>
-                )}
-                {hasValue(deliveryData?.customer?.district) && (
-                  <span>District: {deliveryData?.customer?.district}</span>
-                )}
-                {
-                  <span>
-                    {deliveryData?.customer?.contact_no && (
-                      <>Phone: {deliveryData?.customer?.contact_no}</>
-                    )}
-                    {deliveryData?.customer?.email && (
-                      <>Phone: {deliveryData?.customer?.email}</>
-                    )}
-                  </span>
-                }
-              </div>
-            </div>
-          </div>
-
-          {/* Dates / meta - right column */}
-          <div className="flex md:justify-end">
-            <div className="text-primary-bold text-[14px] md:text-right">
-              {hasValue(deliveryData?.delivery_date) && deliveryData?.delivery_date && (
-                <div>
-                  Delivery Date:{" "}
-                  <span className="font-bold">
-                    {new Date(deliveryData.delivery_date).toLocaleDateString('en-GB')}
-                  </span>
-                </div>
-              )}
-              {(hasValue(deliveryData?.route?.code) || hasValue(deliveryData?.route?.name)) && (
-                <div className="mt-2">
-                  Route:{" "}
-                  <span className="font-bold">
-                    {deliveryData?.route?.code && deliveryData?.route?.name
-                      ? `${deliveryData.route.code} - ${deliveryData.route.name}`
-                      : deliveryData?.route?.code || deliveryData?.route?.name}
-                  </span>
-                </div>
-              )}
-              {(hasValue(deliveryData?.salesman?.code) || hasValue(deliveryData?.salesman?.name)) && (
-                <div className="mt-2">
-                  Salesman:{" "}
-                  <span className="font-bold">
-                    {deliveryData?.salesman?.code && deliveryData?.salesman?.name
-                      ? `${deliveryData.salesman.code} - ${deliveryData.salesman.name}`
-                      : deliveryData?.salesman?.code || deliveryData?.salesman?.name}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
 
           {/* ---------- Order Table ---------- */}
           <Table
@@ -360,7 +399,7 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              {/* Totals */}
+              {/* Totals - Only show rows with values */}
               <div className="flex flex-col gap-[10px] w-full lg:w-[350px] border-b-[1px] border-[#D5D7DA] lg:border-0 pb-[20px] lg:pb-0 mb-[20px] lg:mb-0">
                 {keyValueData.map((kv: any) => (
                   <div key={kv.key} className="w-full">
@@ -371,10 +410,9 @@ export default function OrderDetailPage() {
                     <hr className="text-[#D5D7DA]" />
                   </div>
                 ))}
-                {/* <hr className="text-[#D5D7DA]" /> */}
                 <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
                   <span>Total</span>
-                  <span>AED {deliveryData?.total || "0.00"}</span>
+                  <span>AED {toInternationalNumber(finalTotal)}</span>
                 </div>
               </div>
 
@@ -396,10 +434,10 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          <hr className="text-[#D5D7DA]" />
+          <hr className="text-[#D5D7DA] print:hidden" />
 
           {/* ---------- Footer Buttons ---------- */}
-          <div className="flex flex-wrap justify-end gap-[20px]">
+          <div className="flex flex-wrap justify-end gap-[20px] print:hidden">
             <SidebarBtn
               leadingIcon={"lucide:download"}
               leadingIconSize={20}

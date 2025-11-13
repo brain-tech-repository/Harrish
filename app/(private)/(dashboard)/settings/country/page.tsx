@@ -8,13 +8,11 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
   listReturnType,
-  searchReturnType,
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
   countryList,
-  countryListGlobalSearch,
   deleteCountry,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
@@ -101,29 +99,7 @@ export default function Country() {
     []
   );
 
-  const searchCountries = useCallback(
-    async (
-      searchQuery: string,
-      pageSize: number
-    ): Promise<searchReturnType> => {
-      setLoading(true);
-      const result = await countryListGlobalSearch({
-        query: searchQuery,
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (result.error) throw new Error(result.data.message);
-      else {
-        return {
-          data: result.data || [],
-          total: result.pagination.pagination.totalPages || 0,
-          currentPage: result.pagination.pagination.current_page || 0,
-          pageSize: result.pagination.pagination.limit || pageSize,
-        };
-      }
-    },
-    []
-  );
+  // global search removed: use column filters and list API only
 
   useEffect(() => {
     setLoading(true);
@@ -137,7 +113,6 @@ export default function Country() {
           config={{
             api: {
               list: fetchCountries,
-              search: searchCountries,
             },
             header: {
               title: "Country",
@@ -171,7 +146,8 @@ export default function Country() {
                   />
                 </div>,
               ],
-              searchBar: true,
+              // disable global search bar (use column filters only)
+              searchBar: false,
               columnFilter: true,
               actions: [
                 <SidebarBtn

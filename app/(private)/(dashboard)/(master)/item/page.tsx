@@ -1,5 +1,6 @@
 "use client";
 
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
@@ -24,6 +25,7 @@ interface DropdownItem {
 interface LocalTableDataType {
   id?: number | string;
   erp_code?: string;
+  code?: string;
   name?: string;
   item_category?: { category_name?: string };
   item_uoms?: Array<{ name?: string; uom_type?: string; uom_price?: string }>;
@@ -36,12 +38,8 @@ const dropdownDataList: DropdownItem[] = [
 ];
 
 const columns = [
-  {
-    key: "erp_code",
-    label: "ERP Code",
-    render: (row: LocalTableDataType) => row.erp_code || "-",
-  },
-  { key: "name", label: "Name" },
+  { key: "erp_code", label: "ERP Code", render: (row: LocalTableDataType) => row.erp_code || "-" },
+  { key: "name", label: "Name", render: (row: LocalTableDataType) => row.code + " - " + row.name || "-" },
   {
     key: "item_category",
     label: "Category",
@@ -60,7 +58,7 @@ const columns = [
     label: "Base UOM Price",
     render: (row: LocalTableDataType) => {
       if (!row.item_uoms || row.item_uoms.length === 0) return "-";
-      return row.item_uoms[0]?.uom_price ?? "-"; // ✔️ Base UOM Price
+      return toInternationalNumber(row.item_uoms[0]?.uom_price) ?? "-";
     },
   },
   {
@@ -68,7 +66,7 @@ const columns = [
     label: "Secondary UOM",
     render: (row: LocalTableDataType) => {
       if (!row.item_uoms || row.item_uoms.length < 2) return "-";
-      return row.item_uoms[1]?.name ?? "-"; // ✔️ Secondary UOM
+      return row.item_uoms[1]?.name ?? "-";
     },
   },
   {
@@ -76,7 +74,7 @@ const columns = [
     label: "Secondary UOM Price",
     render: (row: LocalTableDataType) => {
       if (!row.item_uoms || row.item_uoms.length < 2) return "-";
-      return row.item_uoms[1]?.uom_price ?? "-"; // ✔️ Secondary UOM Price
+      return toInternationalNumber(row.item_uoms[1]?.uom_price) ?? "-";
     },
   },
   {

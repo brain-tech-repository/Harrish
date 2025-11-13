@@ -12,8 +12,9 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
-  getArea,
-  deleteArea,
+  countryList,
+  locationList,
+  deleteCountry,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -26,76 +27,60 @@ interface DropdownItem {
   iconWidth: number;
 }
 
-interface SubRegionItem {
-  id?: number | string;
-  area_code?: string;
-  area_name?: string;
-  region?: {
-    region_name?: string;
-  };
-
-  // region_name?: string;
-  status?: number;
-}
-
 const dropdownDataList: DropdownItem[] = [
-  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
+  // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+  // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+  // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
 
 const columns = [
   {
-    key: "area_code",
-    label: "Area Code",
+    key: "code",
+    label: "Location Code",
     render: (row: TableDataType) => (
       <span className="font-semibold text-[#181D27] text-[14px]">
-        {row.area_code}
+        {row.code}
       </span>
     ),
   },
-  { key: "area_name", label: "Area Name" },
-  // { key: "region_name", label: "Region" },
-  {
-    key: "region_name",
-    label: "Region",
-    render: (data: TableDataType) => {
-      const typeObj = data.region
-        ? JSON.parse(JSON.stringify(data.region))
-        : null;
-      return typeObj?.region_name ? typeObj.region_name : "-";
-    },
-    // render: (row: SubRegionItem) => row.region.region_name || "-",
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (row: TableDataType) => (
-      <StatusBtn isActive={row.status ? true : false} />
-    ),
-  },
+  { key: "name", label: "Location Name" },
+  // { key: "currency", label: "Currency" },
+  // {
+  //   key: "status",
+  //   label: "Status",
+  //   render: (row: TableDataType) => (
+  //     <StatusBtn isActive={row.status ? true : false} />
+  //   ),
+  // },
 ];
 
-export default function SubRegion() {
+export default function Country() {
+  interface CountryItem {
+    id?: number | string;
+    code?: string;
+    name?: string;
+    // currency?: string;
+  }
+
   const { setLoading } = useLoading();
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<SubRegionItem | null>(null);
+  const [selectedRow, setSelectedRow] = useState<CountryItem | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   type TableRow = TableDataType & { id?: string };
 
-  // ✅ Fetch SubRegions
-  const fetchSubRegions = useCallback(
+  const fetchCountries = useCallback(
     async (
       page: number = 1,
       pageSize: number = 50
     ): Promise<listReturnType> => {
       try {
         setLoading(true);
-        const listRes = await getArea({
+        const listRes = await locationList({
           limit: pageSize.toString(),
           page: page.toString(),
         });
@@ -128,46 +113,47 @@ export default function SubRegion() {
           refreshKey={refreshKey}
           config={{
             api: {
-              list: fetchSubRegions,
+              list: fetchCountries,
             },
             header: {
-              title: "Area",
-              // wholeTableActions: [
-              //   <div key={0} className="flex gap-[12px] relative">
-              //     <DismissibleDropdown
-              //       isOpen={showDropdown}
-              //       setIsOpen={setShowDropdown}
-              //       button={<BorderIconButton icon="ic:sharp-more-vert" />}
-              //       dropdown={
-              //         <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-              //           <CustomDropdown>
-              //             {dropdownDataList.map((link, idx) => (
-              //               <div
-              //                 key={idx}
-              //                 className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-              //               >
-              //                 <Icon
-              //                   icon={link.icon}
-              //                   width={link.iconWidth}
-              //                   className="text-[#717680]"
-              //                 />
-              //                 <span className="text-[#181D27] font-[500] text-[16px]">
-              //                   {link.label}
-              //                 </span>
-              //               </div>
-              //             ))}
-              //           </CustomDropdown>
-              //         </div>
-              //       }
-              //     />
-              //   </div>,
-              // ],
-              searchBar: true,
+              title: "Location",
+              wholeTableActions: [
+                <div key={0} className="flex gap-[12px] relative">
+                  <DismissibleDropdown
+                    isOpen={showDropdown}
+                    setIsOpen={setShowDropdown}
+                    button={<BorderIconButton icon="ic:sharp-more-vert" />}
+                    dropdown={
+                      <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                        <CustomDropdown>
+                          {dropdownDataList.map((link, idx) => (
+                            <div
+                              key={idx}
+                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
+                            >
+                              <Icon
+                                icon={link.icon}
+                                width={link.iconWidth}
+                                className="text-[#717680]"
+                              />
+                              <span className="text-[#181D27] font-[500] text-[16px]">
+                                {link.label}
+                              </span>
+                            </div>
+                          ))}
+                        </CustomDropdown>
+                      </div>
+                    }
+                  />
+                </div>,
+              ],
+              // disable global search bar (use column filters only)
+              searchBar: false,
               columnFilter: true,
               actions: [
                 <SidebarBtn
                   key={0}
-                  href="/settings/area/add"
+                  href="/settings/location/add"
                   isActive
                   leadingIcon="lucide:plus"
                   label="Add"
@@ -175,7 +161,7 @@ export default function SubRegion() {
                 />,
               ],
             },
-            localStorageKey: "area",
+            localStorageKey: "country",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,
@@ -184,7 +170,7 @@ export default function SubRegion() {
                 icon: "lucide:edit-2",
                 onClick: (data: object) => {
                   const row = data as TableRow;
-                  router.push(`/settings/area/${row.id}`);
+                  router.push(`/settings/location/${row.uuid}`);
                 },
               },
             ],

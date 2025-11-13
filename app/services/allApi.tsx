@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  headers: {
+  headers: {  
     "Content-Type": "application/json",
   },
 });
@@ -277,12 +277,14 @@ export const itemCategoryById = async (id: number) => {
 
 export const createItemCategory = async (
   category_name: string,
-  status: 0 | 1
+  status: 0 | 1,
+  category_code?: string
 ) => {
   try {
     const res = await API.post(`/api/settings/item_category/create`, {
       category_name,
       status,
+      category_code,
     });
     return res.data;
   } catch (error: unknown) {
@@ -293,11 +295,13 @@ export const createItemCategory = async (
 export const updateItemCategory = async (
   category_id: number,
   category_name?: string | undefined,
-  status?: 0 | 1 | undefined
+  status?: 0 | 1 | undefined,
+category_code?: string | undefined
 ) => {
   const body = {
     ...(category_name && { category_name }),
     ...(status !== undefined && { status }),
+    ...(category_code && { category_code: category_code }),
     category_id,
   };
 
@@ -349,12 +353,14 @@ export const itemSubCategoryById = async (id: string) => {
 export const createItemSubCategory = async (
   category_id: number,
   sub_category_name: string,
+  sub_category_code: string,
   status: 0 | 1
 ) => {
   try {
     const res = await API.post(`/api/settings/item-sub-category/create`, {
       category_id,
       sub_category_name,
+      sub_category_code,
       status,
     });
     return res.data;
@@ -367,12 +373,13 @@ export const updateItemSubCategory = async (
   category_id: number,
   sub_category_id: number,
   sub_category_name: string,
+  sub_category_code: string,
   status: 0 | 1
 ) => {
   try {
     const res = await API.put(
       `/api/settings/item-sub-category/${sub_category_id}/update`,
-      { sub_category_name, status, category_id }
+      { sub_category_name,sub_category_code,status, category_id }
     );
     return res.data;
   } catch (error: unknown) {
@@ -485,6 +492,23 @@ export const saveRouteVisit = async (body: object) => {
   }
 };
 
+export const merchandiserData = async () => {
+  try {
+    const res = await API.get("/api/master/route-visits/salesmen");
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+export const getCustomerByMerchandiser = async (merchandiser_id:string) => {
+  try {
+    const res = await API.get(`/api/master/route-visits/customerlist/${merchandiser_id}`);
+    return res.data;
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
 export const getRouteVisitList = async (params: {
   from_date: string | null;
   to_date: string | null;
@@ -521,6 +545,26 @@ export const getRouteVisitDetails = async (uuid: string) => {
 export const warehouseListGlobalSearch = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/warehouse/global_search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const warehouseReturn = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/warehouse/returns`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const warehouseSales = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/warehouse/invoices`, {
       params: params,
     });
     return res.data;
@@ -1980,7 +2024,7 @@ export const updateItemStatus = async (body: object) => {
 
 export const addItem = async (payload: object) => {
   try {
-    const res = await API.post("/api/master/items/add", payload);
+    const res = await APIFormData.post("/api/master/items/add", payload);
 
     return res.data;
   } catch (error: unknown) {
@@ -2000,16 +2044,35 @@ export const itemById = async (id: string) => {
 
 export const editItem = async (id: string, payload: object) => {
   try {
-    const res = await API.put(`/api/master/items/update/${id}`, payload);
+    const res = await APIFormData.put(`/api/master/items/update/${id}`, payload);
 
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
 export const deleteItem = async (id: string) => {
   try {
     const res = await API.delete(`/api/master/items/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemSales = async (id: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/items/item-invoices/${id}`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemReturn = async (id: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/items/item-returns/${id}`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -2780,6 +2843,15 @@ export const exportWarehouseData = async (body: object) => {
   }
 };
 
+export const exportRouteVisit = async (body: object) => {
+  try {
+    const res = await API.post(`/api/master/route-visits/export`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const warehouseStatusUpdate = async (body: object) => {
   try {
     const res = await API.post(
@@ -3263,6 +3335,126 @@ export const editWarehouseStock = async (uuid: string, payload: object) => {
 export const getWarehouseStockById = async (uuid: string) => {
   try {
     const res = await API.get(`/api/settings/warehouse-stocks/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const userEmailVerification = async (query: string) => {
+  try {
+    const res = await API.get(`/api/master/auth/checkEmail?query=${query}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const userListGlobalSearch = async (params: Params) => {
+  try {
+    const res = await API.get("/api/settings/user/global-search", { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const locationList = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/settings/locations/list", {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+
+export const addLocation = async (payload: object) => {
+  try {
+    const res = await API.post(`/api/settings/locations/add`, payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const LocationById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/settings/locations/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editLocation = async (uuid: string, payload: object) => {
+  try {
+    const res = await API.put(
+      `/api/settings/locations/update/${uuid}`,
+      payload
+    );
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+// export const editWarehouseStock = async (uuid: string, payload: object) => {
+//   try {
+//     const res = await API.put(`/api/settings/warehouse-stocks/${uuid}`, payload);
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+
+export const BrandList = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/settings/brands/list", {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+
+export const addBrand = async (payload: object) => {
+  try {
+    const res = await API.post(`/api/settings/brands/add`, payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const BrandById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/settings/brands/show/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const editBrand = async (uuid: string, payload: object) => {
+  try {
+    const res = await API.put(`/api/settings/brands/update/${uuid}`, payload);
 
     return res.data;
   } catch (error: unknown) {

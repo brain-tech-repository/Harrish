@@ -154,10 +154,7 @@ type props = {
   setSelectedCountry: { name: string; code?: string; flag?: string };
 };
 
-export default function AddEditSalesman({
-  selectedCountry,
-  setSelectedCountry,
-}: props) {
+export default function AddEditSalesman() {
   const [prefix, setPrefix] = useState("");
   const [loading, setLoading] = useState(true);
   const { showSnackbar } = useSnackbar();
@@ -422,25 +419,18 @@ export default function AddEditSalesman({
                   name="name"
                   value={values.name}
                   onChange={(e) => setFieldValue("name", e.target.value)}
-                // error={touched.name && errors.name}
+                  error={touched.name && errors.name}
                 />
-                {/* <ErrorMessage
-                  name="name"
-                  component="span"
-                  className="text-xs text-red-500"
-                /> */}
               </div>
               <div className="flex flex-col w-full">
                 <InputFields
                   label="Salesman Type"
-                  name="salesman_type"
+                  name="type"
                   value={values.type}
                   options={salesmanTypeOptions}
                   onChange={(e) => setFieldValue("type", e.target.value)}
+                  error={touched.type && errors.type}
                 />
-                {errors.type && (
-                  <p className="text-red-500 text-sm">{errors.type}</p>
-                )}
               </div>
 
               {/* Show Project List only when salesman_type id = 6 */}
@@ -451,6 +441,7 @@ export default function AddEditSalesman({
                     value={values.sub_type}
                     options={projectOptions}
                     onChange={(e) => setFieldValue("sub_type", e.target.value)}
+                    error={touched.sub_type && errors.sub_type}
                   />
                 </div>
               )}
@@ -509,11 +500,7 @@ export default function AddEditSalesman({
                       fetchRoutes(e.target.value);
                     }
                   }}
-                />
-                <ErrorMessage
-                  name="warehouse_id"
-                  component="span"
-                  className="text-xs text-red-500"
+                  error={touched.warehouse_id && errors.warehouse_id}
                 />
               </div>}
 
@@ -524,8 +511,8 @@ export default function AddEditSalesman({
                   value={values.route_id?.toString() ?? ""}
                   onChange={(e) => setFieldValue("route_id", e.target.value)}
                   options={filteredRouteOptions}
-                  // 👇 Disable when project is selected
                   disabled={!!values.sub_type}
+                  error={touched.route_id && errors.route_id}
                 />
               </div>
 
