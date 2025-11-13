@@ -75,9 +75,24 @@ export default function SalemanLoad() {
             }
     }, [setLoading]);
 
-    const exportFile = async () => {
+    const exportListFile = async (format: string) => {
              try {
-               const response = await exportCapsCollection(); 
+               const response = await exportCapsCollection({ format }); 
+               if (response && typeof response === 'object' && response.download_url) {
+                await downloadFile(response.download_url);
+                 showSnackbar("File downloaded successfully ", "success");
+               } else {
+                 showSnackbar("Failed to get download URL", "error");
+               }
+             } catch (error) {
+               showSnackbar("Failed to download warehouse data", "error");
+             } finally {
+             }
+           };
+
+           const exportDetailsFile = async (format: string) => {
+             try {
+               const response = await exportCapsCollection({ format }); 
                if (response && typeof response === 'object' && response.download_url) {
                 await downloadFile(response.download_url);
                  showSnackbar("File downloaded successfully ", "success");
@@ -95,7 +110,6 @@ export default function SalemanLoad() {
                  selectedRowOrStatus?: number[] | number
                ) => {
                  try {
-                   // normalize to an array of UUIDs and determine status
                    if (!dataOrIds || dataOrIds.length === 0) {
                      showSnackbar("No CAPS Collection selected", "error");
                      return;
@@ -243,16 +257,23 @@ export default function SalemanLoad() {
                              threeDot: [
                 {
                   icon: "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: exportFile,
+                  label: "Export List Excel",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                      return data[id].id;
+                    })
+                    exportListFile("xlsx");
+                  }
                 },
                 {
                   icon: "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: exportFile,
-
+                  label: "Export Details Excel",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                      return data[id].id;
+                    })
+                    exportDetailsFile("xlsx");
+                  }
                 },
                 // {
                 //   icon: "lucide:radio",

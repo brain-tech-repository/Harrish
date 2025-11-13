@@ -129,16 +129,7 @@ const PaymentDetails = () => {
             <span className="text-primary text-end text-[14px] tracking-[10px]">
               {"#" + data.osa_code}
             </span>
-            {data.recipt_image && !imageError && (
-
-              <button
-                onClick={() => setShowImageModal(true)}
-                className="px-4 py-2 m-3 rounded-lg cursor-pointer underline hover:text-red-500 transition"
-              >
-                Recipt Image
-              </button>
             
-          )}
           </div>
           
         </div>
@@ -172,6 +163,14 @@ const PaymentDetails = () => {
             <Grid>
               <Field label="Receipt Number" value={data.recipt_no || "N/A"} />
               <Field label="Receipt Date" value={formatDate(data.recipt_date)} />
+              {data.recipt_image && !imageError && (
+              <button
+                onClick={() => setShowImageModal(true)}
+                className="px-4 py-2 m-3 rounded-lg cursor-pointer underline hover:text-red-500 transition"
+              >
+                Recipt Image
+              </button>
+          )}
             </Grid>
           </Section>
         </div>

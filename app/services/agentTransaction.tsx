@@ -236,9 +236,18 @@ export const updateCapsCollection = async (uuid:string,body:object) => {
   }
 };
 
-export const exportCapsCollection = async () => {
+export const exportCapsCollection = async (params: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/capscollection/export`);
+    const res = await API.get(`/api/agent_transaction/capscollection/export`, {params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCapsCollectionDetail = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/capscollection/exportcollapse`, {params});
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -558,6 +567,15 @@ export const getAgentCustomerByReturnId = async (uuid: string) => {
 export const agentCustomerReturnExport = async (params: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/returns/exportcustomer`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const advancePaymentExport = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/advancepayments/export`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

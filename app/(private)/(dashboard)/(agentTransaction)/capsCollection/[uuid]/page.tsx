@@ -306,56 +306,6 @@ export default function AddEditCapsCollection() {
   };
 
 
-
-  // const recalculateItem = async (index: number, field: string, value: string, values?: FormikValues) => {
-  //     const newData = [...itemData];
-  //     const item: ItemData = newData[index];
-  //     (item as any)[field] = value;
-
-  //     // If user selects an item, update UI immediately and show skeletons while fetching price/UOM
-  //     if (field === "item_id") {
-  //       // keep item id and name aligned for existing logic
-  //       item.item_id = value;
-  //       item.UOM = [];
-  //       item.Price = "-";
-  //       setItemData(newData);
-  //       setItemLoading((prev) => ({ ...prev, [index]: { uom: true } }));
-  //       item.UOM = orderData.find((order: FormData) => order.id.toString() === item.item_id)?.uom?.map(uom => ({ label: uom.name, value: uom.id.toString(), price: uom.price })) || [];
-  //       setItemLoading((prev) => ({ ...prev, [index]: { uom: false } }));
-  //     }
-
-  //     // Ensure numeric calculations use the latest values
-  //     const qty = Number(item.Quantity) || 0;
-  //     const price = Number(item.Price) || 0;
-  //     const total = qty * price;
-  //     const vat = total - total / 1.18;
-  //     const net = total - vat;
-  //     const excise = 0; // Calculate excise based on your business logic
-  //     const discount = 0; // Calculate discount based on your business logic
-  //     const gross = total;
-
-  //     // Persist any value changes for qty/uom/price
-  //     if (field === "Quantity") item.Quantity = value;
-  //     if (field === "uom_id") item.uom_id = value;
-
-  //     item.Total = total.toFixed(2);
-  //     item.Vat = vat.toFixed(2);
-  //     item.Net = net.toFixed(2);
-  //     item.Excise = excise.toFixed(2);
-  //     item.Discount = discount.toFixed(2);
-  //     item.gross = gross.toFixed(2);
-
-  //     setItemData(newData);
-  //     // validate this row after updating; if we just changed the item selection, skip UOM required check
-  //     if (field === "item_id") {
-  //       validateRow(index, newData[index], { skipUom: true });
-  //     } else {
-  //       validateRow(index, newData[index]);
-  //     }
-  //   };
-
-
-
   // 🚀 Submit
   const handleSubmit = async () => {
     try {
