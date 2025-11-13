@@ -273,6 +273,15 @@ export const exportInvoice = async (params?:Params) => {
   }
 };
 
+export const exportOrderInvoice = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/orders/exportall`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const exportInvoiceWithDetails = async (params?:Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/invoices/exportFull`,{params});
