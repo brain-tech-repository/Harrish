@@ -19,6 +19,7 @@ import {
   itemList,
   itemSubCategory,
   labelList,
+  locationList,
   permissionList,
   projectList,
   regionList,
@@ -64,6 +65,7 @@ interface DropdownDataContextType {
   projectList: Project[];
   companyTypeList: CompanyType[];
   uomList: UOM[];
+  locationList: LocationItem[];
   // mapped dropdown options
   companyOptions: { value: string; label: string }[];
   countryOptions: { value: string; label: string }[];
@@ -96,6 +98,7 @@ interface DropdownDataContextType {
   projectOptions: { value: string; label: string }[];
   companyTypeOptions: { value: string; label: string }[];
   uomOptions: { value: string; label: string }[];
+  locationOptions: { value: string; label: string }[];
   permissions: permissionsList[];
   refreshDropdowns: () => Promise<void>;
   refreshDropdown: (name: string, params?: any) => Promise<void>;
@@ -336,6 +339,12 @@ interface Role {
   status: number;
 }
 
+interface LocationItem {
+  id: number;
+  name: string;
+  code: string;
+}
+
 const AllDropdownListDataContext = createContext<DropdownDataContextType | undefined>(undefined);
 
 export const useAllDropdownListData = () => {
@@ -381,6 +390,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [project, setProject] = useState<Project[]>([]);
   const [companyType, setComapanyType] = useState<CompanyType[]>([]);
   const [uom, setUom] = useState<UOM[]>([]);
+  const [location, setLocation] = useState<LocationItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   // mapped dropdown options (explicit typed mappings)
@@ -589,6 +599,10 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const roleOptions = (Array.isArray(roles) ? roles : []).map((r: Role) => ({
     value: String(r.id ?? ''),
     label: r.name ?? ''
+  }));
+  const locationOptions = (Array.isArray(location) ? location : []).map((l: LocationItem) => ({
+    value: String(l.id ?? ''),
+    label: l.name ?? ''
   }));
 
 
@@ -890,6 +904,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         projectList({}),
         companyTypeList(),
         uomList(),
+        locationList(),
       ]);
 
 
@@ -936,6 +951,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setProject(normalize(res[29]) as Project[]);
       setComapanyType(normalize(res[30]) as CompanyType[]);
       setUom(normalize(res[31]) as UOM[]);
+      setLocation(normalize(res[32]) as LocationItem[]);
 
     } catch (error) {
       console.error('Error loading dropdown data:', error);
@@ -972,6 +988,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setProject([]);
       setComapanyType([]);
       setUom([]);
+      setLocation([]);
     } finally {
       setLoading(false);
     }
@@ -1154,6 +1171,11 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
           setUom(normalizeResponse(res) as UOM[]);
           break;
         }
+        case 'location': {
+          const res = await locationList(params ?? {});
+          setLocation(normalizeResponse(res) as LocationItem[]);
+          break;
+        }
         default: {
           console.warn('refreshDropdown: unknown dropdown name', name);
           break;
@@ -1199,6 +1221,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         projectList: project,
         companyTypeList: companyType,
         uomList: uom,
+        locationList: location,
         fetchItemSubCategoryOptions,
         fetchAgentCustomerOptions,
         fetchSalesmanOptions,
@@ -1249,6 +1272,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         getItemUoms,
         getPrimaryUom,
         uomOptions,
+        locationOptions,
         loading
       }}
     >

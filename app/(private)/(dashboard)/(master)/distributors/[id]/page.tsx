@@ -63,7 +63,7 @@ const validationSchema = Yup.object({
     warehouse_name: Yup.string().required('Warehouse Name is required'),
     owner_name: Yup.string().required('Owner Name is required'),
     company: Yup.string().required('Company is required'),
-    agreed_stock_capital: Yup.number().required('Agreed Stock Capital is required'),
+    agreed_stock_capital: Yup.number(),
     agent_customer: Yup.string().required('Agent Customer is required'),
     warehouse_manager: Yup.string().required('Warehouse Manager is required'),
     location: Yup.string().required('Location is required'),
@@ -95,7 +95,6 @@ const stepSchemas = [
         company: validationSchema.fields.company,
         agent_customer: validationSchema.fields.agent_customer,
         warehouse_manager: validationSchema.fields.warehouse_manager,
-        agreed_stock_capital: validationSchema.fields.agreed_stock_capital,
     }),
 
     // Step 2: Warehouse Contact (no required validations here so user can proceed)
