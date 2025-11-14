@@ -63,7 +63,7 @@ const validationSchema = Yup.object({
     warehouse_name: Yup.string().required('Warehouse Name is required'),
     owner_name: Yup.string().required('Owner Name is required'),
     company: Yup.string().required('Company is required'),
-    agreed_stock_capital: Yup.string().required('Agreed Stock Capital is required'),
+    agreed_stock_capital: Yup.number().required('Agreed Stock Capital is required'),
     agent_customer: Yup.string().required('Agent Customer is required'),
     warehouse_manager: Yup.string().required('Warehouse Manager is required'),
     location: Yup.string().required('Location is required'),
@@ -95,6 +95,7 @@ const stepSchemas = [
         company: validationSchema.fields.company,
         agent_customer: validationSchema.fields.agent_customer,
         warehouse_manager: validationSchema.fields.warehouse_manager,
+        agreed_stock_capital: validationSchema.fields.agreed_stock_capital,
     }),
 
     // Step 2: Warehouse Contact (no required validations here so user can proceed)
@@ -308,11 +309,11 @@ export default function AddEditWarehouse() {
             if (res.error) {
                 showSnackbar(res.data?.message || "Failed to submit form", "error");
             } else {
-                showSnackbar(res.message || (isEditMode ? "Warehouse updated successfully" : "Warehouse added successfully"), "success");
-                router.push("/warehouse");
+                showSnackbar(res.message || (isEditMode ? "Distributor updated successfully" : "Distributor added successfully"), "success");
+                router.push("/distributors");
             }
         } catch {
-            showSnackbar("Add/Update Warehouse failed ❌", "error");
+            showSnackbar("Add/Update Distributor failed", "error");
         }
     };
 

@@ -37,8 +37,8 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     name="warehouse_code"
                     value={values.warehouse_code}
                     onChange={handleChange}
-                    error={errors?.warehouse_code && touched?.warehouse_code ? errors.warehouse_code : false}
                     disabled={codeMode === 'auto'}
+                    error={errors?.warehouse_code && touched?.warehouse_code ? errors.warehouse_code : false}
                 />
                 
                 {/* {!isEditMode && (
@@ -73,6 +73,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
+                    type="select"
                     label="Warehouse Type"
                     name="warehouse_type"
                     value={values.warehouse_type}
@@ -90,8 +91,9 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     }}
                     options={[
                         { value: "Agent Warehouse", label: "Agent Warehouse" },
-                        { value: "Company Outlet", label: "Company Outlet" },
+                        { value: "Company Outlet", label: "Company Outlet" },
                     ]}
+                    error={errors?.warehouse_type && touched?.warehouse_type ? errors.warehouse_type : false}
                 />
             </div>
             <div className="flex flex-col gap-2">
@@ -113,6 +115,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                             }
                         });
                     }}
+                    error={errors?.agent_customer && touched?.agent_customer ? errors.agent_customer : false}
                 />
             </div>
             {/* )} */}
@@ -176,11 +179,14 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                 /> */}
                 <InputFields
                     required
+                    type="number"
+                    min={0}
+                    integerOnly={true}
                     label="Agreed Stock Capital"
                     name="agreed_stock_capital"
                     value={values.agreed_stock_capital}
                     placeholder="Enter Stock Capital"
-                    onChange={(e) => setFieldValue('agreed_stock_capital', e.target.value)}
+                    onChange={handleChange}
                     error={errors?.agreed_stock_capital && touched?.agreed_stock_capital ? errors.agreed_stock_capital : false}
                 />
             </div>
