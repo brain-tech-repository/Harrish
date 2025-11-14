@@ -70,7 +70,7 @@ interface Salesman {
   forceful_login?: string | number;
 }
 
-function formatDate(dateString:string) {
+export function formatDate(dateString:string) {
   const date = new Date(dateString);
 
   const day = date.getUTCDate();
@@ -651,7 +651,7 @@ export default function Page() {
                     ? "Yes"
                     : "No",
               },
-              { key: "Block Date From", value:salesman?.block_date_from? formatDate(salesman?.block_date_from):"-" },
+                { key: "Block Date From", value:salesman?.block_date_from? formatDate(salesman?.block_date_from):"-" },
               { key: "Block Date To", value: salesman?.block_date_to?formatDate(salesman?.block_date_to):"-" },
               { key: "cashier Description Block", value: salesman?.cashier_description_block == "1" ? "Yes" : "No" },
               {
