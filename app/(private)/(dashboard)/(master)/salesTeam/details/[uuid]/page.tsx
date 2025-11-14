@@ -70,7 +70,15 @@ interface Salesman {
   forceful_login?: string | number;
 }
 
+function formatDate(dateString:string) {
+  const date = new Date(dateString);
 
+  const day = date.getUTCDate();
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getUTCFullYear();
+
+  return `${day} ${month} ${year}`;
+}
 
 export default function Page() {
   const { id, tabName } = useParams();
@@ -95,7 +103,7 @@ export default function Page() {
 
 
   const columns: configType["columns"] = [
-    { key: "invoice_date", label: "Data", render: (row: TableDataType) => row.invoice_date.split("T")[0] },
+    { key: "invoice_date", label: "Data", render: (row: TableDataType) => row.invoice_date?formatDate(row.invoice_date):"-" },
     { key: "invoice_time", label: "Time" },
     {
       key: "invoice_number",
@@ -151,7 +159,7 @@ export default function Page() {
     {
       key: "delivery_date",
       label: "Delivery Date",
-      render: (row: TableDataType) => row.delivery_date?.split("T")[0] || "-",
+      render: (row: TableDataType) =>row.delivery_date? formatDate(row.delivery_date) :"-",
     },
     {
       key: "order_code",
@@ -354,7 +362,7 @@ export default function Page() {
     { key: "overview", label: "Overview" },
     { key: "attendence", label: "Attendence" },
     { key: "sales", label: "Sales" },
-    { key: "order", label: "Order" },
+    { key: "order", label: "Purchase Order" },
   ];
 
   const filterBy = useCallback(
@@ -537,8 +545,8 @@ export default function Page() {
                     ? "Yes"
                     : "No",
               },
-              { key: "Block Date From", value: salesman?.block_date_from || "-" },
-              { key: "Block Date To", value: salesman?.block_date_to || "-" },
+              { key: "Block Date From", value:salesman?.block_date_from? formatDate(salesman?.block_date_from):"-" },
+              { key: "Block Date To", value: salesman?.block_date_to?formatDate(salesman?.block_date_to):"-" },
               { key: "cashier Description Block", value: salesman?.cashier_description_block == "1" ? "Yes" : "No" },
               {
                 key: "Invoice Block",
@@ -550,7 +558,7 @@ export default function Page() {
               },
 
               {
-                key: "Is Block Reason",
+                key: "Reason",
                 value: salesman?.reason || "-",
               },
             ]}
@@ -681,6 +689,7 @@ export default function Page() {
           />
         </div>
       </Popup>
+      <br/>
     </>
   );
 }
