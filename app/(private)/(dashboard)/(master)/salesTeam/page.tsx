@@ -36,7 +36,7 @@ const SalesmanPage = () => {
     status: "0" | "1"
   ) => {
     if (!selectedRow || selectedRow.length === 0) {
-      showSnackbar("Please select at least one salesman", "error");
+      showSnackbar("Please select at least one sales Team", "error");
       return;
     }
 
@@ -113,7 +113,7 @@ const SalesmanPage = () => {
       );
     } catch (error) {
       console.error("Export error:", error);
-      showSnackbar("Failed to export salesman data", "error");
+      showSnackbar("Failed to export sales team data", "error");
     } finally {
       setLoading(false);
       setShowExportDropdown(false);
@@ -191,7 +191,7 @@ const SalesmanPage = () => {
     },
     {
       key: "salesman_type",
-      label: "Salesman Type",
+      label: "Sales Team Type",
       render: (row: TableDataType) => {
         const obj =
           typeof row.salesman_type === "string"
@@ -273,7 +273,7 @@ const SalesmanPage = () => {
             api: { list: fetchSalesman, search: searchSalesman },
             
             header: {
-              title: "Salesman",
+              title: "Sales Team",
               threeDot: [
                 {
                   icon: "gala:file-document",
@@ -299,7 +299,7 @@ const SalesmanPage = () => {
               actions: [
                 <SidebarBtn
                   key={0}
-                  href="/salesman/add"
+                  href="/salesTeam/add"
                   isActive
                   leadingIcon="lucide:plus"
                   label="Add"
@@ -315,14 +315,14 @@ const SalesmanPage = () => {
               {
                 icon: "lucide:eye",
                 onClick: (data: TableDataType) => {
-                  router.push(`/salesman/details/${data.uuid}`);
+                  router.push(`/salesTeam/details/${data.uuid}`);
                 },
               },
               {
                 icon: "lucide:edit-2",
                 onClick: (row: object) => {
                   const r = row as TableDataType;
-                  router.push(`/salesman/${r.uuid}`);
+                  router.push(`/salesTeam/${r.uuid}`);
                 },
               },
             ],

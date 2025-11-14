@@ -128,8 +128,8 @@ export default function AddEditWarehouse() {
     const warehouseId = params.id as string | undefined;
     const isEditMode = warehouseId !== undefined && warehouseId !== "add";
     const steps: StepperStep[] = [
-        { id: 1, label: "Warehouse Details" },
-        { id: 2, label: "Warehouse Contact" },
+        { id: 1, label: "Distributor Details" },
+        { id: 2, label: "Distributor Contact" },
         { id: 3, label: "Location Information" },
         { id: 4, label: "EFRIS Information" }
     ];
@@ -314,11 +314,11 @@ export default function AddEditWarehouse() {
             if (res.error) {
                 showSnackbar(res.data?.message || "Failed to submit form", "error");
             } else {
-                showSnackbar(res.message || (isEditMode ? "Warehouse updated successfully" : "Warehouse added successfully"), "success");
-                router.push("/warehouse");
+                showSnackbar(res.message || (isEditMode ? "Distributor updated successfully" : "Distributor added successfully"), "success");
+                router.push("/distributors");
             }
         } catch {
-            showSnackbar("Add/Update Warehouse failed ❌", "error");
+            showSnackbar("Add/Update Distributor failed ❌", "error");
         }
     };
 
@@ -397,11 +397,11 @@ export default function AddEditWarehouse() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-          <Link href="/warehouse">
+          <Link href="/distributors">
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Update Warehouse" : "Add Warehouse"}
+            {isEditMode ? "Update Distributor" : "Add Distributor"}
           </h1>
         </div>
       </div>

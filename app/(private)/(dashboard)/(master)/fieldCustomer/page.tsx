@@ -13,7 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { getPaymentType } from "../keyAccountCustomer/details/[id]/page";
+import { getPaymentType } from "../keyCustomer/details/[id]/page";
 
 export default function AgentCustomer() {
     const { customerSubCategoryOptions, itemCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
@@ -108,7 +108,7 @@ export default function AgentCustomer() {
         { key: "town", label: "Town" },
         {
             key: "getWarehouse",
-            label: "Warehouse",
+            label: "Distributor",
             render: (row: TableDataType) =>
                 typeof row.getWarehouse === "object" &&
                     row.getWarehouse !== null &&
@@ -235,7 +235,7 @@ export default function AgentCustomer() {
                 showSnackbar("Failed to get download URL", "error");
             }
         } catch (error) {
-            showSnackbar("Failed to download warehouse data", "error");
+            showSnackbar("Failed to download Field Customer data", "error");
         }
     }
 
@@ -372,7 +372,7 @@ export default function AgentCustomer() {
                             actions: [
                                 <SidebarBtn
                                     key={0}
-                                    href="/agentCustomer/new"
+                                    href="/fieldCustomer/new"
                                     isActive
                                     leadingIcon="lucide:plus"
                                     label="Add"
@@ -390,7 +390,7 @@ export default function AgentCustomer() {
                                 icon: "lucide:eye",
                                 onClick: (data: object) => {
                                     const row = data as TableRow;
-                                    router.push(`/agentCustomer/details/${row.uuid}`);
+                                    router.push(`/fieldCustomer/details/${row.uuid}`);
                                 },
                             },
                             {
@@ -398,7 +398,7 @@ export default function AgentCustomer() {
                                 onClick: (data: object) => {
                                     const row = data as TableRow;
                                     router.push(
-                                        `/agentCustomer/${row.uuid}`
+                                        `/fieldCustomer/${row.uuid}`
                                     );
                                 },
                             },

@@ -33,7 +33,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
                     required
-                    label="Warehouse Code"
+                    label="Distributor Code"
                     name="warehouse_code"
                     value={values.warehouse_code}
                     onChange={handleChange}
@@ -73,7 +73,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    label="Warehouse Type"
+                    label="Distributor Type"
                     name="warehouse_type"
                     value={values.warehouse_type}
                     onChange={(e) => {
@@ -89,7 +89,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                         }
                     }}
                     options={[
-                        { value: "Agent Warehouse", label: "Agent Warehouse" },
+                        { value: "Agent Distributor", label: "Agent Distributor" },
                         { value: "Company Outlet", label: "Company Outlet" },
                     ]}
                 />
@@ -127,7 +127,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    label="Warehouse Name"
+                    label="Distributor Name"
                     name="warehouse_name"
                     value={values.warehouse_name}
                     onChange={handleChange}
@@ -142,7 +142,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    label="Warehouse Owner Name"
+                    label="Distributor Owner Name"
                     name="owner_name"
                     value={values.owner_name}
                     onChange={handleChange}
@@ -185,7 +185,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             <div className="flex flex-col gap-2">
                 <InputFields
                     required
-                    label="Warehouse Manager"
+                    label="Distributor Manager"
                     name="warehouse_manager"
                     value={values.warehouse_manager}
                     onChange={handleChange}

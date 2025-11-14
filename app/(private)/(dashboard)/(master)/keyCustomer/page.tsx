@@ -61,7 +61,7 @@ export default function CompanyCustomers() {
     const res = await getCompanyCustomers({ page: pageNo.toString(), pageSize: pageSize.toString() });
     setLoading(false);
     if (res.error) {
-      showSnackbar(res.data.message || "Failed to fetch Company Customers", "error");
+      showSnackbar(res.data.message || "Failed to fetch Key Customers", "error");
       throw new Error(res.data.message);
     }
     return {
@@ -146,7 +146,7 @@ export default function CompanyCustomers() {
         showSnackbar("Failed to get download URL", "error");
       }
     } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
+      showSnackbar("Failed to download distributor data", "error");
     }
   }
 
@@ -178,7 +178,7 @@ export default function CompanyCustomers() {
               search: search,
             },
             header: {
-              title: "Company Customer",
+              title: "Key Customer",
               threeDot: [
                 {
                   icon: "gala:file-document",
@@ -250,7 +250,7 @@ export default function CompanyCustomers() {
               actions: [
                 <SidebarBtn
                   key="add-company-customer"
-                  href="/companyCustomer/add"
+                  href="/keyCustomer/add"
                   leadingIcon="lucide:plus"
                   label="Add"
                   labelTw="hidden sm:block"
@@ -266,7 +266,7 @@ export default function CompanyCustomers() {
               {
                 icon: "lucide:eye",
                 onClick: (data: TableDataType) => {
-                  router.push(`/companyCustomer/details/${data.id}`);
+                  router.push(`/keyCustomer/details/${data.id}`);
                 },
               },
               {
@@ -274,7 +274,7 @@ export default function CompanyCustomers() {
                 onClick: (row: TableDataType) => {
                   console.log(row)
                   router.push(
-                    `/companyCustomer/${row.id}`
+                    `/keyCustomer/${row.id}`
                   )
                 }
               },
