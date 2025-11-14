@@ -103,6 +103,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     options={companyCustomersOptions}
                     onChange={async(e) => {
                         const val = (e.target as HTMLSelectElement).value;
+                        handleChange(e);
                         await getCompanyCustomerById(val).then((res) => {
                             if (res) {
                                 const customer = res;
@@ -111,7 +112,6 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                                 
                             }
                         });
-                        handleChange(e);
                     }}
                 />
             </div>

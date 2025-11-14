@@ -18,6 +18,8 @@ import { Form, Formik, FormikErrors, FormikHelpers, FormikTouched } from "formik
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import * as Yup from "yup";
+import { CustomTableSkelton } from "../../../(master)/warehouse/details/[id]/page";
+import Skeleton from "@mui/material/Skeleton";
 
 interface User {
   name: string;
@@ -33,6 +35,7 @@ interface User {
   region?: string | string[];
   area?: string | string[];
   salesman?: string | string[];
+  item?: string | string[];
 }
 
 interface ContactCountry {
@@ -44,6 +47,8 @@ interface ContactCountry {
 export default function UserAddEdit() {
   const [isValidEmail, setIsValidEmail] = useState<boolean>(false)
   const [isValidUser, setIsValidUser] = useState<boolean>(false)
+  const [isNestedDropdownValue, setIsNestedDropdownValue] = useState<boolean>(false)
+
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
   const router = useRouter();
@@ -61,6 +66,7 @@ export default function UserAddEdit() {
     warehouseOptions,
     routeOptions,
     salesmanOptions,
+    itemOptions,
     fetchRegionOptions,
     fetchAreaOptions,
     fetchWarehouseOptions,
@@ -115,7 +121,8 @@ export default function UserAddEdit() {
           refreshDropdown("area"),
           refreshDropdown("warehouse"),
           refreshDropdown("route"),
-          refreshDropdown("salesman")
+          refreshDropdown("salesman"),
+          refreshDropdown("item"),
         ])
       } catch (e) { }
     })();
@@ -130,6 +137,7 @@ export default function UserAddEdit() {
     area: false,
     warehouse: false,
     route: false,
+    item: false,
   });
 
   const steps: StepperStep[] = [
@@ -154,6 +162,7 @@ export default function UserAddEdit() {
     region: "",
     area: "",
     salesman: "",
+    item: "",
   });
   const [originalUser, setOriginalUser] = useState<Record<string, unknown> | null>(null);
 
@@ -185,6 +194,9 @@ export default function UserAddEdit() {
           const salesmanVals = Array.isArray(user?.salesmen) && user.salesmen.length > 0
             ? user.salesmen.map((s: unknown) => String(((s as Record<string, unknown>)?.id) ?? s))
             : (user?.salesman ? [String(user.salesman)] : []);
+            const itemIds = Array.isArray(user?.item) && user.item.length > 0
+            ? user.item.map((s: unknown) => String(((s as Record<string, unknown>)?.id) ?? s))
+            : (user?.item ? [String(user.item)] : []);
 
           setInitialValues({
             name: String(user?.name ?? ""),
@@ -200,6 +212,7 @@ export default function UserAddEdit() {
             region: regionIds.length ? regionIds : [],
             area: areaIds.length ? areaIds : [],
             salesman: salesmanVals.length ? salesmanVals : [],
+            item: itemIds.length ? itemIds : [],
           });
           setOriginalUser(user);
 
@@ -317,7 +330,12 @@ export default function UserAddEdit() {
     name: Yup.string().required("Name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
     username: Yup.string().required("Username is required"),
-    contact_number: Yup.string().required("Contact number is required"),
+    contact_number: Yup.string()
+  .required("Contact number is required")
+  .matches(/^[0-9]+$/, "Contact number must contain only digits")
+  .min(9, "Contact number must be at least 9 digits")
+  .max(10, "Contact number cannot be more than 10 digits"),
+
     password: passwordField,
     password_confirmation: passwordConfirmationField,
   };
@@ -372,6 +390,13 @@ export default function UserAddEdit() {
         return false;
       }),
     }),
+    ...(visibleLabels.includes("item") && {
+      item: Yup.mixed().test("item-required", "Item is required", (v) => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "string") return v.trim() !== "";
+        return false;
+      }),
+    }),
   });
 
   const handleNext = async (
@@ -387,6 +412,7 @@ export default function UserAddEdit() {
         warehouse: Array.isArray(values.warehouse) ? values.warehouse[0] : values.warehouse,
         route: Array.isArray(values.route) ? values.route[0] : values.route,
         salesman: Array.isArray(values.salesman) ? values.salesman[0] : values.salesman,
+        item: Array.isArray(values.item) ? values.item[0] : values.item,
       } as User;
       const stepSchema =
         currentStep === 1
@@ -432,7 +458,13 @@ export default function UserAddEdit() {
 
       await stepSchema.validate(normalized, { abortEarly: false });
       markStepCompleted(currentStep);
+      if(!isValidEmail)
+      { 
+        if(!isValidUser)
+        {
       nextStep();
+        }
+      }
     } catch (err) {
       if (err instanceof Yup.ValidationError) {
         const errors = err.inner.reduce((acc: Record<string, string>, curr: Yup.ValidationError) => {
@@ -458,6 +490,7 @@ export default function UserAddEdit() {
         warehouse: Array.isArray(values.warehouse) ? values.warehouse[0] : values.warehouse,
         route: Array.isArray(values.route) ? values.route[0] : values.route,
         salesman: Array.isArray(values.salesman) ? values.salesman[0] : values.salesman,
+        item: Array.isArray(values.item) ? values.item[0] : values.item,
       } as User;
 
       await dynamicSchema.validate(normalized, { abortEarly: false });
@@ -471,6 +504,7 @@ export default function UserAddEdit() {
       const warehouses = toArray(values.warehouse).map((id) => Number(String(id)));
       const routes = toArray(values.route).map((id) => Number(String(id)));
       const salesmen = toArray(values.salesman).map((id) => Number(String(id)));
+      const item = toArray(values.item).map((id) => Number(String(id)));
       // Always include these keys as arrays (may be empty) per backend requirement
       payload.company = companies;
       payload.region = regions;
@@ -478,6 +512,7 @@ export default function UserAddEdit() {
       payload.warehouse = warehouses;
       payload.route = routes;
       payload.salesman = salesmen;
+      payload.item = item;
 
       if (isEditMode) {
         if (Object.prototype.hasOwnProperty.call(payload, "password_confirmation")) delete (payload as Record<string, unknown>)["password_confirmation"];
@@ -542,6 +577,8 @@ export default function UserAddEdit() {
     required
     label="Email"
     name="email"
+    // autoComplete={false}
+
     value={values.email}
     onChange={(e) => {
       setFieldValue("email", e.target.value);
@@ -656,14 +693,18 @@ export default function UserAddEdit() {
                 value={values.role}
                 options={roleOptions}
                 onChange={async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+setIsNestedDropdownValue(true);
+
                   const val = e?.target?.value;
                   setFieldValue("role", val);
                   await fetchLabelsForRoles(val);
+
+setIsNestedDropdownValue(false);
                 }}
                 onBlur={() => setFieldTouched && setFieldTouched('role', true)}
                 error={touched.role ? (errors.role as string) : undefined}
               />
-
+      {!isNestedDropdownValue? <>
               {visibleLabels.includes("company") && (
                 <InputFields
                   required
@@ -928,6 +969,20 @@ export default function UserAddEdit() {
                   error={touched.salesman ? (errors.salesman as string) : undefined}
                 />
               )}
+              {visibleLabels.includes("item") && (
+                <InputFields
+                  required
+                  label="Item"
+                  name="item"
+                  isSingle={false}
+                  value={values.item}
+                  options={itemOptions}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setFieldValue("item", e?.target?.value)}
+                  onBlur={() => setFieldTouched && setFieldTouched('item', true)}
+                  error={touched.item ? (errors.item as string) : undefined}
+                />
+              )}
+          </>:<div style={{display:"flex",flexDirection:"column", justifyContent:"center"}}> <Skeleton height={12}/><Skeleton height={12}/><Skeleton height={12}/><Skeleton height={12}/></div>}
             </div>
           </div>
         );
@@ -955,7 +1010,7 @@ export default function UserAddEdit() {
         onSubmit={handleSubmit}
       >
         {({ values, setFieldValue, errors, touched, setErrors, setTouched, setFieldTouched, isSubmitting }) => (
-          <Form>
+          <Form autoComplete="off">
             <StepperForm
               steps={steps.map((step) => ({
                 ...step,

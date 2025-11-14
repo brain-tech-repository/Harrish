@@ -552,6 +552,17 @@ export const warehouseListGlobalSearch = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const routeVisitGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/route-visits/global_search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 export const warehouseReturn = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/warehouse/returns`, {
@@ -3348,6 +3359,18 @@ export const getWarehouseStockById = async (uuid: string) => {
     return handleError(error);
   }
 };
+
+export const getAgentCusByRoute = async (id: string) => {
+  try {
+    const res = await API.get(`/api/master/agent_customers/route/${id}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 
 export const userEmailVerification = async (query: string) => {
   try {

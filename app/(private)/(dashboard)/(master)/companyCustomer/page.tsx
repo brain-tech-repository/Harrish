@@ -89,27 +89,6 @@ export default function CompanyCustomers() {
     }
   };
 
-  // const handleConfirmDelete = async () => {
-  //   if (!selectedRow) return;
-
-  //   // Optimistically remove row first
-  //   setCustomers((prev) => prev.filter((c) => c.id !== selectedRow.id));
-  //   setShowDeletePopup(false);
-
-  //   setLoading(true);
-  //   try {
-  //     await deleteCompanyCustomer(selectedRow.id.toString());
-  //     showSnackbar("Company Customer deleted successfully ✅", "success");
-  //   } catch (error) {
-  //     setCustomers((prev) => [...prev, selectedRow]);
-  //     showSnackbar("Failed to delete Customer ❌", "error");
-  //   } finally {
-  //     setSelectedRow(null);
-  //   }
-  //   setLoading(false);
-  // };
-
-
   /* ---------- Column Configuration ---------- */
   const columns = [
     {

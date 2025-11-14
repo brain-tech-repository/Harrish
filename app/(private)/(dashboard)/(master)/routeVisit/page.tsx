@@ -6,7 +6,7 @@ import Table, {
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { getRouteVisitList, downloadFile, exportRouteVisit } from "@/app/services/allApi"; // Adjust import path
+import { getRouteVisitList, downloadFile, exportRouteVisit, routeVisitGlobalSearch } from "@/app/services/allApi"; // Adjust import path
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -15,12 +15,19 @@ import { useCallback, useEffect, useState } from "react";
 
 const columns = [
   { key: "osa_code", label: "Code" },
-  { key: "from_date", label: "From Date" },
-  { key: "to_date", label: "To Date" },
-  { key: "customer_type", label: "Customer Type" },
+  { key: "from_date", label: "From Date", render: (row: TableDataType) => row.from_date ? row.from_date.split("T")[0] : "" },
+  { key: "to_date", label: "To Date", render: (row: TableDataType) => row.to_date ? row.to_date.split("T")[0] : "" },
+  {
+    key: "customer_type",
+    label: "Customer Type",
+    render: (row: TableDataType) =>
+      String(row.customer_type) === "1" ? "Agent Customer" : "Merchandiser",
+  },
+
   {
     key: "status",
     label: "Status",
+    isSortable: true,
     render: (row: TableDataType) => (
       <StatusBtn isActive={String(row.status) === "1"} />
     ),
@@ -103,52 +110,32 @@ export default function RouteVisits() {
 
   const searchRouteVisits = useCallback(
     async (
-      searchQuery: string,
-      pageSize: number
-    ): Promise<searchReturnType> => {
+      query: string,
+      pageSize: number = 50,
+      column?: string,
+      page: number = 1
+    ): Promise<listReturnType> => {
       try {
-        // setLoading(true);
-
-        // For search, you might want to adjust the params
-        // or use a different search endpoint if available
-        const params = {
-          from_date: filters.from_date,
-          to_date: filters.to_date,
-          customer_type: filters.customer_type,
-          status: filters.status,
-          // Add search query if your API supports it
-          search: searchQuery || null,
-        };
-
-        const result = await getRouteVisitList(params);
-        // setLoading(false);
-
-        // ✅ Added: transform customer_type names only
-        const transformedData = (result.data || []).map((item: any) => ({
-          ...item,
-          customer_type:
-            item.customer_type == 1 ? "Agent Customer" : "Merchandiser",
-          // Keep numeric status so StatusBtn (which checks String(row.status) === "1") works
-          status: item.status,
-          // Add date formatting:
-          from_date: item.from_date ? item.from_date.split("T")[0] : "",
-          to_date: item.to_date ? item.to_date.split("T")[0] : "",
-        }));
-
+        setLoading(true);
+        const listRes = await routeVisitGlobalSearch({
+          query,
+          per_page: pageSize.toString(),
+          page: page.toString(),
+        });
+        setLoading(false);
         return {
-          data: transformedData,
-          total: result.pagination?.totalPages || 0,
-          currentPage: result.pagination?.page || 1,
-          pageSize: result.pagination?.limit || pageSize,
+          data: listRes.data || [],
+          total: listRes.pagination.totalPages,
+          currentPage: listRes.pagination.page,
+          pageSize: listRes.pagination.limit,
         };
       } catch (error: unknown) {
-        console.error("Search Error:", error);
+        console.error("API Error:", error);
         setLoading(false);
-        showSnackbar("Search failed", "error");
         throw error;
       }
     },
-    [filters, setLoading, showSnackbar]
+    []
   );
   const exportFile = async (format: string) => {
     try {

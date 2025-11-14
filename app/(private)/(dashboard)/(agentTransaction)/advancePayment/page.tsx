@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import StatusBtn from "@/app/components/statusBtn2";
 import Table, {
   configType,
   listReturnType,
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { allPaymentList } from "@/app/services/allApi";
-import { useSnackbar } from "@/app/services/snackbarContext";
+import { advancePaymentExport } from "@/app/services/agentTransaction";
+import { allPaymentList, downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
+import { useSnackbar } from "@/app/services/snackbarContext";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 interface Payment {
   id: number;
@@ -78,16 +78,16 @@ export default function PaymentListPage() {
         return row.cheque_date || "-";
       },
     },
-    {
-      key: "status",
-      label: "Status",
-      showByDefault: true,
-      render: (row: TableDataType) => {
-        // ✅ ADDED: Render status properly
-        const isActive = row.status == "1" || row.status === "active";
-        return <StatusBtn isActive={isActive} />;
-      },
-    },
+    // {
+    //   key: "status",
+    //   label: "Status",
+    //   showByDefault: true,
+    //   render: (row: TableDataType) => {
+    //     // ✅ ADDED: Render status properly
+    //     const isActive = row.status == "1" || row.status === "active";
+    //     return <StatusBtn isActive={isActive} />;
+    //   },
+    // },
   ];
 
   const { setLoading } = useLoading();
@@ -159,6 +159,20 @@ export default function PaymentListPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
+  const exportfile = async (format: string) => {
+          try {
+              const response = await advancePaymentExport({ format });
+              if (response && typeof response === 'object' && response.download_url) {
+                  await downloadFile(response.download_url);
+                  showSnackbar("File downloaded successfully ", "success");
+              } else {
+                  showSnackbar("Failed to get download URL", "error");
+              }
+          } catch (error) {
+              showSnackbar("Failed to download warehouse data", "error");
+          }
+      }
+
   return (
     <>
       <div className="flex flex-col h-full">
@@ -168,6 +182,28 @@ export default function PaymentListPage() {
             api: { list: fetchPayments },
             header: {
               title: "Advance Payments",
+              threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                      return data[id].id;
+                    })
+                    exportfile("csv");
+                  }
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const ids = selectedRow?.map((id) => {
+                      return data[id].id;
+                    })
+                    exportfile("xlsx");
+                  }
+                },
+              ],
               searchBar: false,
               columnFilter: true,
               actions: [

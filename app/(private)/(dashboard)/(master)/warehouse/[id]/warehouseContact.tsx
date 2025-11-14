@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import InputFields from "@/app/components/inputFields";
 
 type Props = {
@@ -10,22 +10,9 @@ type Props = {
   setFieldValue: (field: string, value: string) => void;
 };
 
-// ======== VALIDATION HELPERS ========
-function validateContact(phone: string) {
-  return /^\d{9,12}$/.test(phone) ? "" : "Contact number must be 9-12 digits";
-}
-
-function validateEmail(email: string) {
-  if (!email) return "Email is required";
-  if (!/^\S+@gmail\.com$/.test(email)) return "Enter a valid Gmail address";
-  return "";
-}
-
 // ======== MAIN COMPONENT ========
 export default function WarehouseContactDetails({
   values,
-  errors = {},
-  touched = {},
   handleChange,
   setFieldValue,
 }: Props) {
@@ -42,32 +29,18 @@ export default function WarehouseContactDetails({
     flag: "🇺🇬",
   });
 
-  // Error states
-  const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
 
-  // ======== HANDLERS ========
-  // Accept both HTMLInputElement and HTMLSelectElement
   const handleContactChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     field: string
   ) => {
-    const inputValue =
-      "value" in e.target ? e.target.value.replace(/\D/g, "") : "";
+    const inputValue = "value" in e.target ? e.target.value.replace(/\D/g, "") : "";
     setFieldValue(field, inputValue);
-    setLocalErrors((prev) => ({
-      ...prev,
-      [field]: validateContact(inputValue),
-    }));
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    // No local validation required here; delegate to parent/Formik validation
     handleChange(e);
-    // const emailError =
-    //   "value" in e.target ? validateEmail(e.target.value) : "";
-    setLocalErrors((prev) => ({
-      ...prev,
-      owner_email: e.target.value,
-    }));
   };
 
  
@@ -111,11 +84,7 @@ export default function WarehouseContactDetails({
           name="owner_email"
           value={values.owner_email || ""}
           onChange={handleEmailChange}
-          // error={
-          //   localErrors.owner_email && touched?.owner_email
-          //     ? localErrors.owner_email
-          //     : false
-          // }
+         
         />
     
       </div>

@@ -33,7 +33,7 @@ export type CompanyCustomerFormValues = {
   sap_code: string;
   osa_code: string;
   business_name: string;
-  company_type: number;
+  company_type: string;
   language: string;
   contact_number?: string;
   business_type: number;
@@ -61,7 +61,7 @@ interface CompanyCustomerPayload {
   sap_code: string;
   osa_code: string;
   business_name: string;
-  company_type: number;
+  company_type: string;
   language: string;
   contact_number?: string;
   business_type: number;
@@ -107,7 +107,7 @@ const validationSchema = Yup.object({
   area_id: Yup.string().required("Area is required."),
   payment_type: Yup.string().required("Payment Type is required."),
   creditday: Yup.string().required("Credit Day is required."),
-  tin_no: Yup.string().required("VAT No is required."),
+  tin_no: Yup.string().required("TIN No is required."),
   creditlimit: Yup.string().required("Credit Limit is required."),
   bank_guarantee_name: Yup.string().required("Guarantee Name is required."),
   bank_guarantee_amount: Yup.string().required("Guarantee Amount is required."),
@@ -217,7 +217,7 @@ export default function AddCompanyCustomer() {
       osa_code: "",
       business_name: "",
       business_type: 0,
-      company_type: 0,
+      company_type: "",
       language: "",
       contact_number: "",
       town: "",
@@ -257,7 +257,7 @@ export default function AddCompanyCustomer() {
         sap_code: data.sap_code || "",
         osa_code: data.osa_code || "",
         business_name: data.business_name || "",
-        company_type: Number(data.company_type || 0),
+        company_type: String(data?.company_type?.id || ""),
         language: data.language || "",
         contact_number: data.contact_number || "",
         business_type: Number(data.business_type || 0),

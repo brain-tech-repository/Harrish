@@ -28,6 +28,61 @@ export default function WarehouseLocationInfo({
 
   // Fetch area options on region change
 
+  // Validation: latitude and longitude must not be the same
+  const [latLongError, setLatLongError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const lat = values?.latitude;
+    const long = values?.longitude;
+
+    // Only validate when both fields have values
+    if (lat !== undefined && long !== undefined && lat !== "" && long !== "") {
+      const latNum = Number(lat);
+      const longNum = Number(long);
+
+      if (!isNaN(latNum) && !isNaN(longNum) && latNum === longNum) {
+        const msg = "Latitude & Longitude values must not be the same";
+        setLatLongError(msg);
+
+        // mark fields touched if parent passed setTouched
+        if (setTouched) {
+          try {
+            setTouched({ ...(touched || {}), latitude: true, longitude: true });
+          } catch (e) {
+            // ignore if parent expects different shape
+          }
+        }
+
+        // set a hidden flag so parent can detect the validation state if needed
+        if (setFieldValue) {
+          try {
+            setFieldValue("_lat_long_error", "true");
+          } catch (e) {
+            // ignore
+          }
+        }
+      } else {
+        setLatLongError(null);
+        if (setFieldValue) {
+          try {
+            setFieldValue("_lat_long_error", "");
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+    } else {
+      setLatLongError(null);
+      if (setFieldValue) {
+        try {
+          setFieldValue("_lat_long_error", "");
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+  }, [values?.latitude, values?.longitude]);
+
 
   return (
     <>
@@ -164,12 +219,12 @@ export default function WarehouseLocationInfo({
             type="number"
             value={values.longitude}
             onChange={handleChange}
-            error={errors?.longitude && touched?.longitude ? errors.longitude : undefined}
+            // error={errors?.longitude && touched?.longitude ? errors.longitude : undefined}
           />
-          {errors?.longitude && touched?.longitude && (
+          { (latLongError || (errors?.longitude && touched?.longitude)) && (
             <span className="text-xs text-red-500 mt-1">
-              {/* {errors.longitude} */}
-              </span>
+              {latLongError ? latLongError : errors?.longitude}
+            </span>
           )}
         </div>
       </div>

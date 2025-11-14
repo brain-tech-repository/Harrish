@@ -302,7 +302,7 @@ interface AgentCustomerList {
   id: number,
   uuid: string,
   osa_code: string,
-  outlet_name: string,
+  name: string,
   contact_no?: string,
   status: number
 }
@@ -562,7 +562,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const agentCustomerOptions = (Array.isArray(agentCustomer) ? agentCustomer : []).map((c: AgentCustomerList) => ({
     value: String(c.id ?? ''),
-    label: c.osa_code && c.outlet_name ? `${c.osa_code} - ${c.outlet_name}` : (c.outlet_name ?? ''),
+    label: c.osa_code && c.name ? `${c.osa_code} - ${c.name}` : (c.name ?? ''),
     contact_no: c.contact_no ?? ''
   }));
 
@@ -809,6 +809,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     }
   }, []);
 
+
   const fetchSalesmanOptions = useCallback(async (warehouse_id: string | number) => {
     // Keep loading false here to avoid flipping global loading unexpectedly; caller may manage UI.
     setLoading(false);
@@ -863,7 +864,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         SurveyList(),
         routeList({}),
         getAllActiveWarehouse(),
-        routeType(),
+        routeType({ dropdown: "true" }),
         getSubRegion(),
         getCompanyCustomers(),
         getCompanyCustomersType(),

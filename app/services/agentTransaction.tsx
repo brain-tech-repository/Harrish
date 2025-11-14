@@ -77,6 +77,16 @@ export const newCustomerList = async (params?: Params) => {
   }
 };
 
+export const exportNewCustomer = async () => {
+  try {
+    const res = await API.get(`/api/agent_transaction/new-customer/export`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 export const addApprovedCustomer = async (body: object) => {
   try {
     const res = await API.post(`/api/agent_transaction/new-customer/add`, body);
@@ -85,14 +95,14 @@ export const addApprovedCustomer = async (body: object) => {
     return handleError(error);
   }
 };
-export const exportNewCustomerData = async (body: object) => {
-  try {
-    const res = await API.post(`/api/agent_transaction/new-customer/export`, body);
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
+// export const exportNewCustomerData = async (body: object) => {
+//   try {
+//     const res = await API.post(`/api/agent_transaction/new-customer/export`, body);
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
 
 export const newCustomerStatusUpdate = async (body: object) => {
   try {
@@ -236,9 +246,18 @@ export const updateCapsCollection = async (uuid:string,body:object) => {
   }
 };
 
-export const exportCapsCollection = async () => {
+export const exportCapsCollection = async (params: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/capscollection/export`);
+    const res = await API.get(`/api/agent_transaction/capscollection/export`, {params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportCapsCollectionDetail = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/capscollection/exportcollapse`, {params});
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -267,6 +286,15 @@ export const invoiceByUuid = async (uuid: string) => {
 export const exportInvoice = async (params?:Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/invoices/export`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportOrderInvoice = async (params?:Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/orders/exportall`,{params});
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -386,6 +414,15 @@ export const agentOrderByUUID = async (uuid: string, params: Params) => {
 export const agentOrderExport = async (params: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/orders/exportall`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const agentReturnExport = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/returns/exportcollapse`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -558,6 +595,15 @@ export const getAgentCustomerByReturnId = async (uuid: string) => {
 export const agentCustomerReturnExport = async (params: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/returns/exportcustomer`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const advancePaymentExport = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/advancepayments/export`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

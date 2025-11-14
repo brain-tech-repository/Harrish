@@ -7,14 +7,14 @@ import Table, {
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { deleteRole, roleGlobalSearch, roleList } from "@/app/services/allApi";
+import { roleList } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
 
 const columns = [
     { key: "name", label: "Name" },
-    { key: "status", label: "Status", render: (data: TableDataType) => <StatusBtn isActive={data.status ? true : false} /> },
+    { key: "status", label: "Status", isSortable: true, render: (data: TableDataType) => <StatusBtn isActive={data.status ? true : false} /> },
     // { key: "permissions", label: "Permissions", render: (data: TableDataType) => {
     //     const row = (data as any)[0];
     //     if (row && typeof row === "object" && "menus" in row) {
@@ -58,28 +58,7 @@ export default function Roles() {
         []
     );
 
-    const searchList = useCallback(
-        async (search: string, pageSize: number = 5): Promise<listReturnType> => {
-            setLoading(true);
-            const listRes = await roleGlobalSearch({
-            search,
-            per_page: pageSize.toString(),
-            });
-            setLoading(false);
-            if (listRes.error) {
-            showSnackbar(listRes.data.message || "Failed to Search", "error");
-            throw new Error("Failed to Search");
-            } else {
-            return {
-                data: listRes.data || [],
-                total: listRes.pagination.totalPages || 1,
-                currentPage: listRes.pagination.page || 1,
-                pageSize: listRes.pagination.limit || pageSize,
-            };
-            }
-        },
-        []
-    );
+   
 
     // const deleteUser = useCallback(async (id: string) => {
     //     setLoading(true);
@@ -104,11 +83,10 @@ export default function Roles() {
                 config={{
                     api: {
                         list: fetchCountries,
-                        search: searchList,
                     },
                     header: {
                         title: "Roles",
-                        searchBar: true,
+                        searchBar: false,
                         columnFilter: true,
                         actions: [
                             <SidebarBtn

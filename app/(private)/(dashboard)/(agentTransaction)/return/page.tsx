@@ -13,9 +13,10 @@ import { useLoading } from "@/app/services/loadingContext";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import { returnList } from "@/app/services/agentTransaction";
+import { returnList ,agentReturnExport} from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
+import { downloadFile } from "@/app/services/allApi";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 const dropdownDataList = [
@@ -55,6 +56,7 @@ const columns = [
    {
            key: "status",
            label: "Status",
+           isSortable: true,
            render: (row: TableDataType) => {
                // Treat status 1 or 'active' (case-insensitive) as active
                const isActive =
@@ -168,6 +170,21 @@ export default function CustomerInvoicePage() {
                 [setLoading]
             );
 
+                       const exportFile = async (format: string) => {
+                       try {
+                         const response = await agentReturnExport({ format }); 
+                         if (response && typeof response === 'object' && response.download_url) {
+                          await downloadFile(response.download_url);
+                           showSnackbar("File downloaded successfully ", "success");
+                         } else {
+                           showSnackbar("Failed to get download URL", "error");
+                         }
+                       } catch (error) {
+                         showSnackbar("Failed to download warehouse data", "error");
+                       } finally {
+                       }
+                     };
+
     return (
         <div className="flex flex-col h-full">
                 {/* 🔹 Table Section */}
@@ -178,6 +195,21 @@ export default function CustomerInvoicePage() {
                         header: {
                             title: "Return",
                             columnFilter: true,
+                             threeDot: [
+                {
+                  icon: "gala:file-document",
+                  label: "Export CSV",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => exportFile("csv"),
+                },
+                {
+                  icon: "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => exportFile("xlsx"),
+
+                },
+            ],
                             filterByFields: [
                                 {
                                     key: "date_change",
@@ -266,6 +298,7 @@ export default function CustomerInvoicePage() {
                             //       leadingIcon="mdi:download"
                             //       label="Download"
                             //       labelTw="hidden lg:block"
+                            //       onClick={exportFile}
                             //   />,
                               <SidebarBtn
                                   key={1}

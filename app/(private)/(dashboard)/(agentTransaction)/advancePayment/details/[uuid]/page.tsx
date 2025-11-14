@@ -40,7 +40,6 @@ const PaymentDetails = () => {
         try {
           const res = await getPaymentById(String(id));
           const responseData = res?.data;
-
           if (!responseData) return;
 
           const paymentTypeMap: { [key: number]: string } = {
@@ -53,10 +52,7 @@ const PaymentDetails = () => {
           if (responseData.recipt_image) {
             receiptImageUrl = responseData.recipt_image.startsWith("http")
               ? responseData.recipt_image
-              : `${API_BASE_URL}/${responseData.recipt_image.replace(
-                  /^\//,
-                  ""
-                )}`;
+              : `${API_BASE_URL}/${responseData.recipt_image.replace(/^\//, "")}`;
           }
 
           const paymentData: PaymentData = {
@@ -102,10 +98,7 @@ const PaymentDetails = () => {
     <>
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link
-          href="/advancePayment"
-          className="text-gray-600 hover:text-gray-900"
-        >
+        <Link href="/advancePayment" className="text-gray-600 hover:text-gray-900">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
@@ -115,11 +108,9 @@ const PaymentDetails = () => {
 
       {/* Main Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Header Bar */}
         <div className="flex justify-between items-start mb-10 px-5 pb-5 pt-10 flex-wrap gap-[20px] border-b border-gray-300">
           <div className="flex flex-col gap-[10px]">
             <Logo type="full" />
-            {/* Status moved below logo */}
             <div className="mt-2">
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
@@ -139,17 +130,15 @@ const PaymentDetails = () => {
             <span className="text-primary text-end text-[14px] tracking-[10px]">
               {"#" + data.osa_code}
             </span>
+            
           </div>
+          
         </div>
 
         <div className="px-5">
           <Section title="Basic Information">
             <Grid>
-              <Field
-                label="OSA Code"
-                value={data.osa_code ? `#${data.osa_code}` : "N/A"}
-              />
-              {/* Status removed from here since it's now above */}
+              <Field label="OSA Code" value={data.osa_code ? `#${data.osa_code}` : "N/A"} />
               <Field label="Amount" value={formatCurrency(data.amount)} />
             </Grid>
           </Section>
@@ -166,10 +155,7 @@ const PaymentDetails = () => {
             <Section title="Cheque Information">
               <Grid>
                 <Field label="Cheque Number" value={data.cheque_no || "N/A"} />
-                <Field
-                  label="Cheque Date"
-                  value={formatDate(data.cheque_date)}
-                />
+                <Field label="Cheque Date" value={formatDate(data.cheque_date)} />
               </Grid>
             </Section>
           )}
@@ -209,6 +195,7 @@ const PaymentDetails = () => {
 
 export default PaymentDetails;
 
+// Utility Components
 const Section = ({
   title,
   children,
@@ -225,9 +212,7 @@ const Section = ({
 );
 
 const Grid = ({ children }: { children: React.ReactNode }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {children}
-  </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{children}</div>
 );
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (

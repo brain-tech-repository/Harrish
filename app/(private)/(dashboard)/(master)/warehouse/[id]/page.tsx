@@ -66,9 +66,6 @@ const validationSchema = Yup.object({
     agreed_stock_capital: Yup.string().required('Agreed Stock Capital is required'),
     agent_customer: Yup.string().required('Agent Customer is required'),
     warehouse_manager: Yup.string().required('Warehouse Manager is required'),
-    owner_number: Yup.string(),
-    warehouse_manager_contact: Yup.string(),
-    owner_email: Yup.string(),
     location: Yup.string().required('Location is required'),
     city: Yup.string().required('City is required'),
     town_village: Yup.string(),
@@ -89,6 +86,7 @@ const validationSchema = Yup.object({
 
 // STEP-WISE SCHEMAS
 const stepSchemas = [
+    // Step 1: Warehouse Details
     Yup.object().shape({
         warehouse_code: validationSchema.fields.warehouse_code,
         warehouse_type: validationSchema.fields.warehouse_type,
@@ -99,6 +97,10 @@ const stepSchemas = [
         warehouse_manager: validationSchema.fields.warehouse_manager,
     }),
 
+    // Step 2: Warehouse Contact (no required validations here so user can proceed)
+    Yup.object().shape({}),
+
+    // Step 3: Location Information
     Yup.object().shape({
         location: validationSchema.fields.location,
         city: validationSchema.fields.city,
@@ -107,6 +109,8 @@ const stepSchemas = [
         latitude: validationSchema.fields.latitude,
         longitude: validationSchema.fields.longitude,
     }),
+
+    // Step 4: EFRIS / Additional
     Yup.object().shape({
         is_efris: validationSchema.fields.is_efris,
         is_branch: validationSchema.fields.is_branch,

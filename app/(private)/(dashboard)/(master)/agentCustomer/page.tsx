@@ -280,14 +280,6 @@ export default function AgentCustomer() {
             }
             // setLoading(false);
             if (result.error) throw new Error(result.data.message);
-            // if (columnName) {
-            //     return {
-            //         data: result.data || [],
-            //         total: result.pagination.pagination.totalPages || 0,
-            //         currentPage: result.pagination.pagination.current_page || 0,
-            //         pageSize: result.pagination.pagination.limit || pageSize,
-            //     };
-            // }
             return {
                 data: result?.data || [],
                 total: result?.pagination?.totalPages || 1,
