@@ -103,7 +103,15 @@ const columns = [
   },
   // { key: "sub_region_id", label: "Sub Region"},
   { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-",showByDefault: true, },
-  { key: "location", label: "Location", showByDefault: true, render: (row: WarehouseRow) => row.location || "-" },
+  {
+    label: 'Location',
+    showByDefault: true,
+    key: 'location',
+    render: (row: WarehouseRow) => {
+        const name =  (typeof row.location === "object" ? (row.location as {name?: string})?.name : row.location) ||  '-';
+        return `${name}`;
+      }
+  },
   // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
   // { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
   // { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
@@ -197,7 +205,7 @@ export default function Warehouse() {
                  } catch (error: unknown) {
                      console.error("API Error:", error);
                      setLoading(false);
-                     throw error;
+                     throw new Error(String(error));
                  }
              },
              []

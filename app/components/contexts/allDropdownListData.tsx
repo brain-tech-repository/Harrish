@@ -454,17 +454,17 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const itemCategoryOptions = (Array.isArray(itemCategoryData) ? itemCategoryData : []).map((c: ItemCategoryItem) => ({
     value: String(c.id ?? ''),
-    label: c.category_code && c.category_name ? `${c.category_code} - ${c.category_name}` : (c.category_name ?? '')
+    label: c.category_code && c.category_name ? `${c.category_name}` : (c.category_name ?? '')
   }));
 
   const itemSubCategoryOptions = (Array.isArray(itemSubCategoryData) ? itemSubCategoryData : []).map((c: ItemSubCategoryItem) => ({
     value: String(c.id ?? ''),
-    label: c.sub_category_code && c.sub_category_name ? `${c.sub_category_code} - ${c.sub_category_name}` : (c.sub_category_name ?? '')
+    label: c.sub_category_code && c.sub_category_name ? `${c.sub_category_name}` : (c.sub_category_name ?? '')
   }));
 
   const channelOptions = (Array.isArray(channelListData) ? channelListData : []).map((c: ChannelItem) => ({
     value: String(c.id ?? ''),
-    label: c.outlet_channel_code && c.outlet_channel ? `${c.outlet_channel_code} - ${c.outlet_channel}` : (c.outlet_channel ?? '')
+    label: c.outlet_channel_code && c.outlet_channel ? `${c.outlet_channel}` : (c.outlet_channel ?? '')
   }));
   const customerTypeOptions = (Array.isArray(customerTypeData) ? customerTypeData : []).map((c: CustomerType) => ({
     value: String(c.id ?? ''),
@@ -498,14 +498,14 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const uomOptions = (Array.isArray(uom) ? uom : []).map((c: UOM) => ({
     value: String(c.id ?? ''),
-    label: c.osa_code && c.name ? `${c.osa_code} - ${c.name}` : (c.name ?? '')
+    label: c.osa_code && c.name ? `${c.name}` : (c.name ?? '')
   }))
 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => ({
     value: String(c.id ?? ""),
     label:
       c.item_code && c.name
-        ? `${c.item_code} - ${c.name}`
+        ? `${c.name}`
         : c.name ?? "",
     uom: Array.isArray((c as any).uom)
       ? (c as any).uom.map((u: any) => ({
@@ -868,8 +868,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         getSubRegion(),
         getCompanyCustomers(),
         getCompanyCustomersType(),
-        itemCategory(),
-        itemSubCategory(),
+        itemCategory({ dropdown: "true" }),
+        itemSubCategory({ dropdown: "true" }),
         channelList(),
         getCustomerType(),
         salesmanTypeList({}),
@@ -930,7 +930,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setShelves(normalize(res[24]) as ShelvesList[]);
       setSubmenu(normalize(res[25]) as submenuList[]);
       setPermissions(normalize(res[26]) as permissionsList[]);
-      console.log(normalize(res[27]), "normalize(res[27]) ")
+      // console.log(normalize(res[27]), "normalize(res[27]) ")
       setLabels(normalize(res[27]) as LabelItem[]);
       setRoles(normalize(res[28]) as Role[]);
       setProject(normalize(res[29]) as Project[]);
