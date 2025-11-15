@@ -32,7 +32,8 @@ import {
   subRegionList,
   SurveyList,
   uomList,
-  vehicleListData
+  vehicleListData,
+  warehouseList
 } from '@/app/services/allApi';
 import { vendorList } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
@@ -45,6 +46,7 @@ interface DropdownDataContextType {
   SurveyList: SurveyItem[];
   routeList: RouteItem[];
   warehouseList: WarehouseItem[];
+  warehouseAllList: WarehouseAll[];
   routeType: RouteTypeItem[];
   areaList: AreaItem[];
   companyCustomers: CustomerItem[];
@@ -75,6 +77,7 @@ interface DropdownDataContextType {
   surveyOptions: { value: string; label: string }[];
   routeOptions: { value: string; label: string }[];
   warehouseOptions: { value: string; label: string }[];
+  warehouseAllOptions: { value: string; label: string }[];
   routeTypeOptions: { value: string; label: string }[];
   areaOptions: { value: string; label: string, region_id: number; }[];
   companyCustomersOptions: { value: string; label: string }[];
@@ -172,6 +175,11 @@ interface UOM {
 
 
 interface WarehouseItem {
+  id?: number | string;
+  warehouse_code?: string;
+  warehouse_name?: string;
+}
+interface WarehouseAll {
   id?: number | string;
   warehouse_code?: string;
   warehouse_name?: string;
@@ -364,6 +372,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [routeListData, setRouteListData] = useState<RouteItem[]>([]);
   const [routeListBySalesman, setRouteListBySalesman] = useState<RouteItem[]>([]);
   const [warehouseListData, setWarehouseListData] = useState<WarehouseItem[]>([]);
+  const [warehouseAllList, setWarehouseAllList] = useState<WarehouseAll[]>([]);
   const [routeTypeData, setRouteTypeData] = useState<RouteTypeItem[]>([]);
   const [areaListData, setAreaListData] = useState<AreaItem[]>([]);
   const [companyCustomersData, setCompanyCustomersData] = useState<CustomerItem[]>([]);
@@ -432,6 +441,11 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   }));
 
   const warehouseOptions = (Array.isArray(warehouseListData) ? warehouseListData : []).map((c: WarehouseItem) => ({
+    value: String(c.id ?? ''),
+    label: c.warehouse_code && c.warehouse_name ? `${c.warehouse_code} - ${c.warehouse_name}` : (c.warehouse_name ?? '')
+  }));
+
+  const warehouseAllOptions = (Array.isArray(warehouseAllList) ? warehouseAllList : []).map((c: WarehouseItem) => ({
     value: String(c.id ?? ''),
     label: c.warehouse_code && c.warehouse_name ? `${c.warehouse_code} - ${c.warehouse_name}` : (c.warehouse_name ?? '')
   }));
@@ -878,6 +892,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         SurveyList(),
         routeList({}),
         getAllActiveWarehouse(),
+        warehouseList({dropdown: "true"}),
         routeType({ dropdown: "true" }),
         getSubRegion(),
         getCompanyCustomers({ dropdown: "true" }),
@@ -924,34 +939,35 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       setSurveyListData(normalize(res[3]) as SurveyItem[]);
       setRouteListData(normalize(res[4]) as RouteItem[]);
       setWarehouseListData(normalize(res[5]) as WarehouseItem[]);
-      setRouteTypeData(normalize(res[6]) as RouteTypeItem[]);
-      setAreaListData(normalize(res[7]) as AreaItem[]);
-      setCompanyCustomersData(normalize(res[8]) as CustomerItem[]);
-      setCompanyCustomersTypeData(normalize(res[9]) as CustomerTypeItem[]);
-      setItemCategoryData(normalize(res[10]) as ItemCategoryItem[]);
-      setItemSubCategoryData(normalize(res[11]) as ItemSubCategoryItem[]);
-      setChannelListData(normalize(res[12]) as ChannelItem[]);
-      setCustomerTypeData(normalize(res[13]) as CustomerType[]);
-      setSalesmanTypesData(normalize(res[14]) as SalesmanType[]);
-      setVehicleList(normalize(res[15]) as VehicleListItem[]);
-      setCustomerCategory(normalize(res[16]) as CustomerCategory[]);
-      setCustomerSubCategory(normalize(res[17]) as CustomerSubCategory[]);
-      setItem(normalize(res[18]) as Item[]);
-      setDiscountType(normalize(res[19]) as DiscountType[]);
-      setMenuList(normalize(res[20]) as MenuList[]);
-      setVendor(normalize(res[21]) as VendorList[]);
-      setSalesman(normalize(res[22]) as SalesmanList[]);
-      setAgentCustomer(normalize(res[23]) as AgentCustomerList[]);
-      setShelves(normalize(res[24]) as ShelvesList[]);
-      setSubmenu(normalize(res[25]) as submenuList[]);
-      setPermissions(normalize(res[26]) as permissionsList[]);
+      setWarehouseAllList(normalize(res[6]) as WarehouseAll[]);
+      setRouteTypeData(normalize(res[7]) as RouteTypeItem[]);
+      setAreaListData(normalize(res[8]) as AreaItem[]);
+      setCompanyCustomersData(normalize(res[9]) as CustomerItem[]);
+      setCompanyCustomersTypeData(normalize(res[10]) as CustomerTypeItem[]);
+      setItemCategoryData(normalize(res[11]) as ItemCategoryItem[]);
+      setItemSubCategoryData(normalize(res[12]) as ItemSubCategoryItem[]);
+      setChannelListData(normalize(res[13]) as ChannelItem[]);
+      setCustomerTypeData(normalize(res[14]) as CustomerType[]);
+      setSalesmanTypesData(normalize(res[15]) as SalesmanType[]);
+      setVehicleList(normalize(res[16]) as VehicleListItem[]);
+      setCustomerCategory(normalize(res[17]) as CustomerCategory[]);
+      setCustomerSubCategory(normalize(res[18]) as CustomerSubCategory[]);
+      setItem(normalize(res[19]) as Item[]);
+      setDiscountType(normalize(res[20]) as DiscountType[]);
+      setMenuList(normalize(res[21]) as MenuList[]);
+      setVendor(normalize(res[22]) as VendorList[]);
+      setSalesman(normalize(res[23]) as SalesmanList[]);
+      setAgentCustomer(normalize(res[24]) as AgentCustomerList[]);
+      setShelves(normalize(res[25]) as ShelvesList[]);
+      setSubmenu(normalize(res[26]) as submenuList[]);
+      setPermissions(normalize(res[27]) as permissionsList[]);
       // console.log(normalize(res[27]), "normalize(res[27]) ")
-      setLabels(normalize(res[27]) as LabelItem[]);
-      setRoles(normalize(res[28]) as Role[]);
-      setProject(normalize(res[29]) as Project[]);
-      setComapanyType(normalize(res[30]) as CompanyType[]);
-      setUom(normalize(res[31]) as UOM[]);
-      setLocation(normalize(res[32]) as LocationItem[]);
+      setLabels(normalize(res[28]) as LabelItem[]);
+      setRoles(normalize(res[29]) as Role[]);
+      setProject(normalize(res[30]) as Project[]);
+      setComapanyType(normalize(res[31]) as CompanyType[]);
+      setUom(normalize(res[32]) as UOM[]);
+      setLocation(normalize(res[33]) as LocationItem[]);
 
     } catch (error) {
       console.error('Error loading dropdown data:', error);
@@ -1201,6 +1217,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         SurveyList: surveyListData,
         routeList: routeListData,
         warehouseList: warehouseListData,
+        warehouseAllList: warehouseAllList,
         routeType: routeTypeData,
         areaList: areaListData,
         companyCustomers: companyCustomersData,
@@ -1235,6 +1252,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         surveyOptions,
         routeOptions,
         warehouseOptions,
+        warehouseAllOptions,
         routeTypeOptions,
         areaOptions,
         companyCustomersOptions,

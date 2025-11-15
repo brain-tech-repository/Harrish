@@ -13,6 +13,8 @@ import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {downloadFile} from "@/app/services/allApi";
+import Skeleton from "@mui/material/Skeleton";
 
 interface CustomerItem {
   id: number;
@@ -75,6 +77,39 @@ export default function ViewPage() {
     setActiveTab(tabList[idx].key);
   };
 
+  // const IconComponentData2 = ({row}:{row:TableDataType})=>{
+  //   const [smallLoading, setSmallLoading] = useState(false)
+  //   const { showSnackbar } = useSnackbar();
+  
+  //   const exportOrderFile = async (uuid: string, format: string) => {
+  //     try {
+  //       setSmallLoading(true)
+  //       const response = await exportOrderInvoice({ uuid, format }); // send proper body object
+  
+  //       if (response && typeof response === "object" && response.download_url) {
+  //         await downloadFile(response.download_url);
+  //         showSnackbar("File downloaded successfully", "success");
+  //       setSmallLoading(false)
+  
+  
+  //       } else {
+  //         showSnackbar("Failed to get download URL", "error");
+  //       setSmallLoading(false)
+  
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       showSnackbar("Failed to download data", "error");
+  //       setSmallLoading(false)
+  
+  //     }
+  //   };
+  
+  //   return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+  //                       exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+  
+  //       }}><Icon  icon="material-symbols:download"/></div>)
+  // }
   useEffect(() => {
     if (!id) return;
 
@@ -133,7 +168,11 @@ export default function ViewPage() {
         return `${code}${code && name ? " - " : ""}${name}`;
       }
     },
-    { key: "total", label: "Amount", showByDefault: true },
+    //  { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                         
+    
+    //       return(<IconComponentData2 row={row} />)
+    //     } }
   ];
 
   // Tab logic

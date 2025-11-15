@@ -801,11 +801,11 @@ export default function Page() {
           <div className="flex flex-col h-full">
             <Table
               config={{
-                // api: {
-                //   // search: searchCustomerById,
-                //   list: salesBySalesman,
-                //   filterBy: filterBySalesmen
-                // },
+                api: {
+                  // search: searchCustomerById,
+                  list: salesBySalesman,
+                  filterBy: filterBySalesmen
+                },
                 header: {
                   searchBar: false,
                   filterByFields: [
@@ -831,7 +831,7 @@ export default function Page() {
              
                 pageSize: 50,
               }}
-              data={[]}
+              
             />
           </div>
 

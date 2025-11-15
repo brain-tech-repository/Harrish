@@ -1,16 +1,13 @@
 "use client";
 
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import StatusBtn from "@/app/components/statusBtn2";
 import { downloadFile, exportVehicleData, vehicleGlobalSearch, vehicleListData, vehicleStatusUpdate } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
-// import formatDate from "@/app/utils/formatDate";
-import { formatWithPattern } from "@/app/utils/formatDate";
+import StatusBtn from "@/app/components/statusBtn2";
 
 // 🔹 API response type
 interface Vehicle {
@@ -37,113 +34,94 @@ interface DropdownItem {
   iconWidth: number;
 }
 
-const dropdownDataList: DropdownItem[] = [
-  // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
-  // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
-  // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
-  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
-  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
-];
+// const dropdownDataList: DropdownItem[] = [
+//   // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
+//   // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
+//   // { icon: "lucide:printer", label: "Print QR Code", iconWidth: 20 },
+//   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
+//   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
+// ];
 
 // 🔹 Table columns
-
+const columns = [
+  { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
+  { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
+  { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
+  { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
+  { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => row.opening_odometer || "-" },
+  {
+    key: "vehicle_type",
+    label: "Vehicle Type",
+    render: (row: TableDataType) => {
+      const value = row.vehicle_type;
+      if (value == null || value === "") return "-";
+      const strValue = String(value);
+      if (strValue === "1") return "Truck";
+      if (strValue === "2") return "Van";
+      if (strValue === "3") return "Bike";
+      if (strValue === "4") return "Tuktuk";
+      return strValue;
+    },
+  },
+  { key: "capacity", label: "Capacity", render: (row: TableDataType) => row.capacity || "-" },
+  {
+    key: "owner_type",
+    label: "Owner Type",
+    render: (row: TableDataType) => {
+      const value = row.owner_type;
+      if (value == null || value === "") return "-";
+      const strValue = String(value);
+      if (strValue === "0") return "Company Owned";
+      if (strValue === "1") return "Contractor";
+      return strValue;
+    },
+  },
+  {
+    key: "warehouse", label: "Warehouse",render: (row: TableDataType) => {
+        const wh = row.warehouse;
+        let code = "-";
+        let name = "-";
+        if (wh && typeof wh === "object" && wh !== null) {
+          const w = wh as { warehouse_code?: string; warehouse_name?: string };
+          code = w.warehouse_code ?? "-";
+          name = w.warehouse_name ?? "-";
+        } else if (typeof wh === "string") {
+          name = wh;
+        }
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
+       filter: {
+      isFilterable: true,
+      render: (data: TableDataType[]) => {
+        return data.map((item, index) => {
+          const wh: any = item.warehouse;
+          const display = (wh && typeof wh === "object") ? (wh.warehouse_name || "-") : (typeof wh === "string" ? wh : "-");
+          return <div key={String(item.id) + index} className="w-full text-left p-2">{display}</div>;
+        });
+      }
+    }
+  },
+  // { key: "ownerReference", label: "Owner Reference" },
+  // { key: "vehicleRoute", label: "Vehicle Route" },
+  { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
+  { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from || "-" },
+  { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to || "-" },
+  {
+    key: "status",
+    label: "Status",
+    isSortable: true,
+    render: (row: TableDataType) => (
+      <StatusBtn isActive={String(row.status) > "0"} />
+    ),
+  },
+];
 
 export default function VehiclePage() {
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [warehouseId, setWarehouseId] = useState<string>("");
+  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
-  const { warehouseOptions } = useAllDropdownListData();
-  const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
-
-
-
-  const columns = [
-    { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
-    { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
-    { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
-    { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
-    { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => row.opening_odometer || "-" },
-    {
-      key: "vehicle_type",
-      label: "Vehicle Type",
-      render: (row: TableDataType) => {
-        const value = row.vehicle_type;
-        if (value == null || value === "") return "-";
-        const strValue = String(value);
-        if (strValue === "1") return "Truck";
-        if (strValue === "2") return "Van";
-        if (strValue === "3") return "Bike";
-        if (strValue === "4") return "Tuktuk";
-        return strValue;
-      },
-    },
-    { key: "capacity", label: "Capacity", render: (row: TableDataType) => row.capacity || "-" },
-    {
-      key: "owner_type",
-      label: "Owner Type",
-      render: (row: TableDataType) => {
-        const value = row.owner_type;
-        if (value == null || value === "") return "-";
-        const strValue = String(value);
-        if (strValue === "0") return "Company Owned";
-        if (strValue === "1") return "Contractor";
-        return strValue;
-      },
-    },
-    {
-      key: "warehouse",
-      label: "Distributor",
-
-      render: (row: TableDataType) => {
-        const wh = row.warehouse;
-
-        let code = "";
-        let name = "";
-
-        if (wh && typeof wh === "object") {
-          const w = wh as { warehouse_code?: string; warehouse_name?: string };
-          code = w.warehouse_code ?? "";
-          name = w.warehouse_name ?? "";
-        } else if (typeof wh === "string") {
-          name = wh;
-        }
-
-        // Build final text
-        let display = "";
-
-        if (code && name) display = `${code} - ${name}`;
-        else if (code) display = code;
-        else if (name) display = name;
-
-        // If nothing available → return single dash
-        return display || "-";
-      },
-
-      filter: {
-        isFilterable: true,
-        width: 320,
-        options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-        onSelect: (selected: string | string[]) => {
-          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-        },
-      },
-    },
-    { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
-    { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from?formatWithPattern(new Date(row.valid_from),"DD MMM YYYY",'en-GB').toLowerCase(): "-" },
-    { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to?formatWithPattern(new Date(row.valid_to),"DD MMM YYYY",'en-GB').toLowerCase() :"-" },
-    {
-      key: "status",
-      label: "Status",
-      render: (row: TableDataType) => (
-        <StatusBtn isActive={String(row.status) > "0"} />
-      ),
-    },
-  ];
 
 
   const fetchVehicles = useCallback(

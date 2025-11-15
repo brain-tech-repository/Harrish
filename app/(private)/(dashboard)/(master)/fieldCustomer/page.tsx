@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getPaymentType } from "../keyCustomer/details/[id]/page";
 
 export default function AgentCustomer() {
-    const { customerSubCategoryOptions, itemCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
+    const { customerSubCategoryOptions, itemCategoryOptions, channelOptions, warehouseAllOptions, routeOptions } = useAllDropdownListData();
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [channelId, setChannelId] = useState<string>("");
@@ -61,7 +61,7 @@ export default function AgentCustomer() {
             filter: {
                 isFilterable: true,
                 width: 320,
-                options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
                 onSelect: (selected) => {
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
                 },
@@ -290,7 +290,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, routeId]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, routeId]);
 
     return (
         <>
