@@ -1004,6 +1004,8 @@ function FilterTableHeader({
     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
     const parentRef = useRef<HTMLDivElement>(null);
+    const { filterState, setFilterState } = useContext(TableDetails);
+    const selectedRef = useRef<string | string[] | null>(null);
 
     useEffect(() => {
         if (filterConfig?.options) {
@@ -1014,6 +1016,26 @@ function FilterTableHeader({
             // console.log('FilterTableHeader options are empty or undefined');
         }
     }, [filterConfig?.options]);
+
+    // keep selection in sync with global filterState (so selection survives table refresh)
+    useEffect(() => {
+        try {
+            const payload = filterState?.payload || {};
+            const val = payload[column];
+            if (val == null || (typeof val === 'string' && val === "")) {
+                selectedRef.current = null;
+                setSelectedValues([]);
+            } else if (Array.isArray(val)) {
+                selectedRef.current = val;
+                setSelectedValues(val);
+            } else {
+                selectedRef.current = String(val);
+                setSelectedValues([String(val)]);
+            }
+        } catch (err) {
+            // ignore
+        }
+    }, [filterState]);
 
     useEffect(() => {
         // Local search filtering if no onSearch handler
@@ -1047,24 +1069,33 @@ function FilterTableHeader({
             if (filterConfig?.onSelect) {
                 if (selectedValue === value) {
                     filterConfig.onSelect(""); // Deselect
+                    // update global filter state to clear this field
+                    try {
+                        setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: "" } }));
+                    } catch (err) {}
                 } else {
                     filterConfig.onSelect(value);
+                    // persist selection in global filter state so header survives refresh
+                    try {
+                        setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
+                    } catch (err) {}
                 }
             }
             setShowFilterDropdown(false);
         } else {
             setSelectedValues((prev) => {
+                let updated: string[];
                 if (prev.includes(value)) {
-                    // remove
-                    const updated = prev.filter((v) => v !== value);
-                    if (filterConfig?.onSelect) filterConfig.onSelect(updated);
-                    return updated;
+                    updated = prev.filter((v) => v !== value);
                 } else {
-                    // add
-                    const updated = [...prev, value];
-                    if (filterConfig?.onSelect) filterConfig.onSelect(updated);
-                    return updated;
+                    updated = [...prev, value];
                 }
+                // persist multi-select in global filter state
+                try {
+                    setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
+                } catch (err) {}
+                if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+                return updated;
             });
         }
     }
@@ -1095,19 +1126,25 @@ function FilterTableHeader({
                         <div>{children}</div>
                     ) : filteredOptions.length > 0 ? (
                         (filterConfig && typeof filterConfig.selectedValue === 'string' && filterConfig.onSelect) ? (
+                            // prefer persisted selection (selectedRef) when available
                             <FilterOptionList
                                 options={filteredOptions}
-                                selectedValue={filterConfig.selectedValue as string}
-                                onSelect={filterConfig.onSelect as (v: string) => void}
+                                selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig.selectedValue as string)}
+                                onSelect={(v: string) => {
+                                    // call parent's onSelect
+                                    try { filterConfig.onSelect && filterConfig.onSelect(v); } catch (err) {}
+                                    // persist into global filter state
+                                    try { setFilterState(prev => ({ applied: !!v, payload: { ...(prev?.payload || {}), [column]: v } })); } catch (err) {}
+                                }}
                             />
                         ) : filterConfig?.isSingle !== false ? (
                             filteredOptions.map((option, idx) => {
-                                const selectedValue = filterConfig?.selectedValue;
-                                const isSelected = selectedValue === option.value;
+                                const currentSingle = typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? null);
+                                const isSelected = currentSingle === option.value || selectedValues.includes(option.value);
                                 return (
                                     <div
                                         key={option.value}
-                                        className={`font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${isSelected ? 'bg-[#F0F0F0] font-semibold' : ''}`}
+                                        className={`font-normal text-[14px] ${isSelected ? 'text-[#EA0A2A] text-[15px] font-semibold' : 'text-[#181D27]'} flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer`}
                                         onClick={() => handleSelect(option.value)}
                                     >
                                         <span className="text-[#535862]">{option.label}</span>
@@ -1372,7 +1409,7 @@ export function FilterOptionList({
             {options.map(opt => (
                 <div
                     key={opt.value}
-                    className={`font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'bg-[#F0F0F0] font-semibold' : ''}`}
+                    className={`w-full font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'bg-gray-300 font-semibold' : ''}`}
                     onClick={() => {
                         onSelect(selectedValue === opt.value ? "" : opt.value);
                     }}

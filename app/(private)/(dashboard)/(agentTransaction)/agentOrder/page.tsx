@@ -75,8 +75,11 @@ export default function CustomerInvoicePage() {
     const { customerSubCategoryOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
-
     const [refreshKey, setRefreshKey] = useState(0);
+    const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+    });
 
     const fetchOrders = useCallback(
         async (
@@ -135,6 +138,7 @@ export default function CustomerInvoicePage() {
 
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
+            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
             const response = await agentOrderExport({ format });
             if (response && typeof response === 'object' && response.download_url) {
                 await downloadFile(response.download_url);
@@ -142,8 +146,10 @@ export default function CustomerInvoicePage() {
             } else {
                 showSnackbar("Failed to get download URL", "error");
             }
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } catch (error) {
             showSnackbar("Failed to download warehouse data", "error");
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } finally {
         }
     };
@@ -166,18 +172,17 @@ export default function CustomerInvoicePage() {
                             columnFilter: true,
                             threeDot: [
                                 {
-                                    icon: "gala:file-document",
+                                    icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                                     label: "Export CSV",
                                     labelTw: "text-[12px] hidden sm:block",
-                                    onClick: () => exportFile('csv'),
+                                    onClick: () => !threeDotLoading.csv && exportFile("csv"),
                                 },
                                 {
-                                    icon: "gala:file-document",
+                                    icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                     label: "Export Excel",
                                     labelTw: "text-[12px] hidden sm:block",
-                                    onClick: () => exportFile('xlsx'),
-
-                                }
+                                    onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                                },
                             ],
                             filterByFields: [
                                 {

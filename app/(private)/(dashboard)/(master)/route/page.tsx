@@ -79,12 +79,10 @@ export default function Route() {
             //         </>
             //     ),
             // },
-            width: 218,
         },
         {
             key: "warehouse",
             label: "Warehouse",
-            width: 218,
             render: (data: TableDataType) =>
                 typeof data.warehouse === "object" && data.warehouse !== null
                     ? (data.warehouse as { code?: string }).code
