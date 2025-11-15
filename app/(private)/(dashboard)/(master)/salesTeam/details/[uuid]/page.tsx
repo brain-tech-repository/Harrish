@@ -19,6 +19,8 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { exportInvoice, exportOrderInvoice } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import Popup from "@/app/components/popUp";
+import Loading from "@/app/components/Loading";
+import Skeleton from "@mui/material/Skeleton";
 
 // import Attendance from "./attendance/page";
 
@@ -70,6 +72,75 @@ interface Salesman {
   forceful_login?: string | number;
 }
 
+const IconComponentData = ({row}:{row:TableDataType})=>{
+  const [smallLoading, setSmallLoading] = useState(false)
+  const { showSnackbar } = useSnackbar();
+
+    const exportFile = async (uuid: string, format: string) => {
+    try {
+      setSmallLoading(true)
+
+      const response = await exportInvoice({ uuid, format }); // send proper body object
+
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      setSmallLoading(false)
+
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      setSmallLoading(false)
+
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+      setSmallLoading(false)
+
+    }
+  };
+
+  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+                      exportFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+
+      }}><Icon  icon="material-symbols:download"/></div>)
+}
+
+const IconComponentData2 = ({row}:{row:TableDataType})=>{
+  const [smallLoading, setSmallLoading] = useState(false)
+  const { showSnackbar } = useSnackbar();
+
+  const exportOrderFile = async (uuid: string, format: string) => {
+    try {
+      setSmallLoading(true)
+      const response = await exportOrderInvoice({ uuid, format }); // send proper body object
+
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      setSmallLoading(false)
+
+
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      setSmallLoading(false)
+
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+      setSmallLoading(false)
+
+    }
+  };
+
+  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+                      exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+
+      }}><Icon  icon="material-symbols:download"/></div>)
+}
+
+
 export function formatDate(dateString:string) {
   const date = new Date(dateString);
 
@@ -86,6 +157,7 @@ export default function Page() {
   const router = useRouter();
   const { setLoading: setGlobalLoading } = useLoading();
   const [openPopup, setOpenPopup] = useState(false);
+  const [smallLoading, setSmallLoading] = useState(false)
 
   const { showSnackbar } = useSnackbar();
   // const onTabClick = (index: number) => {
@@ -146,6 +218,12 @@ export default function Page() {
       },
     },
     { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
+    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                     
+
+      return(<IconComponentData row={row} />)
+    } },
+
 
   ];
   const warehouseColumns: configType["columns"] = [
@@ -232,6 +310,12 @@ export default function Page() {
           <span className="text-red-600 font-semibold">Inactive</span>
         ),
     },
+    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                     
+
+      return(<IconComponentData2 row={row} />)
+    } }
+    
     // Optional: download icon column
     // {
     //   key: "download",
@@ -255,7 +339,7 @@ export default function Page() {
       pageSize: number = 50
     ): Promise<searchReturnType> => {
 
-      const result = await getSalesmanBySalesId(uuid, { from: "", to: "" });
+      const result = await getSalesmanBySalesId(uuid, { from: "", to: "",page:pageNo.toString() });
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
@@ -289,37 +373,9 @@ export default function Page() {
     []
   );
 
-  const exportFile = async (uuid: string, format: string) => {
-    try {
-      const response = await exportInvoice({ uuid, format }); // send proper body object
 
-      if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      console.error(error);
-      showSnackbar("Failed to download data", "error");
-    }
-  };
 
-  const exportOrderFile = async (uuid: string, format: string) => {
-    try {
-      const response = await exportOrderInvoice({ uuid, format }); // send proper body object
-
-      if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      console.error(error);
-      showSnackbar("Failed to download data", "error");
-    }
-  };
+ 
 
   useEffect(() => {
     if (!uuid) return;
@@ -415,7 +471,7 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await getSalesmanBySalesId(uuid, { from: params.start_date, to: params.end_date });
+        result = await getSalesmanBySalesId(uuid, { from: params.start_date, to: params.end_date,page:params.page });
       } finally {
         setLoading(false);
       }
@@ -753,14 +809,7 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-                rowActions: [
-                  {
-                    icon: "material-symbols:download",
-                    onClick: (data: TableDataType) => {
-                      exportFile(data.uuid, "pdf"); // or "excel", "csv" etc.
-                    },
-                  }
-                ],
+             
                 pageSize: 50,
               }}
             />
@@ -802,14 +851,7 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-                rowActions: [
-                  {
-                    icon: "material-symbols:download",
-                    onClick: (data: TableDataType) => {
-                      exportOrderFile(data.uuid, "pdf"); // or "excel", "csv" etc.
-                    },
-                  }
-                ],
+               
                 pageSize: 50,
               }}
             />
