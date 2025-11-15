@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { vehicleListData, deleteVehicle, vehicleGlobalSearch, exportVehicleData, vehicleStatusUpdate, downloadFile } from "@/app/services/allApi";
+import { downloadFile, exportVehicleData, vehicleGlobalSearch, vehicleListData, vehicleStatusUpdate } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
-import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 // 🔹 API response type
 interface Vehicle {
@@ -45,78 +43,86 @@ interface DropdownItem {
 // ];
 
 // 🔹 Table columns
+const columns = [
+  { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
+  { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
+  { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
+  { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
+  { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => row.opening_odometer || "-" },
+  {
+    key: "vehicle_type",
+    label: "Vehicle Type",
+    render: (row: TableDataType) => {
+      const value = row.vehicle_type;
+      if (value == null || value === "") return "-";
+      const strValue = String(value);
+      if (strValue === "1") return "Truck";
+      if (strValue === "2") return "Van";
+      if (strValue === "3") return "Bike";
+      if (strValue === "4") return "Tuktuk";
+      return strValue;
+    },
+  },
+  { key: "capacity", label: "Capacity", render: (row: TableDataType) => row.capacity || "-" },
+  {
+    key: "owner_type",
+    label: "Owner Type",
+    render: (row: TableDataType) => {
+      const value = row.owner_type;
+      if (value == null || value === "") return "-";
+      const strValue = String(value);
+      if (strValue === "0") return "Company Owned";
+      if (strValue === "1") return "Contractor";
+      return strValue;
+    },
+  },
+  {
+    key: "warehouse", label: "Warehouse",render: (row: TableDataType) => {
+        const wh = row.warehouse;
+        let code = "-";
+        let name = "-";
+        if (wh && typeof wh === "object" && wh !== null) {
+          const w = wh as { warehouse_code?: string; warehouse_name?: string };
+          code = w.warehouse_code ?? "-";
+          name = w.warehouse_name ?? "-";
+        } else if (typeof wh === "string") {
+          name = wh;
+        }
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
+       filter: {
+      isFilterable: true,
+      render: (data: TableDataType[]) => {
+        return data.map((item, index) => {
+          const wh: any = item.warehouse;
+          const display = (wh && typeof wh === "object") ? (wh.warehouse_name || "-") : (typeof wh === "string" ? wh : "-");
+          return <div key={String(item.id) + index} className="w-full text-left p-2">{display}</div>;
+        });
+      }
+    }
+  },
+  // { key: "ownerReference", label: "Owner Reference" },
+  // { key: "vehicleRoute", label: "Vehicle Route" },
+  { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
+  { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from || "-" },
+  { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to || "-" },
+  {
+    key: "status",
+    label: "Status",
+    isSortable: true,
+    render: (row: TableDataType) => (
+      <StatusBtn isActive={String(row.status) > "0"} />
+    ),
+  },
+];
+
 export default function VehiclePage() {
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
   const { showSnackbar } = useSnackbar();
-  const [warehouseId, setWarehouseId] = useState<string>("");
-  const { warehouseOptions } = useAllDropdownListData();
   const router = useRouter();
-  console.log("warehouseOptions", useAllDropdownListData());
 
-  const columns = [
-    { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
-    { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
-    { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
-    { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
-    { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => row.opening_odometer || "-" },
-    {
-      key: "vehicle_type",
-      label: "Vehicle Type",
-      render: (row: TableDataType) => {
-        const value = row.vehicle_type;
-        if (value == null || value === "") return "-";
-        const strValue = String(value);
-        if (strValue === "1") return "Truck";
-        if (strValue === "2") return "Van";
-        if (strValue === "3") return "Bike";
-        if (strValue === "4") return "Tuktuk";
-        return strValue;
-      },
-    },
-    { key: "capacity", label: "Capacity", render: (row: TableDataType) => row.capacity || "-" },
-    {
-      key: "owner_type",
-      label: "Owner Type",
-      render: (row: TableDataType) => {
-        const value = row.owner_type;
-        if (value == null || value === "") return "-";
-        const strValue = String(value);
-        if (strValue === "0") return "Company Owned";
-        if (strValue === "1") return "Contractor";
-        return strValue;
-      },
-    },
-    {
-      key: "warehouse",
-      label: "Warehouse",
-      render: (data: TableDataType) =>
-        typeof data.warehouse === "object" && data.warehouse !== null
-          ? (data.warehouse as { code?: string }).code
-          : "-",
-      filter: {
-        isFilterable: true,
-        width: 320,
-        options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-        onSelect: (selected: string | string[]) => {
-          setWarehouseId((prev) => prev === selected ? "" : (selected as string));
-        },
-      },
-    },
-    // { key: "ownerReference", label: "Owner Reference" },
-    // { key: "vehicleRoute", label: "Vehicle Route" },
-    { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
-    { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from || "-" },
-    { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to || "-" },
-    {
-      key: "status",
-      label: "Status",
-      isSortable: true,
-      render: (row: TableDataType) => (
-        <StatusBtn isActive={String(row.status) > "0"} />
-      ),
-    },
-  ];
 
   const fetchVehicles = useCallback(
     async (
@@ -173,15 +179,18 @@ export default function VehiclePage() {
 
   const exportFile = async (format: string) => {
     try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
       const response = await exportVehicleData({ format });
       if (response && typeof response === 'object' && response.url) {
         await downloadFile(response.url);
         showSnackbar("File downloaded successfully", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
       }
     } catch (error) {
       showSnackbar("Failed to download vehicle data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
     }
   };
@@ -205,25 +214,6 @@ export default function VehiclePage() {
       showSnackbar("Failed to update vehicle status", "error");
     }
   };
-
-  // const handleConfirmDelete = async () => {
-  //   if (!selectedRow?.id) return;
-
-  //   const res = await deleteVehicle(String(selectedRow.id));
-  //   if (res.error) {
-  //     showSnackbar(res.data.message || "Failed to delete vehicle", "error");
-  //   } else {
-  //     showSnackbar(res.message || "Vehicle deleted successfully", "success");
-  //     setRefreshKey(prev => prev + 1);
-  //     setLoading(false);
-  //   }
-  //   setShowDeletePopup(false);
-  //   setSelectedRow(null);
-  // };
-  // useEffect(() => {
-  //   setLoading(true);
-  // }, []);
-
   return (
     <>
 
@@ -238,17 +228,16 @@ export default function VehiclePage() {
             header: {
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => exportFile("csv"),
+                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => exportFile("xlsx"),
-                  // You can add onClick for Excel if needed
+                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 },
                 {
                   icon: "lucide:radio",
@@ -317,7 +306,7 @@ export default function VehiclePage() {
               {
                 icon: "lucide:eye",
                 onClick: (data: TableDataType) => {
-                  router.push(`/vehicle/details/${data.id}`);
+                  router.push(`/vehicle/details/${data.uuid}`);
                 },
               },
               {
@@ -325,7 +314,7 @@ export default function VehiclePage() {
                 onClick: (row: object) => {
                   const r = row as TableDataType;
                   router.push(
-                    `/vehicle/${r.id}`
+                    `/vehicle/${r.uuid}`
                   );
                 },
               },

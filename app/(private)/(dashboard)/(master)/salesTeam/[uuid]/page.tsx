@@ -201,8 +201,8 @@ export default function AddEditSalesman() {
 
   const fetchRoutes = async (value: string) => {
     const filteredOptions = await routeList({
+      // dropdown:"true",
       warehouse_id: value,
-      per_page: "10",
     });
     if (filteredOptions.error) {
       showSnackbar(

@@ -2,6 +2,7 @@
 import React from 'react';
 import InputFields from "@/app/components/inputFields";
 import CustomPasswordInput from '@/app/components/customPasswordInput';
+import { div } from 'framer-motion/client';
 
 type WarehouseValues = {
     latitude?: string;

@@ -17,7 +17,7 @@ import Financial from "./financial";
 import Location from "./location";
 import Overview from "./overview";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
-
+import Skeleton from "@mui/material/Skeleton";
 export interface AgentCustomerDetails {
     id: string;
     uuid: string;
@@ -59,6 +59,7 @@ export interface AgentCustomerDetails {
 }
 
 const tabs = ["Overview", "Sales", "Market Return"];
+
 
 export default function CustomerDetails() {
     const router = useRouter();
@@ -116,7 +117,39 @@ export default function CustomerDetails() {
             mounted = false;
         };
     }, []);
+const IconComponentData2 = ({row}:{row:TableDataType})=>{
+  const [smallLoading, setSmallLoading] = useState(false)
+  const { showSnackbar } = useSnackbar();
 
+  const exportOrderFile = async (uuid: string, format: string) => {
+    try {
+      setSmallLoading(true)
+      const response = await exportInvoice({ uuid, format }); // send proper body object
+
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      setSmallLoading(false)
+
+
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      setSmallLoading(false)
+
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+      setSmallLoading(false)
+
+    }
+  };
+
+  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+                      exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+
+      }}><Icon  icon="material-symbols:download"/></div>)
+}
     function convertDate(input:string) {
   const [dd, mm, yy] = input.split("-");
 
@@ -127,7 +160,7 @@ export default function CustomerDetails() {
 }
 
     const columns: configType["columns"] = [
-        { key: "invoice_date", label: "Data", render: (row: TableDataType) => formatDate(convertDate(row.invoice_date)) },
+        { key: "invoice_date", label: "Date", render: (row: TableDataType) => formatDate(row.invoice_date) },
         { key: "invoice_time", label: "Time" },
         {
             key: "invoice_code",
@@ -146,7 +179,11 @@ export default function CustomerDetails() {
             label: "Route"
         },
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
+ { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                     
 
+      return(<IconComponentData2 row={row} />)
+    } }
 
     ];
 
@@ -497,14 +534,15 @@ const filterByReturn = useCallback(
                                     height: 500,
                                 },
                                 rowSelection: false,
-                                rowActions: [
-                                    {
-                                        icon: "material-symbols:download",
-                                        onClick: (data: TableDataType) => {
-                                            exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
-                                        },
-                                    }
-                                ],
+                                // rowActions: [
+                                //     {
+                                //         icon: "material-symbols:download",
+                                //         onClick: (data: TableDataType) => {
+                                //             return(<IconComponentData2 row={data} />)
+                                //             // exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
+                                //         },
+                                //     }
+                                // ],
                                 pageSize: 50,
                             }}
                         />
@@ -554,7 +592,8 @@ const filterByReturn = useCallback(
                                 {
                                     icon: "material-symbols:download",
                                     onClick: (data: TableDataType) => {
-                                        exportReturnFile(uuid, "excel"); // or "excel", "csv" etc.
+                                        return(<IconComponentData2 row={data} />)
+                                        // exportReturnFile(uuid, "excel"); // or "excel", "csv" etc.
                                     },
                                 }
                             ],

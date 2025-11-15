@@ -388,7 +388,7 @@ export default function InputFields({
                   className={`w-4 h-4 accent-gray-600 border-2 border-gray-600 focus:ring-2 focus:ring-red-400 appearance-none rounded-full checked:bg-red-500 checked:w-3 checked:h-3 checked:border-red-600 ${error ? "border-red-500" : "border-gray-300"}`}
                   style={{ boxShadow: value === opt.value ? '0 0 0 2px #fff, 0 0 0 4px #252b37' : undefined }}
                 />
-                <span className="text-lg text-gray-600">{opt.label}</span>
+                <span className="text-md text-gray-600">{opt.label}</span>
               </label>
             ))}
           </div>

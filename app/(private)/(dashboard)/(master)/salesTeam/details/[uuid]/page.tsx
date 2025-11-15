@@ -19,6 +19,9 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { exportInvoice, exportOrderInvoice } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import Popup from "@/app/components/popUp";
+import Loading from "@/app/components/Loading";
+import Skeleton from "@mui/material/Skeleton";
+import Drawer from "@mui/material/Drawer";
 
 // import Attendance from "./attendance/page";
 
@@ -70,6 +73,75 @@ interface Salesman {
   forceful_login?: string | number;
 }
 
+const IconComponentData = ({row}:{row:TableDataType})=>{
+  const [smallLoading, setSmallLoading] = useState(false)
+  const { showSnackbar } = useSnackbar();
+
+    const exportFile = async (uuid: string, format: string) => {
+    try {
+      setSmallLoading(true)
+
+      const response = await exportInvoice({ uuid, format }); // send proper body object
+
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      setSmallLoading(false)
+
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      setSmallLoading(false)
+
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+      setSmallLoading(false)
+
+    }
+  };
+
+  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+                      exportFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+
+      }}><Icon  icon="material-symbols:download"/></div>)
+}
+
+const IconComponentData2 = ({row}:{row:TableDataType})=>{
+  const [smallLoading, setSmallLoading] = useState(false)
+  const { showSnackbar } = useSnackbar();
+
+  const exportOrderFile = async (uuid: string, format: string) => {
+    try {
+      setSmallLoading(true)
+      const response = await exportOrderInvoice({ uuid, format }); // send proper body object
+
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      setSmallLoading(false)
+
+
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      setSmallLoading(false)
+
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+      setSmallLoading(false)
+
+    }
+  };
+
+  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+                      exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+
+      }}><Icon  icon="material-symbols:download"/></div>)
+}
+
+
 export function formatDate(dateString:string) {
   const date = new Date(dateString);
 
@@ -86,6 +158,7 @@ export default function Page() {
   const router = useRouter();
   const { setLoading: setGlobalLoading } = useLoading();
   const [openPopup, setOpenPopup] = useState(false);
+  const [smallLoading, setSmallLoading] = useState(false)
 
   const { showSnackbar } = useSnackbar();
   // const onTabClick = (index: number) => {
@@ -103,49 +176,74 @@ export default function Page() {
 
 
   const columns: configType["columns"] = [
-    { key: "invoice_date", label: "Data", render: (row: TableDataType) => row.invoice_date?formatDate(row.invoice_date):"-" },
+    { key: "invoice_date", label: "Date", render: (row: TableDataType) => row.invoice_date ? formatDate(row.invoice_date) : "-" },
     { key: "invoice_time", label: "Time" },
     {
-      key: "invoice_number",
-      label: "Invoice Number"
+      key: "invoice_code",
+      label: "Invoice Number",
+      // render: (row: TableDataType) => (row as any).invoice_number || (row as any).invoice_code || "-"
     },
     {
-      key: "customer_id",
+      key: "customer_id", 
       label: "Customer",
-      render: (row: TableDataType) =>
-        typeof row.customer_id === "object" &&
-          row.customer_id !== null &&
-          "customer_id" in row.customer_id
-          ? (row.customer_id as { customer_id?: string })
-            .customer_id || "-"
-          : "-",
+       
+   render: (row: TableDataType | any) => {
+    const customerObj = typeof row.customer_id === "object" && 
+      row.customer_id !== null && 
+      "warehouse_name" in row.customer_id
+      ? row.customer_id
+      : row.customer;
+    
+    if (customerObj?.osa_code && customerObj?.name) {
+      return `${customerObj.osa_code} - ${customerObj.name}`;
+    }
+    return customerObj?.name || "-";
+  },
+  
+      // API provides numeric customer_id plus nested customer object { id, osa_code, name }
+      // render: (row: TableDataType | any) => row.customer?.osa_code || row.customer?.name || "-",
     },
-    {
-      key: "warehouse_id",
-      label: "Distributor",
-      render: (row: TableDataType) =>
-        typeof row.warehouse_id === "object" &&
-          row.warehouse_id !== null &&
-          "warehouse_name" in row.warehouse_id
-          ? (row.warehouse_id as { warehouse_name?: string })
-            .warehouse_name || "-"
-          : "-",
-    },
+   {
+  key: "warehouse_id",
+  label: "Distributor",
+  // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
+  render: (row: TableDataType | any) => {
+    const warehouseObj = typeof row.warehouse_id === "object" && 
+      row.warehouse_id !== null && 
+      "osa_code" in row.warehouse_id
+      ? row.warehouse_id
+      : row.warehouse;
+    
+    if (warehouseObj?.warehouse_code && warehouseObj?.warehouse_name) {
+      return `${warehouseObj.warehouse_code} - ${warehouseObj.warehouse_name}`;
+    }
+    return warehouseObj?.warehouse_name || "-";
+  },
+   },
     {
       key: "route_id",
       label: "Route",
-      render: (row: TableDataType) => {
-        if (
-          typeof row.route_id === "object" &&
-          row.route_id !== null &&
-          "route_name" in row.route_id
-        ) {
-          return (row.route_id as { route_name?: string }).route_name || "-";
-        }
-        return typeof row.route_id === 'string' ? row.route_id : "-";
-      },
+      // API provides numeric route_id plus nested route object { id, route_code, route_name }
+    render: (row: TableDataType | any) => {
+    const routeObj = typeof row.route_id === "object" && 
+      row.route_id !== null && 
+      "warehouse_name" in row.route_id
+      ? row.route_id
+      : row.route;
+    
+    if (routeObj?.route_code && routeObj?.route_name) {
+      return `${routeObj.route_code} - ${routeObj.route_name}`;
+    }
+    return routeObj?.route_name || "-";
+  },
     },
     { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
+    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                     
+
+      return(<IconComponentData row={row} />)
+    } },
+
 
   ];
   const warehouseColumns: configType["columns"] = [
@@ -232,6 +330,12 @@ export default function Page() {
           <span className="text-red-600 font-semibold">Inactive</span>
         ),
     },
+    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                     
+
+      return(<IconComponentData2 row={row} />)
+    } }
+    
     // Optional: download icon column
     // {
     //   key: "download",
@@ -255,7 +359,7 @@ export default function Page() {
       pageSize: number = 50
     ): Promise<searchReturnType> => {
 
-      const result = await getSalesmanBySalesId(uuid, { from: "", to: "" });
+      const result = await getSalesmanBySalesId(uuid, { from: "", to: "",page:pageNo.toString() });
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
@@ -289,37 +393,9 @@ export default function Page() {
     []
   );
 
-  const exportFile = async (uuid: string, format: string) => {
-    try {
-      const response = await exportInvoice({ uuid, format }); // send proper body object
 
-      if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      console.error(error);
-      showSnackbar("Failed to download data", "error");
-    }
-  };
 
-  const exportOrderFile = async (uuid: string, format: string) => {
-    try {
-      const response = await exportOrderInvoice({ uuid, format }); // send proper body object
-
-      if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      console.error(error);
-      showSnackbar("Failed to download data", "error");
-    }
-  };
+ 
 
   useEffect(() => {
     if (!uuid) return;
@@ -415,7 +491,7 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await getSalesmanBySalesId(uuid, { from: params.start_date, to: params.end_date });
+        result = await getSalesmanBySalesId(uuid, { from: params.start_date, to: params.end_date,page:params.page });
       } finally {
         setLoading(false);
       }
@@ -519,7 +595,7 @@ export default function Page() {
                   : "-"
               },
               { key: "Designation", value: salesman?.designation || "-" },
-              { key: "Contact No", value: salesman?.contact_no || "-" },
+              { key: "Contact No", value: salesman?.contact_no=='0' ? "-" :  salesman?.contact_no  || "-" },
               {
                 key: "Distributor",
                 value: <span className="hover:text-red-500 cursor-pointer">View Distributors</span>,
@@ -753,16 +829,10 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-                rowActions: [
-                  {
-                    icon: "material-symbols:download",
-                    onClick: (data: TableDataType) => {
-                      exportFile(data.uuid, "pdf"); // or "excel", "csv" etc.
-                    },
-                  }
-                ],
+             
                 pageSize: 50,
               }}
+              
             />
           </div>
 
@@ -775,11 +845,11 @@ export default function Page() {
           <div className="flex flex-col h-full">
             <Table
               config={{
-                api: {
-                  // search: searchCustomerById,
-                  list: orderBySalesman,
-                  filterBy: filterBy
-                },
+                // api: {
+                //   // search: searchCustomerById,
+                //   list: orderBySalesman,
+                //   filterBy: filterBy
+                // },
                 header: {
                   searchBar: false,
                   filterByFields: [
@@ -802,41 +872,35 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-                rowActions: [
-                  {
-                    icon: "material-symbols:download",
-                    onClick: (data: TableDataType) => {
-                      exportOrderFile(data.uuid, "pdf"); // or "excel", "csv" etc.
-                    },
-                  }
-                ],
+               
                 pageSize: 50,
               }}
+              data={[]}
             />
           </div>
 
         </ContainerCard>
       )}
 
-      <Popup isOpen={openPopup} onClose={() => { setOpenPopup(false); }} >
+      <Drawer open={openPopup} anchor="right" onClose={() => { setOpenPopup(false); }} >
         <div className="flex flex-col h-full">
           <Table
+          
             data={salesman?.warehouses || []}
 
             config={{
+              table:{height:"100vh"},
               showNestedLoading: true,
               footer: { nextPrevBtn: true, pagination: true },
               columns: warehouseColumns,
-              table: {
-                height: 500,
-              },
+              
               rowSelection: false,
 
               pageSize: 50,
             }}
           />
         </div>
-      </Popup>
+      </Drawer>
       <br/>
     </>
   );

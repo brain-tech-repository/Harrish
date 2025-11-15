@@ -12,9 +12,10 @@ import { useCallback, useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
 import Map from "@/app/components/map";
+import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-
+import { formatWithPattern } from "@/app/utils/formatDate";
 interface Item {
     id: string;
     sap_id: string;
@@ -30,6 +31,10 @@ interface Item {
     warehouse_type: string;
     city: string;
     location: string;
+    location_relation: {
+        code: string;
+        name: string;
+    }
     get_company: {
         company_code: string;
         company_name: string;
@@ -63,15 +68,7 @@ const backBtnUrl = "/distributors";
 
 export default function ViewPage() {
     const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
-    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
-    const [warehouseId, setWarehouseId] = useState<string>("");
-    const [channelId, setChannelId] = useState<string>("");
     const [routeId, setRouteId] = useState<string>("");
-    const [warehouseRoutes, setWarehouseRoutes] = useState<TableDataType[]>([]);
-    const [warehouseVehicle, setWarehouseVehicle] = useState<TableDataType[]>([]);
-    const [warehouseSalesman, setWarehouseSalesman] = useState<TableDataType[]>([]);
-    const [warehouseCustomer, setWarehouseCustomer] = useState<TableDataType[]>([]);
-    const [nestedLoading, setNestedLoading] = useState<boolean>(false);
     const [refreshKey, setRefreshKey] = useState(0)
 
     const params = useParams();
@@ -87,6 +84,7 @@ export default function ViewPage() {
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const [item, setItem] = useState<Item | null>(null);
+    const [warehouseId, setWarehouseId] = useState("");
     const onTabClick = async (idx: number) => {
         // ensure index is within range and set the corresponding tab key
         if (typeof idx !== "number") return;
@@ -159,6 +157,8 @@ export default function ViewPage() {
                 throw new Error("Unable to fetch Distributor Details");
             } else {
                 setItem(res.data);
+                // store id as a string so it can be passed to APIs that expect string identifiers
+                setWarehouseId(String(res.data.id));
 
             }
         };
@@ -232,10 +232,11 @@ export default function ViewPage() {
                 <StatusBtn isActive={row.status && row.status.toString() === "0" ? false : true} />
             ),
             showByDefault: true,
-            isSortable: true
         },
     ];
 
+    
+    
     const salesColumns: configType["columns"] = [
         {
             key: "invoice_code",
@@ -251,7 +252,7 @@ export default function ViewPage() {
             key: "invoice_date",
             label: "Invoice Date",
             isSortable: true,
-            render: (data: TableDataType) => (data.invoice_date ? data.invoice_date : "-"),
+            render: (data: TableDataType) => data.invoice_date?formatWithPattern(new Date(data.invoice_date),"DD MMM YYYY",'en-GB').toLowerCase() :"-" ,
             showByDefault: true,
         },
         {
@@ -259,18 +260,6 @@ export default function ViewPage() {
             label: "Invoice Time",
             isSortable: true,
             render: (data: TableDataType) => (data.invoice_time ? data.invoice_time : "-"),
-            showByDefault: true,
-        },
-        {
-            key: "order_number",
-            label: "Order No.",
-            render: (data: TableDataType) => (data.order_number ? data.order_number : "-"),
-            showByDefault: true,
-        },
-        {
-            key: "delivery_number",
-            label: "Delivery No.",
-            render: (data: TableDataType) => (data.delivery_number ? data.delivery_number : "-"),
             showByDefault: true,
         },
         {
@@ -307,20 +296,18 @@ export default function ViewPage() {
         {
             key: "total_amount",
             label: "Amount",
-            render: (data: TableDataType) => (data.total_amount ? data.total_amount : "-"),
+             render: (row: TableDataType) => {
+                        // row.total_amount may be string or number; toInternationalNumber handles both
+                        return toInternationalNumber(row.total_amount, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        } as FormatNumberOptions);
+                    },
 
             showByDefault: true,
         },
 
-        {
-            key: "status",
-            label: "Status",
-            render: (row: TableDataType) => (
-                <StatusBtn isActive={row.status && row.status.toString() === "0" ? false : true} />
-            ),
-            showByDefault: true,
-            isSortable: true
-        },
+       
     ];
     const returnColumns: configType["columns"] = [
         {
@@ -340,26 +327,26 @@ export default function ViewPage() {
             render: (data: TableDataType) => (data.return_date ? data.return_date : "-"),
             showByDefault: true,
         },
-        {
-            key: "order_code",
-            label: "Order Code",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.order_code ? data.order_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
-        {
-            key: "delivery_code",
-            label: "Delivery Code",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.delivery_code ? data.delivery_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
+        // {
+        //     key: "order_code",
+        //     label: "Order Code",
+        //     render: (data: TableDataType) => (
+        //         <span className="font-semibold text-[#181D27] text-[14px]">
+        //             {data.order_code ? data.order_code : "-"}
+        //         </span>
+        //     ),
+        //     showByDefault: true,
+        // },
+        // {
+        //     key: "delivery_code",
+        //     label: "Delivery Code",
+        //     render: (data: TableDataType) => (
+        //         <span className="font-semibold text-[#181D27] text-[14px]">
+        //             {data.delivery_code ? data.delivery_code : "-"}
+        //         </span>
+        //     ),
+        //     showByDefault: true,
+        // },
 
         {
             key: "route_code",
@@ -394,7 +381,13 @@ export default function ViewPage() {
         {
             key: "total",
             label: "Amount",
-            render: (data: TableDataType) => (data.total_amount ? data.total_amount : "-"),
+           render: (row: TableDataType) => {
+                        // row.total_amount may be string or number; toInternationalNumber handles both
+                        return toInternationalNumber(row.total, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        } as FormatNumberOptions);
+                    },
 
             showByDefault: true,
         },
@@ -450,7 +443,6 @@ export default function ViewPage() {
             render: (row: TableDataType) => (
                 <StatusBtn isActive={String(row.status) === "1"} />
             ),
-            isSortable: true
         },
     ];
     const salesmanColumns: configType["columns"] = [
@@ -482,24 +474,15 @@ export default function ViewPage() {
             key: "route",
             label: "Route",
             render: (row: TableDataType) => {
-                if (
-                    typeof row.route === "object" &&
-                    row.route !== null &&
-                    "route_name" in row.route
-                ) {
-                    return (row.route as { route_name?: string }).route_name || "-";
+                const route = row.route;
+                if (typeof route === "object" && route !== null) {
+                    const code = (route as any).route_code || "-";
+                    const name = (route as any).route_name || "-";
+                    return `${code}${code && name ? " - " : "-"}${name}`;
                 }
-                return typeof row.route === 'string' ? row.route : "-";
+                return typeof route === "string" && route ? route : "-";
             },
-            filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(routeOptions) ? routeOptions : [],
-                onSelect: (selected: string | string[]) => {
-                    setRouteId((prev) => prev === selected ? "" : (selected as string));
-                },
-                selectedValue: routeId,
-            },
+           
             showByDefault: true,
         },
         { key: "contact_no", label: "Contact No", showByDefault: true, },
@@ -511,7 +494,6 @@ export default function ViewPage() {
                 <StatusBtn isActive={String(row.status) === "1"} />
             ),
             showByDefault: true,
-            isSortable: true
         },
     ];
 
@@ -656,7 +638,6 @@ export default function ViewPage() {
             showByDefault: true,
         },
         { key: "owner_name", label: "Owner Name", showByDefault: true },
-        { key: "owner_name", label: "Owner Name" },
         {
             key: "customer_type",
             label: "Customer Type",
@@ -708,15 +689,15 @@ export default function ViewPage() {
             key: "route",
             label: "Route",
             render: (row: TableDataType) => {
-                if (
-                    typeof row.route === "object" &&
-                    row.route !== null &&
-                    "route_name" in row.route
-                ) {
-                    return (row.route as { route_name?: string }).route_name || "-";
+                const route = row.route;
+                if (typeof route === "object" && route !== null) {
+                    const code = (route as any).route_code || "-";
+                    const name = (route as any).route_name || "-";
+                    return `${code}${code && name ? " - " : "-"}${name}`;
                 }
-                return typeof row.route === 'string' ? row.route : "-";
+                return typeof route === "string" && route ? route : "-";
             },
+           
             isSortable: true,
 
             showByDefault: true,
@@ -737,7 +718,6 @@ export default function ViewPage() {
                 return <StatusBtn isActive={isActive} />;
             },
             showByDefault: true,
-            isSortable: true,
         },
     ];
 
@@ -756,7 +736,7 @@ export default function ViewPage() {
                         params[k] = String(v);
                     }
                 });
-                result = await warehouseSales(id, params);
+                result = await warehouseSales(warehouseId, params);
             } finally {
                 setLoading(false);
             }
@@ -773,43 +753,43 @@ export default function ViewPage() {
                 };
             }
         },
-        [setLoading]
+        [setLoading, warehouseId]
     );
 
-    const filterByListReturn = useCallback(
-        async (
-            payload: Record<string, string | number | null>,
-            pageSize: number
-        ): Promise<listReturnType> => {
-            let result;
-            setLoading(true);
-            try {
-                const params: Record<string, string> = { per_page: pageSize.toString() };
-                Object.keys(payload || {}).forEach((k) => {
-                    const v = payload[k as keyof typeof payload];
-                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-                        params[k] = String(v);
-                    }
-                });
-                result = await warehouseReturn(id, params);
-            } finally {
-                setLoading(false);
-            }
+    // const filterByListReturn = useCallback(
+    //     async (
+    //         payload: Record<string, string | number | null>,
+    //         pageSize: number
+    //     ): Promise<listReturnType> => {
+    //         let result;
+    //         setLoading(true);
+    //         try {
+    //             const params: Record<string, string> = { per_page: pageSize.toString() };
+    //             Object.keys(payload || {}).forEach((k) => {
+    //                 const v = payload[k as keyof typeof payload];
+    //                 if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+    //                     params[k] = String(v);
+    //                 }
+    //             });
+    //             // result = await warehouseReturn(warehouseId, params);
+    //         } finally {
+    //             setLoading(false);
+    //         }
 
-            if (result?.error) throw new Error(result.data?.message || "Filter failed");
-            else {
-                const pagination = result.pagination?.pagination || result.pagination || {};
-                return {
-                    data: result.data || [],
-                    total: pagination.totalPages || result.pagination?.totalPages || 0,
-                    totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
-                    currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-                    pageSize: pagination.limit || pageSize,
-                };
-            }
-        },
-        [setLoading]
-    );
+    //         // if (result?.error) throw new Error(result.data?.message || "Filter failed");
+    //         // else {
+    //         //     const pagination = result.pagination?.pagination || result.pagination || {};
+    //         //     return {
+    //         //         data: result.data || [],
+    //         //         total: pagination.totalPages || result.pagination?.totalPages || 0,
+    //         //         totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+    //         //         currentPage: pagination.current_page || result.pagination?.currentPage || 0,
+    //         //         pageSize: pagination.limit || pageSize,
+    //         //     };
+    //         // }
+    //     },
+    //     [setLoading, warehouseId]
+    // );
 
     const searchCustomerById = useCallback(
         async (
@@ -817,7 +797,7 @@ export default function ViewPage() {
             pageSize: number = 5,
             columnName?: string
         ): Promise<searchReturnType> => {
-            const result = await getCustomerInWarehouse(id, {
+            const result = await getCustomerInWarehouse(warehouseId, {
                 query: searchQuery,
                 pageSize: pageSize.toString()
             });
@@ -833,7 +813,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const listCustomerById = useCallback(
@@ -841,7 +821,7 @@ export default function ViewPage() {
             pageNo: number = 1,
             pageSize: number = 50
         ): Promise<searchReturnType> => {
-            const result = await getCustomerInWarehouse(id, {
+            const result = await getCustomerInWarehouse(warehouseId, {
                 page: pageNo.toString(),
                 pageSize: pageSize.toString()
             });
@@ -856,7 +836,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const searchRouteByWarehouse = useCallback(
@@ -865,7 +845,7 @@ export default function ViewPage() {
             pageSize: number = 5,
             columnName?: string
         ): Promise<searchReturnType> => {
-            const result = await getRouteInWarehouse(id, {
+            const result = await getRouteInWarehouse(warehouseId, {
                 query: searchQuery,
             });
             if (result.error) {
@@ -879,7 +859,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const listRouteByWarehouse = useCallback(
@@ -887,7 +867,7 @@ export default function ViewPage() {
             pageNo: number = 1,
             pageSize: number = 5,
         ): Promise<searchReturnType> => {
-            const result = await getRouteInWarehouse(id, {
+            const result = await getRouteInWarehouse(warehouseId, {
                 page: pageNo.toString(),
                 pageSize: pageSize.toString()
             });
@@ -903,38 +883,36 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
-    const listReturnByWarehouse = useCallback(
-        async (
-            pageNo: number = 1,
-            pageSize: number = 50,
-        ): Promise<searchReturnType> => {
-            const result = await warehouseReturn(id, {
-                warehouse_id: id,
-                per_page: pageSize.toString()
-            });
+    // const listReturnByWarehouse = useCallback(
+    //     async (
+    //         pageNo: number = 1,
+    //         pageSize: number = 50,
+    //     ): Promise<searchReturnType> => {
+    //         const result = await warehouseReturn(warehouseId, {
+    //             per_page: pageSize.toString()
+    //         });
 
-            if (result.error) {
-                throw new Error(result.data?.message || "Search failed");
-            }
+    //         if (result.error) {
+    //             throw new Error(result.data?.message || "Search failed");
+    //         }
 
-            return {
-                data: result.data || [],
-                currentPage: result?.pagination?.current_page || 1,
-                pageSize: result?.pagination?.per_page || pageSize,
-                total: result?.pagination?.last_page || 1,
-            };
-        },
-        []
-    );
+    //         return {
+    //             data: result.data || [],
+    //             currentPage: result?.pagination?.current_page || 1,
+    //             pageSize: result?.pagination?.per_page || pageSize,
+    //             total: result?.pagination?.last_page || 1,
+    //         };
+    //     },
+    //     [warehouseId]
+    // );
     const listSalesByWarehouse = useCallback(
         async (
             pageNo: number = 1,
             pageSize: number = 50,
         ): Promise<searchReturnType> => {
-            const result = await warehouseSales(id, {
-                warehouse_id: id,
+            const result = await warehouseSales(warehouseId, {
                 per_page: pageSize.toString()
             });
 
@@ -949,7 +927,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const listStockByWarehouse = useCallback(
@@ -957,7 +935,7 @@ export default function ViewPage() {
             pageNo: number = 1,
             pageSize: number = 50,
         ): Promise<searchReturnType> => {
-            const result = await getStockOfWarehouse(id, {
+            const result = await getStockOfWarehouse(warehouseId, {
                 page: pageNo.toString(),
                 pageSize: pageSize.toString()
             });
@@ -973,7 +951,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const searchSalesmanByWarehouse = useCallback(
@@ -982,7 +960,7 @@ export default function ViewPage() {
             pageSize: number = 5,
             columnName?: string
         ): Promise<searchReturnType> => {
-            const result = await getSalesmanInWarehouse(id, {
+            const result = await getSalesmanInWarehouse(warehouseId, {
                 query: searchQuery,
             });
 
@@ -997,40 +975,40 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
-    const searchReturnByWarehouse = useCallback(
-        async (
-            searchQuery: string,
-            pageSize: number = 5,
-            columnName?: string
-        ): Promise<searchReturnType> => {
-            const result = await warehouseReturn(id, {
-                warehouse_id: id,
-                query: searchQuery,
-            });
+    // const searchReturnByWarehouse = useCallback(
+    //     async (
+    //         searchQuery: string,
+    //         pageSize: number = 5,
+    //         columnName?: string
+    //     ): Promise<searchReturnType> => {
+    //         const result = await warehouseReturn(warehouseId, {
+    //             warehouse_id: warehouseId,
+    //             query: searchQuery,
+    //         });
 
-            if (result.error) {
-                throw new Error(result.data?.message || "Search failed");
-            }
+    //         if (result.error) {
+    //             throw new Error(result.data?.message || "Search failed");
+    //         }
 
-            return {
-                data: result.data || [],
-                currentPage: result?.pagination?.current_page || 1,
-                pageSize: result?.pagination?.per_page || pageSize,
-                total: result?.pagination?.last_page || 1,
-            };
-        },
-        []
-    );
+    //         return {
+    //             data: result.data || [],
+    //             currentPage: result?.pagination?.current_page || 1,
+    //             pageSize: result?.pagination?.per_page || pageSize,
+    //             total: result?.pagination?.last_page || 1,
+    //         };
+    //     },
+    //     [warehouseId]
+    // );
     const searchSalesByWarehouse = useCallback(
         async (
             searchQuery: string,
             pageSize: number = 5,
             columnName?: string
         ): Promise<searchReturnType> => {
-            const result = await warehouseSales(id, {
-                warehouse_id: id,
+            const result = await warehouseSales(warehouseId, {
+                warehouse_id: warehouseId,
                 query: searchQuery,
             });
 
@@ -1045,7 +1023,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const searchStockByWarehouse = useCallback(
@@ -1054,7 +1032,7 @@ export default function ViewPage() {
             pageSize: number = 5,
             columnName?: string
         ): Promise<searchReturnType> => {
-            const result = await getStockOfWarehouse(id, {
+            const result = await getStockOfWarehouse(warehouseId, {
                 query: searchQuery,
             });
 
@@ -1069,7 +1047,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     const listSalesmanByWarehouse = useCallback(
@@ -1077,7 +1055,7 @@ export default function ViewPage() {
             pageNo: number = 1,
             pageSize: number = 5,
         ): Promise<searchReturnType> => {
-            const result = await getSalesmanInWarehouse(id, {
+            const result = await getSalesmanInWarehouse(warehouseId, {
                 page: pageNo.toString(),
                 pageSize: pageSize.toString()
             });
@@ -1093,7 +1071,7 @@ export default function ViewPage() {
                 total: result?.pagination?.last_page || 1,
             };
         },
-        []
+        [warehouseId]
     );
 
     return (
@@ -1188,7 +1166,8 @@ export default function ViewPage() {
                                                     width={16}
                                                     className="text-[#EA0A2A]"
                                                 />
-                                                    <span>{item?.owner_number} <br />{item?.warehouse_manager_contact}</span></> : ""}
+                                                    <div>{item?.owner_number== '0' ? "": item?.owner_number }</div>
+                                                    <div>{item?.warehouse_manager_contact == '0' ? "": item?.warehouse_manager_contact}</div></> : ""}
                                             </div>
                                             <div className="flex items-center gap-[8px] text-[16px]">
                                                 {item?.owner_email ? <>
@@ -1407,11 +1386,11 @@ export default function ViewPage() {
                     <div className="flex flex-col h-full">
                         <Table
                             config={{
-                                api: {
-                                    search: searchReturnByWarehouse,
-                                    list: listReturnByWarehouse,
-                                    filterBy: filterByListReturn
-                                },
+                                // api: {
+                                //     // search: searchReturnByWarehouse,
+                                //     // list: listReturnByWarehouse,
+                                //     // filterBy: filterByListReturn
+                                // },
                                 header: {
                                     filterByFields: [
                                         {
@@ -1432,6 +1411,7 @@ export default function ViewPage() {
                                 rowSelection: false,
                                 pageSize: 50,
                             }}
+                            data={[]}
                         />
                     </div>
 

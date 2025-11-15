@@ -200,7 +200,7 @@ interface AreaItem {
 
 interface CustomerItem {
   id?: number | string;
-  customer_code?: string;
+  osa_code?: string;
   business_name?: string;
 }
 
@@ -463,7 +463,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
 
   const companyCustomersOptions = (Array.isArray(companyCustomersData) ? companyCustomersData : []).map((c: CustomerItem) => ({
     value: String(c.id ?? ''),
-    label: c.customer_code && c.business_name ? `${c.customer_code} - ${c.business_name}` : (c.business_name ?? '')
+    label: c.osa_code && c.business_name ? `${c.osa_code} - ${c.business_name}` : (c.business_name ?? '')
   }));
 
   const companyCustomersTypeOptions = (Array.isArray(companyCustomersTypeData) ? companyCustomersTypeData : []).map((c: CustomerTypeItem) => ({
@@ -528,8 +528,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => ({
     value: String(c.id ?? ""),
     label:
-      c.item_code && c.name
-        ? `${c.name}`
+      (c.item_code || (c as any).code) && c.name
+        ? `${c.item_code || (c as any).code} - ${c.name}`
         : c.name ?? "",
     uom: Array.isArray((c as any).uom)
       ? (c as any).uom.map((u: any) => ({
@@ -895,7 +895,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         warehouseList({dropdown: "true"}),
         routeType({ dropdown: "true" }),
         getSubRegion(),
-        getCompanyCustomers(),
+        getCompanyCustomers({ dropdown: "true" }),
         getCompanyCustomersType(),
         itemCategory({ dropdown: "true" }),
         itemSubCategory({ dropdown: "true" }),

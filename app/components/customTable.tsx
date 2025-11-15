@@ -1405,19 +1405,22 @@ export function FilterOptionList({
     onSelect: (value: string) => void;
 }) {
     return (
-        <>
+        <div className={selectedValue ? "pt-[35px]" : ""}>
+        
             {options.map(opt => (
                 <div
                     key={opt.value}
-                    className={`w-full font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'bg-gray-200 hover:bg-gray-100 font-semibold' : ''}`}
+                    className={`w-full overflow-x-scroll font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'absolute top-[55px] bg-gray-100 font-semibold mb-[20px]' : ''}`}
                     onClick={() => {
                         onSelect(selectedValue === opt.value ? "" : opt.value);
                     }}
                 >
+                    <span className="truncate">
                     {opt.label}
+                    </span>
                 </div>
             ))}
-        </>
+        </div>
     );
 }
 

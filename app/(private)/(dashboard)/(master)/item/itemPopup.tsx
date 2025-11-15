@@ -13,7 +13,9 @@ import Image from "next/image";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useLoading } from "@/app/services/loadingContext";
 import Table, { TableDataType } from "@/app/components/customTable";
-import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Drawer from "@mui/material/Drawer";
+import { CustomTableSkelton } from "@/app/components/customSkeleton";
+import { div } from "framer-motion/client";
 
 interface Item {
   id?: number;
@@ -74,11 +76,12 @@ export const tabList = [
   { name: "Market Return", key: "return" }
 ];
 
-export default function Page() {
+export default function ItemPage({id}: {id?: string}) {
   const [uomList, setUomList] = useState<Item[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const { id, tabName } = useParams();
-  const { setLoading } = useLoading();
+//   const { id, tabName } = useParams();
+//   const { setLoading } = useLoading();
+const [ loading,setLoading ] = useState(false);
   const [item, setItem] = useState<Item | null>(null);
 
   const { showSnackbar } = useSnackbar();
@@ -121,16 +124,18 @@ export default function Page() {
 
 
   return (
-    <>
+    <div className=" w-[500px]">
       {/* Header Section */}
-      <div className="flex items-center gap-4 mb-6">
+      {/* <div className="flex items-center gap-4 mb-6 pt-5">
         <Link href={backBtnUrl}>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
-      </div>
+      </div> */}
 
       {/* Main Layout */}
+      {loading ? <div className="p-[10px] w-full"><CustomTableSkelton /></div> :
+      <>
       <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
         <div className="flex flex-col sm:flex-row items-center gap-[20px]">
           <div className="w-[80px] h-[80px] flex justify-center items-center rounded-full bg-[#E9EAEB] overflow-hidden">
@@ -260,7 +265,7 @@ export default function Page() {
                     <strong>Name:</strong> {singleItem?.name || "-"}
                   </p>
                   <p>
-                    <strong>Price:</strong> {toInternationalNumber(singleItem?.uom_price) || "0.00"}
+                    <strong>Price:</strong>{singleItem?.uom_price || "0.00"}
                   </p>
                   <p>
                     <strong>UPC:</strong> {singleItem?.upc || "N/A"}
@@ -338,15 +343,20 @@ export default function Page() {
                   // { key: "uom_id", label: "UOM", render: (row: TableDataType) => <>{ (typeof row?.uom_id === "object" && (row?.uom_id as {name: string})?.name) ?? row?.uom ?? row.uom_id}</>},
                   { key: "name", label: "UOM" },
                   { key: "item_quantity", label: "Quantity" },
-                  { key: "item_price", label: "Price", render: (row: TableDataType) => <>{toInternationalNumber(row.item_price)}</> }
+                  { key: "item_price", label: "Price" }
                 ],
                 pageSize: 50
               }}
               data={[]}
             />
           )}
+            
+
         </div>
       </div>
-    </>
+        </>
+}
+    </div>
   );
 }
+

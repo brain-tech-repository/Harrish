@@ -11,9 +11,10 @@ import { updateItemStatus, itemList, itemGlobalSearch, downloadFile, itemExport 
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
+import Drawer from "@mui/material/Drawer";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-
+import ItemPage from "./itemPopup";
 interface DropdownItem {
   icon: string;
   label: string;
@@ -33,9 +34,31 @@ interface LocalTableDataType {
   status?: number | string;
 }
 
-const columns = [
+
+
+
+export default function Item() {
+  const { setLoading } = useLoading();
+  // const [showDropdown, setShowDropdown] = useState(false);
+  // const [showDeletePopup, setShowDeletePopup] = useState(false);
+  // const [selectedRow, setSelectedRow] = useState<LocalTableDataType | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedId,setSelectedId] = useState<string>('');
+  const [open,setOpen] = useState(false);
+  const router = useRouter();
+  const { showSnackbar } = useSnackbar();
+  const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+
+  const columns = [
   // { key: "erp_code", label: "ERP Code", render: (row: LocalTableDataType) => row.erp_code || "-" },
-  { key: "name", label: "Name", render: (row: LocalTableDataType) => row.erp_code + " - " + row.name || "-" },
+  { key: "name", label: "Name", render: (row: LocalTableDataType) =>{ return <div className="cursor-pointer hover:text-[#EA0A2A]" onClick={()=>{
+    console.log("clicked",row.uuid)
+    setSelectedId(row?.uuid || "")
+  setOpen(true);
+  }}>{row.erp_code + " - " + row.name || "-"}</div> }},
   {
     key: "item_category",
     label: "Category",
@@ -87,20 +110,6 @@ const columns = [
     },
   },
 ];
-
-
-export default function Item() {
-  const { setLoading } = useLoading();
-  // const [showDropdown, setShowDropdown] = useState(false);
-  // const [showDeletePopup, setShowDeletePopup] = useState(false);
-  // const [selectedRow, setSelectedRow] = useState<LocalTableDataType | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const router = useRouter();
-  const { showSnackbar } = useSnackbar();
-  const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
 
   const fetchItems = useCallback(
     async (
@@ -291,6 +300,10 @@ export default function Item() {
           }}
         />
       </div>
+      <Drawer anchor="right" open={open} onClose={() => {setOpen(false)}} >
+        <ItemPage id={selectedId}/>
+        </Drawer>
+
     </>
   );
 }

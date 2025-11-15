@@ -13,6 +13,7 @@ import StatusBtn from "@/app/components/statusBtn2";
 
 type WarehouseRow = TableDataType & {
   id?: string;
+  uuid?: string;
   code?: string;
   warehouseName?: string;
   tin_no?: string;
@@ -27,10 +28,10 @@ type WarehouseRow = TableDataType & {
   street?: string;
   branch_id?: string;
   town_village?: string;
-  region?: { code?: string; name?: string; region_name?: string; }
-  company?: { company_code?: string; company_name?: string };
+  region?: {code?:string; name?:string; region_name?: string;}
+  location?: {code?:string; name?:string; location_code?: string; location_name?:string;}
+  company?:{company_code?:string; company_name?:string};
   city?: string;
-  location?: string;
   landmark?: string;
   latitude?: string;
   longitude?: string;
@@ -86,9 +87,7 @@ const columns = [
     showByDefault: true,
     key: 'region',
     render: (row: WarehouseRow) => {
-      const code = row.region?.code || "";
-      const name = row.region?.name || row.region?.region_name || '-';
-      return `${code}${code && name ? " - " : ""}${name}`;
+      return row.region?.name || row.region?.region_name || '-';
     }
   },
   {
@@ -96,22 +95,15 @@ const columns = [
     showByDefault: true,
     key: 'area',
     render: (row: WarehouseRow) => {
-      const code = row.area?.code || row.area?.area_code || "";
-      const name = row.area?.name || row.area?.area_name || '-';
-      return `${code}${code && name ? " - " : ""}${name}`;
+      return row.area?.name || row.area?.area_name || '-';
+     
     }
   },
   // { key: "sub_region_id", label: "Sub Region"},
-  { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-", showByDefault: true, },
-  {
-    label: 'Location',
-    showByDefault: true,
-    key: 'location',
-    render: (row: WarehouseRow) => {
-      const name = (typeof row.location === "object" ? (row.location as { name?: string })?.name : row.location) || '-';
-      return `${name}`;
-    }
-  },
+  { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-",showByDefault: true, },
+  { key: "location", label: "Location", showByDefault:true, render: (row: WarehouseRow) => {
+        return row.location?.name || row.location?.location_name ||  '-';
+      } },
   // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
   // { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
   // { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
@@ -131,6 +123,7 @@ const columns = [
     key: "status",
     label: "Status",
     showByDefault: true,
+    // isSortable: true,
     render: (row: WarehouseRow) => <StatusBtn isActive={String(row.status) > "0"} />,
   },
 ];

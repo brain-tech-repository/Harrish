@@ -13,6 +13,8 @@ import { useLoading } from "@/app/services/loadingContext";
 import { invoiceList, exportInvoice, invoiceStatusUpdate } from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
+import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
+import { formatDate } from "@/app/(private)/utils/date";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 
@@ -39,34 +41,45 @@ const columns = [
     { key: "order_code", label: "Order Code"},
     {
         key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
-            const code = row.customer_code || "";
-            const name = row.customer_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            const code = row.customer_code || "-";
+            const name = row.customer_name || "-";
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "route_code", label: "Route", showByDefault: true, render: (row: TableDataType) => {
-            const code = row.route_code || "";
-            const name = row.route_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            const code = row.route_code || "-";
+            const name = row.route_name || "-";
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "warehouse_code", label: "Warehouse", showByDefault: true,
         render: (row: TableDataType) => {
-            const code = row.warehouse_code || "";
-            const name = row.warehouse_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            const code = row.warehouse_code || "-";
+            const name = row.warehouse_name || "-";
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "salesman_code", label: "Salesman", showByDefault: true, render: (row: TableDataType) => {
-            const code = row.salesman_code || "";
-            const name = row.salesman_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            const code = row.salesman_code || "-";
+            const name = row.salesman_name || "-";
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
-    { key: "total_amount", label: "Invoice Amount", showByDefault: true },
+    {
+        key: "total_amount",
+        label: "Invoice Amount",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            // row.total_amount may be string or number; toInternationalNumber handles both
+            return toInternationalNumber(row.total_amount, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            } as FormatNumberOptions);
+        },
+    },
     {
         key: "status",
         label: "Status",

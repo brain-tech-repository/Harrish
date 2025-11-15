@@ -113,13 +113,11 @@ const columns = [
   // { key: "total_gross", label: "Gross", render: (value: TableDataType) => <>{toInternationalNumber(value.total_gross) || '0.00'}</> },
   { key: "Total", label: "Total", render: (value: TableDataType) => <>{toInternationalNumber(value.Total) || '0.00'}</> },
 ];
-
 export default function OrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
-
   // const [showDropdown, setShowDropdown] = useState(false);
   const [deliveryData, setDeliveryData] = useState<InvoiceData | null>(null);
   const [tableData, setTableData] = useState<TableRow[]>([]);

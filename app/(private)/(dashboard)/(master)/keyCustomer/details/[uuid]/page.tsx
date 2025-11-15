@@ -5,7 +5,6 @@ import Table, { configType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
-import Toggle from "@/app/components/toggle";
 import { getCompanyCustomerById } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -13,6 +12,9 @@ import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {downloadFile} from "@/app/services/allApi";
+import Skeleton from "@mui/material/Skeleton";
+import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 
 interface CustomerItem {
   id: number;
@@ -59,9 +61,9 @@ export function getPaymentType(value: string): string {
 }
 export default function ViewPage() {
   const params = useParams();
-  const id = Array.isArray(params.id)
-    ? params.id[0] || ""
-    : (params.id as string) || "";
+  const uuid = Array.isArray(params.uuid)
+    ? params.uuid[0] || ""
+    : (params.uuid as string) || "";
 
   const [customer, setCustomer] = useState<CustomerItem | null>(null);
   const [isChecked, setIsChecked] = useState(false);
@@ -75,13 +77,46 @@ export default function ViewPage() {
     setActiveTab(tabList[idx].key);
   };
 
+  // const IconComponentData2 = ({row}:{row:TableDataType})=>{
+  //   const [smallLoading, setSmallLoading] = useState(false)
+  //   const { showSnackbar } = useSnackbar();
+  
+  //   const exportOrderFile = async (uuid: string, format: string) => {
+  //     try {
+  //       setSmallLoading(true)
+  //       const response = await exportOrderInvoice({ uuid, format }); // send proper body object
+  
+  //       if (response && typeof response === "object" && response.download_url) {
+  //         await downloadFile(response.download_url);
+  //         showSnackbar("File downloaded successfully", "success");
+  //       setSmallLoading(false)
+  
+  
+  //       } else {
+  //         showSnackbar("Failed to get download URL", "error");
+  //       setSmallLoading(false)
+  
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       showSnackbar("Failed to download data", "error");
+  //       setSmallLoading(false)
+  
+  //     }
+  //   };
+  
+  //   return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
+  //                       exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+  
+  //       }}><Icon  icon="material-symbols:download"/></div>)
+  // }
   useEffect(() => {
-    if (!id) return;
+    if (!uuid) return;
 
     const fetchCompanyCustomerDetails = async () => {
       setLoading(true);
       try {
-        const res = await getCompanyCustomerById(id);
+        const res = await getCompanyCustomerById(uuid);
         if (res.error) {
           showSnackbar(
             res.data?.message || "Unable to fetch key customer details",
@@ -99,7 +134,7 @@ export default function ViewPage() {
     };
 
     fetchCompanyCustomerDetails();
-  }, [id, setLoading, showSnackbar]);
+  }, [uuid, setLoading, showSnackbar]);
 
   const Columns: configType["columns"] = [
     { key: "osa_code", label: "Code", showByDefault: true },
@@ -133,7 +168,11 @@ export default function ViewPage() {
         return `${code}${code && name ? " - " : ""}${name}`;
       }
     },
-    { key: "total", label: "Amount", showByDefault: true },
+    //  { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
+                         
+    
+    //       return(<IconComponentData2 row={row} />)
+    //     } }
   ];
 
   // Tab logic
@@ -207,7 +246,7 @@ export default function ViewPage() {
                   { key: "SAP Code", value: customer?.sap_code || "-" },
                   { key: "Language", value: customer?.language || "-" },
                   { key: "Contact No.", value: customer?.contact_number || "-" },
-                  { key: "Company Type", value: `${customer?.company_type?.code} - ${customer?.company_type?.name}` || "-" },
+                  { key: "Company Type", value: customer?.company_type?.code ? `${customer?.company_type?.code} - ${customer?.company_type?.name}` : "-" },
                   {
                     key: "Business Type",
                     value:
@@ -265,8 +304,19 @@ export default function ViewPage() {
                 data={[
                   { key: "Guarantee Name", value: customer?.bank_guarantee_name || "-" },
                   { key: "Guarantee Amount", value: customer?.bank_guarantee_amount?.toString() || "-" },
-                  { key: "Guarantee From", value: customer?.bank_guarantee_from || "-" },
-                  { key: "Guarantee To", value: customer?.bank_guarantee_to || "-" },
+                  {
+                    key: "Guarantee From",
+                    value: customer?.bank_guarantee_from
+                      ? formatDate(customer.bank_guarantee_from)
+                      : "-"
+                  },
+                  {
+                    key: "Guarantee To",
+                    value: customer?.bank_guarantee_to
+                      ? formatDate(customer.bank_guarantee_to)
+                      : "-"
+                  },
+
                 ]}
               />
             </ContainerCard>
