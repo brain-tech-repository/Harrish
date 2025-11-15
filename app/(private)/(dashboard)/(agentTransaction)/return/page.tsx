@@ -17,6 +17,7 @@ import { returnList ,agentReturnExport} from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { downloadFile } from "@/app/services/allApi";
+import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 const dropdownDataList = [
@@ -52,7 +53,13 @@ const columns = [
         const name = row.salesman_name || "";
         return `${code}${code && name ? " - " : ""}${name}`;
       }},
-    { key: "total", label: "Amount",showByDefault: true },
+    { key: "total", label: "Amount",showByDefault: true, render: (row: TableDataType) => {
+                // row.total_amount may be string or number; toInternationalNumber handles both
+                return toInternationalNumber(row.total, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                } as FormatNumberOptions);
+            }, },
    {
            key: "status",
            label: "Status",

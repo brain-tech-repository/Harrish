@@ -107,15 +107,18 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
                     onChange={async(e) => {
                         const val = (e.target as HTMLSelectElement).value;
                         handleChange(e);
-                        setFieldValue("warehouse_name", e.target.value);
-                        // await getCompanyCustomerById(val).then((res) => {
-                        //     if (res) {
-                        //         const customer = res;
-                        //         // setFieldValue('region_id', String(customer.region_id) || '');
-                        //         // setFieldValue('area_id', String(customer.area_id) || '');
+                        const name = companyCustomersOptions.filter((option:{label:string,value:string}) => {
+                            return option.value === e.target.value  
+                        })[0].label;
+                        setFieldValue("warehouse_name", name);
+                        await getCompanyCustomerById(val).then((res) => {
+                            if (res) {
+                                const customer = res.data;
+                                setFieldValue('region_id', String(customer.get_region.id) || '');
+                                setFieldValue('area_id', String(customer.get_area.id) || '');
                                 
-                        //     }
-                        // });
+                            }
+                        });
                     }}
                     error={errors?.agent_customer && touched?.agent_customer ? errors.agent_customer : false}
                 />
@@ -154,6 +157,7 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             </div>
             <div className="flex flex-col gap-2">
                 <InputFields
+                type='number'
                     name="tin_no"
                     label="TIN NO."
                     value={values.tin_no}

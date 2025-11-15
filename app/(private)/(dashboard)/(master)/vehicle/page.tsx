@@ -9,6 +9,8 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+// import formatDate from "@/app/utils/formatDate";
+import { formatWithPattern } from "@/app/utils/formatDate";
 
 // 🔹 API response type
 interface Vehicle {
@@ -116,8 +118,8 @@ export default function VehiclePage() {
     // { key: "ownerReference", label: "Owner Reference" },
     // { key: "vehicleRoute", label: "Vehicle Route" },
     { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
-    { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from || "-" },
-    { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to || "-" },
+    { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from?formatWithPattern(new Date(row.valid_from),"DD MMM YYYY",'en-GB').toLowerCase(): "-" },
+    { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to?formatWithPattern(new Date(row.valid_to),"DD MMM YYYY",'en-GB').toLowerCase() :"-" },
     {
       key: "status",
       label: "Status",
