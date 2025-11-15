@@ -1409,7 +1409,7 @@ export function FilterOptionList({
             {options.map(opt => (
                 <div
                     key={opt.value}
-                    className={`w-full font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'bg-gray-300 font-semibold' : ''}`}
+                    className={`w-full font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer ${selectedValue === opt.value ? 'bg-gray-200 hover:bg-gray-100 font-semibold' : ''}`}
                     onClick={() => {
                         onSelect(selectedValue === opt.value ? "" : opt.value);
                     }}
