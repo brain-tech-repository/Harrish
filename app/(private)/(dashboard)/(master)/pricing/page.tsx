@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
 import StatusBtn from "@/app/components/statusBtn2";
+import { formatDate } from "@/app/(private)/utils/date";
 import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
@@ -38,8 +39,8 @@ const dropdownDataList: DropdownItem[] = [
 const columns = [
     { key: "code", label: "Pricing Code" },
     { key: "name", label: "Name" },
-    { key: "start_date", label: "Start Date" },
-    { key: "end_date", label: "End Date" },
+    { key: "start_date", label: "Start Date", render: (row: TableDataType) => row.start_date ? formatDate(row.start_date) : ""  },
+    { key: "end_date", label: "End Date", render: (row: TableDataType) => row.end_date ? formatDate(row.end_date) : ""  },
 ];
 
 export default function Pricing() {

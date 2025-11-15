@@ -6,7 +6,7 @@ import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/co
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { vehicleListData, deleteVehicle, vehicleGlobalSearch, exportVehicleData, vehicleStatusUpdate, downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
-import DeleteConfirmPopup from "@/app/components/deletePopUp";
+import { formatDate } from "@/app/(private)/utils/date";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
 
@@ -105,8 +105,8 @@ const columns = [
   // { key: "ownerReference", label: "Owner Reference" },
   // { key: "vehicleRoute", label: "Vehicle Route" },
   { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
-  { key: "valid_from", label: "Valid From", render: (row: TableDataType) => row.valid_from || "-" },
-  { key: "valid_to", label: "Valid To", render: (row: TableDataType) => row.valid_to || "-" },
+  { key: "valid_from", label: "Valid From", render: (row: TableDataType) => formatDate(row.valid_from) || "-" },
+  { key: "valid_to", label: "Valid To", render: (row: TableDataType) => formatDate(row.valid_to) || "-" },
   {
     key: "status",
     label: "Status",

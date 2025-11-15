@@ -9,11 +9,10 @@ import Table, {
     searchReturnType,
     TableDataType,
 } from "@/app/components/customTable";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { capsCollectionList } from "@/app/services/agentTransaction";
-import { downloadFile } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext"; // ✅ import snackbar
 import { useLoading } from "@/app/services/loadingContext";
+import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 export default function SalemanLoad() {
@@ -21,7 +20,13 @@ export default function SalemanLoad() {
     const columns: configType["columns"] = [
         { key: "invoice_id", label: "Invoice Code" },
         { key: "collection_no", label: "Collection No." },
-        { key: "ammount", label: "Amout" },
+        { key: "ammount", label: "Amout", render: (row: TableDataType) => {
+                        // row.total_amount may be string or number; toInternationalNumber handles both
+                        return toInternationalNumber(row.total, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        } as FormatNumberOptions);
+                    },  },
         { key: "outstanding", label: "Outstanding" },
         // { key: "date", label: "Collection Date" },
         { key: "warehouse_code", label: "Warehouse Code" , render: (row: TableDataType) => {

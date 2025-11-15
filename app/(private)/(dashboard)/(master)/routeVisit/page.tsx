@@ -12,7 +12,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useCallback, useEffect, useState } from "react";
-import { formatDate } from "../salesTeam/details/[uuid]/page";
+import { formatDate } from "@/app/(private)/utils/date";
 
 const columns = [
   { key: "osa_code", label: "Code" },
@@ -88,8 +88,9 @@ export default function RouteVisits() {
           // Keep numeric status so StatusBtn (which checks String(row.status) === "1") works
           status: item.status,
           // Add date formatting:
-          from_date: item.from_date ? item.from_date.split("T")[0] : "",
-          to_date: item.to_date ? item.to_date.split("T")[0] : "",
+          // keep full timestamp here and let column renderer format it via formatDate
+          from_date: item.from_date ?? "",
+          to_date: item.to_date ?? "",
         }));
 
         // Adjust this based on your actual API response structure

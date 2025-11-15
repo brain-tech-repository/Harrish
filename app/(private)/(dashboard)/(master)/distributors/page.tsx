@@ -13,6 +13,7 @@ import StatusBtn from "@/app/components/statusBtn2";
 
 type WarehouseRow = TableDataType & {
   id?:string;
+  uuid?:string;
   code?: string;
   warehouseName?: string;
   tin_no?: string;
@@ -28,9 +29,9 @@ type WarehouseRow = TableDataType & {
   branch_id?: string;
   town_village?: string;
   region?: {code?:string; name?:string; region_name?: string;}
+  location?: {code?:string; name?:string; location_code?: string; location_name?:string;}
   company?:{company_code?:string; company_name?:string};
   city?: string;
-  location?: string;
   landmark?: string;
   latitude?: string;
   longitude?: string;
@@ -103,7 +104,11 @@ const columns = [
   },
   // { key: "sub_region_id", label: "Sub Region"},
   { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-",showByDefault: true, },
-  { key: "location", label: "Location", showByDefault: true, render: (row: WarehouseRow) => row.location || "-" },
+  { key: "location", label: "Location", showByDefault:true, render: (row: WarehouseRow) => {
+        const code = row.location?.code || row.location?.location_code || "";
+        const name =  row.location?.name || row.location?.location_name ||  '-';
+        return `${code}${code && name ? " - " : ""}${name}`;
+      } },
   // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
   // { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
   // { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
@@ -394,7 +399,7 @@ export default function Warehouse() {
                 icon: "lucide:edit-2",
                 onClick: (data: object) => {
                   const row = data as TableRow;
-                  router.push(`/distributors/${row.id}`);
+                  router.push(`/distributors/${row.uuid}`);
                 },
               },
             
