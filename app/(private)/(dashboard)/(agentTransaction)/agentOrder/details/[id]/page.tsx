@@ -16,6 +16,7 @@ import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import PrintButton from "@/app/components/printButton";
 import { agentOrderExport } from "@/app/services/agentTransaction";
 import BorderIconButton from "@/app/components/borderIconButton";
+import { formatWithPattern } from "@/app/(private)/utils/date";
 
 const columns = [
   { key: "index", label: "#" },
@@ -250,10 +251,10 @@ export default function OrderDetailPage() {
             <div className="flex md:justify-end">
               <div className="text-primary-bold text-[14px] md:text-right">
                 {data?.created_at && <div>
-                  Order Date: <span className="font-bold">{data?.created_at.split("T")[0] || ""}</span>
+                  Order Date: <span className="font-bold">{formatWithPattern(new Date(data?.created_at), "DD MMM YYYY", "en-GB").toLowerCase() || ""}</span>
                 </div>}
                 {data?.delivery_date && <div className="mt-2">
-                  Delivery Date: <span className="font-bold">{data?.delivery_date || ""}</span>
+                  Delivery Date: <span className="font-bold">{formatWithPattern(new Date(data?.delivery_date), "DD MMM YYYY", "en-GB").toLowerCase() || ""}</span>
                 </div>}
                 {data?.order_source && <div className="mt-2">
                   Order Source: <span className="font-bold">{data?.order_source || "Online"}</span>
