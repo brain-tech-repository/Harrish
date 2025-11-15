@@ -203,7 +203,7 @@ export default function AddEditWarehouse() {
                         managerContactCountry: data?.managerContactCountry || '',
                         warehouse_manager_contact: data?.warehouse_manager_contact || '',
                         owner_email: data?.owner_email || '',
-                        location: String(data?.location_relation?.id) || '',
+                        location: String(data?.location_id) || '',
                         city: data?.city || '',
                         region_id: String(data?.region_id || ''),
                         area_id: String(data?.area_id || ''),
