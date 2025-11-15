@@ -28,6 +28,7 @@ const columns = [
             return `${code}${code && name ? " - " : ""}${name}`;
         },
     },
+    
     {
         key: "customer_name",
         label: "Customer Name",
