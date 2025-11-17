@@ -789,7 +789,7 @@ export default function InvoiceddEditPage() {
                     : "Invoice created successfully!",
                 "success"
             );
-            router.push("/invoice");
+            router.push("/agentInvoice");
         } catch (error) {
             if (error instanceof yup.ValidationError) {
                 // Handle yup validation errors

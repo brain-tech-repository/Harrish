@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
   const [loading, setLoadingState] = useState<boolean>(false);
   const uuid = params?.uuid as string;
   const CURRENCY = localStorage.getItem("country") || "";
-  const PATH = "/invoice/details/";
+  const PATH = "/agentInvoice/details/";
 
   useEffect(() => {
     if (uuid) {
