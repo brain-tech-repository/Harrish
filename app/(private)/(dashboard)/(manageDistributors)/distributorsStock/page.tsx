@@ -161,21 +161,8 @@ const OverallPerformance: React.FC = () => {
 
   return (
     <>
-      <ContainerCard className="w-full flex gap-[4px] overflow-x-auto">
-        <InputFields
-          //   required
-          //   label="Warehouse"
-          value={""}
-          options={warehouseOptions}
-          onChange={(e) => {
-            // const newWarehouse = e.target.value;
-            // handleChange("warehouse", newWarehouse);
-            // handleChange("vehicleType", ""); // clear vehicle when warehouse changes
-            // fetchRoutes(newWarehouse);
-          }}
-        />
-      </ContainerCard>
-      <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+    
+      {/* <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
         {tabList.map((tab, index) => (
           <div key={index}>
             <TabBtn
@@ -185,55 +172,32 @@ const OverallPerformance: React.FC = () => {
             />
           </div>
         ))}
-      </ContainerCard>
+      </ContainerCard> */}
       <ContainerCard className="w-full">
 
         <div className="flex justify-between md:items-center">
           <div>
-            <p className="text-base font-bold">Overall Performance</p>
+            <p className="text-base font-bold">Distributers Overview</p>
           </div>
 
           {/* Dropdown */}
-          <div className="shrink-0 relative">
-            <button
-              type="button"
-              onClick={() => setOpenMenu(!openMenu)}
-              className="select-none text-xs py-3 px-6 rounded-lg border text-gray-900 flex items-center gap-1 border-gray-300 hover:opacity-75"
-            >
-              {selected}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={4}
-                stroke="currentColor"
-                className="w-3 h-3 text-gray-900"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                />
-              </svg>
-            </button>
+          {/* <div className=""> */}
+           
+<InputFields
+          //   required
+          //   label="Warehouse"
+          placeholder="Select Distributers"
+          value={""}
+          options={warehouseOptions}
+          
+          onChange={(e) => {
+            // const newWarehouse = e.target.value;
+            // handleChange("warehouse", newWarehouse);
+            // handleChange("vehicleType", ""); // clear vehicle when warehouse changes
+            // fetchRoutes(newWarehouse);
+          }}
+        />
 
-            {openMenu && (
-              <ul className="absolute right-0 mt-2 z-10 min-w-[180px] rounded-md border bg-white p-3 text-sm shadow-lg">
-                {options.map((item) => (
-                  <li
-                    key={item}
-                    onClick={() => {
-                      setSelected(item);
-                      setOpenMenu(false);
-                    }}
-                    className="cursor-pointer rounded-md px-3 py-2 hover:bg-blue-gray-50 text-gray-700"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
 
         {/* CARDS (dynamic from array) */}
