@@ -47,7 +47,7 @@ export const downloadFile = (fileurl: string, type?: string): void => {
   const n = fileurl.lastIndexOf("/");
   const final_url = fileurl.substring(n + 1);
   const link = document.createElement("a");
-  link.setAttribute("target", "");
+  link.setAttribute("target", "_blank");
   link.setAttribute("href", fileurl);
   link.setAttribute("download", final_url);
   document.body.appendChild(link);
@@ -1959,6 +1959,37 @@ export const agentCustomerById = async (uuid: string) => {
     return handleError(error);
   }
 };
+// https://api.coreexl.com/osa_developmentV2/public/api/settings/warehouse-stocks/loaded-stock/7
+
+export const warehouseStocksKpi = async (id: string) => {
+  try {
+    const res = await API.get(`/api/settings/warehouse-stocks/${id}/valuation`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const warehouseLowStocksKpi = async (id: string) => {
+  try {
+    const res = await API.get(`/api/settings/warehouse-stocks/46/low-items`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const warehouseStockTopOrders = async (id: string) => {
+  try {
+    const res = await API.get(`/api/settings/warehouse-stocks/46/stock-details`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 
 export const editAgentCustomer = async (uuid: string, payload: object) => {
   try {
@@ -3452,8 +3483,7 @@ export const addBrand = async (payload: object) => {
     const res = await API.post(`/api/settings/brands/add`, payload);
 
     return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
+  } catch (error: unknown) { 
   }
 };
 
