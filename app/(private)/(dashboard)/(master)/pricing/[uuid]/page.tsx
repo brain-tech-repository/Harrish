@@ -161,13 +161,6 @@ const Auom = ({ row, details, setDetails }: any) => {
         // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row.id,name:`${row.item_code}-${row.name}`}    
         // details.push(newdata)
         // setDetails(details)
-
-
-
-
-
-
-
       }
       else {
         const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row.id, name: `${row.item_code}-${row.name}` }
