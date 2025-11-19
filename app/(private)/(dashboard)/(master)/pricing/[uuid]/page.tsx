@@ -183,13 +183,6 @@ const Auom = ({ row, details, setDetails }: any) => {
         // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row.id,name:`${row.item_code}-${row.name}`}    
         // details.push(newdata)
         // setDetails(details)
-
-
-
-
-
-
-
       }
       else {
         const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row.id, name: `${row.item_code}-${row.name}` }
@@ -1187,7 +1180,7 @@ export default function AddPricing() {
         );
       case 3:
         const itemsData = (keyValue["Item"] || []).map((itemId, idx) => {
-          let itemData = selectedItemDetails.find(
+          const itemData = selectedItemDetails.find(
             (item) => String(item.code || item.itemCode) === String(itemId)
           );
           if (!itemData) {
