@@ -248,8 +248,8 @@ export default function DeliveryAddEditPage() {
   };
 
   // Function for fetching Item
-  const fetchItem = async (searchTerm: string) => {
-    const res = await itemGlobalSearch({ per_page: "10", query: searchTerm });
+  const fetchItem = async (searchTerm: string, values?: FormikValues) => {
+    const res = await itemGlobalSearch({ per_page: "10", query: searchTerm, warehouse: values?.warehouse || "" });
     if (res.error) {
       showSnackbar(res.data?.message || "Failed to fetch items", "error");
       setSkeleton({ ...skeleton, item: false });
@@ -651,11 +651,15 @@ export default function DeliveryAddEditPage() {
                       label="Delivery Date"
                       type="date"
                       name="delivery_date"
-                      value={values.delivery_date}
-                      min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                      value={
+                        values.delivery_date ||
+                        new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+                      }
+                      min={new Date().toISOString().slice(0, 10)} // today
                       onChange={handleChange}
                     />
                   </div>
+
                   <div>
                     <AutoSuggestion
                       required
@@ -747,7 +751,7 @@ export default function DeliveryAddEditPage() {
                                 label=""
                                 name={`item_id_${row.idx}`}
                                 placeholder="Search item"
-                                onSearch={(q) => fetchItem(q)}
+                                onSearch={(q) => fetchItem(q, values)}
                                 initialValue={initialLabel}
                                 selectedOption={selectedOpt ?? null}
                                 onSelect={(opt) => {
@@ -894,7 +898,7 @@ export default function DeliveryAddEditPage() {
                           );
                         })()}
                       </div>
-                      <div className="flex flex-col justify-end gap-[20px] w-full lg:w-[400px]">
+                      {/* <div className="flex flex-col justify-end gap-[20px] w-full lg:w-[400px]">
                         <InputFields
                           label="Note"
                           type="textarea"
@@ -904,7 +908,7 @@ export default function DeliveryAddEditPage() {
                           onChange={handleChange}
                           error={touched.note && (errors.note as string)}
                         />
-                      </div>
+                      </div> */}
                     </div>
 
                     <div className="flex flex-col gap-[10px] w-full lg:w-[350px]">
