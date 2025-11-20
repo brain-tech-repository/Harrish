@@ -628,7 +628,7 @@ export const updateWarehouse = async (id: string, payload: object) => {
   }
 };
 
-export const getAllActiveWarehouse = async (params: Params) => {
+export const getAllActiveWarehouse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/warehouse/list_warehouse/active`, { params });
     return res.data;
