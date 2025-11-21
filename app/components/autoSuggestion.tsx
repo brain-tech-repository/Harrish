@@ -27,13 +27,9 @@ type Props = {
   width?: string;
   disabled?: boolean;
   onClear?: () => void;
-  /** Pre-selected single option (optional). When provided the input shows its label and backspace clears it. */
   selectedOption?: Option | null;
-  /** When true, allow selecting multiple options (multi-select). */
   multiple?: boolean;
-  /** Initial selected options for multi-select */
   initialSelected?: Option[];
-  /** Callback when multi-select selection changes */
   onChangeSelected?: (selected: Option[]) => void;
 };
 
@@ -72,6 +68,7 @@ export default function AutoSuggestion({
   const [dropdownProps, setDropdownProps] = useState<{ left: number; top: number; width: number }>({ left: 0, top: 0, width: 0 });
   const debounceRef = useRef<number | null>(null);
   const onSearchRef = useRef(onSearch);
+  const requestIdRef = useRef(0);
   const onClearRef = useRef(onClear);
   const prevQueryRef = useRef<string>(initialValue || "");
   // when we programmatically set the query (for example after selecting an option),
@@ -171,20 +168,31 @@ export default function AutoSuggestion({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       (async () => {
+        // assign a request id for this search — only responses matching the latest
+        // request id will be applied. This avoids out-of-order (race) updates.
+        requestIdRef.current += 1;
+        const thisRequestId = requestIdRef.current;
         try {
           // when the debounced search starts, show loading and open dropdown
           setLoading(true);
           setOpen(true);
           // use the stable ref to call the latest onSearch without making it a dependency
           const res = await onSearchRef.current(query);
+          // if a newer request started while we were awaiting, ignore this response
+          if (thisRequestId !== requestIdRef.current) return;
           setOptions(Array.isArray(res) ? res : []);
           setHighlight(-1);
         } catch (err) {
-          setOptions([]);
-          setHighlight(-1);
+          // if this is stale, let newer request handle UI; otherwise clear options
+          if (thisRequestId === requestIdRef.current) {
+            setOptions([]);
+            setHighlight(-1);
+          }
           // swallow error (caller can surface)
         } finally {
-          setLoading(false);
+          if (thisRequestId === requestIdRef.current) {
+            setLoading(false);
+          }
         }
       })();
     }, debounceMs);

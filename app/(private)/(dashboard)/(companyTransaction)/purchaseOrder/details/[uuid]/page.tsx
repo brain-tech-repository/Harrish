@@ -85,7 +85,7 @@ export default function OrderDetailPage() {
     const params = useParams();
     const UUID = Array.isArray(params.uuid) ? params.uuid[0] : params.uuid ?? "";
     const CURRENCY = localStorage.getItem("country") || "";
-    const PATH = `/companyTransaction/details/`;
+    const PATH = `/purchaseOrder/details/`;
 
     const fetchOrder = async () => {
         setLoading(true);
@@ -126,12 +126,12 @@ export default function OrderDetailPage() {
         (sum, item) => sum + Number(item.discount || 0),
         0
     ) ?? 0;
-    const finalTotal = grossTotal + totalVat;
+    const finalTotal = netAmount + totalVat;
 
     const keyValueData = [
-        { key: "Net Total", value: CURRENCY + " " + toInternationalNumber(netAmount ?? 0) },
-        { key: "Excise", value: "AED " + toInternationalNumber(excise ?? 0) },
+        { key: "Excise", value: CURRENCY + " " + toInternationalNumber(excise ?? 0) },
         { key: "Vat", value: CURRENCY + " " + toInternationalNumber(totalVat ?? 0) },
+        { key: "Net Total", value: CURRENCY + " " + toInternationalNumber(netAmount ?? 0) },
     ];
 
     const exportFile = async () => {
@@ -167,8 +167,8 @@ export default function OrderDetailPage() {
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
                         Purchase Order #{data?.order_code || "-"}
                     </h1>
-                    <BorderIconButton disabled={!data?.previous_uuid} onClick={data?.previous_uuid ? () => router.push(`/agentOrder/details/${data.previous_uuid}`) : undefined} icon="lucide:chevron-left" label={"Prev"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pr-[10px]" />
-                    <BorderIconButton disabled={!data?.next_uuid} onClick={data?.next_uuid ? () => router.push(`/agentOrder/details/${data.next_uuid}`) : undefined} trailingIcon="lucide:chevron-right" label={"Next"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pl-[10px]" />
+                    <BorderIconButton disabled={!data?.previous_uuid} onClick={data?.previous_uuid ? () => router.push(`${PATH}${data.previous_uuid}`) : undefined} icon="lucide:chevron-left" label={"Prev"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pr-[10px]" />
+                    <BorderIconButton disabled={!data?.next_uuid} onClick={data?.next_uuid ? () => router.push(`${PATH}${data.next_uuid}`) : undefined} trailingIcon="lucide:chevron-right" label={"Next"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pl-[10px]" />
                 </div>
 
                 {/* Action Buttons */}
@@ -275,7 +275,7 @@ export default function OrderDetailPage() {
                                 <div className="font-semibold text-[#181D27] text-[18px] flex justify-between">
                                     <span>Total</span>
                                     {/* <span>AED {toInternationalNumber(finalTotal) || 0}</span> */}
-                                    <span>{CURRENCY} {toInternationalNumber(finalTotal) || 0}</span>
+                                    <span>{CURRENCY} {toInternationalNumber(finalTotal) || "0.00"}</span>
                                 </div>
                             </div>
 
