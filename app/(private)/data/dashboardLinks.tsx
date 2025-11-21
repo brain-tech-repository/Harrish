@@ -439,14 +439,14 @@ export const initialLinkData: SidebarDataType[] = [
             isActive: false,
             href: "/compailedClaim",
             label: "Compailed Claim",
-            leadingIcon: "carbon:delivery-parcel",
+            leadingIcon: "mdi:file-document-check",
             iconColor: "text-cyan-500"
           },
           {
             isActive: false,
             href: "/petitClaim",
             label: "Petit Claim",
-            leadingIcon: "carbon:delivery-parcel",
+            leadingIcon: "mdi:file-document-outline",
             iconColor: "text-cyan-500"
           },
           
