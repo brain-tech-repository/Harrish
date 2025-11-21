@@ -398,6 +398,7 @@ export default function InputFields({
               aria-labelledby="demo-radio-buttons-group-label"
               defaultValue="female"
               name="radio-buttons-group"
+              value={value}
             >
               {options && options.map((opt, idx) => (
                 <FormControlLabel
@@ -710,7 +711,7 @@ export default function InputFields({
                           }
                         }}
                         onFocus={() => setDropdownOpen(true)}
-                        className={`w-full truncate outline-none border-none px-3 h-full ${hasSelection ? 'text-gray-900' : 'text-gray-400'}`}
+                        className={`w-full truncate outline-none border-none px-3 h-full placeholder:text-gray-400 ${hasSelection ? 'text-gray-900' : 'text-gray-400'}`}
                         style={hasSelection ? { color: '#111827' } : undefined}
                         onKeyDown={e => {
                           if (e.key === 'Enter') {
