@@ -645,8 +645,8 @@ export default function OrderAddEditPage() {
 
       return data.map((item: any) => ({
         value: String(item.id),
-        label: `${item.item_code || item.code || ""} - ${item.name || ""}`,
-        code: item.item_code || item.code,
+        label: `${item.erp_code || item.erp_code || ""} - ${item.name || ""}`,
+        code: item.erp_code || item.erp_code,
         name: item.name,
         uoms: Array.isArray(item.item_uoms)
           ? item.item_uoms.map((u: any) => ({
@@ -660,6 +660,9 @@ export default function OrderAddEditPage() {
       return [];
     }
   };
+
+  // At least one item row must have both item_id and uom_id to allow submit
+  const hasValidItems = itemData.some(item => item && item.item_id && item.uom_id);
 
   return (
     <div className="flex flex-col h-full">
@@ -779,15 +782,28 @@ export default function OrderAddEditPage() {
                 key: "itemName",
                 label: "Item Name",
                 width: 390,
-                render: (row) => (
+                render: (row) =>{ 
+                   const selectedOpt = (() => {
+                                        const selectedItemId = row.item_id;
+                                        if (!selectedItemId) return null;
+                                        // Try to find in global itemOptions first
+                                        const typedItemOptions = itemOptions;
+                                        const found = typedItemOptions?.find?.((it) => it.value === String(selectedItemId));
+                                        if (found) return found;
+                                        // Fallback to building a minimal option from the row label
+                                        return { value: String(selectedItemId), label: row.itemLabel || String(selectedItemId) } ;
+                                    })();
+                  return(
                   <div style={{ minWidth: '390px', maxWidth: '390px' }}>
                     <AutoSuggestion
                       key={`item-${row.idx}`}
                       placeholder="Search item..."
                       initialValue={row.itemLabel}
+                      selectedOption={selectedOpt ?? null}
                       onSearch={handleItemSearch}
                       minSearchLength={0}
-                      disabled={!form.warehouse_name}
+                      disabled={!form.customer_name && !row.item_id}
+                      // disabled={!form.customer_name}
                       onSelect={async (option: { value: string; label: string; uoms?: Uom[] }) => {
                         const selectedItemId = option.value;
                         const newData = [...itemData];
@@ -870,7 +886,8 @@ export default function OrderAddEditPage() {
                       }}
                     />
                   </div>
-                ),
+              );
+                },
               },
               {
                 key: "UOM",
@@ -928,14 +945,7 @@ export default function OrderAddEditPage() {
                 label: "Price",
                 render: (row) => <span>{Number(row.Price || 0).toFixed(2)}</span>
               },
-              {
-                key: "Total",
-                label: "Total",
-                render: (row) => (
-
-                  <span > {Number(row.Total || 0).toFixed(2)}</span>
-                ),
-              },
+              
 
               {
                 key: "return_type",
@@ -1006,7 +1016,14 @@ export default function OrderAddEditPage() {
                   );
                 },
               },
+              {
+                key: "Total",
+                label: "Total",
+                render: (row) => (
 
+                  <span > {Number(row.Total || 0).toFixed(2)}</span>
+                ),
+              },
 
               {
                 key: "action",
@@ -1033,14 +1050,29 @@ export default function OrderAddEditPage() {
 
         {/* --- Add New Item --- */}
         <div className="mt-4">
-          <button
+           {(() => {
+                                  // disable add when there's already an empty/new item row
+                                  const hasEmptyRow = itemData.some(it => (String(it.item_id ?? '').trim() === '' && String(it.uom_id ?? '').trim() === ''));
+                                  return (
+                                      <button
+                                          type="button"
+                                          disabled={hasEmptyRow}
+                                          className={`text-[#E53935] font-medium text-[16px] flex items-center gap-2 ${hasEmptyRow ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                          onClick={() => { if (!hasEmptyRow) handleAddNewItem(); }}
+                                      >
+                                          <Icon icon="material-symbols:add-circle-outline" width={20} />
+                                          Add New Item
+                                      </button>
+                                  );
+                              })()}
+          {/* <button
             type="button"
             className="text-[#E53935] font-medium text-[16px] flex items-center gap-2"
             onClick={handleAddNewItem}
           >
             <Icon icon="material-symbols:add-circle-outline" width={20} />
             Add New Item
-          </button>
+          </button> */}
         </div>
 
 
@@ -1056,6 +1088,7 @@ export default function OrderAddEditPage() {
             Cancel
           </button>
           <SidebarBtn
+          disabled={!hasValidItems}
             isActive={!isSubmitting}
             label={
               isSubmitting

@@ -37,28 +37,28 @@ const columns = [
         key: "warehouse_code", label: "Warehouse", showByDefault: true, render: (row: TableDataType) => {
             const code = row.warehouse_code || "";
             const name = row.warehouse_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "route_code", label: "Route", showByDefault: true, render: (row: TableDataType) => {
             const code = row.route_code || "";
             const name = row.route_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
             const code = row.customer_code || "";
             const name = row.customer_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
         key: "salesman_code", label: "Salesman", showByDefault: true, render: (row: TableDataType) => {
             const code = row.salesman_code || "";
             const name = row.salesman_name || "";
-            return `${code}${code && name ? " - " : ""}${name}`;
+            return `${code}${code && name ? " - " : "-"}${name}`;
         }
     },
     {
