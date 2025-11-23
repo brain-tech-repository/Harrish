@@ -7,7 +7,7 @@ import Table from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import Logo from "@/app/components/logo";
-import { addExchange, invoiceList,returnType ,reasonList } from "@/app/services/agentTransaction";
+import { addExchange, invoiceList, returnType, reasonList } from "@/app/services/agentTransaction";
 import {
   agentCustomerGlobalSearch,
   genearateCode,
@@ -20,7 +20,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import { useRouter } from "next/navigation";
-import {  useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
 
 interface FormData {
@@ -103,7 +103,7 @@ export default function ExchangeAddEditPage() {
     items: Yup.array().of(itemRowSchema),
   });
 
-   const goodOptions = [{ label: "Near By Expiry", value: "0" },
+  const goodOptions = [{ label: "Near By Expiry", value: "0" },
   { label: "Package Issue", value: "1" },
   { label: "Not Saleable", value: "2" },];
   const badOptions = [{ label: "Damage", value: "0" },
@@ -112,8 +112,8 @@ export default function ExchangeAddEditPage() {
   const router = useRouter();
   const [returnTypeOptions, setReturnTypeOptions] = useState<{ label: string; value: string }[]>([]);
   const [goodReasonOptions, setGoodReasonOptions] = useState<{ label: string; value: string }[]>([]);
-   const [rowUomOptions, setRowUomOptions] = useState<Record<string, { value: string; label: string; price?: string }[]>>({});
-    const [rowReasonOptions, setRowReasonOptions] = useState<Record<string, { label: string; value: string }[]>>({});
+  const [rowUomOptions, setRowUomOptions] = useState<Record<string, { value: string; label: string; price?: string }[]>>({});
+  const [rowReasonOptions, setRowReasonOptions] = useState<Record<string, { label: string; value: string }[]>>({});
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
 
@@ -216,7 +216,7 @@ export default function ExchangeAddEditPage() {
           return copy;
         });
       }
-    } catch (err:unknown) {
+    } catch (err: unknown) {
       const validationErrors: Record<string, string> = {};
       const anyErr = err as any;
       if (anyErr && typeof anyErr === "object" && Array.isArray(anyErr.inner)) {
@@ -257,47 +257,47 @@ export default function ExchangeAddEditPage() {
   };
 
   useEffect(() => {
-      // Fetch reason list on component mount
-      (async () => {
-        try {
-          setLoading(true);
-          const res = await returnType();
-          if (res && Array.isArray(res.data)) {
-            const list = res.data as Reason[];
-            const options = list.map((reason: Reason) => ({
-                  label: reason.reson || reason.return_reason || reason.return_type || String(reason.id),
-              value: String(reason.id),
-            }));
-            setReturnTypeOptions(options);
-          }
-        } catch (error) {
-          console.error("Failed to fetch reason list:", error);
-        } finally {
-          setLoading(false);
+    // Fetch reason list on component mount
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await returnType();
+        if (res && Array.isArray(res.data)) {
+          const list = res.data as Reason[];
+          const options = list.map((reason: Reason) => ({
+            label: reason.reson || reason.return_reason || reason.return_type || String(reason.id),
+            value: String(reason.id),
+          }));
+          setReturnTypeOptions(options);
         }
-      })();
-    }, []);
+      } catch (error) {
+        console.error("Failed to fetch reason list:", error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
   useEffect(() => {
-      // Fetch reason list on component mount
-      (async () => {
-        try {
-          setLoading(true);
-          const res = await reasonList();
-          if (res && Array.isArray(res.data)) {
-            const list = res.data as Reason[];
-            const options = list.map((reason: Reason) => ({
-                  label: reason.reson || reason.return_reason || reason.return_type || String(reason.id),
-              value: String(reason.id),
-            }));
-            setGoodReasonOptions(options);
-          }
-        } catch (error) {
-          console.error("Failed to fetch reason list:", error);
-        } finally {
-          setLoading(false);
+    // Fetch reason list on component mount
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await reasonList();
+        if (res && Array.isArray(res.data)) {
+          const list = res.data as Reason[];
+          const options = list.map((reason: Reason) => ({
+            label: reason.reson || reason.return_reason || reason.return_type || String(reason.id),
+            value: String(reason.id),
+          }));
+          setGoodReasonOptions(options);
         }
-      })();
-    }, []);
+      } catch (error) {
+        console.error("Failed to fetch reason list:", error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
   useEffect(() => {
@@ -683,7 +683,8 @@ export default function ExchangeAddEditPage() {
                 </div>
 
                 <div className="mt-6 mb-6">
-                  <h3 className="text-[16px] font-semibold mb-2">Return</h3>
+                  <h3 className="text-[16px] font-semibold mb-2"> Received
+                  </h3>
                   <Table
                     data={itemData.map((row, idx) => ({
                       ...row,
@@ -816,7 +817,7 @@ export default function ExchangeAddEditPage() {
                         },
                         {
                           key: "region",
-                          label: "Region",
+                          label: "Reason",
                           width: 150,
                           render: (row) => {
                             const idx = Number(row.idx);
@@ -845,7 +846,7 @@ export default function ExchangeAddEditPage() {
                         },
                         {
                           key: "return_type",
-                          label: "Return Type",
+                          label: "Reason Type",
                           width: 150,
                           render: (row) => {
                             const idx = Number(row.idx);
@@ -893,17 +894,17 @@ export default function ExchangeAddEditPage() {
                       ],
                     }}
                   />
-                   <div className="mt-4">
-                        <button type="button" className="text-[#E53935] font-medium text-[16px] flex items-center gap-2" onClick={handleAddNewItem}>
-                          <Icon icon="material-symbols:add-circle-outline" width={20} />
-                          Add New Item
-                        </button>
-                      </div>
+                  <div className="mt-4">
+                    <button type="button" className="text-[#E53935] font-medium text-[16px] flex items-center gap-2" onClick={handleAddNewItem}>
+                      <Icon icon="material-symbols:add-circle-outline" width={20} />
+                      Add New Item
+                    </button>
+                  </div>
                 </div>
 
                 {/* --- Collect table: SHOW ONLY SELECTED ITEMS (driven by itemData) --- */}
                 <div className="mt-6 mb-6">
-                  <h3 className="text-[16px] font-semibold mb-2">Collect</h3>
+                  <h3 className="text-[16px] font-semibold mb-2"> Delivered</h3>
                   <Table
                     data={itemData
                       .filter((row) => row.item_id)
@@ -950,7 +951,7 @@ export default function ExchangeAddEditPage() {
                 <div className="flex justify-between text-primary gap-0 mb-10">
                   <div className="flex justify-between flex-wrap w-full mt-[20px]">
                     <div className="flex flex-col justify-between gap-[20px] w-full lg:w-auto">
-                     
+
                       <div className="flex flex-col justify-end gap-[20px] w-full lg:w-[400px]">
                         <InputFields label="comment" type="textarea" name="comment" placeholder="Enter comment" value={values.comment} onChange={handleChange} error={touched.comment && (errors.comment as string)} />
                       </div>
