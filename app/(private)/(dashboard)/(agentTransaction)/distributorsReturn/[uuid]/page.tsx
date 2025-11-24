@@ -66,10 +66,10 @@ interface DeliveryResponse {
     id: number;
     name: string;
   };
-  customer_type?: {
-    id: number;
-    name: string;
-  };
+  // customer_type?: {
+  //   id: number;
+  //   name: string;
+  // };
   route?: {
     id: number;
     name: string;
@@ -97,7 +97,7 @@ export default function OrderAddEditPage() {
     warehouse_name: "",
     customer: "",
     customer_name: "",
-    customer_type: "",
+    // customer_type: "",
     route: "",
     route_name: "",
   });
@@ -199,7 +199,7 @@ export default function OrderAddEditPage() {
             warehouse_name: warehouseLabel,
             customer: data?.customer?.id ? String(data.customer.id) : "",
             customer_name: customerLabel,
-            customer_type: data?.customer_type?.id ? String(data.customer_type?.id) : "",
+            // customer_type: data?.customer_type?.id ? String(data.customer_type?.id) : "",
             route: data?.route?.id ? String(data.route?.id) : "",
             route_name: routeLabel,
           });
@@ -360,7 +360,7 @@ export default function OrderAddEditPage() {
   const validationSchema = yup.object().shape({
     warehouse: yup.string().required("Warehouse is required"),
     customer: yup.string().required("Customer is required"),
-    customer_type: yup.string().required("Customer Typa is required"),
+    // customer_type: yup.string().required("Customer Typa is required"),
     route: yup.string().required("Route is required"),
   });
 
@@ -424,7 +424,7 @@ export default function OrderAddEditPage() {
       warehouse_id: Number(form.warehouse),
       customer_id: Number(form.customer),
       osa_code: code,
-      customer_type: Number(form.customer_type),
+      // customer_type: Number(form.customer_type),
       route_id: Number(form.route),
       details: itemData
         .filter(item => item.item_id && item.uom_id) // Only include rows with item and UOM selected
@@ -589,18 +589,11 @@ export default function OrderAddEditPage() {
   const handleCustomerSearch = async (searchText: string) => {
     if (!form.route) return [];
     try {
-      let response;
-      if (form.customer_type === "1") {
-        response = await getCompanyCustomers({ route_id: form.route, search: searchText, per_page: "50" });
-      } else {
-        response = await agentCustomerList({ route_id: form.route, search: searchText, per_page: "50" });
-      }
+      
+        const response = await agentCustomerList({ route_id: form.route, search: searchText });
+      
       const data = Array.isArray(response?.data) ? response.data : [];
-      interface CompanyCustomer {
-        id: number;
-        osa_code?: string;
-        business_name?: string;
-      }
+      
       interface AgentCustomer {
         id: number;
         osa_code?: string;
@@ -608,24 +601,13 @@ export default function OrderAddEditPage() {
         customer_name?: string;
         name?: string;
       }
-      return data.map((customer: CompanyCustomer | AgentCustomer) => {
-        if (form.customer_type === "1") {
-          // Company customer: show osa_code - business_name
-          const company = customer as CompanyCustomer;
-          return {
-            value: String(company.id),
-            label: `${company.osa_code || ""} - ${company.business_name || ""}`.trim(),
-            name: company.business_name || "",
-          };
-        } else {
-          // Agent customer
+      return data.map((customer: AgentCustomer) => {
           const agent = customer as AgentCustomer;
           return {
             value: String(agent.id),
             label: `${agent.osa_code || ""} - ${agent.name || ""}`,
             name: agent.outlet_name || agent.customer_name || agent.name || '',
           };
-        }
       });
     } catch {
       return [];
@@ -701,7 +683,7 @@ export default function OrderAddEditPage() {
 
         {/* --- Form Fields --- */}
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
-          <InputFields
+          {/* <InputFields
             label="Customer Type"
             required
             name="customer_type"
@@ -709,7 +691,7 @@ export default function OrderAddEditPage() {
             options={[{ label: "Field Customer", value: "0" }, { label: "Key Customer", value: "1" }]}
             onChange={handleChange}
             error={errors.customer_type}
-          />
+          /> */}
           <AutoSuggestion
             required
             label="Warehouse"

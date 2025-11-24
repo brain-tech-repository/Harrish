@@ -170,3 +170,25 @@ export const deliveryExportHeader = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+// Delivery Hariss Transaction APIs
+export const compensationReportList = async (params?: Params) => {
+  try {
+    // available params - from_date, to_date, format
+    const res = await API.get(`/api/hariss_transaction/ht_invoice/filter`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const compensationReportExport = async (params?: Params) => {
+  try {
+    // available params - from_date, to_date, format
+    const res = await API.get(`/api/hariss_transaction/ht_invoice/export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
