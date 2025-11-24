@@ -307,7 +307,7 @@ export default function AddEditVehicleWithStepper() {
         owner_type: form.ownerType,
         warehouse_id: finalWarehouseId, // ← updated
         opening_odometer: form.odoMeter,
-        status: Number(form.status) || 0,
+        status: Number(form.status),
         valid_from: form.validFrom,
         valid_to: form.validTo,
       };
@@ -489,7 +489,7 @@ export default function AddEditVehicleWithStepper() {
                   error={touched.ownerType && errors.ownerType}
                   options={[
                     { value: "company", label: "Company" },
-                    { value: "agent", label: "Agent" },
+                    { value: "distributor", label: "Distributor" },
                   ]}
                 />
               </div>
@@ -615,7 +615,7 @@ export default function AddEditVehicleWithStepper() {
                   type="radio"
                   label="Status"
                   name="status"
-                  value={"1"}
+                  value={form.status}
                   onChange={(e) => setFieldValue("status", e.target.value)}
                   options={[
                     { value: "1", label: "Active" },
