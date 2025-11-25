@@ -265,7 +265,7 @@ export const initialLinkData: SidebarDataType[] = [
         isActive: false,
         href: "/settings/approval",
         label: "Approval Settings",
-        leadingIcon: "mi:settings",
+        leadingIcon: "wpf:approval",
         iconColor: "text-green-500",
       }
     ],

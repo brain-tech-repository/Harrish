@@ -2015,6 +2015,20 @@ export const approvalAdd = async (payload: object) => {
     return handleError(error);
   }
 };
+// https://api.coreexl.com/osa_developmentV2/public/api/master/approval/workflow/update
+
+export const approvalWorkfolowUpdate = async (payload: object) => {
+  try {
+    const res = await API.post(
+      `/api/master/approval/workflow/update`,
+      payload
+    );
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 
 export const workFlowList = async () => {
   try {
@@ -2026,6 +2040,17 @@ export const workFlowList = async () => {
     return handleError(error);
   }
 };
+
+export const singleWorkFlowList = async (uuid:string) => {
+  try {
+    const res = await API.get(
+      `/api/master/approval/workflow/detail/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
 
 export const deleteAgentCustomer = async (uuid: string) => {
   try {

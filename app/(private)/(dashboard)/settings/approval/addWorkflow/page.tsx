@@ -286,16 +286,16 @@ export default function AddApprovalFlow() {
             // Full form schema validation
             // await ApprovalSchema.validate(form, { abortEarly: false });
             setLoading(true);
-            // const resultData = await approvalAdd(result)
+            const resultData = await approvalAdd(result)
 
             console.log("Submitting Data:", newFormData);
             setLoading(false)
-            // if(resultData)
-            // {
-            // showSnackbar("Approval Flow Created Successfully ✅", "success");
-            // setLoading(false);
+            if(resultData)
+            {
+            showSnackbar("Approval Flow Created Successfully ✅", "success");
+            setLoading(false);
 
-            // }
+            }
             // router.push("/approval");
         }
         catch(err)

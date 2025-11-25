@@ -5,14 +5,14 @@ import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useEffect, useState } from "react";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import * as Yup from "yup";
 import Link from "next/link";
 import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
 import ApprovalFlowTable from "./dragTable";
-import { submenuList, roleList, userList, approvalAdd } from "@/app/services/allApi";
+import { submenuList, roleList, userList, approvalAdd, singleWorkFlowList, approvalWorkfolowUpdate } from "@/app/services/allApi";
 // import {VerticalArrow} from "./proccessFlow";
 
 type OldStep = {
@@ -58,6 +58,7 @@ function convertWorkflow(oldData: any) {
 
 
     return {
+        workflow_id:oldData.workflow_id,
         approvalName: oldData.name,
         description: oldData.description,
         status: oldData.is_active ? "1" : "0",
@@ -87,15 +88,17 @@ function convertWorkflow(oldData: any) {
                 })
 
             return {
+                ...step,
                 step_order: step.step_order,
                 title: step.title,
                 condition: step.approval_type,
                 approvalMessage: step.message,
                 notificationMessage: step.notification,
-                targetType: step.approvers.filter((a: any) => a.type === "USER").length > 0 ? "1" : "2",
-                selectedCustomer: step.approvers.filter((a: any) => a.type === "USER")?useIds:[],
+                targetType: step.approvers.filter((a: any) => a.type === "USER").length > 0 ? "2" : "1",
+                selectedCustomer: step.approvers.filter((a: any) => a.type === "USER").length>0?useIds:[],
+                formType:step.permissions,
                 
-                selectedRole: step.approvers.filter((a: any) => a.type !== "USER")?roleIds:[]
+                selectedRole: step.approvers.filter((a: any) => a.type !== "USER").length>0?roleIds:[]
             }
         })
 
@@ -112,12 +115,7 @@ export function convertToNewFlow(old: OldFlow): any {
 
         steps: old.steps.map((step, index) => {
             // convert permissions
-            const permissions: string[] = [];
-            if (step.formType?.includes("Allow Approval")) permissions.push("APPROVE");
-            if (step.formType?.includes("Allow Reject")) permissions.push("REJECT");
-            if (step.formType?.includes("Return To Step No")) permissions.push("RETURN_BACK");
-            if (step.formType?.includes("Can Edit Before Approval")) permissions.push("EDIT_BEFORE_APPROVAL");
-
+            const permissions: string[] = step.formType
             // approval type
             const approvalType = step.condition || "OR";
 
@@ -201,6 +199,9 @@ export default function AddApprovalFlow() {
         formType: string | string[]; // allow both string and string[] to match dragTable prop types
     }
     const [stepsProccess, setStepsProcess] = useState<ApprovalStep[]>([]);
+    const params = useParams();
+  const uuid = params?.uuid as string;
+    
 
     const [modulesList, setModulesList] = useState<{ value: string; label: string }[]>([]);
     const [roleListData, setRoleListData] = useState<{ value: string; label: string }[]>([]);
@@ -242,15 +243,25 @@ export default function AddApprovalFlow() {
     //       return { ...prev, modules };
     //     });
     //   };
-
-    useEffect(() => {
-        const store: any = localStorage.getItem("selectedFlow")
-        const flow: any = convertWorkflow(JSON.parse(store))
-        console.log(flow)
+    async function apiCall()
+    {
+         let data = await singleWorkFlowList(uuid)
+         let store = data.data
+         console.log(store,"hii252")
+  const flow: any = convertWorkflow(store)
+        console.log(flow,"25")
        
         setForm(flow)
         console.log(flow.steps, "flow.steps")
         setStepsProcess(flow.steps)
+    }
+
+    useEffect(() => {
+        const store: any = localStorage.getItem("selectedFlow")
+        if(uuid)
+        {
+      apiCall()
+        }
 
     }, [])
 
@@ -342,16 +353,16 @@ export default function AddApprovalFlow() {
             // Full form schema validation
             // await ApprovalSchema.validate(form, { abortEarly: false });
             setLoading(true);
-            // const resultData = await approvalAdd(result)
+            const resultData = await approvalWorkfolowUpdate(result)
 
             console.log("Submitting Data:", newFormData);
-            setLoading(false)
-            // if(resultData)
-            // {
-            // showSnackbar("Approval Flow Created Successfully ✅", "success");
-            // setLoading(false);
+            // setLoading(false)
+            if(resultData)
+            {
+            showSnackbar("Approval Flow Created Successfully ✅", "success");
+            setLoading(false);
 
-            // }
+            }
             // router.push("/approval");
         }
         catch (err) {
