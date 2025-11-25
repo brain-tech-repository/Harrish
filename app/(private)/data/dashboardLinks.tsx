@@ -427,6 +427,13 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "hugeicons:invoice",
             iconColor: "text-cyan-500"
           },
+          {
+            isActive: false,
+            href: "/compensationReport",
+            label: "Compensation Report",
+            leadingIcon: "hugeicons:invoice",
+            iconColor: "text-cyan-500"
+          },
         ]
       },
       {

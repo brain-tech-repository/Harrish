@@ -350,7 +350,7 @@ export default function AddEditVehicleWithStepper() {
         owner_type: form.ownerType,
         warehouse_id: finalWarehouseId, // ← updated
         opening_odometer: form.odoMeter,
-        status: Number(form.status) || 0,
+        status: Number(form.status),
         valid_from: form.validFrom,
         valid_to: form.validTo,
       };
