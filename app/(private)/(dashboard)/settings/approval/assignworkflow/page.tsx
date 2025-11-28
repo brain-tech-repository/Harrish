@@ -7,9 +7,14 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { workFlowList } from "@/app/services/allApi";
+import { assignWorkFlowsToSubmenu, submenuList, workFlowAssignList, workFlowList } from "@/app/services/allApi";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 import { useEffect, useState } from "react";
+import InputFields from "@/app/components/inputFields";
 
 // ---- Your JSON pasted here ----
 // const WORKFLOW_DATA:any = [
@@ -102,6 +107,57 @@ import { useEffect, useState } from "react";
 
 export default function WorkflowTable() {
     const [refreshKey, setRefreshKey] = useState(0);
+    const [open, setOpen] = useState(false)
+    const [workFlowList, setWorkflowList] = useState([])
+    const [modulesList, setModulesList] = useState<any>([])
+
+    const formik = useFormik({
+    initialValues: {
+        workflow_id: "",
+        // process_type: "",
+        process_id: "",
+    },
+
+    validationSchema: Yup.object({
+        workflow_id: Yup.string().required("Workflow is required"),
+        // process_type: Yup.string().required("Process Type is required"),
+        process_id: Yup.number()
+            .typeError("Process ID must be a number")
+            .required("Process ID is required"),
+    }),
+
+    onSubmit: async(values) => {
+        console.log("✨ Final Submitted Values:", values);
+        const workflowType = modulesList.filter((ids:any)=>ids.value == values.process_id)[0]?.label
+
+        const data = await assignWorkFlowsToSubmenu({...values,process_type:workflowType})
+
+        if(data.success)
+        {
+            setOpen(false)
+        }
+    },
+});
+
+
+
+    useEffect(() => {
+        const fetchSubmenuList = async () => {
+            try {
+                const res = await submenuList();
+                const subMenuListDta: { value: string, label: string }[] = []
+                res.data.map((item: { id: number, name: string }) => {
+                    subMenuListDta.push({ value: item.id.toString(), label: item.name });
+                });
+                console.log("submenu list", res.data);
+                setModulesList(subMenuListDta);
+            }
+            catch (err) {
+
+            }
+        }
+        fetchSubmenuList()
+    }, [])
 
     // ------------------ COLUMNS --------------------
     const columns = [
@@ -117,30 +173,24 @@ export default function WorkflowTable() {
         {
             key: "description",
             label: "Description",
+            
             render: (data: TableDataType) => data.description || "-",
-        },
-        {
-            key: "is_active",
-            label: "Status",
-            render: (row: TableDataType) => (
-                <StatusBtn isActive={row.is_active ? true : false} />
-            ),
-        },
-        {
-            key: "steps",
-            label: "Total Steps",
-            render: (data: TableDataType) => data.steps?.length || 0,
-        },
-        {
-            key: "step_summary",
-            label: "Step Details",
+        }
+        // {
+        //     key: "steps",
+        //     label: "Total Steps",
+        //     render: (data: TableDataType) => data.steps?.length || 0,
+        // },
+        ,{
+            key: "assigned_to",
+            label: "Assigned To",
             width: 300,
             render: (data: any) => {
-                const step = data.steps?.[0];
+                const step = data.assigned_to?.map((ids:any)=>ids.model_name).join(",")
                 if (!step) return "-";
                 return (
                     <span className="text-sm text-gray-600">
-                        {step.title} ({step.approval_type}) – {step.approvers.length} approvers
+                        {step}
                     </span>
                 );
             },
@@ -156,12 +206,22 @@ export default function WorkflowTable() {
         const end = start + pageSize;
 
         // WORKFLOW_DATA.slice(start, end);
-       const pageData:any =  await workFlowList()
-       console.log(pageData,"pageData")
+        const pageData: any = await workFlowAssignList()
+        console.log(pageData, "pageData")
+        const workFlowListData: any = []
+        pageData.data.map((dta: any) => {
+            workFlowListData.push({
+                value: dta.workflow_id,
+                label: dta.name
+            })
+
+
+        })
+        setWorkflowList(workFlowListData)
         return {
             data: pageData.data,
             currentPage: 1,
-            pageSize:50,
+            pageSize: 50,
             total: 1,
         };
     };
@@ -192,23 +252,16 @@ export default function WorkflowTable() {
                         // search: searchWorkflow,
                     },
                     header: {
-                        title: "Workflows",
+                        title: "Assign Workflow",
                         // searchBar: true,
                         columnFilter: true,
                         actions: [
                             <SidebarBtn
                                 key={0}
-                                href="/settings/approval/addWorkflow"
+                                onClick={() => setOpen(true)}
                                 isActive={true}
                                 leadingIcon="lucide:plus"
                                 label="Add"
-                                labelTw="hidden sm:block"
-                            />,<SidebarBtn
-                                key={0}
-                                href="/settings/approval/assignworkflow"
-                                isActive={true}
-                                leadingIcon="lucide:plus"
-                                label="Assign Workflow"
                                 labelTw="hidden sm:block"
                             />
                         ],
@@ -225,13 +278,79 @@ export default function WorkflowTable() {
                             icon: "lucide:edit-2",
                             onClick: (row: TableDataType) => {
                                 window.location.href = `/settings/approval/${row.uuid}`;
-                                localStorage.setItem("selectedFlow",JSON.stringify(row))
+                                localStorage.setItem("selectedFlow", JSON.stringify(row))
                             },
                         },
                     ],
                     pageSize: 10,
                 }}
             />
+
+            <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
+    <div className="w-[350px] p-[10px] text-lg font-semibold">
+        Assign Workflow
+    </div>
+
+    <Divider />
+
+    <div className="w-[350px] p-[10px]">
+        <form onSubmit={formik.handleSubmit} className="space-y-4">
+
+            {/* Workflow */}
+            <InputFields
+                required
+                label="Workflow"
+                name="workflow_id"
+                isSingle={true}
+                options={workFlowList}
+                value={formik.values.workflow_id}
+                onChange={(e: any) => {
+                    formik.setFieldValue("workflow_id", e.target.value);
+                }}
+                error={formik.touched.workflow_id && formik.errors.workflow_id}
+                width="full"
+            />
+
+            {/* Process Type */}
+            <InputFields
+                required
+                label="Process Type"
+                name="process_type"
+                isSingle={true}
+                options={modulesList}
+                value={formik.values.process_id}
+                onChange={(e: any) => {
+                    formik.setFieldValue("process_id", e.target.value);
+                }}
+                error={formik.touched.process_id && formik.errors.process_id}
+                width="full"
+            />
+
+            {/* Process ID */}
+            {/* <InputFields
+                required
+                label="Process ID"
+                name="process_id"
+                type="number"
+                value={formik.values.process_id}
+                onChange={(e: any) =>
+                    formik.setFieldValue("process_id", e.target.value)
+                }
+                error={formik.touched.process_id && formik.errors.process_id}
+                width="full"
+            /> */}
+
+            <SidebarBtn
+                label={formik.isSubmitting ? "Submitting..." : "Submit"}
+                isActive={!formik.isSubmitting}
+                leadingIcon="mdi:check"
+                type="submit"
+                disabled={formik.isSubmitting}
+            />
+        </form>
+    </div>
+</Drawer>
+
         </div>
     );
 }

@@ -48,7 +48,7 @@ export type configType = {
             columnName?: string,
             pageNo?: number,
         ) => Promise<listReturnType> | listReturnType;
-        list: (
+        list?: (
             pageNo: number,
             pageSize: number
         ) => Promise<listReturnType> | listReturnType;

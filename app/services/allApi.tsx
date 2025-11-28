@@ -1632,6 +1632,16 @@ export const addVehicle = async (data: object) => {
   }
 };
 
+export const numberPlateVerification = async (query: string) => {
+  try {
+    const res = await API.get(`/api/master/vehicle/numberplate?number_plat=${query}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const updateVehicle = async (
   uuid: string,
   data: object
@@ -2015,6 +2025,20 @@ export const approvalAdd = async (payload: object) => {
     return handleError(error);
   }
 };
+// https://api.coreexl.com/osa_developmentV2/public/api/master/approval/workflow/update
+
+export const approvalWorkfolowUpdate = async (payload: object) => {
+  try {
+    const res = await API.post(
+      `/api/master/approval/workflow/update`,
+      payload
+    );
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
 
 export const workFlowList = async () => {
   try {
@@ -2026,6 +2050,30 @@ export const workFlowList = async () => {
     return handleError(error);
   }
 };
+
+export const workFlowAssignList = async () => {
+  try {
+    
+    const res = await API.get(
+      `/api/master/approval/workflow/assigned-list
+`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const singleWorkFlowList = async (uuid:string) => {
+  try {
+    const res = await API.get(
+      `/api/master/approval/workflow/detail/${uuid}`);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}
 
 export const deleteAgentCustomer = async (uuid: string) => {
   try {
@@ -2795,6 +2843,15 @@ export const addMenu = async (payload: menuType) => {
 export const updateMenu = async (uuid: string, payload: menuType) => {
   try {
     const res = await API.put(`/api/settings/menus/update/${uuid}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const assignWorkFlowsToSubmenu= async (payload: any) => {
+  try {
+    const res = await API.post(`/api/master/approval/workflow/start`, payload);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

@@ -48,6 +48,7 @@ export default function AddEditRoute() {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<CompiledClaimRow[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [creatingMap, setCreatingMap] = useState<Record<string, boolean>>({});
   
   const [form, setForm] = useState({
@@ -149,7 +150,8 @@ export default function AddEditRoute() {
       return;
     }
 
-    setSearchLoading(true);
+  setSearchLoading(true);
+  setHasSearched(true);
     try {
       const params = {
         from_date: form.fromDate,
@@ -343,8 +345,14 @@ export default function AddEditRoute() {
         
       </div>
 
-          {/* Search results table */}
-          {searchResults && searchResults.length > 0 && (
+          {/* Search results table, loading, or no data message */}
+          {searchLoading ? (
+            <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
+              <div className="p-6 flex items-center justify-center min-h-[60px]">
+                <Loading />
+              </div>
+            </div>
+          ) : searchResults && searchResults.length > 0 ? (
             <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
               <div className="p-6">
                 <h2 className="text-lg font-medium text-gray-800 mb-4">Search Results</h2>
@@ -413,6 +421,14 @@ export default function AddEditRoute() {
                 />
               </div>
             </div>
+          ) : (
+            hasSearched && (
+              <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
+                <div className="p-6 flex items-center justify-center min-h-[120px]">
+                  <span className="text-gray-500 text-lg">No data found</span>
+                </div>
+              </div>
+            )
           )}
 
     
