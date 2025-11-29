@@ -35,7 +35,7 @@ export default function SalemanLoad() {
   const columns: configType["columns"] = [
     {
       key: "warehouse",
-      label: "Warehouse",
+      label: "Distributor",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
         const nameParts = s.warehouse?.name?.split(" - ");

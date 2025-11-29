@@ -18,9 +18,11 @@ import {
   agentCustomerList,
   genearateCode,
   itemGlobalSearch,
+  itemList,
   routeList,
   saveFinalCode,
   warehouseListGlobalSearch,
+  warehouseStockTopOrders,
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -224,7 +226,7 @@ export default function OrderAddEditPage() {
       try {
         setLoading(true);
         const response = await deliveryByUuid(uuid);
-        const data = (response?.data ?? response) as DeliveryResponse;
+        const data = (response?.data ?? response) as DeliveryResponse
 
         const warehouseObj = data?.warehouse;
         const warehouseCode = warehouseObj?.code ?? "";
@@ -544,9 +546,54 @@ export default function OrderAddEditPage() {
   const handleItemSearch = async (searchText: string) => {
     if (!form.warehouse) return [];
     try {
-      const response = await itemGlobalSearch({ query: searchText, warehouse_id: form.warehouse });
-      const data = Array.isArray(response?.data) ? response.data : [];
-      return data.map((item: any) => ({
+      // Fetch warehouse stock details
+      const response = await warehouseStockTopOrders(form.warehouse);
+      const stocksArray = response.data?.stocks || response.stocks || response.data || [];
+
+      // Fetch full item details to get proper UOM data
+      const itemsRes = await itemList({ allData: "true", warehouse_id: form.warehouse });
+      const fullItems = itemsRes.data || [];
+
+      // Merge stock data with full item data
+      const mergedData = stocksArray
+        .map((stockItem: any) => {
+          // Find the full item details
+          const fullItem = fullItems.find((item: any) => item.id === stockItem.item_id);
+
+          if (!fullItem) {
+            // console.warn(`Item ${stockItem.item_id} not found in full items list`);
+            return null;
+          }
+
+          return {
+            id: stockItem.item_id,
+            erp_code: stockItem.item_code || fullItem.erp_code,
+            name: stockItem.item_name || fullItem.name,
+            item_uoms: fullItem.item_uoms || [],
+            pricing: fullItem.pricing || {},
+            stock_qty: stockItem.stock_qty || 0,
+          };
+        })
+        .filter((item: any) => {
+          if (!item) return false;
+          // Only show items with stock > 0
+          return item.stock_qty > 0;
+        });
+
+      // Filter items based on search text
+      const filteredData = searchText
+        ? mergedData.filter((item: any) => {
+          const itemCode = item.erp_code || "";
+          const itemName = item.name || "";
+          const searchLower = searchText.toLowerCase();
+          return (
+            itemCode.toLowerCase().includes(searchLower) ||
+            itemName.toLowerCase().includes(searchLower)
+          );
+        })
+        : mergedData;
+
+      return filteredData.map((item: any) => ({
         value: String(item.id),
         label: `${item.erp_code || ""} - ${item.name || ""}`,
         name: item.name,
@@ -559,7 +606,8 @@ export default function OrderAddEditPage() {
           })
           : [],
       }));
-    } catch {
+    } catch (error) {
+      console.error("Error fetching warehouse stock items:", error);
       return [];
     }
   };
@@ -574,48 +622,48 @@ export default function OrderAddEditPage() {
           <Icon icon="lucide:arrow-left" width={24} onClick={() => router.back()} />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
             {isEditMode ? "Update Return" : "Add Return"}
-          </h1>
-        </div>
-      </div>
+          </h1 >
+        </div >
+      </div >
 
       <ContainerCard className="rounded-[10px] scrollbar-none">
         <div className="flex justify-between mb-10 flex-wrap gap-[20px]">
           <div className="flex flex-col gap-[10px]">
             <Logo type="full" />
-          </div>
+          </div >
           <div className="flex flex-col">
             <span className="flex justify-end text-[42px] uppercase text-[#A4A7AE] mb-[10px]">Return</span>
             <span className="text-primary text-[14px] tracking-[10px]">#{code}</span>
           </div>
-        </div>
+        </div >
         <hr className="w-full text-[#D5D7DA]" />
 
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
-          <AutoSuggestion
+          <InputFields
             required
             label="Distributor"
             name="warehouse"
-            placeholder="Search distributor..."
-            initialValue={form.warehouse_name}
-            onSearch={handleWarehouseSearch}
-            onSelect={(option: any) => {
+            value={form.warehouse}
+            options={warehouseOptions}
+            onChange={(e) => {
+              const selectedWarehouse = e.target.value;
               setForm((prev) => ({
                 ...prev,
-                warehouse: option.value,
-                warehouse_name: option.label,
+                warehouse: selectedWarehouse,
                 route: "",
                 route_name: "",
                 customer: "",
                 customer_name: "",
               }));
               if (errors.warehouse) setErrors((prev) => ({ ...prev, warehouse: "" }));
-              try {
-                fetchAgentCustomerOptions(option.value);
-              } catch {
-                //
+              if (selectedWarehouse) {
+                try {
+                  fetchAgentCustomerOptions(selectedWarehouse);
+                } catch {
+                  //
+                }
               }
             }}
-            onClear={() => setForm((prev) => ({ ...prev, warehouse: "", warehouse_name: "", route: "", route_name: "", customer: "", customer_name: "" }))}
             error={errors.warehouse}
           />
 
@@ -953,7 +1001,7 @@ export default function OrderAddEditPage() {
             onClick={handleSubmit}
           />
         </div>
-      </ContainerCard>
-    </div>
+      </ContainerCard >
+    </div >
   );
 }
