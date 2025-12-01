@@ -109,7 +109,7 @@ export default function NewCustomer() {
         { key: "town", label: "Town" },
         {
             key: "getWarehouse",
-            label: "Warehouse",
+            label: "Distributor ",
             render: (row: TableDataType) =>
                 typeof row.getWarehouse === "object" &&
                     row.getWarehouse !== null &&

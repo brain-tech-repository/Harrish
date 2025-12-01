@@ -259,7 +259,7 @@ export default function AddEditSalesmanLoad() {
   // ✅ Validation Schema
   const validationSchema = yup.object().shape({
     salesman_type: yup.string().required("Sales Team Type is required"),
-    warehouse: yup.string().required("Warehouse is required"),
+    warehouse: yup.string().required("Distributor is required"),
     route: yup.string().required("Route is required"),
 
     salesman: yup.string().required("Sales Team is required"),
@@ -355,8 +355,8 @@ export default function AddEditSalesmanLoad() {
       } else {
         showSnackbar(
           isEditMode
-            ? "Salesman Load updated successfully"
-            : "Salesman Load added successfully",
+            ? "Sales Team Load updated successfully"
+            : "Sales Team Load added successfully",
           "success"
         );
         router.push("/salesTeamLoad");
@@ -444,7 +444,7 @@ export default function AddEditSalesmanLoad() {
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
           <div className="flex flex-col w-full sm:w-[30%]">
             <InputFields
-              label="Salesman Type"
+              label="Sales Team Type"
               name="salesman_type"
               value={form.salesman_type}
               options={salesmanTypeOptions}

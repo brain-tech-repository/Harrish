@@ -82,8 +82,18 @@ export default function Page() {
   const [item, setItem] = useState<Item | null>(null);
   const { showSnackbar } = useSnackbar();
   const [imageSrc, setImageSrc] = useState<string>("/no-image.png");
+
   useEffect(() => {
-    setImageSrc(item?.image ?? "/no-image.png");
+    if (!item || !item.image) return;
+
+    try {
+      const url = new URL(item.image || "");
+      setImageSrc(url.href);
+      return;
+    } catch {
+      setImageSrc("/no-image.png");
+      return;
+    }
   }, [item?.image]);
 
   const onTabClick = (idx: number) => {
@@ -120,8 +130,6 @@ export default function Page() {
 
     fetchItemDetails();
   }, [id, showSnackbar]);
-
-console.log(item?.image, "itemimage")
 
   return (
     <>

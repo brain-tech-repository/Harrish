@@ -4,7 +4,7 @@ import SearchBar from "./searchBar";
 import { Icon } from "@iconify-icon/react";
 import CustomDropdown from "./customDropdown";
 import BorderIconButton from "./borderIconButton";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import FilterDropdown from "./filterDropdown";
 import InputFields from "./inputFields";
 import SidebarBtn from "./dashboardSidebarBtn";
@@ -12,6 +12,7 @@ import CustomCheckbox from "./customCheckbox";
 import DismissibleDropdown from "./dismissibleDropdown";
 import { naturalSort } from "../(private)/utils/naturalSort";
 import { CustomTableSkelton } from "./customSkeleton";
+import Draggable from "react-draggable";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -29,14 +30,7 @@ export type FilterField = {
     placeholder?: string;
     isSingle?: boolean;
     multiSelectChips?: boolean;
-    // optional predicate to determine whether this filter should be applied.
-    // Receives the full `filters` object and should return `true` when the
-    // filter should be applied (included in payload / client-side filter).
-    // Example for a date-range start field:
-    // applyWhen: (filters) => Boolean(filters.startDate && filters.endDate)
     applyWhen?: (filters: Record<string, any>) => boolean;
-    // arbitrary props to forward directly to the `InputFields` component
-    // useful for passing attributes like `inputProps`, `disabled`, `max`, etc.
     inputProps?: Record<string, any>;
 };
 
@@ -106,13 +100,27 @@ export type configType = {
     pageSizeOptions?: number[]; // yet to implement
     rowSelection?: boolean;
     dragableColumn?: boolean;
+    floatingInfoBar?: {
+        showByDefault?: boolean;
+        showSelectedRow?: boolean;
+        rowSelectionOnClick?: (data: TableDataType[], selectedRow?: number[], selectedColumns?: number[]) => void;
+        buttons?: {
+            label: string;
+            labelTw?: string;
+            icon?: string;
+            iconWidth?: string;
+            onClick?: (data: TableDataType[], selectedRow?: number[], selectedColumns?: number[]) => void;
+            showOnSelect?: boolean;
+            showWhen?: (data: TableDataType[], selectedRow?: number[], selectedColumns?: number[]) => boolean;
+        }[];
+    };
     columns: {
         key: string;
         label: string | React.ReactNode;
         width?: number;
         render?: (row: TableDataType) => React.ReactNode;
-        align?: "left" | "center" | "right"; // yet to implement
-        sticky?: string; // yet to implement
+        align?: "left" | "center" | "right";
+        sticky?: string;
         isSortable?: boolean;
         showByDefault?: boolean;
         filter?: {
@@ -245,7 +253,7 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 function TableContainer({ refreshKey, data, config }: TableProps) {
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
-    const { setTableDetails, setNestedLoading, setInitialTableData } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData } = useContext(TableDetails);
     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
     const [showDropdown, setShowDropdown] = useState(false);
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -352,6 +360,7 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
         }
         setSelectedRow([]);
     }, [data, refreshKey]);
+
 
     const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
 
@@ -483,36 +492,6 @@ function TableHeader() {
                             {/* show results summary for global search (from context) */}
                             {searchState && searchState.applied && (
                                 <div className="ml-3 flex items-center gap-2 text-sm text-gray-600">
-                                    {/* <span className="font-medium">
-                                        {(tableDetails?.totalRecords ?? tableDetails?.data?.length ?? 0)} Results Found
-                                    </span> */}
-                                    {/* <button
-                                        type="button"
-                                        onClick={async () => {
-                                            try {
-                                                setNestedLoading(true);
-                                                setSearchState({ applied: false, term: "" });
-                                                if (config.api?.list) {
-                                                    const res = await config.api.list(1, config.pageSize || defaultPageSize);
-                                                    const resolved = res instanceof Promise ? await res : res;
-                                                    const { data, total, currentPage, pageSize } = resolved as any;
-                                                    setTableDetails({
-                                                        data: data || [],
-                                                        total: total || 1,
-                                                        currentPage: currentPage - 1 || 0,
-                                                        pageSize: pageSize || config.pageSize || defaultPageSize,
-                                                    });
-                                                } else if (initialTableData) {
-                                                    setTableDetails(initialTableData);
-                                                }
-                                            } finally {
-                                                setNestedLoading(false);
-                                            }
-                                        }}
-                                        className="ml-2 underline text-gray-600"
-                                    >
-                                        Clear Search
-                                    </button> */}
                                 </div>
                             )}
 
@@ -1218,17 +1197,14 @@ function FilterTableHeader({
 function TableFooter() {
     const { config } = useContext(Config);
     const { api, footer, pageSize = defaultPageSize } = config;
-    const { tableDetails, setTableDetails, setNestedLoading, searchState, filterState } = useContext(TableDetails);
+    const { tableDetails, nestedLoading, setTableDetails, setNestedLoading, searchState, filterState } = useContext(TableDetails);
+    const { selectedRow } = useContext(SelectedRow);
+    const { selectedColumns } = useContext<columnFilterConfigType>(ColumnFilterConfig);
     const cPage = tableDetails.currentPage || 0;
     const totalPages = tableDetails.total || 1;
 
     async function handlePageChange(pageNo: number) {
         if (pageNo < 0 || pageNo > totalPages - 1) return;
-        // NOTE: previously we dispatched a global "customTable:clearFilters"
-        // event here which caused filter UI to reset when changing pages.
-        // That cleared the applied filters and active filter count unexpectedly
-        // when paginating. Do not clear filters on page change — pagination
-        // should respect the currently applied filters (see filterState).
 
         const MIN_LOADING_MS = 1000;
         const start = Date.now();
@@ -1306,9 +1282,88 @@ function TableFooter() {
         }
     }
 
-    return (
-        footer && (
-            <div className="px-[24px] py-[12px] flex justify-between items-center text-[#414651]">
+     // Floating Info Bar State
+    const [showFloatingBar, setShowFloatingBar] = useState(
+        !!config.floatingInfoBar?.showByDefault
+    );
+
+    // Show bar if showSelectedRow and rows are selected
+    useEffect(() => {
+        if (config.floatingInfoBar?.showSelectedRow && selectedRow.length > 0) {
+            setShowFloatingBar(true);
+        } else if (!config.floatingInfoBar?.showByDefault) {
+            setShowFloatingBar(false);
+        }
+    }, [selectedRow, config.floatingInfoBar]);
+
+    // Move nodeRef outside to prevent recreation and flickering
+    const floatingBarNodeRef = useRef(null);
+
+    // Memoize visible buttons to avoid recalculation
+    const visibleButtons = useMemo(() => {
+        if (!config.floatingInfoBar?.buttons) return [];
+        
+        return config.floatingInfoBar.buttons.filter(button => {
+            // Check showOnSelect condition
+            if (button.showOnSelect && selectedRow.length === 0) return false;
+            
+            // Check showWhen condition
+            if (button.showWhen && !button.showWhen(tableDetails?.data || [], selectedRow, selectedColumns)) return false;
+            
+            return true;
+        });
+    }, [config.floatingInfoBar?.buttons, selectedRow, tableDetails?.data, selectedColumns]);
+
+    const FloatingInfoBar = useCallback(() => {
+        if (!config.floatingInfoBar || !showFloatingBar || nestedLoading) return null;
+        
+        return (
+            <Draggable nodeRef={floatingBarNodeRef}>
+                <div 
+                    ref={floatingBarNodeRef} 
+                    className={`flex justify-between items-center gap-6 w-fit p-4 z-[70] cursor-grab text-white bg-[#00000080] backdrop-blur-xl rounded-[40px] transition-all ease-in-out ${footer ? 'mb-20' : ''}`}
+                >
+                    <span onClick={() => config?.floatingInfoBar?.rowSelectionOnClick && config.floatingInfoBar.rowSelectionOnClick(tableDetails?.data || [], selectedRow, selectedColumns) }>selected {selectedRow.length}</span>
+                    {visibleButtons.length > 0 && (
+                        <span className="flex gap-[18px]">
+                            {visibleButtons.map((button, index) => (
+                                <span 
+                                    key={`${button.label}-${index}`}
+                                    className={`cursor-pointer bg-[#FDFDFD33] shadow-[0px_1px_2px_0px_#0A0D120D] py-2 px-3 rounded-3xl flex items-center gap-2 ${
+                                        button.labelTw || ''
+                                    }`}
+                                    onClick={() => button.onClick?.(tableDetails?.data || [], selectedRow, selectedColumns)}
+                                >
+                                    {button.icon && (
+                                        <span className="w-5 h-5">
+                                            <Icon 
+                                                icon={button.icon}
+                                                className="transition-all duration-200 ease-in-out"
+                                                width={button.iconWidth ? parseInt(button.iconWidth) : 20} 
+                                            />
+                                        </span>
+                                    )}
+                                    <span>{button.label}</span>
+                                </span>
+                            ))}
+                        </span>
+                    )}
+                    <span className="rounded-full py-2 px-3 bg-[#FDFDFD33] bg-opacity-30 flex items-center justify-center cursor-pointer">
+                        <span className="w-5 h-5">
+                            <Icon icon="mdi:close" className="transition-all duration-200 ease-in-out" width={20} onClick={() => setShowFloatingBar(false)} />
+                        </span>
+                    </span>
+                </div>
+            </Draggable>
+        );
+    }, [config.floatingInfoBar, showFloatingBar, nestedLoading, selectedRow.length, visibleButtons, footer]);
+
+    return (<div className="relative">
+        <div className="absolute left-1/2 -translate-x-1/2 ml-2 flex justify-center bottom-1">
+            <FloatingInfoBar />
+        </div>
+        {footer && (
+            <div className="px-6 py-3 flex justify-between items-center text-[#414651]">
                 <div>
                     {footer?.nextPrevBtn && (
                         <BorderIconButton
@@ -1323,7 +1378,7 @@ function TableFooter() {
                 </div>
                 <div>
                     {footer?.pagination && (
-                        <div className="gap-[2px] text-[14px] hidden md:flex select-none">
+                        <div className="gap-0.5 text-[14px] hidden md:flex select-none">
                             {(() => {
                                 // Build pagination elements based on totalPages and current page (cPage)
                                 if (totalPages <= 6) {
@@ -1399,7 +1454,8 @@ function TableFooter() {
                     )}
                 </div>
             </div>
-        )
+        )}
+    </div>
     );
 }
 

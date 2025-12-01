@@ -80,10 +80,10 @@ export default function AddEditSalesmanUnload() {
             // If no data, reset to empty table
             setItemData([]);
             setIsItemsLoaded(true);
-            showSnackbar("No items found for selected date and salesman", "info");
+            showSnackbar("No items found for selected date and sales team", "info");
           }
         } catch (error: any) {
-          console.error("Salesman Unload Data Error:", error);
+          console.error("Sales team Unload Data Error:", error);
           console.error("Error details:", error?.response?.data);
           showSnackbar(
             error?.response?.data?.message || "Failed to fetch item data",
@@ -149,10 +149,10 @@ export default function AddEditSalesmanUnload() {
 
   // ✅ Validation Schema
   const validationSchema = yup.object().shape({
-    salesman_type: yup.string().required("Salesman Type is required"),
+    salesman_type: yup.string().required("Sales Team Type is required"),
     route_id: yup.string().required("Route is required"),
-    warehouse: yup.string().required("Warehouse is required"),
-    salesman_id: yup.string().required("Salesman is required"),
+    warehouse: yup.string().required("Distributor is required"),
+    salesman_id: yup.string().required("Sales Team is required"),
     unload_date: yup.string().required("Unload Date is required"),
   });
 
@@ -274,7 +274,7 @@ export default function AddEditSalesmanUnload() {
         <div className="flex flex-col sm:flex-row gap-4 mt-10 mb-10 flex-wrap">
           <div className="flex flex-col w-full sm:w-[30%]">
             <InputFields
-              label="Salesman Type"
+              label="Sales Team Type"
               name="salesman_type"
               value={form.salesman_type}
               options={salesmanTypeOptions}
@@ -336,7 +336,7 @@ export default function AddEditSalesmanUnload() {
 
           <div className="flex flex-col w-full sm:w-[30%]">
             <InputFields
-              label="Salesman"
+              label="Sales Team"
               name="salesman_id"
               value={form.salesman_id}
               options={salesmanOptions}

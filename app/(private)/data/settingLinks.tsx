@@ -19,23 +19,6 @@ export type LinkDataType = {
 export const initialLinkData: SidebarDataType[] = [
   {
     data: [
-      // {
-      //   isActive: false,
-      //   href: "/settings/profile",
-      //   label: "Profile ",
-      //   leadingIcon: "mdi:account-multiple",
-      //   // trailingIcon: "mdi-light:chevron-right",
-      //   iconColor: "text-yellow-400",
-      // },
-      {
-        isActive: false,
-        href: "/settings/process",
-        label: "Process ",
-        leadingIcon: "mdi:account-multiple",
-        // trailingIcon: "mdi-light:chevron-right",
-        iconColor: "text-yellow-400",
-      },
-
       {
         isActive: false,
         href: "#",
@@ -152,13 +135,6 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
-          // {
-          //   isActive: false,
-          //   href: "/settings/customer/discountType",
-          //   label: "Discount Types",
-          //   leadingIcon: "mdi:map",
-          //   iconColor: "text-yellow-400",
-          // },
         ],
       },
       {
@@ -197,13 +173,6 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:earth",
             iconColor: "text-green-500",
           },
-          // {
-          //   isActive: false,
-          //   href: "/settings/routetype",
-          //   label: "Route Type",
-          //   leadingIcon: "mdi:map-marker-path",
-          //   iconColor: "text-green-500",
-          // },
         ],
       },
       {
@@ -235,6 +204,31 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:package-variant",
             iconColor: "text-cyan-500",
           },
+        ],
+      },
+      {
+        isActive: false,
+        href: "#",
+        label: "Loyalty Program",
+        leadingIcon: "ix:customer-filled",
+        trailingIcon: "qlementine-icons:items-grid-small-24",
+        iconColor: "text-yellow-400",
+        children: [
+          {
+            isActive: false,
+            href: "/settings/tier",
+            label: "Tier",
+            leadingIcon: "arcticons:myfrontier",
+            iconColor: "text-green-500",
+          },
+          {
+            isActive: false,
+            href: "/settings/rewardCategory",
+            label: "Reward Category",
+            leadingIcon: "streamline-ultimate:reward-stars-4",
+            iconColor: "text-green-500",
+          },
+          
         ],
       },
       {

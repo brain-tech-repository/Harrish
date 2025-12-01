@@ -35,7 +35,6 @@ const columns = [
         key: "invoice_time",
         label: "Time",
         showByDefault: true,
-
     },
     { key: "invoice_code", label: "Invoice Code", showByDefault: true },
     { key: "order_code", label: "Order Code" },
@@ -54,7 +53,7 @@ const columns = [
         }
     },
     {
-        key: "warehouse_code", label: "Warehouse", showByDefault: true,
+        key: "warehouse_code", label: "Distributor ", showByDefault: true,
         render: (row: TableDataType) => {
             const code = row.warehouse_code || "-";
             const name = row.warehouse_name || "-";
@@ -80,7 +79,7 @@ const columns = [
             } as FormatNumberOptions);
         },
     },
-    
+
 ];
 
 export default function CustomerInvoicePage() {

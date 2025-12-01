@@ -75,7 +75,7 @@ export default function ViewPage() {
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
 
-  const title = `Unload ${customer?.osa_code || "-"}`;
+  const title = `Unload #${customer?.osa_code || "-"}`;
   const backBtnUrl = "/salesmanUnload";
 
   // Tab logic
@@ -137,7 +137,11 @@ export default function ViewPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link href={backBtnUrl}>
-          <Icon icon="lucide:arrow-left" width={24} />
+          <Icon
+            icon="lucide:arrow-left"
+            width={24}
+            className="cursor-pointer"
+          />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
       </div>
@@ -150,12 +154,10 @@ export default function ViewPage() {
             <Logo type="full" />
 
             <div className="text-right">
-              <h2 className="text-4xl font-bold text-gray-400 uppercase mb-2">
-                Unload
-              </h2>
-              <p className="text-primary text-sm tracking-[5px]">
-                {customer?.osa_code || "-"}
-              </p>
+              <div className="flex flex-col items-end">
+              <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">Unload</span>
+              <span className="text-primary text-[14px] tracking-[8px]">#{customer?.osa_code || "-"}</span>
+            </div>
             </div>
           </div>
 
@@ -213,24 +215,13 @@ export default function ViewPage() {
           </div>
 
           {/* ---------- Footer Buttons ---------- */}
-          {/* ---------- Footer Buttons ---------- */}
-          <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200">
-            <SidebarBtn
+          <div className="flex flex-wrap justify-end gap-4 pt-4 print:hidden">
+            {/* <SidebarBtn
               leadingIcon="lucide:download"
               leadingIconSize={20}
               label="Download"
-            // onClick={handleDownload}
-            />
-            <SidebarBtn
-              isActive
-              leadingIcon="lucide:printer"
-              leadingIconSize={20}
-              label="Print Now"
-            // onClick={handlePrint}
-            />
+            /> */}
             <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
-
-
           </div>
 
         </ContainerCard>

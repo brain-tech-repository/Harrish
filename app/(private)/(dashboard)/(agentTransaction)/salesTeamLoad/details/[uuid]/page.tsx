@@ -5,7 +5,10 @@ import ContainerCard from "@/app/components/containerCard";
 import Table, { configType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Logo from "@/app/components/logo";
-import { salesmanLoadByUuid, exportSalesmanLoadDownload } from "@/app/services/agentTransaction";
+import {
+  salesmanLoadByUuid,
+  exportSalesmanLoadDownload,
+} from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -52,7 +55,7 @@ export default function ViewPage() {
   const { setLoading } = useLoading();
   const [loading, setLoadingState] = useState<boolean>(false);
 
-  const title = `Load ${customer?.osa_code || "-"}`;
+  const title = `Load #${customer?.osa_code || "-"}`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,9 +90,7 @@ export default function ViewPage() {
   // ✅ Prepare table data
   const tableData =
     customer?.details?.map((detail) => ({
-      item: detail.item
-        ? `${detail.item.code} - ${detail.item.name}`
-        : "-",
+      item: detail.item ? `${detail.item.code} - ${detail.item.name}` : "-",
       uom: detail.uom_name || "-",
       qty: detail.qty?.toString() ?? "-",
       price: detail.price ?? "-",
@@ -105,10 +106,12 @@ export default function ViewPage() {
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            className="text-gray-700 hover:text-primary transition"
+            className="cursor-pointer"
           />
         </Link>
-        <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
+        <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
+          {title}
+        </h1>
       </div>
 
       {/* ---------- Main Card ---------- */}
@@ -120,19 +123,19 @@ export default function ViewPage() {
             <div className="flex justify-between flex-wrap gap-6 items-start">
               <Logo type="full" />
               <div className="text-right">
-                <h2 className="text-4xl font-bold text-gray-400 uppercase mb-2">
-                  SalesTeam Load
-                </h2>
-                <p className="text-primary text-sm tracking-[5px]">
-                  {customer?.osa_code || "-"}
-                </p>
+                <div className="flex flex-col items-end">
+                  <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
+                    Load
+                  </span>
+                  <span className="text-primary text-[14px] tracking-[8px]">
+                    #{customer?.osa_code || "-"}
+                  </span>
+                </div>
               </div>
             </div>
 
             <hr className="border-gray-200 my-5" />
 
-            {/* ---------- Info & Table Section ---------- */}
-            {/* ---------- Info & Table Section ---------- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-6">
               {/* ---------- Left Side (Details) ---------- */}
               <div className="lg:col-span-1">
@@ -152,7 +155,7 @@ export default function ViewPage() {
                         : "-",
                     },
                     {
-                      key: "Salesman Type",
+                      key: "Sales Team Type",
                       value: customer?.salesman_type?.name || "-",
                     },
                     {
@@ -160,7 +163,7 @@ export default function ViewPage() {
                       value: customer?.project_type?.name || "-",
                     },
                     {
-                      key: "Salesman",
+                      key: "Sales Team",
                       value: customer?.salesman
                         ? `${customer.salesman.code} - ${customer.salesman.name}`
                         : "-",
@@ -176,14 +179,15 @@ export default function ViewPage() {
                 </h3>
                 <Table data={tableData} config={{ columns }} />
               </div>
+
+              {/* <div className="lg:col-span-2 w-full">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                  Load Items
+                </h3>
+                <Table data={tableData} config={{ columns }} />
+              </div> */}
             </div>
             {/* ---------- Right Side (Table) ---------- */}
-            <div className="lg:col-span-2 w-full">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Load Items
-              </h3>
-              <Table data={tableData} config={{ columns }} />
-            </div>
           </div>
 
           {/* ---------- Footer Buttons ---------- */}
@@ -195,7 +199,11 @@ export default function ViewPage() {
             onClick={handleDownload}
           />*/}
 
-          <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
+          <div  className="flex flex-wrap justify-end gap-4 pt-4 print:hidden">
+            <PrintButton
+              targetRef={targetRef as unknown as RefObject<HTMLElement>}
+            />
+          </div>
         </ContainerCard>
       </div>
     </>

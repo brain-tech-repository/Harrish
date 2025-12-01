@@ -372,11 +372,11 @@ export default function OrderDetailPage() {
         <hr className="text-[#D5D7DA]" />
 
         <div className="flex flex-wrap justify-end gap-[20px]">
-          <SidebarBtn
+          {/* <SidebarBtn
             leadingIcon={"lucide:download"}
             leadingIconSize={20}
             label="Download"
-          />
+          /> */}
           <SidebarBtn
             isActive
             leadingIcon={"lucide:printer"}

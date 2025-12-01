@@ -35,7 +35,7 @@ export default function SalemanLoad() {
   const columns: configType["columns"] = [
     {
       key: "warehouse",
-      label: "Warehouse",
+      label: "Distributor",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
         const nameParts = s.warehouse?.name?.split(" - ");
@@ -56,7 +56,7 @@ export default function SalemanLoad() {
     },
     {
       key: "salesman",
-      label: "Salesman",
+      label: "Sales Team",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
         return `${s.salesman?.code ?? ""} - ${s.salesman?.name ?? ""}`;
@@ -232,7 +232,7 @@ export default function SalemanLoad() {
             filterBy: filterBy,
           },
           header: {
-            title: "SalesTeam Load",
+            title: "Sales Team Load",
             searchBar: false,
             columnFilter: true,
             threeDot: [

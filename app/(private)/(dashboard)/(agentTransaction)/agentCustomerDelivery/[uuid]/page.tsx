@@ -14,6 +14,8 @@ import {
   genearateCode,
   getAllActiveWarehouse,
   itemGlobalSearch,
+  salesmanList,
+  SalesmanListGlobalSearch,
   saveFinalCode,
   warehouseListGlobalSearch,
 } from "@/app/services/allApi";
@@ -158,6 +160,7 @@ export default function DeliveryAddEditPage() {
   const validationSchema = Yup.object({
     warehouse: Yup.string().required("Warehouse is required"),
     order_code: Yup.string().required("Delivery is required"),
+    salesman_id: Yup.string().required("Salesteam is required"),
     note: Yup.string().max(1000, "Note is too long"),
     items: Yup.array().of(itemRowSchema),
   });
@@ -506,10 +509,11 @@ export default function DeliveryAddEditPage() {
   const generatePayload = (values?: FormikValues) => {
     return {
       delivery_code: code,
-      order_code: filteredDeliveryOptions.find(option => option.value === values?.delivery)?.order_code || null,
+      order_code: filteredDeliveryOptions.find(option => option.value === values?.order_code)?.order_code || null,
       warehouse_id: Number(values?.warehouse) || null,
       customer_id: Number(values?.customer_id) || null,
       delivery_date: values?.delivery_date || form.delivery_date,
+      salesman_id: Number(values?.salesman_id) || null,
       // gross_total: Number(grossTotal.toFixed(2)),
       vat: Number(totalVat.toFixed(2)),
       net_amount: Number(netAmount.toFixed(2)),
@@ -957,6 +961,38 @@ export default function DeliveryAddEditPage() {
                       error={touched.order_code && (errors.order_code as string)}
                     />
                   </div>
+
+                  <div>
+                    <AutoSuggestion
+                      required
+                      label="Sales Team"
+                      name="salesman_id"
+                      placeholder="Search Sales Team"
+                      disabled={!values.order_code}
+                      onSearch={async (q) => {
+                        const res = await SalesmanListGlobalSearch({
+                          query: q,
+                          per_page: "10",
+                        });
+                        const options = res.error
+                          ? []
+                          : (res.data || []).map((item: any) => ({
+                              value: item.id,
+                              label: item.osa_code + " - " + item.name,
+                            }));
+                        return options;
+                      }}
+                      // selectedOption={}
+                      onSelect={(opt) => {
+                        setFieldValue("salesman_id", opt.value);
+
+                      }}
+                      onClear={() => {
+                        setFieldValue("salesman_id", "");
+                      }}
+                      error={touched.salesman_id && (errors.salesman_id as string)}
+                    />
+                  </div>
                 </div>
 
                 <Table
@@ -1022,7 +1058,7 @@ export default function DeliveryAddEditPage() {
                                     ""
                                   );
                                 }}
-                                disabled={!values.delivery}
+                                disabled={!values.order_code}
                                 error={err && err}
                                 className="
                                   w-full
@@ -1050,7 +1086,7 @@ export default function DeliveryAddEditPage() {
                                 options={options}
                                 searchable={true}
                                 disabled={
-                                  options.length === 0 || !values.delivery
+                                  options.length === 0 || !values.order_code
                                 }
                                 showSkeleton={Boolean(itemLoading[idx]?.uom)}
                                 onChange={(e) => {
@@ -1092,7 +1128,7 @@ export default function DeliveryAddEditPage() {
                                 // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={!row.uom_id || !values.delivery}
+                                disabled={!row.uom_id || !values.order_code}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement)
                                     .value;

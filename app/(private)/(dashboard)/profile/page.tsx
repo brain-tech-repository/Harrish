@@ -9,8 +9,10 @@ import { useFormik } from "formik";
 import TabBtn from "@/app/components/tabBtn";
 import { isVerify, updateAuthUser, countryList, roleList } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("edit"); // edit | settings
 
   // Form
@@ -43,6 +45,37 @@ export default function ProfilePage() {
   const [roleOptions, setRoleOptions] = useState<{ label: string; value: string }[]>([]);
   const { showSnackbar } = useSnackbar();
 
+  // File upload state
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showSnackbar("Please select an image file", "error");
+        return;
+      }
+
+      // Validate file size (1MB = 1048576 bytes)
+      if (file.size > 1048576) {
+        showSnackbar("Image size should be under 1 MB", "error");
+        return;
+      }
+
+      setProfileImage(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleProfileUpdate = async (values: typeof formik.initialValues) => {
     if (!profile?.uuid) {
       showSnackbar("User ID not found", "error");
@@ -51,29 +84,86 @@ export default function ProfilePage() {
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        name: String(values.firstName || ""),
-        dob: String(values.dob || ""),
-        role: String(values.role || ""),
-        email: String(values.email || ""),
-        contact_number: String(values.contact_number || ""),
-        street: String(values.street || ""),
-        city: String(values.city || ""),
-        zip: String(values.zip || ""),
-        country_id: values.country_id ? Number(values.country_id) : null,
-      };
+      let payload: FormData | object;
+      let type: "json" | "form-data" = "json";
 
-      const res = await updateAuthUser(profile.uuid, payload);
+      // If profile image is selected, use FormData
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append('name', String(values.firstName || ""));
+        formData.append('dob', String(values.dob || ""));
+        formData.append('role', String(values.role || ""));
+        formData.append('email', String(values.email || ""));
+        formData.append('contact_number', String(values.contact_number || ""));
+        formData.append('street', String(values.street || ""));
+        formData.append('city', String(values.city || ""));
+        formData.append('zip', String(values.zip || ""));
+        formData.append('country_id', values.country_id ? String(values.country_id) : "");
+        formData.append('profile_picture', profileImage);
 
-      if (res && res.code === 200) {
+        console.log("🖼️ Image upload - File info:", {
+          name: profileImage.name,
+          size: profileImage.size,
+          type: profileImage.type
+        });
+        console.log("📤 FormData fields:");
+        for (const pair of formData.entries()) {
+          console.log(pair[0] + ':', pair[1]);
+        }
+
+        payload = formData;
+        type = "form-data";
+      } else {
+        // Otherwise, use JSON object
+        payload = {
+          name: String(values.firstName || ""),
+          dob: String(values.dob || ""),
+          role: String(values.role || ""),
+          email: String(values.email || ""),
+          contact_number: String(values.contact_number || ""),
+          street: String(values.street || ""),
+          city: String(values.city || ""),
+          zip: String(values.zip || ""),
+          country_id: values.country_id ? Number(values.country_id) : null,
+        };
+        type = "json";
+        console.log("📤 JSON Payload:", payload);
+      }
+
+      console.log("🚀 Calling API - UUID:", profile.uuid, "Type:", type);
+      const res = await updateAuthUser(profile.uuid, payload, type);
+      console.log("📥 API Response:", res);
+      console.log("📊 Response details - code:", res?.code, "error:", res?.error, "data:", res?.data);
+
+      // Check if the update was successful
+      // The API returns res.data directly, so if there's no error, it's successful
+      const isSuccess = res && !res.error && (
+        res.code === 200 ||
+        res.status === 200 ||
+        res.success === true ||
+        res.success === 1 ||
+        // If response doesn't have an error field and has some data, consider it success
+        (res.error === undefined && res !== null && typeof res === 'object')
+      );
+
+      console.log("✅ Is Success?", isSuccess);
+
+      if (isSuccess) {
         showSnackbar("Profile updated successfully", "success");
+        // Clear image state after successful upload
+        setProfileImage(null);
+        setImagePreview(null);
         // Refresh profile data
         const updatedProfile = await isVerify();
         if (updatedProfile && updatedProfile.code === 200 && updatedProfile.data) {
           setProfile(updatedProfile.data);
         }
+      } else if (res && res.error) {
+        showSnackbar(res.data?.message || res.message || "Failed to update profile", "error");
       } else if (res && res.data && res.data.message) {
         showSnackbar(String(res.data.message), "error");
+      } else if (res && res.message) {
+        showSnackbar(String(res.message), "error");
       } else {
         showSnackbar("Failed to update profile", "error");
       }
@@ -83,7 +173,6 @@ export default function ProfilePage() {
       setIsSubmitting(false);
     }
   };
-
   // Fetch role list
   useEffect(() => {
     const fetchRoles = async () => {
@@ -161,6 +250,7 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const newLocal = "/distributors";
   return (
     <>
       {/* Top Header */}
@@ -243,7 +333,7 @@ export default function ProfilePage() {
                 <>
                   <span className="text-gray-600">Email</span>
                   <span className="text-gray-600">:</span>
-                  <span className="font-medium">{profile.email}</span>
+                  <span className="font-medium lowercase">{profile.email}</span>
                 </>
               ) : null}
 
@@ -279,11 +369,13 @@ export default function ProfilePage() {
                 </>
               ) : null}
 
-              {(profile?.companies && profile.companies.length > 0 && profile.companies[0].company_name) || profile?.country ? (
+              {profile?.country_id && profile.country_id?.name ? (
                 <>
                   <span className="text-gray-600">Country</span>
                   <span className="text-gray-600">:</span>
-                  <span className="font-medium">{profile?.companies?.[0]?.company_name ?? profile.country}</span>
+                  <span className="font-medium">
+                    {profile.country_id.name}
+                  </span>
                 </>
               ) : null}
 
@@ -346,17 +438,50 @@ export default function ProfilePage() {
               <form onSubmit={formik.handleSubmit} className="space-y-8">
                 {/* Upload */}
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
-                    <Icon icon="lucide:image" width={30} />
+                  <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 overflow-hidden">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : profile?.profile_picture ? (
+                      <img src={profile.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <Icon icon="lucide:image" width={30} />
+                    )}
                   </div>
 
                   <div>
-                    <button className="bg-red-600 text-white px-4 py-2 rounded-md">
+                    <input
+                      type="file"
+                      id="profileImageInput"
+                      accept="image/jpeg,image/png,image/jpg"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('profileImageInput')?.click()}
+                      className="bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-red-700 transition-colors"
+                    >
                       <Icon icon="lucide:upload" width={20} />  Upload Profile
                     </button>
                     <p className="text-xs text-gray-500 mt-1">
                       Upload square JPG or PNG under 1 MB
                     </p>
+                    {profileImage && (
+                      <p className="text-xs text-green-600 mt-1">
+                        ✓ {profileImage.name} selected
+                      </p>
+                    )}
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-red-600">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -441,20 +566,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-red-600 text-white px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Icon icon="lucide:loader-2" width={20} className="animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/distributors")} // Or any other cancel action
+                    className="bg-gray-200 text-gray-700 px-6 py-3 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-red-600 text-white px-6 py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Icon icon="lucide:loader-2" width={20} className="animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save"
+                    )}
+                  </button>
+                </div>
               </form>
             </ContainerCard>
           )}
@@ -690,8 +824,12 @@ export default function ProfilePage() {
           {showSidebar && (
             <>
               {/* Overlay */}
-              <div className="fixed inset-0 " onClick={() => setShowSidebar(false)} />
-
+              {/* <div className="fixed inset-0 bg-black bg-/opacity-50 z-40" onClick={() => setShowSidebar(false)} /> */}
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-40 
+             opacity-0 animate-fadeIn transition-opacity duration-300"
+                onClick={() => setShowSidebar(false)}
+              />
               {/* Sidebar - 1/3 screen */}
               <div className="fixed top-0 right-0 h-full w-1/3 bg-white z-50 shadow-lg transform transition-transform duration-300 translate-x-0">
 

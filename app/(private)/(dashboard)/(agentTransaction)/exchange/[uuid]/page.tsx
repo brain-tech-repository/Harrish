@@ -97,7 +97,7 @@ export default function ExchangeAddEditPage() {
   });
 
   const validationSchema = Yup.object({
-    warehouse: Yup.string().required("Warehouse is required"),
+    warehouse: Yup.string().required("Distributor is required"),
     customer: Yup.string().required("Customer is required"),
     comment: Yup.string().max(1000, "comment is too long"),
     items: Yup.array().of(itemRowSchema),
@@ -633,7 +633,7 @@ export default function ExchangeAddEditPage() {
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search distributor"
+                      placeholder="Search Distributor"
                       onSearch={(q) => fetchWarehouse(q)}
                       initialValue={filteredWarehouseOptions.find((o) => o.value === String(values?.warehouse))?.label || ""}
                       onSelect={(opt) => {
@@ -827,7 +827,7 @@ export default function ExchangeAddEditPage() {
                                 <InputFields
                                   label=""
                                   name="region"
-                                  placeholder="Enter Region"
+                                  placeholder="Enter Reason"
                                   value={row.region}
                                   disabled={!row.uom_id || !values.customer}
                                   onChange={(e) => {
@@ -856,7 +856,7 @@ export default function ExchangeAddEditPage() {
                                 <InputFields
                                   label=""
                                   name="return_type"
-                                  placeholder="select Return type"
+                                  placeholder="Select Reason Type"
                                   value={row.return_type}
                                   disabled={!row.uom_id || !values.customer}
                                   onChange={(e) => {

@@ -175,7 +175,7 @@ export default function ViewPage() {
                   { key: "Chassis Number", value: vehicle?.vehicle_chesis_no || "-" },
                   { key: "Vehicle Type", value: vehicleTypeLabel(vehicle?.vehicle_type) },
                   { key: "Description", value: vehicle?.description || "-" },
-                  { key: "Owner Type", value: ownerTypeLabel(vehicle?.owner_type) },
+                  { key: "Owner Type", value: (vehicle?.owner_type) },
                 ]}
               />
             </ContainerCard>

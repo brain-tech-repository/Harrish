@@ -310,7 +310,7 @@ export default function AddEditCapsCollection() {
 
   // 🧾 Validation
   const validationSchema = yup.object().shape({
-    warehouse: yup.string().required("Warehouse is required"),
+    warehouse: yup.string().required("Distributor is required"),
     customer: yup.string().required("Customer is required"),
   });
 
@@ -483,7 +483,7 @@ export default function AddEditCapsCollection() {
               required
               label="Distributor"
               name="warehouse"
-              placeholder="Search distributor..."
+              placeholder="Search Distributor"
               initialValue={warehouseOptions.find(o => o.value === String(form.warehouse))?.label || ""}
               onSearch={handleWarehouseSearch}
               onSelect={(option: { value: string }) => {
@@ -637,6 +637,7 @@ export default function AddEditCapsCollection() {
                     <InputFields
                       options={opts}
                       value={row.uom}
+                      placeholder="select UOM"
                       disabled={opts.length === 0}
                       onChange={(e) => {
                         const val = e.target.value;

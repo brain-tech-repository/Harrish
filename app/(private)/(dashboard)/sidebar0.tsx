@@ -198,7 +198,7 @@ export default function Sidebar({
                                       {(child.children || []).map((third: LinkDataType) => {
                                         const isThirdActive = third.href === activeHref;
                                         return (
-                                          <li key={third.href} className={`w-full cursor-pointer transition-all rounded-md hover:bg-blue-200 ${isThirdActive ? "text-blue-500 font-semibold" : ""}`}>
+                                          <li key={third.href} className={`w-full cursor-pointer transition-all rounded ${isThirdActive ? "bg-gray-100 text-primary font-medium" : "hover:bg-gray-50 hover:font-medium"} group/third px-2`}>
                                             <div
                                               className="flex items-center gap-2 w-full"
                                               onClick={() => {
@@ -206,15 +206,15 @@ export default function Sidebar({
                                                 onClickHandler(third.href);
                                               }}
                                             >
-                                              {/* Line indicator */}
-                                              <span className={`w-0.5 h-8 ml-4 flex-shrink-0 rounded ${isThirdActive ? "bg-blue-500" : "bg-gray-200"}`}></span>
+                                              {/* Subtle vertical line for indentation */}
+                                              <span className={"w-1 h-6 bg-gray-200 group-hover/third:bg-gray-600 rounded mr-2" + (isThirdActive ? " bg-gray-600" : "")}></span>
                                               <div className="flex-1">
                                                 <SidebarBtn
                                                   isActive={false}
                                                   href={third.href}
                                                   label={third.label}
-                                                  className={`${!isThirdActive ? "hover:bg-transparent!" : ""}`}
-                                                  labelTw={`${isOpen ? "block" : "hidden"} hover:text-blue-500 group-hover:block text-xs`}
+                                                  className="hover:bg-transparent"
+                                                  labelTw={`block text-xs ${isThirdActive ? "text-primary" : "text-gray-700"}`}
                                                   isSubmenu={true}
                                                 />
                                               </div>

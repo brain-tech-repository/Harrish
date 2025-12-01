@@ -103,48 +103,48 @@ export default function SalesmanUnloadPage() {
     [setLoading, isFiltered, form]
   );
 
-     const filterBy = useCallback(
-        async (
-          payload: Record<string, any>,
-          pageSize: number
-        ): Promise<listReturnType> => {
-          let result;
-          try {
-            const params: Record<string, string> = { };
-            // Include pagination + submit flag used by API
-            params.page = String(payload.page ?? 1);
-            params.per_page = String(pageSize);
-            params.submit = "Filter";
+  const filterBy = useCallback(
+    async (
+      payload: Record<string, any>,
+      pageSize: number
+    ): Promise<listReturnType> => {
+      let result;
+      try {
+        const params: Record<string, string> = {};
+        // Include pagination + submit flag used by API
+        params.page = String(payload.page ?? 1);
+        params.per_page = String(pageSize);
+        params.submit = "Filter";
 
-            // Normalize and include provided filters
-            Object.keys(payload || {}).forEach((k) => {
-              if (k === "page") return; // already handled
-              const v = payload[k as keyof typeof payload];
-              if (v === null || typeof v === "undefined") return;
-              if (Array.isArray(v)) {
-                if (v.length > 0) params[k] = v.join(",");
-              } else if (String(v) !== "") {
-                params[k] = String(v);
-              }
-            });
-            result = await salesmanUnloadList(params);
-          } finally {
+        // Normalize and include provided filters
+        Object.keys(payload || {}).forEach((k) => {
+          if (k === "page") return; // already handled
+          const v = payload[k as keyof typeof payload];
+          if (v === null || typeof v === "undefined") return;
+          if (Array.isArray(v)) {
+            if (v.length > 0) params[k] = v.join(",");
+          } else if (String(v) !== "") {
+            params[k] = String(v);
           }
+        });
+        result = await salesmanUnloadList(params);
+      } finally {
+      }
 
-          if (result?.error) throw new Error(result.data?.message || "Filter failed");
-          else {
-            const pagination = result.pagination?.pagination || result.pagination || {};
-            return {
-              data: result.data || [],
-              total: pagination.last_page || result.pagination?.last_page || pagination.totalPages || 0,
-              totalRecords: pagination.total || result.pagination?.total || pagination.totalRecords || 0,
-              currentPage: pagination.current_page || result.pagination?.currentPage || pagination.page || 1,
-              pageSize: pagination.limit || pageSize,
-            };
-          }
-        },
-        [setLoading]
-      );
+      if (result?.error) throw new Error(result.data?.message || "Filter failed");
+      else {
+        const pagination = result.pagination?.pagination || result.pagination || {};
+        return {
+          data: result.data || [],
+          total: pagination.last_page || result.pagination?.last_page || pagination.totalPages || 0,
+          totalRecords: pagination.total || result.pagination?.total || pagination.totalRecords || 0,
+          currentPage: pagination.current_page || result.pagination?.currentPage || pagination.page || 1,
+          pageSize: pagination.limit || pageSize,
+        };
+      }
+    },
+    [setLoading]
+  );
 
 
   // ✅ Table Columns
@@ -154,7 +154,7 @@ export default function SalesmanUnloadPage() {
     { key: "laod_date", label: "Load Date" },
     {
       key: "salesman",
-      label: "Salesman",
+      label: "Sales Team",
       render: (row: TableDataType) => {
         const obj =
           typeof row.salesman === "string"
@@ -165,7 +165,7 @@ export default function SalesmanUnloadPage() {
     },
     {
       key: "warehouse",
-      label: "Warehouse",
+      label: "Distributor ",
       render: (row: TableDataType) => {
         const obj =
           typeof row.warehouse === "string"
@@ -183,7 +183,7 @@ export default function SalesmanUnloadPage() {
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
     },
-    { key: "Salesman_type", label: "Salesman Role" },
+    { key: "Salesman_type", label: "Sales Team Role" },
     { key: "unload_no", label: "Unload No." },
     { key: "unload_from", label: "Unload By" },
     {
@@ -220,7 +220,7 @@ export default function SalesmanUnloadPage() {
               },
               {
                 key: "warehouse",
-                label: "Warehouse",
+                label: "Distributor",
                 isSingle: false,
                 multiSelectChips: true,
                 options: Array.isArray(warehouseOptions)
