@@ -2123,7 +2123,7 @@ export const workFlowList = async () => {
 
 export const workFlowAssignList = async () => {
   try {
-    
+
     const res = await API.get(
       `/api/master/approval/workflow/assigned-list
 `);
@@ -2134,7 +2134,7 @@ export const workFlowAssignList = async () => {
   }
 };
 
-export const singleWorkFlowList = async (uuid:string) => {
+export const singleWorkFlowList = async (uuid: string) => {
   try {
     const res = await API.get(
       `/api/master/approval/workflow/detail/${uuid}`);
@@ -2919,7 +2919,7 @@ export const updateMenu = async (uuid: string, payload: menuType) => {
   }
 };
 
-export const assignWorkFlowsToSubmenu= async (payload: any) => {
+export const assignWorkFlowsToSubmenu = async (payload: any) => {
   try {
     const res = await API.post(`/api/master/approval/workflow/start`, payload);
     return res.data;
@@ -3336,9 +3336,13 @@ export const registerAuthUser = async (body: object) => {
   }
 };
 
-export const updateAuthUser = async (uuid: string, body: object) => {
+export const updateAuthUser = async (uuid: string, body: object, type: "json" | "form-data" = "json") => {
   try {
-    const res = await API.put(`/api/master/auth/updateUser/${uuid}`, body);
+    if (type === "json") {
+      const res = await API.post(`/api/master/auth/updateUser/${uuid}`, body);
+      return res.data;
+    }
+    const res = await APIFormData.post(`/api/master/auth/updateUser/${uuid}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

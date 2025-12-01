@@ -63,7 +63,7 @@ const columns = [
     },
     {
         key: "warehouse",
-        label: "Warehouse Name",
+        label: "Distributor",
         render: (row: TableDataType) => {
             const warehouse = typeof row.warehouse === "string" ? { code: "", name: row.warehouse } : (row.warehouse ?? {});
             const code = warehouse.code ?? "";

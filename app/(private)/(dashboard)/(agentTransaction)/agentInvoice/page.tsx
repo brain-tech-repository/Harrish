@@ -54,7 +54,7 @@ const columns = [
         }
     },
     {
-        key: "warehouse_code", label: "Warehouse", showByDefault: true,
+        key: "warehouse_code", label: "Distributor ", showByDefault: true,
         render: (row: TableDataType) => {
             const code = row.warehouse_code || "-";
             const name = row.warehouse_name || "-";
@@ -80,7 +80,7 @@ const columns = [
             } as FormatNumberOptions);
         },
     },
-    
+
 ];
 
 export default function CustomerInvoicePage() {

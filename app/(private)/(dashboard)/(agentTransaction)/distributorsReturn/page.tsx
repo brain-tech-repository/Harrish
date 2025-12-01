@@ -34,7 +34,7 @@ const columns = [
     { key: "order_code", label: "Order Code", showByDefault: true },
     { key: "delivery_code", label: "Delivery Code", showByDefault: true },
     {
-        key: "warehouse_code", label: "Warehouse", showByDefault: true, render: (row: TableDataType) => {
+        key: "warehouse_code", label: "Distributor ", showByDefault: true, render: (row: TableDataType) => {
             const code = row.warehouse_code || "";
             const name = row.warehouse_name || "";
             return `${code}${code && name ? " - " : "-"}${name}`;
