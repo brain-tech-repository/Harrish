@@ -813,6 +813,7 @@ export default function OrderAddEditPage() {
                       value={values.warehouse}
                       options={warehouseAllOptions}
                       searchable={true}
+                      showSkeleton={warehouseAllOptions.length === 0}
                       onChange={(e) => {
                         if (values.warehouse !== e.target.value) {
                           setFieldValue("warehouse", e.target.value);
@@ -993,7 +994,7 @@ export default function OrderAddEditPage() {
                           const availableStock = currentItem?.available_stock;
                           
                           return (
-                            <div className="pt-5">
+                            <div className={`${ availableStock ? "pt-5" : ""}`}>
                               <InputFields
                                 label=""
                                 type="number"
