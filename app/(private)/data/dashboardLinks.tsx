@@ -302,7 +302,7 @@ export const initialLinkData: SidebarDataType[] = [
           {
             isActive: false,
             href: "/distributorsExchange",
-            label: "Distributor's Exchange",
+            label: "Distributor Exchange",
             leadingIcon: "mdi:truck-remove-outline",
             iconColor: "text-cyan-500"
           },
@@ -519,7 +519,7 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "si:pull-request-duotone",
             iconColor: "text-cyan-500",
           },
-         
+
         ],
       },
     ],
