@@ -254,14 +254,9 @@ export default function OrderAddEditPage() {
     try {
       setSkeleton(prev => ({ ...prev, item: true }));
       
-      // Fetch warehouse stocks and full item details
-      const [stockRes, itemsRes] = await Promise.all([
-        warehouseStockTopOrders(warehouseId),
-        itemList({ allData: "true", warehouse_id: warehouseId })
-      ]);
-
+      // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
+      const stockRes = await warehouseStockTopOrders(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
-      const fullItems = itemsRes.data || [];
 
       // Store warehouse stocks for validation
       setWarehouseStocks(prev => ({
@@ -282,18 +277,22 @@ export default function OrderAddEditPage() {
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
       
       const processedItems = filteredStocks.map((stockItem: any) => {
-        const fullItem = fullItems.find((item: any) => item.id === stockItem.item_id);
-        if (!fullItem) return null;
-
-        // Process UOMs with pricing
-        const item_uoms = fullItem?.item_uoms ? fullItem.item_uoms.map((uom: any) => {
+        // Process UOMs with pricing from warehouseStockTopOrders response
+        const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
+          let price = uom.price;
+          // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            return { ...uom, price: fullItem.pricing?.auom_pc_price || uom.price };
+            price = stockItem.auom_pc_price || uom.price;
           } else if (uom?.uom_type === "secondary") {
-            return { ...uom, price: fullItem.pricing?.buom_ctn_price || uom.price };
+            price = stockItem.buom_ctn_price || uom.price;
           }
-          return uom;
-        }) : fullItem?.item_uoms || [];
+          return { 
+            ...uom, 
+            price,
+            id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+            item_id: stockItem.item_id
+          };
+        }) : [];
 
         // Store UOM data for this item
         itemsUOMMap[stockItem.item_id] = {
@@ -302,11 +301,18 @@ export default function OrderAddEditPage() {
         };
 
         return { 
-          ...fullItem, 
+          id: stockItem.item_id,
+          name: stockItem.item_name,
+          item_code: stockItem.item_code,
+          erp_code: stockItem.erp_code,
           item_uoms,
-          warehouse_stock: stockItem.stock_qty
+          warehouse_stock: stockItem.stock_qty,
+          pricing: {
+            buom_ctn_price: stockItem.buom_ctn_price,
+            auom_pc_price: stockItem.auom_pc_price
+          }
         };
-      }).filter(Boolean);
+      });
 
       setItemsWithUOM(itemsUOMMap);
       setOrderData(processedItems);
@@ -314,7 +320,7 @@ export default function OrderAddEditPage() {
       // Create dropdown options
       const options = processedItems.map((item: any) => ({
         value: String(item.id),
-        label: `${item.erp_code || item.item_code || item.code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
+        label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
       }));
 
       setItemsOptions(options);
@@ -358,10 +364,6 @@ export default function OrderAddEditPage() {
         const stockRes = await warehouseStockTopOrders(values.warehouse);
         const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
 
-        // Fetch full item details for pricing and UOM
-        const itemsRes = await itemList({ allData: "true", warehouse_id: values.warehouse });
-        const fullItems = itemsRes.data || [];
-
         // Filter items based on search term and stock availability
         const filteredStocks = stocksArray.filter((stock: any) => {
           if (Number(stock.stock_qty) <= 0) return false;
@@ -371,22 +373,36 @@ export default function OrderAddEditPage() {
             stock.item_code?.toLowerCase().includes(searchLower);
         });
 
-        // Process items to include pricing logic
+        // Process items to include pricing logic from warehouseStockTopOrders
         const data = filteredStocks.map((stockItem: any) => {
-          const fullItem = fullItems.find((item: any) => item.id === stockItem.item_id);
-          if (!fullItem) return null;
-
-          const item_uoms = fullItem?.item_uoms ? fullItem.item_uoms.map((uom: any) => {
+          // Process UOMs with pricing from the API response
+          const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
+            let price = uom.price;
             if (uom?.uom_type === "primary") {
-              return { ...uom, price: fullItem.pricing?.auom_pc_price }
+              price = stockItem.auom_pc_price || uom.price;
             } else if (uom?.uom_type === "secondary") {
-              return { ...uom, price: fullItem.pricing?.buom_ctn_price }
+              price = stockItem.buom_ctn_price || uom.price;
             }
-            return uom;
-          }) : fullItem?.item_uoms;
+            return { 
+              ...uom, 
+              price,
+              id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+              item_id: stockItem.item_id
+            };
+          }) : [];
 
-          return { ...fullItem, item_uoms };
-        }).filter(Boolean);
+          return { 
+            id: stockItem.item_id,
+            name: stockItem.item_name,
+            item_code: stockItem.item_code,
+            erp_code: stockItem.erp_code,
+            item_uoms,
+            pricing: {
+              buom_ctn_price: stockItem.buom_ctn_price,
+              auom_pc_price: stockItem.auom_pc_price
+            }
+          };
+        });
 
         setOrderData(data);
         const options = data.map((item: any) => ({
@@ -487,25 +503,53 @@ export default function OrderAddEditPage() {
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
         
-        // Use UOM data from itemsWithUOM which includes pricing
+        // Use UOM data from itemsWithUOM which includes pricing from warehouseStockTopOrders
         if (itemUOMData?.uoms) {
           item.UOM = itemUOMData.uoms.map(uom => ({ 
             label: uom.name, 
-            value: uom.id.toString(), 
+            value: String(uom.id || ''), 
             price: uom.price 
           }));
           item.uom_id = itemUOMData.uoms[0]?.id ? String(itemUOMData.uoms[0].id) : "";
           item.Price = itemUOMData.uoms[0]?.price ? String(itemUOMData.uoms[0].price) : "";
           item.available_stock = itemUOMData.stock_qty || "";
+        } else if (selectedOrder?.item_uoms) {
+          // Fallback to selectedOrder UOMs with pricing from selectedOrder.pricing
+          item.UOM = selectedOrder.item_uoms.map(uom => {
+            let price = uom.price;
+            if (uom.uom_type === "primary") {
+              price = selectedOrder.pricing?.auom_pc_price || uom.price;
+            } else if (uom.uom_type === "secondary") {
+              price = selectedOrder.pricing?.buom_ctn_price || uom.price;
+            }
+            return { 
+              label: uom.name, 
+              value: String(uom.id || ''), 
+              price: price 
+            };
+          });
+          
+          // Set price based on UOM type
+          const firstUom = selectedOrder.item_uoms[0];
+          if (firstUom) {
+            item.uom_id = String(firstUom.id || "");
+            if (firstUom.uom_type === "primary") {
+              item.Price = selectedOrder.pricing?.auom_pc_price || firstUom.price || "";
+            } else if (firstUom.uom_type === "secondary") {
+              item.Price = selectedOrder.pricing?.buom_ctn_price || firstUom.price || "";
+            } else {
+              item.Price = firstUom.price || "";
+            }
+          } else {
+            item.uom_id = "";
+            item.Price = "";
+          }
+          item.available_stock = "";
         } else {
-          // Fallback to selectedOrder UOMs
-          item.UOM = selectedOrder?.item_uoms?.map(uom => ({ 
-            label: uom.name, 
-            value: uom.id.toString(), 
-            price: uom.price 
-          })) || [];
-          item.uom_id = selectedOrder?.item_uoms?.[0]?.id ? String(selectedOrder.item_uoms[0].id) : "";
-          item.Price = selectedOrder?.item_uoms?.[0]?.price ? String(selectedOrder.item_uoms[0].price) : "";
+          // No data available
+          item.UOM = [];
+          item.uom_id = "";
+          item.Price = "";
           item.available_stock = "";
         }
         
@@ -680,7 +724,7 @@ export default function OrderAddEditPage() {
           // Optionally handle error, but don't block success
         }
         showSnackbar("Order created successfully", "success");
-        router.push("/agentOrder");
+        router.push("/distributorsOrder");
       }
     } catch (err) {
       console.error(err);
@@ -762,6 +806,7 @@ export default function OrderAddEditPage() {
             icon="lucide:arrow-left"
             width={24}
             onClick={() => router.back()}
+            className="cursor-pointer"
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Add Distributor&apos;s Orders
@@ -812,6 +857,7 @@ export default function OrderAddEditPage() {
                       value={values.warehouse}
                       options={warehouseAllOptions}
                       searchable={true}
+                      showSkeleton={warehouseAllOptions.length === 0}
                       onChange={(e) => {
                         if (values.warehouse !== e.target.value) {
                           setFieldValue("warehouse", e.target.value);
@@ -992,7 +1038,7 @@ export default function OrderAddEditPage() {
                           const availableStock = currentItem?.available_stock;
                           
                           return (
-                            <div>
+                            <div className={`${ availableStock ? "pt-5" : ""}`}>
                               <InputFields
                                 label=""
                                 type="number"
@@ -1121,7 +1167,7 @@ export default function OrderAddEditPage() {
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-                    onClick={() => router.push("/agentOrder")}
+                    onClick={() => router.push("/distributorsOrder")}
                   >
                     Cancel
                   </button>

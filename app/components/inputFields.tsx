@@ -30,10 +30,8 @@ type Props = {
   label?: string;
   name?: string;
   value?: string | string[];
-  onBlur?: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => void;
+  onBlur?: (e: any) => void;
+  onChange: (e: any) => void;
   options?: Option[];
   type?:
     | "text"
@@ -78,7 +76,7 @@ type Props = {
   onSearchChange?: (searchText: string) => void;
   // current filter state when InputFields is used inside filter UI
   filters?: Record<string, any>;
-};
+} & React.InputHTMLAttributes<any>;
 
 export default function InputFields({
   label,
@@ -116,6 +114,7 @@ export default function InputFields({
   setSelectedCountry,
   selectedCountry,
   onSearchChange,
+  ...props
 }: Props) {
   const [dropdownProperties, setDropdownProperties] = useState({
     width: "0",
@@ -520,23 +519,24 @@ export default function InputFields({
           return (
             <div className="w-full relative">
               <input
-                id={id ?? name}
-                name={name}
-                type="text"
-                value={value ?? ""}
-                onChange={safeOnChange}
-                disabled={disabled}
-                onBlur={onBlur}
-                autoComplete="off"
-                className={`box-border border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] ${
-                  leadingElement ? "pl-10" : "pl-3"
-                } ${
-                  trailingElement ? "pr-10" : "pr-3"
-                } mt-0 text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${
-                  error ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder={placeholder || `Enter ${label}`}
-              />
+                  id={id ?? name}
+                  name={name}
+                  type="text"
+                  value={value ?? ""}
+                  onChange={safeOnChange}
+                  disabled={disabled}
+                  onBlur={onBlur}
+                  autoComplete="off"
+                  className={`box-border border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] ${
+                    leadingElement ? "pl-10" : "pl-3"
+                  } ${
+                    trailingElement ? "pr-10" : "pr-3"
+                  } mt-0 text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    error ? "border-red-500" : "border-gray-300"
+                  }`}
+                  placeholder={placeholder || `Enter ${label}`}
+                  {...props}
+                />
               {(leadingElement || trailingElement) && (
                 <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3 pointer-events-none">
                   {leadingElement ? (
@@ -559,7 +559,7 @@ export default function InputFields({
           );
         } else {
           return isSingle === false ? (
-            <div className="relative select-none" ref={dropdownRef}>
+            <div className="relative select-none w-full" ref={dropdownRef}>
               <div
                 tabIndex={0}
                 onMouseDown={() => {
@@ -1289,6 +1289,7 @@ export default function InputFields({
             cols={textareaCols}
             rows={textareaRows}
             style={textareaResize === false ? { resize: "none" } : {}}
+            {...props}
           />
         );
 

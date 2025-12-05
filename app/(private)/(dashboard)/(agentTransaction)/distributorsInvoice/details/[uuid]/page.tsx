@@ -128,7 +128,7 @@ export default function OrderDetailPage() {
   const [loading, setLoadingState] = useState<boolean>(false);
   const uuid = params?.uuid as string;
   const CURRENCY = localStorage.getItem("country") || "";
-  const PATH = "/agentInvoice/details/";
+  const PATH = "/distributorsInvoice/details/";
 
   useEffect(() => {
     if (uuid) {
@@ -189,7 +189,7 @@ export default function OrderDetailPage() {
   const keyValueData = [
     // { key: "Gross Total", value: `AED ${deliveryData?.gross_total || "0.00"}` },
     // { key: "Discount", value: `AED ${deliveryData?.discount || "0.00"}` },
-    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.gross_total || 0)) || "0.00"}` },
+    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.net_total || 0)) || "0.00"}` },
     // { key: "Excise", value: `AED ${deliveryData?.excise || "0.00"}` },
     { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.vat || 0)) || "0.00"}` },
     // { key: "Pre VAT", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.pre_vat || 0)) || "0.00"}` },
@@ -205,7 +205,7 @@ export default function OrderDetailPage() {
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.push("/agentInvoice")}
+            onClick={() => router.push("/distributorsInvoice")}
             className="cursor-pointer"
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
@@ -356,7 +356,7 @@ export default function OrderDetailPage() {
                 {/* <hr className="text-[#D5D7DA]" /> */}
                 <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
                   <span>Total</span>
-                  <span>{CURRENCY} {toInternationalNumber(deliveryData?.net_total) || "0.00"}</span>
+                  <span>{CURRENCY} {toInternationalNumber(deliveryData?.total_amount) || "0.00"}</span>
                 </div>
               </div>
 

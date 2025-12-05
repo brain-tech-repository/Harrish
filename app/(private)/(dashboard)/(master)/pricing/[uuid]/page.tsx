@@ -32,6 +32,7 @@ import {
   itemGlobalSearch,
   channelList,
   itemCategory,
+  editPricingHeader,
 } from "@/app/services/allApi";
 import CustomCheckbox from "@/app/components/customCheckbox";
 import InputFields from "@/app/components/inputFields";
@@ -39,7 +40,20 @@ import Table, { TableDataType } from "@/app/components/customTable";
 import Loading from "@/app/components/Loading";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
-import Select from "@mui/material/Select";
+
+type ItemDetail = {
+  id: number;
+  erp_code?: string;
+  name: string;
+  code?: string;
+  itemName?: string;
+  item_uoms?: Array<{
+    id: number;
+    name: string;
+    uom_price: string;
+    uom_type: string;
+  }>;
+};
 
 type KeyOption = { label: string; id: string; isSelected: boolean };
 type KeyGroup = { type: string; options: KeyOption[] };
@@ -74,12 +88,13 @@ const initialKeys: KeyGroup[] = [
 
 const Buom = ({ row, details, setDetails }: any) => {
   const [buom, setBuom] = useState("");
-  const unit = row.item_uoms.find((u: any) => u.uom_type === "primary")?.name || "";
+  const primary_uom = Array.isArray(row?.item_uoms) ? row.item_uoms.find((u: any) => u.uom_type === "primary") : null;
+  const trailingValue = primary_uom ? `${primary_uom.name} - ${primary_uom.uom_price}` : "Base Price";
 
   useEffect(() => {
     details.filter((ids: any, index: number) => {
-      // console.log(ids, "ids", row.id)
-      if (ids.item_id == row.id) {
+      // console.log(ids, "ids", row?.id)
+      if (ids.item_id == row?.id) {
         setBuom(ids.buom_ctn_price)
       }
     })
@@ -91,7 +106,7 @@ const Buom = ({ row, details, setDetails }: any) => {
     min={0}
     step="0.01"
     value={buom}
-    trailingElement={unit || " "}
+    trailingElement={trailingValue || " "}
     onChange={(e) => {
       setBuom(e.target.value)
       let isAvailable = false
@@ -99,8 +114,8 @@ const Buom = ({ row, details, setDetails }: any) => {
       if (details.length > 0) {
 
         details.filter((ids: any, index: number) => {
-          console.log(ids, "ids", row.id)
-          if (ids.item_id == row.id) {
+          console.log(ids, "ids", row?.id)
+          if (ids.item_id == row?.id) {
             isAvailable = true
             indexVal = index
 
@@ -112,18 +127,18 @@ const Buom = ({ row, details, setDetails }: any) => {
           setDetails(details)
         }
         else {
-          const newdata = { buom_ctn_price: e.target.value, auom_pc_price: 0, item_id: row.id, name: `${row.item_code}-${row.name}` }
+          const newdata = { buom_ctn_price: e.target.value, auom_pc_price: 0, item_id: row?.id, name: `${row?.erp_code || row?.code || ''}-${row?.name || row?.itemName || ''}` }
           details.push(newdata)
           setDetails(details)
         }
 
-        // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row.id,name:`${row.item_code}-${row.name}`}    
+        // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row?.id,name:`${row?.item_code}-${row?.name}`}    
         // details.push(newdata)
         // setDetails(details)
 
       }
       else {
-        const newdata = { buom_ctn_price: e.target.value, auom_pc_price: 0, item_id: row.id, name: `${row.item_code}-${row.name}` }
+        const newdata = { buom_ctn_price: e.target.value, auom_pc_price: 0, item_id: row?.id, name: `${row?.erp_code || row?.code || ''}-${row?.name || row?.itemName || ''}` }
         details.push(newdata)
         setDetails(details)
 
@@ -136,12 +151,13 @@ const Buom = ({ row, details, setDetails }: any) => {
 
 const Auom = ({ row, details, setDetails }: any) => {
   const [auom, setAuom] = useState("");
-  const unit = row.item_uoms.find((u: any) => u.uom_type === "secondary")?.name || "";
+  const secondary_uom = Array.isArray(row?.item_uoms) ? row.item_uoms.find((u: any) => u.uom_type === "secondary") : null;
+  const trailingValue = secondary_uom ? `${secondary_uom.name} - ${secondary_uom.uom_price}` : "Secondary Price";
 
   useEffect(() => {
     details.filter((ids: any, index: number) => {
-      // console.log(ids, "ids", row.id)
-      if (ids.item_id == row.id) {
+      // console.log(ids, "ids", row?.id)
+      if (ids.item_id == row?.id) {
         setAuom(ids.auom_pc_price)
 
       }
@@ -153,7 +169,7 @@ const Auom = ({ row, details, setDetails }: any) => {
     min={0}
     step="0.01"
     value={auom || ""}
-    trailingElement={unit || " "}
+    trailingElement={trailingValue || " "}
     onChange={(e) => {
       setAuom(e.target.value)
       let isAvailable = false
@@ -161,8 +177,8 @@ const Auom = ({ row, details, setDetails }: any) => {
       if (details.length > 0) {
 
         details.filter((ids: any, index: number) => {
-          // console.log(ids, "ids", row.id)
-          if (ids.item_id == row.id) {
+          // console.log(ids, "ids", row?.id)
+          if (ids.item_id == row?.id) {
             isAvailable = true
             indexVal = index
 
@@ -174,17 +190,17 @@ const Auom = ({ row, details, setDetails }: any) => {
           setDetails(details)
         }
         else {
-          const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row.id, name: `${row.item_code}-${row.name}` }
+          const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row?.id, name: `${row?.erp_code || row?.code || ''}-${row?.name || row?.itemName || ''}` }
           details.push(newdata)
           setDetails(details)
         }
 
-        // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row.id,name:`${row.item_code}-${row.name}`}    
+        // let newdata = {buom_ctn_price:e.target.value,auom_pc_price:0,item_id:row?.id,name:`${row.item_code}-${row.name}`}    
         // details.push(newdata)
         // setDetails(details)
       }
       else {
-        const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row.id, name: `${row.item_code}-${row.name}` }
+        const newdata = { buom_ctn_price: 0, auom_pc_price: e.target.value, item_id: row?.id, name: `${row?.erp_code || row?.code || ''}-${row?.name || row?.itemName || ''}` }
         details.push(newdata)
         setDetails(details)
 
@@ -330,6 +346,12 @@ export default function AddPricing() {
   const [customerCategoryOptions, setCustomerCategoryOptions] = useState<{ label: string; value: string }[]>([]);
   const [itemCategoryOptions, setItemCategoryOptions] = useState<{ label: string; value: string }[]>([]);
   const [itemOptions, setItemOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>([]);
+
+  // Debug selectedItemDetails changes
+  useEffect(() => {
+    console.log("selectedItemDetails updated:", selectedItemDetails);
+  }, [selectedItemDetails]);
 
   // Removed duplicate dropdown state declarations
 
@@ -441,13 +463,43 @@ export default function AddPricing() {
     isLastStep,
   } = useStepperForm(steps.length);
   const { showSnackbar } = useSnackbar();
+  const router = useRouter();
   const params = useParams();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const clearErrors = () => setErrors({});
   // support routes that use either [uuid] or [id] as the segment name
   const rawParam = (typeof params === "object" && params !== null ? (params as Record<string, unknown>)?.uuid : undefined) ?? (typeof params === "object" && params !== null ? (params as Record<string, unknown>)?.id : undefined);
   const id = Array.isArray(rawParam) ? rawParam[0] : rawParam;
   const isEditMode = id !== undefined && id !== "add" && id !== "";
   const [loading, setLoading] = useState(false);
-  const [details, setDetails] = useState([])
+  const [details, setDetails] = useState([]);
+
+  const [promotion, setPromotion] = useState<{
+    itemName: string;
+    applicable_for: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    orderItems: OrderItem[];
+  }>({
+    itemName: "",
+    applicable_for: "Primary",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+    status: "1",
+    orderItems: [
+      {
+        itemName: "",
+        itemCode: "",
+        quantity: "",
+        toQuantity: "",
+        uom: "CTN",
+        price: "",
+        buom_ctn_price: "",
+        auom_pc_price: "",
+      },
+    ],
+  });
 
   // Fetch existing pricing details in edit mode
   useEffect(() => {
@@ -455,26 +507,20 @@ export default function AddPricing() {
       if (!isEditMode || !id) return;
       setLoading(true);
       try {
-        // Prefer the detailed endpoint for edit-mode population
         const raw = await pricingHeaderById(id);
-
-        // console.log(,"raw343")
         setDetails(raw.data.details)
-        // API sometimes wraps result under `data` or returns object directly
         const res = raw && typeof raw === "object" && "data" in raw ? (raw as { data: unknown }).data : raw;
         if (res && typeof res === "object") {
-          // populate basic fields if available
           setPromotion((s) => ({
             ...s,
             itemName: res.name || res.title || s.itemName,
+            applicable_for: res.applicable_for || s.applicable_for,
             startDate: res.start_date || s.startDate,
             endDate: res.end_date || s.endDate,
             status: res.status !== undefined ? String(res.status) : s.status,
           }));
 
-          // Map description (array of key ids) back to checkbox labels
           try {
-
             const descArr: number[] = Array.isArray((res as Record<string, unknown>).description)
               ? ((res as Record<string, unknown>).description as unknown[]).map((d) => Number(d)).filter((n: number) => !Number.isNaN(n))
               : [];
@@ -485,19 +531,16 @@ export default function AddPricing() {
               Item: [],
             };
 
-            // initialKeys (top-level) defines the id->label mapping for checkboxes
             initialKeys.forEach((group) => {
               group.options.forEach((opt) => {
                 const optId = Number(opt.id);
                 if (!Number.isNaN(optId) && descArr.includes(optId)) {
-                  // push label into the corresponding group
                   if (group.type === "Location") selectedForCombo.Location.push(opt.label);
                   else if (group.type === "Customer") selectedForCombo.Customer.push(opt.label);
                   else if (group.type === "Item") selectedForCombo.Item.push(opt.label);
                 }
               });
             });
-            // apply if anything found
             if (
               selectedForCombo.Location.length > 0 ||
               selectedForCombo.Customer.length > 0 ||
@@ -554,15 +597,23 @@ export default function AddPricing() {
             setKeyValue((kv) => ({ ...kv, ...nextKeyValue }));
 
             // If API returned full item objects, use them; otherwise fetch details by ids
-            const itemField = (res as Record<string, unknown>).item || nextKeyValue["Item"] || [];
-            const itemArr = (res as Record<string, unknown>).item as ItemDetail[] | undefined;
-            if (Array.isArray(itemArr) && itemArr.length > 0 && typeof itemArr[0] === "object") {
-              setSelectedItemDetails(itemArr);
+            const itemField = (res as Record<string, unknown>).item;
+            console.log("API response item field:", itemField);
+            if (Array.isArray(itemField) && itemField.length > 0) {
+              // Map the item data from API response to ItemDetail format
+              const mappedItems = itemField.map((item: any) => ({
+                id: item.id,
+                erp_code: item.erp_code,
+                name: item.name,
+                code: item.erp_code,
+                itemName: item.name,
+                item_uoms: item.item_uoms || [] // Include UOMs if available
+              }));
+              console.log("Setting selectedItemDetails:", mappedItems);
+              setSelectedItemDetails(mappedItems);
             } else if (Array.isArray(nextKeyValue["Item"]) && nextKeyValue["Item"].length > 0) {
               // try to fetch full item objects when we only have ids
               try {
-                console.log(nextKeyValue);
-                
                 const items = await itemList({ ids: nextKeyValue["Item"] });
                 if (Array.isArray(items)) setSelectedItemDetails(items as ItemDetail[]);
                 else if (items && typeof items === "object" && Array.isArray((items as Record<string, unknown>).data)) setSelectedItemDetails((items as Record<string, unknown>).data as ItemDetail[]);
@@ -570,6 +621,7 @@ export default function AddPricing() {
                 console.error("Failed to fetch item details for edit mode", innerErr);
               }
             }
+
             // If API returned pricing details (per-item prices), map them into promotion.orderItems
             try {
               const detailsArr = Array.isArray((res as Record<string, unknown>).details)
@@ -593,13 +645,11 @@ export default function AddPricing() {
 
                   return {
                     itemName,
-                    // keep both itemCode (string code) and item_id for flexible matching
                     itemCode: itemCodeStr,
                     item_id: itemIdNum,
                     quantity: "",
                     toQuantity: "",
-                    uom: "CTN",
-                    // keep `price` empty — use buom/auom fields for base/secondary prices
+                    uom: "",
                     price: "",
                     buom_ctn_price: buom,
                     auom_pc_price: auom,
@@ -626,8 +676,8 @@ export default function AddPricing() {
   const validateStep = (step: number) => {
     if (step === 1) {
       return (
-        keyCombo.Location.length > 0 &&
-        keyCombo.Customer.length > 0 &&
+        // keyCombo.Location.length > 0 &&
+        // keyCombo.Customer.length > 0 &&
         keyCombo.Item.length > 0
       );
     }
@@ -643,8 +693,8 @@ export default function AddPricing() {
       };
 
       // If any selected key group has no corresponding values, block progression.
-      if (!requireSelectedValues(keyCombo.Location)) return false;
-      if (!requireSelectedValues(keyCombo.Customer)) return false;
+      // if (!requireSelectedValues(keyCombo.Location)) return false;
+      // if (!requireSelectedValues(keyCombo.Customer)) return false;
       if (!requireSelectedValues(keyCombo.Item)) return false;
 
       return true;
@@ -656,6 +706,12 @@ export default function AddPricing() {
   };
 
   const handleNext = () => {
+    try {
+      validateStep(currentStep);
+    } catch (itemErr: any) {
+      console.error("Item validation errors:", itemErr.inner || itemErr);
+      showSnackbar(itemErr.inner.map((err: any) => err.message).join(", "), "error");
+    }
     if (!validateStep(currentStep)) {
       showSnackbar(
         "Please fill in all required fields before proceeding.",
@@ -669,24 +725,20 @@ export default function AddPricing() {
     }
   };
 
-  const router = useRouter();
   const pricingValidationSchema = yup.object().shape({
     name: yup.string().required("Name is required"),
+    applicable_for: yup.string().required("Pricing Type is Required"),
     start_date: yup.string().required("Start date is required"),
     end_date: yup.string().required("End date is required"),
     item: yup.array().of(yup.string()).min(1, "At least one item is required"),
     key: yup.object({
-      Location: yup.array().of(yup.string()).min(1, "Location key required"),
-      Customer: yup.array().of(yup.string()).min(1, "Customer key required"),
+      // Location: yup.array().of(yup.string()).min(1, "Location key required"),
+      // Customer: yup.array().of(yup.string()).min(1, "Customer key required"),
       Item: yup.array().of(yup.string()).min(1, "Item key required"),
     }),
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const clearErrors = () => setErrors({});
-
   const handleSubmit = async () => {
-    console.log(details, "hii496")
     clearErrors();
     const initialKeys = [
       {
@@ -738,6 +790,7 @@ export default function AddPricing() {
     const payload = {
       name: promotion.itemName,
       description, // adjust this as needed
+      applicable_for: promotion.applicable_for,
       start_date: promotion.startDate,
       end_date: promotion.endDate,
       apply_on: 1, // static/mapped as per requirement
@@ -757,11 +810,12 @@ export default function AddPricing() {
       item_id: selectedItemIds.join(","),
       details: details,
     };
+    console.log(payload, "payload567");
 
     try {
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       setLoading(true);
-      const res = isEditMode && id ? await editPricingDetail(id, payload) : await addPricingDetail(payload);
+      const res = isEditMode && id ? await editPricingHeader(id, payload) : await addPricingDetail(payload);
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit pricing", "error");
       } else {
@@ -787,6 +841,7 @@ export default function AddPricing() {
         (err as yup.ValidationError).inner.forEach((e) => {
           if (e.path) formErrors[e.path] = e.message;
         });
+        console.log(formErrors, "formerrors");
         setErrors(formErrors);
         showSnackbar("Please fix validation errors before proceeding", "error");
       } else {
@@ -823,45 +878,6 @@ export default function AddPricing() {
   };
 
   // Removed duplicate keyValue declaration
-  const [promotion, setPromotion] = useState<{
-    itemName: string;
-    startDate: string;
-    endDate: string;
-    status: string;
-    orderType: string;
-    offerType: string;
-    type: string;
-    discountType: string;
-    discountApplyOn: string;
-    bundle: boolean;
-    orderItems: OrderItem[];
-    offerItems: Array<{ itemName: string; uom: string; quantity: string }>;
-  }>({
-    itemName: "",
-    startDate: "",
-    endDate: "",
-    status: "1",
-    orderType: "All",
-    offerType: "All",
-    type: "Slab",
-    discountType: "Fixed",
-    discountApplyOn: "Quantity",
-    bundle: false,
-    orderItems: [
-      {
-        itemName: "",
-        itemCode: "",
-        quantity: "",
-        toQuantity: "",
-        uom: "CTN",
-        price: "",
-        buom_ctn_price: "",
-        auom_pc_price: "",
-      },
-    ],
-    offerItems: [{ itemName: "", uom: "BAG", quantity: "" }],
-  });
-
   type ItemDetail = {
     code?: string;
     itemCode?: string;
@@ -870,14 +886,15 @@ export default function AddPricing() {
     label?: string;
     [key: string]: unknown;
   };
-  const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>(
-    []
-  );
+  // const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>(
+  //   []
+  // );
+  console.log(selectedItemDetails, "selectedItemDetails--->");
+
   const [page, setPage] = useState(1);
   const pageSize = 5;
   // useEffect(() => {
   //   if (keyValue["Item"] && keyValue["Item"].length > 0) {
-  //     console.log(keyValue["Item"], "keyvalueitem512")
   //     itemList({ ids: keyValue["Item"].join(",") })
   //       .then((data) => {
   //         let items: ItemDetail[] = [];
@@ -900,7 +917,6 @@ export default function AddPricing() {
   //   }
   // console.log(keyValue["Item"], "keyvalueitem520");
   // }, [keyValue["Item"]]);
-
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -1036,7 +1052,18 @@ export default function AddPricing() {
             }
             const res = await itemGlobalSearch(params);
             const data = Array.isArray(res?.data) ? res.data : [];
-            return data.map((it: any) => ({ data: it, value: String(it.id), label: `${it.erp_code || ""}${it.name ? " - " + it.name : ""}`, code: it.item_code || it.code, name: it.name }));
+            return data.map((it: any) => ({ 
+              value: String(it.id), 
+              label: `${it.erp_code || ""}${it.name ? " - " + it.name : ""}`,
+              itemData: {
+                id: it.id,
+                erp_code: it.erp_code,
+                name: it.name,
+                code: it.erp_code,
+                itemName: it.name,
+                item_uoms: it.item_uoms || []
+              }
+            }));
           } catch (err) {
             return [];
           }
@@ -1150,7 +1177,11 @@ export default function AddPricing() {
                           if (itemKey === "Item") {
                             return selectedItemDetails
                               .filter((it) => sel.includes(String(it.id)))
-                              .map((it) => ({ value: String((it as any).id || ""), label: `${(it as any).item_code || (it as any).code || ""}${(it as any).name ? " - " + (it as any).name : ""}` }));
+                              .map((it) => ({ 
+                                value: String(it.id || ""), 
+                                label: `${it.erp_code || it.code || ""}${it.name || it.itemName ? " - " + (it.name || it.itemName) : ""}`,
+                                itemData: it
+                              }));
                           }
                           if (itemKey === "Item Category") return itemCategoryOptions.filter((o) => sel.includes(o.value));
                           return [];
@@ -1161,17 +1192,43 @@ export default function AddPricing() {
                           return [];
                         }}
                         onChangeSelected={(selected) => {
-                          setSelectedItemDetails(selected);
+                          if (itemKey === "Item") {
+                            // Extract itemData from selected items and merge with existing items
+                            const newItemDetails = selected.map((item: any) => item.itemData).filter(Boolean);
+                            const selectedIds = selected.map((o) => o.value);
+                            
+                            // Keep existing items that are still selected, add new items
+                            setSelectedItemDetails((prev) => {
+                              // Remove items that are no longer selected
+                              const filteredPrev = prev.filter((item) => selectedIds.includes(String(item.id)));
+                              // Add new items that aren't already in the list
+                              const existingIds = filteredPrev.map((item) => String(item.id));
+                              const newItems = newItemDetails.filter((item) => !existingIds.includes(String(item.id)));
+                              return [...filteredPrev, ...newItems];
+                            });
+                          }
                           setKeyValue((s) => ({ ...s, [itemKey]: selected.map((o) => o.value) }));
                         }}
-                        onSelect={(opt: { value: string }) => {
+                        onSelect={(opt: any) => {
+                          if (itemKey === "Item" && opt.itemData) {
+                            // Add the new item to selectedItemDetails if not already present
+                            setSelectedItemDetails((prev) => {
+                              const exists = prev.find((item) => item.id === opt.itemData.id);
+                              return exists ? prev : [...prev, opt.itemData];
+                            });
+                          }
                           setKeyValue((s) => {
                             const prev = s[itemKey] || [];
                             if (prev.includes(String(opt.value))) return s;
                             return { ...s, [itemKey]: [...prev, String(opt.value)] };
                           });
                         }}
-                        onClear={() => setKeyValue((s) => ({ ...s, [itemKey]: [] }))}
+                        onClear={() => {
+                          if (itemKey === "Item") {
+                            setSelectedItemDetails([]);
+                          }
+                          setKeyValue((s) => ({ ...s, [itemKey]: [] }));
+                        }}
                         error={undefined}
                         className="w-full"
                       />
@@ -1240,55 +1297,39 @@ export default function AddPricing() {
         return (
           <ContainerCard className="bg-[#fff] p-6 rounded-xl border border-[#E5E7EB]">
             <h2 className="text-xl font-semibold mb-6">Pricing</h2>
-            <div className="grid grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
               <div>
-                <label className="block mb-2 font-medium">
-                  Name<span className="text-red-500 ml-1">*</span>
-                </label>
                 <InputFields
-                  label=""
+                  required
+                  label="Name"
                   type="text"
                   value={promotion.itemName}
                   onChange={(e) =>
                     setPromotion((s) => ({ ...s, itemName: e.target.value }))
                   }
                   width="w-full"
+                  error={errors.itemName}
                 />
               </div>
               <div>
-                <label className="block mb-2 font-medium">
-                  Start Date<span className="text-red-500 ml-1">*</span>
-                </label>
                 <InputFields
-                  label=""
-                  type="date"
-                  value={promotion.startDate}
-                  onChange={(e) =>
-                    setPromotion((s) => ({ ...s, startDate: e.target.value }))
-                  }
-                  width="w-full"
+                  type="select"
+                  label="Pricing Type"
+                  placeholder="Select Pricing Type"
+                  width="100%"
+                  value={promotion.applicable_for}
+                  options={[
+                    { label: "Primary", value: "Primary" },
+                    { label: "Secondary", value: "Secondary" },
+                  ]}
+                  onChange={(e) => setPromotion({...promotion, applicable_for: e.target.value})}
+                  error={errors.applicable_for}
                 />
               </div>
               <div>
-                <label className="block mb-2 font-medium">
-                  End Date<span className="text-red-500 ml-1">*</span>
-                </label>
                 <InputFields
-                  label=""
-                  type="date"
-                  value={promotion.endDate}
-                  onChange={(e) =>
-                    setPromotion((s) => ({ ...s, endDate: e.target.value }))
-                  }
-                  width="w-full"
-                />
-              </div>
-              <div>
-                <label className="block mb-2 font-medium">
-                  Status<span className="text-red-500 ml-1">*</span>
-                </label>
-                <InputFields
-                  label=""
+                  required
+                  label="Status"
                   type="radio"
                   isSingle={true}
                   options={[
@@ -1302,12 +1343,40 @@ export default function AddPricing() {
                   width="w-full"
                 />
               </div>
+              <div>
+                <InputFields
+                  required
+                  label="Start Date"
+                  type="date"
+                  value={promotion.startDate || new Date(Date.now()).toISOString().slice(0, 10)}
+                  min={new Date(Date.now()).toISOString().slice(0, 10)}
+                  onChange={(e) =>
+                    setPromotion((s) => ({ ...s, startDate: e.target.value }))
+                  }
+                  width="w-full"
+                  error={errors.startDate}
+                />
+              </div>
+              <div>
+                <InputFields
+                  required
+                  label="End Date"
+                  type="date"
+                  value={promotion.endDate || new Date(Date.now()).toISOString().slice(0, 10)}
+                  min={promotion.startDate || new Date(Date.now()).toISOString().slice(0, 10)}
+                  onChange={(e) =>
+                    setPromotion((s) => ({ ...s, endDate: e.target.value }))
+                  }
+                  width="w-full"
+                  error={errors.endDate}
+                />
+              </div>
             </div>
             <div className="mt-8">
               <div className="font-semibold text-lg mb-4">Items</div>
               <div className="mb-6">
                 <Table
-                  data={selectedItemDetails.map((it) => it.data) as TableDataType[]}
+                  data={selectedItemDetails as TableDataType[]}
                   config={{
                     table: {
                       height: 500,
@@ -1319,28 +1388,28 @@ export default function AddPricing() {
                         label: "Item Code",
                         render: (row) => (
                           <span className="font-semibold text-[#181D27] text-[14px]">
-                            {row?.code}- {row?.name}
+                            {row?.erp_code || row?.code || ""} - {row?.name || row?.itemName || ""}
                           </span>
                         ),
                       },
 
-                      {
-                        key: "price",
-                        label: "Price",
-                        render: (row) => (
-                          <div className="text-[14px] text-[#181D27] font-semibold space-y-1">
-                            {Array.isArray(row?.item_uoms) && row.item_uoms.length > 0 ? (
-                              row.item_uoms.map((u) => (
-                                <div key={u?.id}>
-                                  {`${u?.name} - ${u?.uom_price}`}
-                                </div>
-                              ))
-                            ) : (
-                              <span>-</span>
-                            )}
-                          </div>
-                        ),
-                      },
+                      // {
+                      //   key: "price",
+                      //   label: "Price",
+                      //   render: (row) => (
+                      //     <div className="text-[14px] text-[#181D27] font-semibold space-y-1">
+                      //       {Array.isArray(row?.item_uoms) && row?.item_uoms.length > 0 ? (
+                      //         row?.item_uoms.map((u) => (
+                      //           <div key={u?.id}>
+                      //             {`${u?.name} - ${u?.uom_price}`}
+                      //           </div>
+                      //         ))
+                      //       ) : (
+                      //         <span>-</span>
+                      //       )}
+                      //     </div>
+                      //   ),
+                      // },
                       {
                         key: "buom_ctn_price",
                         label: "Base Price",
@@ -1379,12 +1448,12 @@ export default function AddPricing() {
     );
   }
   return (
-    <>
+    <div className="p-6">
       <div className="flex items-center gap-2">
         <Link href="/pricing">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">
           {isEditMode ? "Update Pricing" : "Add Pricing"}
         </h1>
       </div>
@@ -1398,7 +1467,10 @@ export default function AddPricing() {
           onStepClick={() => { }}
           onBack={prevStep}
           onNext={handleNext}
-          onSubmit={handleSubmit}
+          onSubmit={() => {
+            handleNext();
+            handleSubmit();
+          }}
           showSubmitButton={isLastStep}
           showNextButton={!isLastStep}
           nextButtonText="Save & Next"
@@ -1407,6 +1479,6 @@ export default function AddPricing() {
           {renderStepContent()}
         </StepperForm>
       </div>
-    </>
+    </div>
   );
 }

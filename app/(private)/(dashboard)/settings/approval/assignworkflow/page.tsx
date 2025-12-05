@@ -1,13 +1,22 @@
 "use client";
 
 import Table, {
-    listReturnType,
-    searchReturnType,
-    TableDataType,
+  listReturnType,
+  searchReturnType,
+  TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { assignWorkFlowsToSubmenu, submenuList, workFlowAssignList, workFlowList } from "@/app/services/allApi";
+import {
+  assignWorkFlowsToSubmenu,
+  submenuList,
+  updateWorkFlowsToSubmenu,
+  workFlowAssignList,
+  workFlowAssignmentList,
+  workFlowList,
+  workFlowProcessType,
+  workFlowRequest,
+} from "@/app/services/allApi";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import { useFormik } from "formik";
@@ -15,6 +24,9 @@ import * as Yup from "yup";
 
 import { useEffect, useState } from "react";
 import InputFields from "@/app/components/inputFields";
+import { Icon } from "@iconify-icon/react";
+import { useRouter } from "next/navigation";
+import { useSnackbar } from "@/app/services/snackbarContext";
 
 // ---- Your JSON pasted here ----
 // const WORKFLOW_DATA:any = [
@@ -106,224 +118,245 @@ import InputFields from "@/app/components/inputFields";
 // -----------------------------------------------
 
 export default function WorkflowTable() {
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [open, setOpen] = useState(false)
-    const [workFlowList, setWorkflowList] = useState([])
-    const [modulesList, setModulesList] = useState<any>([])
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [open, setOpen] = useState(false);
+  const { showSnackbar } = useSnackbar();
+  const [workFlowListOptions, setWorkflowListOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [modulesList, setModulesList] = useState<any>([]);
+  const router = useRouter();
 
-    const formik = useFormik({
+  const formik = useFormik({
     initialValues: {
-        workflow_id: "",
-        // process_type: "",
-        process_id: "",
+      id: "",
+      workflow_id: "",
+      process_type: "",
+      // process_id: "",
     },
 
     validationSchema: Yup.object({
-        workflow_id: Yup.string().required("Workflow is required"),
-        // process_type: Yup.string().required("Process Type is required"),
-        process_id: Yup.number()
-            .typeError("Process ID must be a number")
-            .required("Process ID is required"),
+      workflow_id: Yup.string().required("Workflow is required"),
+      process_type: Yup.string().required("Process Type is required"),
+      //   process_id: Yup.string().required("Process ID is required"),
     }),
 
-    onSubmit: async(values) => {
-        console.log("✨ Final Submitted Values:", values);
-        const workflowType = modulesList.filter((ids:any)=>ids.value == values.process_id)[0]?.label
+    onSubmit: async (values) => {
+      console.log("✨ Final Submitted Values:", {
+        workflow_id: values.workflow_id,
+        process_type: values.process_type,
+      });
+      //   const workflowType = modulesList.filter(
+      //     (ids: any) => ids.value == values.process_type
+      //   )[0]?.label;
 
-        const data = await assignWorkFlowsToSubmenu({...values,process_type:workflowType})
+      let data;
+      if (values.id) {
+        data = await updateWorkFlowsToSubmenu({
+          ...values,
+          process_type: values.process_type,
+        });
+      } else {
+        data = await assignWorkFlowsToSubmenu({
+          ...values,
+          process_type: values.process_type,
+        });
+      }
 
-        if(data.success)
-        {
-            setOpen(false)
-        }
+      if (data.error) {
+        showSnackbar(data.message || "Something went wrong");
+        throw new Error(data.message || "Something went wrong");
+      }
+      showSnackbar(data.message || "Workflow assigned successfully", "success");
+      setOpen(false);
+      setRefreshKey((prev) => prev + 1);
     },
-});
+  });
 
-
-
-    useEffect(() => {
-        const fetchSubmenuList = async () => {
-            try {
-                const res = await submenuList();
-                const subMenuListDta: { value: string, label: string }[] = []
-                res.data.map((item: { id: number, name: string }) => {
-                    subMenuListDta.push({ value: item.id.toString(), label: item.name });
-                });
-                console.log("submenu list", res.data);
-                setModulesList(subMenuListDta);
-            }
-            catch (err) {
-
-            }
-        }
-        fetchSubmenuList()
-    }, [])
-
-    // ------------------ COLUMNS --------------------
-    const columns = [
-        {
-            key: "name",
-            label: "Workflow Name",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.name}
-                </span>
-            ),
-        },
-        {
-            key: "description",
-            label: "Description",
-            
-            render: (data: TableDataType) => data.description || "-",
-        }
-        // {
-        //     key: "steps",
-        //     label: "Total Steps",
-        //     render: (data: TableDataType) => data.steps?.length || 0,
-        // },
-        ,{
-            key: "assigned_to",
-            label: "Assigned To",
-            width: 300,
-            render: (data: any) => {
-                const step = data.assigned_to?.map((ids:any)=>ids.model_name).join(",")
-                if (!step) return "-";
-                return (
-                    <span className="text-sm text-gray-600">
-                        {step}
-                    </span>
-                );
-            },
-        },
-    ];
-
-    // ------------------ LOCAL LIST FUNCTION -----------------
-    const fetchWorkflows = async (
-        pageNo: number = 1,
-        pageSize: number = 10
-    ): Promise<listReturnType> => {
-        const start = (pageNo - 1) * pageSize;
-        const end = start + pageSize;
-
-        // WORKFLOW_DATA.slice(start, end);
-        const pageData: any = await workFlowAssignList()
-        console.log(pageData, "pageData")
-        const workFlowListData: any = []
-        pageData.data.map((dta: any) => {
-            workFlowListData.push({
-                value: dta.workflow_id,
-                label: dta.name
-            })
-
-
-        })
-        setWorkflowList(workFlowListData)
-        return {
-            data: pageData.data,
-            currentPage: 1,
-            pageSize: 50,
-            total: 1,
-        };
+  useEffect(() => {
+    const fetchWorkflowList = async () => {
+      try {
+        const res = await workFlowList();
+        const workflowListData: { value: string; label: string }[] = [];
+        res.data.map((item: { workflow_id: string; name: string }) => {
+          workflowListData.push({
+            value: item.workflow_id.toString(),
+            label: item.name,
+          });
+        });
+        setWorkflowListOptions(workflowListData);
+      } catch (err) {}
     };
+    fetchWorkflowList();
+  }, []);
 
-    // ------------------ SEARCH FUNCTION ----------------------
-    // const searchWorkflow = async (
-    //     query: string
-    // ): Promise<searchReturnType> => {
-    //     const filtered = WORKFLOW_DATA.filter((item) =>
-    //         item.name.toLowerCase().includes(query.toLowerCase())
-    //     );
+  useEffect(() => {
+    const fetchSubmenuList = async () => {
+      try {
+        const res = await workFlowProcessType();
+        const subMenuListDta: { value: string; label: string }[] = [];
+        res.data.map((item: { process_type: string; display_name: string }) => {
+          subMenuListDta.push({
+            value: item.process_type.toString(),
+            label: item.display_name,
+          });
+        });
+        setModulesList(subMenuListDta);
+      } catch (err) {}
+    };
+    fetchSubmenuList();
+  }, []);
 
-    //     return {
-    //         data: filtered,
-    //         total: 1,
-    //         currentPage: 1,
-    //         pageSize: filtered.length,
-    //     };
-    // };
+  // ------------------ COLUMNS --------------------
+  const columns = [
+    {
+      key: "workflow_name",
+      label: "Workflow Name",
+    },
+    {
+      key: "display_name",
+      label: "Assigned To",
+    },
+  ];
 
-    return (
-        <div className="flex flex-col h-full">
-            <Table
-                refreshKey={refreshKey}
-                config={{
-                    api: {
-                        list: fetchWorkflows,
-                        // search: searchWorkflow,
-                    },
-                    header: {
-                        title: "Assign Workflow",
-                        // searchBar: true,
-                        columnFilter: true,
-                        actions: [
-                            <SidebarBtn
-                                key={0}
-                                onClick={() => setOpen(true)}
-                                isActive={true}
-                                leadingIcon="lucide:plus"
-                                label="Add"
-                                labelTw="hidden sm:block"
-                            />
-                        ],
-                    },
-                    localStorageKey: "workflow-table",
-                    footer: {
-                        nextPrevBtn: true,
-                        pagination: true,
-                    },
-                    columns,
-                    rowSelection: true,
-                    rowActions: [
-                        {
-                            icon: "lucide:edit-2",
-                            onClick: (row: TableDataType) => {
-                                window.location.href = `/settings/approval/${row.uuid}`;
-                                localStorage.setItem("selectedFlow", JSON.stringify(row))
-                            },
-                        },
-                    ],
-                    pageSize: 10,
-                }}
-            />
+  // ------------------ LOCAL LIST FUNCTION -----------------
+  const fetchWorkflows = async (
+    pageNo: number = 1,
+    pageSize: number = 10
+  ): Promise<listReturnType> => {
+    const start = (pageNo - 1) * pageSize;
+    const end = start + pageSize;
 
-            <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
-    <div className="w-[350px] p-[10px] text-lg font-semibold">
-        Assign Workflow
-    </div>
+    // WORKFLOW_DATA.slice(start, end);
+    const pageData: any = await workFlowAssignmentList();
 
-    <Divider />
+    return {
+      data: pageData.data,
+      currentPage: 1,
+      pageSize: 50,
+      total: 1,
+    };
+  };
+  // ------------------ SEARCH FUNCTION ----------------------
+  // const searchWorkflow = async (
+  //     query: string
+  // ): Promise<searchReturnType> => {
+  //     const filtered = WORKFLOW_DATA.filter((item) =>
+  //         item.name.toLowerCase().includes(query.toLowerCase())
+  //     );
 
-    <div className="w-[350px] p-[10px]">
-        <form onSubmit={formik.handleSubmit} className="space-y-4">
+  //     return {
+  //         data: filtered,
+  //         total: 1,
+  //         currentPage: 1,
+  //         pageSize: filtered.length,
+  //     };
+  // };
 
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center mb-[20px]">
+        <div className="flex items-center gap-[16px]">
+          <Icon
+            icon="lucide:arrow-left"
+            width={24}
+            onClick={() => router.back()}
+            className="cursor-pointer"
+          />
+          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
+            Assign Workflow
+          </h1>
+        </div>
+      </div>
+      <Table
+        refreshKey={refreshKey}
+        config={{
+          api: {
+            list: fetchWorkflows,
+            // search: searchWorkflow,
+          },
+          header: {
+            // title: "Assign Workflow",
+            // searchBar: true,
+            columnFilter: true,
+            actions: [
+              <SidebarBtn
+                key={0}
+                onClick={() => setOpen(true)}
+                isActive={true}
+                leadingIcon="lucide:plus"
+                label="Add"
+                labelTw="hidden sm:block"
+              />,
+            ],
+          },
+          localStorageKey: "workflow-table",
+          footer: {
+            nextPrevBtn: true,
+            pagination: true,
+          },
+          columns,
+          rowSelection: true,
+          rowActions: [
+            {
+              icon: "lucide:edit-2",
+              onClick: (row: TableDataType) => {
+                console.log(row);
+                formik.setFieldValue("workflow_id", String(row.workflow_id));
+                formik.setFieldValue("process_type", String(row.process_type));
+                formik.setFieldValue("id", String(row.id));
+                setOpen(true);
+              },
+            },
+          ],
+          pageSize: 10,
+        }}
+      />
+
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          formik.resetForm();
+        }}
+      >
+        <div className="w-[350px] p-2.5 text-lg font-semibold">
+          Assign Workflow
+        </div>
+
+        <Divider />
+
+        <div className="w-[350px] p-2.5">
+          <form onSubmit={formik.handleSubmit} className="space-y-4">
             {/* Workflow */}
             <InputFields
-                required
-                label="Workflow"
-                name="workflow_id"
-                isSingle={true}
-                options={workFlowList}
-                value={formik.values.workflow_id}
-                onChange={(e: any) => {
-                    formik.setFieldValue("workflow_id", e.target.value);
-                }}
-                error={formik.touched.workflow_id && formik.errors.workflow_id}
-                width="full"
+              required
+              label="Workflow"
+              name="workflow_id"
+              isSingle={true}
+              options={workFlowListOptions}
+              value={formik.values.workflow_id}
+              onChange={(e: any) => {
+                formik.setFieldValue("workflow_id", e.target.value);
+              }}
+              error={formik.touched.workflow_id && formik.errors.workflow_id}
+              width="full"
             />
 
             {/* Process Type */}
             <InputFields
-                required
-                label="Process Type"
-                name="process_type"
-                isSingle={true}
-                options={modulesList}
-                value={formik.values.process_id}
-                onChange={(e: any) => {
-                    formik.setFieldValue("process_id", e.target.value);
-                }}
-                error={formik.touched.process_id && formik.errors.process_id}
-                width="full"
+              required
+              label="Process Type"
+              name="process_type"
+              isSingle={true}
+              options={modulesList}
+              value={formik.values.process_type}
+              onChange={(e: any) => {
+                formik.setFieldValue("process_type", e.target.value);
+              }}
+              error={formik.touched.process_type && formik.errors.process_type}
+              width="full"
             />
 
             {/* Process ID */}
@@ -341,16 +374,15 @@ export default function WorkflowTable() {
             /> */}
 
             <SidebarBtn
-                label={formik.isSubmitting ? "Submitting..." : "Submit"}
-                isActive={!formik.isSubmitting}
-                leadingIcon="mdi:check"
-                type="submit"
-                disabled={formik.isSubmitting}
+              label={formik.isSubmitting ? "Submitting..." : "Submit"}
+              isActive={!formik.isSubmitting}
+              leadingIcon="mdi:check"
+              type="submit"
+              disabled={formik.isSubmitting}
             />
-        </form>
-    </div>
-</Drawer>
-
+          </form>
         </div>
-    );
+      </Drawer>
+    </div>
+  );
 }

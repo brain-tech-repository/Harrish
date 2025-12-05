@@ -37,11 +37,11 @@ export default function SidebarBtn1({
             <Link
                 href={href}
                 onClick={onClick}
-                className={`${ btnTw || "h-[32px] px-3 py-2"} rounded-lg flex items-center gap-[12px] justify-between ${
+                className={`${ btnTw || "h-fit px-3 py-2"} rounded-lg flex items-center gap-[12px] justify-between ${
                     isActive
                         ? "bg-[#285295] text-white"
                         : "bg-transparent text-[#C2CBDE] hover:bg-[#536893] hover:text-white"
-                }`}
+                } ${className}`}
             >
                 <div className="flex items-center gap-[12px]">
                     {leadingIcon && (

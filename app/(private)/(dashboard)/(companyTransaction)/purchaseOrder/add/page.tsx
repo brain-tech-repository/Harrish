@@ -230,10 +230,16 @@ export default function PurchaseOrderAddEditPage() {
       value: String(item.id),
       label: (item.erp_code ?? item.item_code ?? item.code ?? "") + " - " + (item.name ?? "")
     }));
-    // Merge newly fetched options with existing ones so previously selected items remain available
+    // Set the new options while preserving any items that are currently selected in rows
     setItemsOptions((prev: { label: string; value: string }[] = []) => {
       const map = new Map<string, { label: string; value: string }>();
-      prev.forEach((o) => map.set(o.value, o));
+      // Add currently selected items to preserve them
+      itemData.forEach((row) => {
+        if (row.item_id && row.item_label) {
+          map.set(row.item_id, { value: row.item_id, label: row.item_label });
+        }
+      });
+      // Add new search results
       options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
       return Array.from(map.values());
     });
@@ -276,6 +282,11 @@ export default function PurchaseOrderAddEditPage() {
         item.Price = "";
         item.Quantity = "1";
         item.item_label = "";
+        item.Excise = "0.00";
+        item.Discount = "0.00";
+        item.Net = "0.00";
+        item.Vat = "0.00";
+        item.Total = "0.00";
       } else {
         const selectedOrder = orderData.find((order: FormData) => order.id.toString() === value);
         console.log(selectedOrder);
@@ -286,7 +297,7 @@ export default function PurchaseOrderAddEditPage() {
         item.Price = selectedOrder?.item_uoms?.[0]?.price ? String(selectedOrder.item_uoms[0].price) : "";
         item.Quantity = "1";
         const initialExc = getExcise({
-          item: {...selectedOrder, excies: 1},
+          item: { ...selectedOrder, excies: 1 },
           uom: Number(item.uom_id) || 0,
           quantity: Number(item.Quantity) || 1,
           itemPrice: Number(item.Price) || null,
@@ -316,18 +327,18 @@ export default function PurchaseOrderAddEditPage() {
     const exciseNumeric = getExcise({
       item: selectedOrder
         ? // normalize shape so `getExcise` can read `item_category` as a number
-          ({
-            ...selectedOrder,
-            excies: 1,
-            item_category: (selectedOrder as any).item_category?.id ?? (selectedOrder as any).category_id ?? (selectedOrder as any).category?.id ?? (selectedOrder as any).category ?? (selectedOrder as any).category_code ?? 0,
-          } as any)
+        ({
+          ...selectedOrder,
+          excies: 1,
+          item_category: (selectedOrder as any).item_category?.id ?? (selectedOrder as any).category_id ?? (selectedOrder as any).category?.id ?? (selectedOrder as any).category ?? (selectedOrder as any).category_code ?? 0,
+        } as any)
         : {
-            id: Number(item.item_id) || 0,
-            agent_excise: 0,
-            direct_sell_excise: 0,
-            base_uom_price: Number(item.Price) || 0,
-            item_category: 0,
-          },
+          id: Number(item.item_id) || 0,
+          agent_excise: 0,
+          direct_sell_excise: 0,
+          base_uom_price: Number(item.Price) || 0,
+          item_category: 0,
+        },
       uom: Number(item.uom_id) || 0,
       quantity: Number(item.Quantity) || 1,
       itemPrice: Number(item.Price) || null,
@@ -336,7 +347,7 @@ export default function PurchaseOrderAddEditPage() {
     const excise = (Math.round(exciseNumeric * 100) / 100).toFixed(2);
     // keep both `Excise` (existing row shape) and `excise` (table render key) in sync
     item.Excise = excise;
-    console.log(item.Excise, (selectedOrder as any).item_category?.id );
+    console.log(item.Excise, (selectedOrder as any).item_category?.id);
     // const discount = 0;
     // const gross = total;
 
@@ -352,6 +363,16 @@ export default function PurchaseOrderAddEditPage() {
       validateRow(index, newData[index]);
     }
     setItemData(newData);
+    
+    // // Force component update when clearing an item
+    // if (field === "item_id" && !value) {
+    //   // Clear any validation errors for this row
+    //   setItemErrors((prev) => {
+    //     const copy = { ...prev };
+    //     delete copy[index];
+    //     return copy;
+    //   });
+    // }
   };
 
   const handleAddNewItem = () => {
@@ -434,18 +455,20 @@ export default function PurchaseOrderAddEditPage() {
       discount: Number(discount.toFixed(2)),
       comment: values?.note || "",
       status: 1,
-      details: itemData.map((item, i) => ({
-        item_id: Number(item.item_id) || null,
-        item_price: Number(item.Price) || null,
-        quantity: Number(item.Quantity) || null,
-        vat: Number(item.Vat) || null,
-        uom_id: Number(item.uom_id) || null,
-        // discount: Number(item.Discount) || null,
-        // discount_id: 0,
-        // gross_total: Number(item.Total) || null,
-        net_total: Number(item.Net) || null,
-        total: Number(item.Total) || null,
-      })),
+      details: itemData
+        .filter((item) => item.item_id && item.uom_id && item.Quantity) // Only include valid items
+        .map((item, i) => ({
+          item_id: Number(item.item_id) || 0,
+          item_price: Number(item.Price) || 0,
+          quantity: Number(item.Quantity) || 0,
+          vat: Number(item.Vat) || 0,
+          uom_id: Number(item.uom_id) || 0,
+          // discount: Number(item.Discount) || 0,
+          // discount_id: 0,
+          // gross_total: Number(item.Total) || 0,
+          net_total: Number(item.Net) || 0,
+          total: Number(item.Total) || 0,
+        })),
     };
   };
 
@@ -627,7 +650,7 @@ export default function PurchaseOrderAddEditPage() {
                   <div>
                     <InputFields
                       required
-                      label="Warehouse"
+                      label="distributor"
                       name="warehouse"
                       placeholder="Search warehouse"
                       value={values.warehouse}
@@ -745,11 +768,9 @@ export default function PurchaseOrderAddEditPage() {
                         render: (row) => {
                           const idx = Number(row.idx);
                           const err = itemErrors[idx]?.item_id;
-                          // Optimized: avoid mapping+filtering arrays on every render.
-                          // Find the option for the current row (if still present) and fall back to stored label
-                          // so the selection remains visible even when the option isn't returned by a search.
+                          // Find the option for the current row or use stored label, but only if item_id exists
                           const matchedOption = itemsOptions.find((o) => o.value === row.item_id);
-                          const initialLabel = matchedOption?.label ?? (row.item_label as string) ?? "";
+                          const initialLabel = row.item_id ? (matchedOption?.label ?? (row.item_label as string) ?? "") : "";
                           // console.log(row);
                           return (
                             <div>
@@ -852,7 +873,7 @@ export default function PurchaseOrderAddEditPage() {
                           return <span>{price}</span>;
                         }
                       },
-                      { key: "excise", label: "Excise", render: (row) => <>{toInternationalNumber(row.Excise) || "0.00"}</>},
+                      { key: "excise", label: "Excise", render: (row) => <>{toInternationalNumber(row.Excise) || "0.00"}</> },
                       // { key: "discount", label: "Discount", render: (row) => <span>{toInternationalNumber(row.Discount) || "0.00"}</span> },
                       // { key: "preVat", label: "Pre VAT", render: (row) => <span>{toInternationalNumber(row.preVat) || "0.00"}</span> },
                       { key: "Net", label: "Net", render: (row) => <span>{toInternationalNumber(row.Net) || "0.00"}</span> },
@@ -941,7 +962,7 @@ export default function PurchaseOrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !values.salesteam || !itemData || itemData.length < 0 } onClick={() => submitForm()} />
+                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !values.salesteam || !itemData || itemData.length < 0} onClick={() => submitForm()} />
                 </div>
               </>
             );

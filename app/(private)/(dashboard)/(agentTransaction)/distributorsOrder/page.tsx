@@ -17,8 +17,9 @@ import {
 } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { downloadFile } from "@/app/services/allApi";
+import { downloadFile, workFlowRequest } from "@/app/services/allApi";
 import { formatWithPattern } from "@/app/utils/formatDate";
+import ApprovalStatus from "@/app/components/approvalStatus";
 // import { useLoading } from "@/app/services/loadingContext";
 
 const columns = [
@@ -124,6 +125,12 @@ const columns = [
     key: "comment",
     label: "Comment",
     render: (row: TableDataType) => row.comment || "-",
+  },
+  {
+    key: "approval_status",
+    label: "Approval Status",
+    showByDefault: true,
+    render: (row: TableDataType) => <ApprovalStatus status={row.approval_status} />,
   },
   {
     key: "order_flag",
@@ -249,7 +256,13 @@ export default function CustomerInvoicePage() {
     }
   };
 
-
+  useEffect(() => {
+    const res = async () => {
+      const res = await workFlowRequest({ model: "order"});
+      localStorage.setItem("workflow.order", JSON.stringify(res.data[0]))
+    };
+    res();
+  }, []);
 
   useEffect(() => {
     setRefreshKey((k) => k + 1);
@@ -369,7 +382,7 @@ export default function CustomerInvoicePage() {
                 // />,
                 <SidebarBtn
                   key={1}
-                  href="/agentOrder/add"
+                  href="/distributorsOrder/add"
                   isActive
                   leadingIcon="mdi:plus"
                   label="Add"
@@ -384,7 +397,7 @@ export default function CustomerInvoicePage() {
               {
                 icon: "lucide:eye",
                 onClick: (row: TableDataType) =>
-                  router.push(`/agentOrder/details/${row.uuid}`),
+                  router.push(`/distributorsOrder/details/${row.uuid}`),
               },
               {
                 icon: "lucide:download",

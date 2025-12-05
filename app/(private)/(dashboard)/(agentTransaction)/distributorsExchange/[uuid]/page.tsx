@@ -12,8 +12,10 @@ import {
   agentCustomerGlobalSearch,
   genearateCode,
   itemGlobalSearch,
+  itemList,
   saveFinalCode,
-  warehouseListGlobalSearch
+  warehouseListGlobalSearch,
+  warehouseStockTopOrders
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -232,6 +234,10 @@ export default function ExchangeAddEditPage() {
 
   // Function for fetching Item
   const fetchItem = async (searchTerm: string, warehouse_id?: string) => {
+    // Don't fetch items if no warehouse is selected
+    if (!warehouse_id) {
+      return [];
+    }
     setSkeleton((prev) => ({ ...prev, item: true }));
     const res = await itemGlobalSearch({ perPage: "10", query: searchTerm, warehouse_id });
     if (res?.error) {
@@ -544,7 +550,7 @@ export default function ExchangeAddEditPage() {
           // Optionally handle error, but don't block success
         }
         showSnackbar("Exchange created successfully", "success");
-        router.push("/exchange");
+        router.push("/distributorsExchange");
       }
     } catch (err) {
       console.error(err);
@@ -602,7 +608,7 @@ export default function ExchangeAddEditPage() {
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Icon icon="lucide:arrow-left" width={24} onClick={() => router.back()} />
+          <Icon icon="lucide:arrow-left" className="curosor-pointer" width={24} onClick={() => router.back()} />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">Add Exchange</h1>
         </div>
       </div>
@@ -642,6 +648,23 @@ export default function ExchangeAddEditPage() {
                           setSkeleton((prev) => ({ ...prev, customer: true }));
                           setFieldValue("customer", "");
                           setFilteredCustomerOptions([]);
+                          // Clear items when warehouse changes
+                          setItemsOptions([]);
+                          setItemData([
+                            {
+                              item_id: "",
+                              item_name: "",
+                              item_label: "",
+                              UOM: [],
+                              uom_id: "",
+                              Quantity: "1",
+                              Price: "",
+                              Total: "0.00",
+                              region: "",
+                              return_type: "",
+                              Vat: "0",
+                            },
+                          ]);
                         } else {
                           setFieldValue("warehouse", opt.value);
                         }
@@ -651,6 +674,23 @@ export default function ExchangeAddEditPage() {
                         setFieldValue("customer", "");
                         setFilteredCustomerOptions([]);
                         setSkeleton((prev) => ({ ...prev, customer: false }));
+                        // Clear items when warehouse is cleared
+                        setItemsOptions([]);
+                        setItemData([
+                          {
+                            item_id: "",
+                            item_name: "",
+                            item_label: "",
+                            UOM: [],
+                            uom_id: "",
+                            Quantity: "1",
+                            Price: "",
+                            Total: "0.00",
+                            region: "",
+                            return_type: "",
+                            Vat: "0",
+                          },
+                        ]);
                       }}
                       error={touched.warehouse && (errors.warehouse as string)}
                     />
@@ -963,7 +1003,7 @@ export default function ExchangeAddEditPage() {
 
                 {/* --- Buttons --- */}
                 <div className="flex justify-end gap-4 mt-6">
-                  <button type="button" className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100" onClick={() => router.push("/exchange")}>
+                  <button type="button" className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100" onClick={() => router.push("/distributorsExchange")}>
                     Cancel
                   </button>
                   <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Exchange..." : "Create Exchange"} disabled={isSubmitting} onClick={() => submitForm()} />
