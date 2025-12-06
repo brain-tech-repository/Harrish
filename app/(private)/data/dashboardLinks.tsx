@@ -493,6 +493,13 @@ export const initialLinkData: SidebarDataType[] = [
                 leadingIcon: "guidance:refrigeration",
                 iconColor: "text-cyan-500",
               },
+              {
+                isActive: false,
+                href: "/chillerInstallation/bulkTransfer",
+                label: "Bulk Transfer",
+                leadingIcon: "guidance:refrigeration",
+                iconColor: "text-cyan-500",
+              },
             ],
           },
         ],

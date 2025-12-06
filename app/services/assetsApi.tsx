@@ -383,7 +383,6 @@ export const deleteChillerRequest = async (uuid: string) => {
 
 
 
-
 // export const getWarehouseStockDetails = async (id: string) => {
 //   try {
 //     const res = await API.get(`/api/settings/warehouse-stocks/${id}/stock-details`);
@@ -416,11 +415,52 @@ export const addAcf = async (body: object) => {
 };
 
 
-export const iroList = async (params: Params) => {
+export const iroList = async ( params: Params) => {
   try {
     const res = await API.get(`/api/assets/iro/count`, {
       params: params,
     });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const iroViewList = async (id: string) => {
+  try {
+    const res = await API.get(`/api/assets/iro/${id}`);
+    console.log(res, "ABCD");
+    return res.data?.count?.headers;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const bulkTransferList = async ( params: Params) => {
+  try {
+    const res = await API.get(`/api/assets/bulk-transfer/list`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const addBulkTransfer = async (body: object) => {
+  try {
+    const res = await API.post(`/api/assets/bulk-transfer/add`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const addAllocate = async (body: object) => {
+  try {
+    const res = await API.post(`/api/assets/bulk-transfer/allocate-assets`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
