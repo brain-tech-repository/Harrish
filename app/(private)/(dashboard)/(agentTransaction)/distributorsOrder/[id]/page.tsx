@@ -122,7 +122,7 @@ export default function OrderAddEditPage() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
-  const { warehouseAllOptions,warehouseOptions } = useAllDropdownListData();
+  const { warehouseAllOptions } = useAllDropdownListData();
   const [skeleton, setSkeleton] = useState({
     route: false,
     customer: false,

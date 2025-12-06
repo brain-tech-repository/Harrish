@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment, useState, useEffect, useRef } from "react";
+import React, { Fragment, useState, useEffect, useRef, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import Table from "@/app/components/customTable";
 import Logo from "@/app/components/logo";
@@ -10,7 +10,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
-import { agentCustomerGlobalSearch, genearateCode, itemGlobalSearch, itemList, pricingHeaderGetItemPrice, SalesmanListGlobalSearch, saveFinalCode, warehouseList, warehouseListGlobalSearch } from "@/app/services/allApi";
+import { agentCustomerGlobalSearch, genearateCode, itemGlobalSearch, itemList, pricingHeaderGetItemPrice, SalesmanListGlobalSearch, saveFinalCode, warehouseList, warehouseListGlobalSearch, warehouseStockTopOrders } from "@/app/services/allApi";
 import { addAgentOrder } from "@/app/services/agentTransaction";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import * as Yup from "yup";
@@ -60,6 +60,24 @@ interface FormData {
   has_excies: boolean,
   item_weight: string,
   volume: number
+}
+
+interface WarehouseStock {
+  item_id: number;
+  warehouse_id: number;
+  qty: string;
+}
+
+interface ItemUOM {
+  id: number;
+  item_id: number;
+  uom_type: string;
+  name: string;
+  price: string;
+  is_stock_keeping: boolean;
+  upc: string;
+  enable_for: string;
+  uom_id: number;
 }
 
 interface ItemData {
@@ -123,6 +141,8 @@ export default function PurchaseOrderAddEditPage() {
   };
 
   const [orderData, setOrderData] = useState<FormData[]>([]);
+  const [warehouseStocks, setWarehouseStocks] = useState<Record<string, WarehouseStock[]>>({});
+  const [itemsWithUOM, setItemsWithUOM] = useState<Record<string, { uoms: ItemUOM[], stock_qty: string }>>({});
   const [itemsOptions, setItemsOptions] = useState<{ label: string; value: string }[]>([]);
   const [itemData, setItemData] = useState<ItemData[]>([
     {
@@ -145,6 +165,8 @@ export default function PurchaseOrderAddEditPage() {
 
   // per-row loading (for UOM / price) so UI can show skeletons while fetching
   const [itemLoading, setItemLoading] = useState<Record<number, { uom?: boolean; price?: boolean }>>({});
+
+  const warehouseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const validateRow = async (index: number, row?: ItemData, options?: { skipUom?: boolean }) => {
     const rowData = row ?? itemData[index];
     if (!rowData) return;
@@ -201,51 +223,163 @@ export default function PurchaseOrderAddEditPage() {
     }
   };
 
+  const fetchWarehouseItems = useCallback(async (warehouseId: string, searchTerm: string = "") => {
+      if (!warehouseId) {
+        setItemsOptions([]);
+        setItemsWithUOM({});
+        setWarehouseStocks({});
+        return;
+      }
+  
+      try {
+        setSkeleton(prev => ({ ...prev, item: true }));
+        
+        // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
+        const stockRes = await warehouseStockTopOrders(warehouseId);
+        const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
+  
+        // Store warehouse stocks for validation
+        setWarehouseStocks(prev => ({
+          ...prev,
+          [warehouseId]: stocksArray
+        }));
+  
+        // Filter items based on search term and stock availability
+        const filteredStocks = stocksArray.filter((stock: any) => {
+          if (Number(stock.stock_qty) <= 0) return false;
+          if (!searchTerm) return true;
+          const searchLower = searchTerm.toLowerCase();
+          return stock.item_name?.toLowerCase().includes(searchLower) ||
+                 stock.item_code?.toLowerCase().includes(searchLower);
+        });
+  
+        // Create items with UOM data map for easy access
+        const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
+        
+        const processedItems = filteredStocks.map((stockItem: any) => {
+          const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
+            let price = uom.price;
+            // Override with specific pricing from the API response
+            if (uom?.uom_type === "primary") {
+              price = stockItem.auom_pc_price || "-";
+            } else if (uom?.uom_type === "secondary") {
+              price = stockItem.buom_ctn_price || "-";
+            }
+            return { 
+              ...uom, 
+              price,
+              id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+              item_id: stockItem.item_id
+            };
+          }) : [];
+  
+          // Store UOM data for this item
+          itemsUOMMap[stockItem.item_id] = {
+            uoms: item_uoms,
+            stock_qty: stockItem.stock_qty
+          };
+  
+          return { 
+            id: stockItem.item_id,
+            name: stockItem.item_name,
+            item_code: stockItem.item_code,
+            erp_code: stockItem.erp_code,
+            item_uoms,
+            warehouse_stock: stockItem.stock_qty,
+            pricing: {
+              buom_ctn_price: stockItem.buom_ctn_price,
+              auom_pc_price: stockItem.auom_pc_price
+            }
+          };
+        });
+  
+        setItemsWithUOM(itemsUOMMap);
+        setOrderData(processedItems);
+  
+        // Create dropdown options
+        const options = processedItems.map((item: any) => ({
+          value: String(item.id),
+          label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
+        }));
+  
+        setItemsOptions(options);
+        setSkeleton(prev => ({ ...prev, item: false }));
+        
+        return options;
+      } catch (error) {
+        console.error("Error fetching warehouse items:", error);
+        setSkeleton(prev => ({ ...prev, item: false }));
+        return [];
+      }
+    }, []);
+  
+    // Debounced warehouse change handler
+    const handleWarehouseChange = useCallback((warehouseId: string) => {
+      // Clear existing timeout
+      if (warehouseDebounceRef.current) {
+        clearTimeout(warehouseDebounceRef.current);
+      }
+  
+      // Set new timeout for debounced API call
+      warehouseDebounceRef.current = setTimeout(() => {
+        fetchWarehouseItems(warehouseId);
+      }, 500); // 500ms debounce delay
+    }, [fetchWarehouseItems]);
+  
+    // Cleanup debounce timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (warehouseDebounceRef.current) {
+          clearTimeout(warehouseDebounceRef.current);
+        }
+      };
+    }, []);
+
   // Function for fetching Item
-  const fetchItem = async (searchTerm: string, values?: FormikValues) => {
-    const res = await itemGlobalSearch({ per_page: "10", query: searchTerm, warehouse: values?.warehouse || "" });
-    if (res.error) {
-      // showSnackbar(res.data?.message || "Failed to fetch items", "error");
-      setSkeleton({ ...skeleton, item: false });
-      return;
-    }
-    const data = res?.data || [];
+  // const fetchItem = async (searchTerm: string, values?: FormikValues) => {
+  //   const res = await itemGlobalSearch({ per_page: "10", query: searchTerm, warehouse: values?.warehouse || "" });
+  //   if (res.error) {
+  //     // showSnackbar(res.data?.message || "Failed to fetch items", "error");
+  //     setSkeleton({ ...skeleton, item: false });
+  //     return;
+  //   }
+  //   const data = res?.data || [];
 
-    // sets the price directly in the item_uoms
-    const updatedData = data.map((item: any) => {
-      const item_uoms = item?.item_uoms ? item?.item_uoms?.map((uom: any) => {
-        if (uom?.uom_type === "primary") {
-          return { ...uom, price: item.pricing?.auom_pc_price }
-        } else if (uom?.uom_type === "secondary") {
-          return { ...uom, price: item.pricing?.buom_ctn_price }
-        }
-      }) : item?.item_uoms;
-      return { ...item, item_uoms }
-    })
+  //   // sets the price directly in the item_uoms
+  //   const updatedData = data.map((item: any) => {
+  //     const item_uoms = item?.item_uoms ? item?.item_uoms?.map((uom: any) => {
+  //       if (uom?.uom_type === "primary") {
+  //         return { ...uom, price: item.pricing?.auom_pc_price }
+  //       } else if (uom?.uom_type === "secondary") {
+  //         return { ...uom, price: item.pricing?.buom_ctn_price }
+  //       }
+  //     }) : item?.item_uoms;
+  //     return { ...item, item_uoms }
+  //   })
 
-    // console.log(updatedData);
+  //   // console.log(updatedData);
 
-    setOrderData(updatedData);
-    const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
-      value: String(item.id),
-      label: (item.erp_code ?? item.item_code ?? item.code ?? "") + " - " + (item.name ?? "")
-    }));
-    // Set the new options while preserving any items that are currently selected in rows
-    setItemsOptions((prev: { label: string; value: string }[] = []) => {
-      const map = new Map<string, { label: string; value: string }>();
-      // Add currently selected items to preserve them
-      itemData.forEach((row) => {
-        if (row.item_id && row.item_label) {
-          map.set(row.item_id, { value: row.item_id, label: row.item_label });
-        }
-      });
-      // Add new search results
-      options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
-      return Array.from(map.values());
-    });
-    setSkeleton({ ...skeleton, item: false });
-    return options;
-  };
+  //   setOrderData(updatedData);
+  //   const options = data.map((item: { id: number; name: string; code?: string; item_code?: string; erp_code?: string }) => ({
+  //     value: String(item.id),
+  //     label: (item.erp_code ?? item.item_code ?? item.code ?? "") + " - " + (item.name ?? "")
+  //   }));
+  //   // Set the new options while preserving any items that are currently selected in rows
+  //   setItemsOptions((prev: { label: string; value: string }[] = []) => {
+  //     const map = new Map<string, { label: string; value: string }>();
+  //     // Add currently selected items to preserve them
+  //     itemData.forEach((row) => {
+  //       if (row.item_id && row.item_label) {
+  //         map.set(row.item_id, { value: row.item_id, label: row.item_label });
+  //       }
+  //     });
+  //     // Add new search results
+  //     options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
+  //     return Array.from(map.values());
+  //   });
+  //   setSkeleton({ ...skeleton, item: false });
+  //   return options;
+  // };
 
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
@@ -657,7 +791,13 @@ export default function PurchaseOrderAddEditPage() {
                       options={warehouseAllOptions}
                       searchable={true}
                       onChange={(e) => {
-                        setFieldValue("warehouse", e.target.value);
+                        if(values.warehouse !== e.target.value) {
+                          setFieldValue("warehouse", e.target.value);
+                          setFieldValue("customer", "");
+                          setFilteredCustomerOptions([]);
+                          setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
+                          handleWarehouseChange(e.target.value);
+                        }
                       }}
                       // onSearch={(q) => fetchWarehouse(q)}
                       // initialValue={filteredWarehouseOptions.find(o => o.value === String(values?.warehouse))?.label || ""}
@@ -725,7 +865,7 @@ export default function PurchaseOrderAddEditPage() {
                       }}
                       onClear={() => {
                         setFieldValue("salesteam", "");
-                        setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
+                        // setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                       }}
                       disabled={values.warehouse === ""}
                       error={touched.salesteam && (errors.salesteam as string)}
@@ -769,25 +909,26 @@ export default function PurchaseOrderAddEditPage() {
                           const idx = Number(row.idx);
                           const err = itemErrors[idx]?.item_id;
                           // Find the option for the current row or use stored label, but only if item_id exists
-                          const matchedOption = itemsOptions.find((o) => o.value === row.item_id);
-                          const initialLabel = row.item_id ? (matchedOption?.label ?? (row.item_label as string) ?? "") : "";
+                          // const matchedOption = itemsOptions.find((o) => o.value === row.item_id);
+                          // const initialLabel = row.item_id ? (matchedOption?.label ?? (row.item_label as string) ?? "") : "";
                           // console.log(row);
                           return (
                             <div>
-                              <AutoSuggestion
+                              <InputFields
                                 label=""
                                 name={`item_id_${row.idx}`}
                                 placeholder="Search item"
-                                onSearch={(q) => fetchItem(q, values)}
-                                initialValue={initialLabel}
-                                onSelect={(opt) => {
-                                  if (opt.value !== row.item_id) {
-                                    recalculateItem(Number(row.idx), "item_id", opt.value);
+                                // onSearch={(q) => fetchItem(q, values)}
+                                // initialValue={initialLabel}
+                                value={row.item_id}
+                                onChange={(e) => {
+                                  if (e.target.value !== row.item_id) {
+                                    recalculateItem(Number(row.idx), "item_id", e.target.value);
                                   }
                                 }}
-                                onClear={() => {
-                                  recalculateItem(Number(row.idx), "item_id", "");
-                                }}
+                                options={itemsOptions}
+                                searchable={true}
+                                showSkeleton={itemsOptions.length === 0}
                                 disabled={!values.customer}
                                 error={err && err}
                                 className="w-full"
@@ -962,7 +1103,7 @@ export default function PurchaseOrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !values.salesteam || !itemData || itemData.length < 0} onClick={() => submitForm()} />
+                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !values.salesteam || !values.delivery_date ||  !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );
