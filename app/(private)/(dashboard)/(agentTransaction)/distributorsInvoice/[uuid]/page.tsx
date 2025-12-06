@@ -1433,9 +1433,9 @@ export default function InvoiceddEditPage() {
                                                         const uomOpts = (selectedOrder as any).item_uoms.map((uom: any) => {
                                                             let price = uom.price;
                                                             if (uom.uom_type === "primary") {
-                                                                price = (selectedOrder as any).pricing?.auom_pc_price || uom.price;
+                                                                price = (selectedOrder as any).pricing?.auom_pc_price || "-";
                                                             } else if (uom.uom_type === "secondary") {
-                                                                price = (selectedOrder as any).pricing?.buom_ctn_price || uom.price;
+                                                                price = (selectedOrder as any).pricing?.buom_ctn_price || "-";
                                                             }
                                                             return { 
                                                                 label: uom.name, 
