@@ -26,7 +26,8 @@ const dropdownDataList = [
 const columns = [
     {
         key: "exchange_code",
-        label: "Code"
+        label: "Code",
+        showByDefault: true,
     },
     {
         key: "warehouse_code, warehouse_name",
