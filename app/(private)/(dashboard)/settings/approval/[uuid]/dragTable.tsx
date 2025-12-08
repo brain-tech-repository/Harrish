@@ -24,6 +24,7 @@ type SelectedOption = OptionType | null;
 
 interface ApprovalStep {
     id: string;
+    step_id: string;
     targetType: string;
     condition: string;
     roleOrCustomer: string;
@@ -153,7 +154,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
 
     const handleEdit = (id: string,index:number) => {
         console.log(id,"editId")
-        const step = steps.find((s) => s.id === id)?steps.find((s) => s.id === id):steps.find((s:any) => s.step_id === id);
+        const step = steps.find((s) => s.step_id === id)?steps.find((s) => s.step_id === id):steps.find((s:any) => s.step_id === id);
         if (step) {
 
          
@@ -177,8 +178,8 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
         const { active, over } = event;
         if (active.id !== over?.id) {
             setSteps((items) => {
-                const oldIndex = items.findIndex((i) => i.id === active.id);
-                const newIndex = items.findIndex((i) => i.id === over?.id);
+                const oldIndex = items.findIndex((i) => i.step_id === active.id);
+                const newIndex = items.findIndex((i) => i.step_id === over?.id);
                 return arrayMove(items, oldIndex, newIndex);
             });
         }
@@ -187,7 +188,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     const updateCondition = (id: string, condition: string) => {
         setSteps((prev) =>
             prev.map((s) =>
-                s.id === id ? { ...s, conditionType: condition } : s
+                s.step_id === id ? { ...s, conditionType: condition } : s
             )
         );
     };
@@ -195,7 +196,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     const updateRelatedSteps = (id: string, selectedIds: string[]) => {
         setSteps((prev) =>
             prev.map((s) =>
-                s.id === id ? { ...s, relatedSteps: selectedIds } : s
+                s.step_id === id ? { ...s, relatedSteps: selectedIds } : s
             )
         );
     };
@@ -434,7 +435,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
             <div className="bg-white shadow rounded-2xl p-4 overflow-x-auto">
                 <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext
-                        items={steps.map((s) => s.id)}
+                        items={steps.map((s) => s.step_id)}
                         strategy={verticalListSortingStrategy}
                     >
                         <table className="table-auto min-w-max w-full text-sm">
@@ -461,7 +462,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                                 {steps.map((step, idx) => {
                                     return(
                                     <SortableRow
-                                        key={step.id}
+                                        key={step.step_id}
                                         step={step}
                                         index={idx}
                                         allSteps={steps}

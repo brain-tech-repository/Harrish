@@ -90,6 +90,7 @@ function convertWorkflow(oldData: any) {
             return {
                 ...step,
                 id:step.step_order,
+                step_id:step.step_order,
                 step_order: step.step_order,
                 title: step.title,
                 condition: step.approval_type,
@@ -129,6 +130,7 @@ export function convertToNewFlow(old: any): any {
 
                 step_order: index + 1,
                 id:index + 1,
+                step_id:index + 1,
                 title: title,
                 approval_type: approvalType,
                 message: step.approvalMessage || null,
@@ -190,6 +192,7 @@ export default function AddApprovalFlow() {
     ];
     interface ApprovalStep {
         id: string;
+        step_id: string;
         targetType: string;
         roleOrCustomer: string;
         allowApproval: boolean;
