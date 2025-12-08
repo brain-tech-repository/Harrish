@@ -132,11 +132,7 @@ const columns = [
     key: "approval_status",
     label: "Approval Status",
     showByDefault: true,
-<<<<<<< HEAD
     render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-=======
-    render: (row: TableDataType) => <ApprovalStatus status={row.approval_status} />,
->>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
   },
   {
     key: "order_flag",
