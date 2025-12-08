@@ -12,7 +12,7 @@ import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
 import ApprovalFlowTable from "./dragTable";
-import { submenuList, roleList, userList, approvalAdd, singleWorkFlowList, approvalWorkfolowUpdate } from "@/app/services/allApi";
+import { submenuList, roleList, userList, approvalAdd, singleWorkFlowList, approvalWorkfolowUpdate, authUserList } from "@/app/services/allApi";
 // import {VerticalArrow} from "./proccessFlow";
 
 type OldStep = {
@@ -63,7 +63,6 @@ function convertWorkflow(oldData: any) {
         description: oldData.description,
         status: oldData.is_active ? "1" : "0",
         steps: oldData.steps.map((step: any) => {
-           
            const useIds: any = []
  const roleIds: any = []
 
@@ -209,7 +208,6 @@ export default function AddApprovalFlow() {
     const [stepsProccess, setStepsProcess] = useState<ApprovalStep[]>([]);
     const params = useParams();
   const uuid = params?.uuid as string;
-    
 
     const [modulesList, setModulesList] = useState<{ value: string; label: string }[]>([]);
     const [roleListData, setRoleListData] = useState<{ value: string; label: string }[]>([]);
@@ -258,7 +256,6 @@ export default function AddApprovalFlow() {
          console.log(store,"hii252")
   const flow: any = convertWorkflow(store)
         console.log(flow,"25")
-       
         setForm(flow)
         console.log(flow.steps, "flow.steps")
         setStepsProcess(flow.steps)
@@ -418,8 +415,8 @@ export default function AddApprovalFlow() {
 
     const fetchUsersList = async () => {
         try {
-
-            const res = await userList();
+            // const res1 = await userList();
+            const res = await authUserList({});
             console.log("role list", res.data);
             const usersDataList: { value: string, label: string }[] = []
             res.data.map((item: { id: number, name: string }) => {

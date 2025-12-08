@@ -412,6 +412,7 @@ export default function OrderDetailPage() {
           break;
 
         case "editBeforeApproval":
+<<<<<<< HEAD
           // Call the editBeforeApproval workflow API (if applicable) and then redirect to list on success
           try {
             res = await editBeforeApprovalWorkflow({
@@ -423,6 +424,10 @@ export default function OrderDetailPage() {
             res = (e as any) || null;
           }
           break;
+=======
+          router.push(`${PATH}${UUID}`);
+          return;
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
 
         default:
           break;
@@ -439,12 +444,15 @@ export default function OrderDetailPage() {
         showSnackbar(res.data.message || "Action failed", "error");
       } else {
         showSnackbar("Action performed successfully", "success");
+<<<<<<< HEAD
         // After successful workflow action, redirect to list page
         try {
           router.push("/distributorsOrder");
         } catch (e) {
           // ignore navigation errors
         }
+=======
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -517,8 +525,13 @@ export default function OrderDetailPage() {
             className="!h-[30px] !gap-[3px] !px-[5px] !pl-[10px]"
           />
         </div>
+<<<<<<< HEAD
 {order?.permissions && data?.request_Step_id != null &&
   <div
+=======
+
+        <div
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
           style={{ zIndex: 30 }}
           className="absolute bottom-20 left-1/2 -translate-x-1/2 backdrop-blur-md bg-black/10 border border-white/30 shadow-lg rounded-xl p-8 text-black z-[60px]"
         >
@@ -554,9 +567,14 @@ export default function OrderDetailPage() {
               </div>
             </>
           )}
+<<<<<<< HEAD
           
           <div className="flex gap-4 flex-wrap">
             {order?.permissions?.includes("APPROVE") && (
+=======
+          <div className="flex gap-4 flex-wrap">
+            {order.permissions.includes("APPROVE") && (
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
               <BorderIconButton
                 icon={
                   loadingWorkflow.approve ? "line-md:loading-loop" : "mdi:tick"
@@ -571,7 +589,11 @@ export default function OrderDetailPage() {
                 }
               />
             )}
+<<<<<<< HEAD
             {order?.permissions?.includes("REJECT") && (
+=======
+            {order.permissions.includes("REJECT") && (
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
               <BorderIconButton
                 icon={
                   loadingWorkflow.reject ? "line-md:loading-loop" : "mdi:times"
@@ -586,7 +608,11 @@ export default function OrderDetailPage() {
                 }
               />
             )}
+<<<<<<< HEAD
             {order?.permissions?.includes("RETURN_BACK") && (
+=======
+            {order.permissions.includes("RETURN_BACK") && (
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
               <BorderIconButton
                 icon={
                   loadingWorkflow.returnBack
@@ -603,7 +629,11 @@ export default function OrderDetailPage() {
                 }
               />
             )}
+<<<<<<< HEAD
             {order?.permissions?.includes("EDIT_BEFORE_APPROVAL") && (
+=======
+            {order.permissions.includes("EDIT_BEFORE_APPROVAL") && (
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
               <BorderIconButton
                 icon={
                   loadingWorkflow.editBeforeApproval
@@ -622,7 +652,10 @@ export default function OrderDetailPage() {
             )}
           </div>
         </div>
+<<<<<<< HEAD
 }
+=======
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
 
         {/* Action Buttons */}
         <div className="flex gap-[12px] relative">

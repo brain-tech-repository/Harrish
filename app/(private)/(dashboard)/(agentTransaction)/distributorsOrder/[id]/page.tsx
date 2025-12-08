@@ -855,7 +855,11 @@ export default function OrderAddEditPage() {
                       value={values.warehouse}
                       options={warehouseOptions}
                       searchable={true}
+<<<<<<< HEAD
                       showSkeleton={warehouseOptions.length === 0}
+=======
+                      showSkeleton={warehouseAllOptions.length === 0}
+>>>>>>> 24afe680ac6ddafd7865122e4c1350165d63c5fd
                       onChange={(e) => {
                         if (values.warehouse !== e.target.value) {
                           setFieldValue("warehouse", e.target.value);
