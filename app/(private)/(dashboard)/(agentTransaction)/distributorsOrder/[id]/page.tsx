@@ -122,7 +122,7 @@ export default function OrderAddEditPage() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
-  const { warehouseAllOptions } = useAllDropdownListData();
+  const { warehouseAllOptions,warehouseOptions } = useAllDropdownListData();
   const [skeleton, setSkeleton] = useState({
     route: false,
     customer: false,
@@ -277,14 +277,13 @@ export default function OrderAddEditPage() {
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
       
       const processedItems = filteredStocks.map((stockItem: any) => {
-        // Process UOMs with pricing from warehouseStockTopOrders response
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
           // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            price = stockItem.auom_pc_price || uom.price;
+            price = stockItem.auom_pc_price || "-";
           } else if (uom?.uom_type === "secondary") {
-            price = stockItem.buom_ctn_price || uom.price;
+            price = stockItem.buom_ctn_price || "-";
           }
           return { 
             ...uom, 
@@ -503,7 +502,6 @@ export default function OrderAddEditPage() {
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
         
-        // Use UOM data from itemsWithUOM which includes pricing from warehouseStockTopOrders
         if (itemUOMData?.uoms) {
           item.UOM = itemUOMData.uoms.map(uom => ({ 
             label: uom.name, 
@@ -855,9 +853,9 @@ export default function OrderAddEditPage() {
                       name="warehouse"
                       placeholder="Search Distributor"
                       value={values.warehouse}
-                      options={warehouseAllOptions}
+                      options={warehouseOptions}
                       searchable={true}
-                      showSkeleton={warehouseAllOptions.length === 0}
+                      showSkeleton={warehouseOptions.length === 0}
                       onChange={(e) => {
                         if (values.warehouse !== e.target.value) {
                           setFieldValue("warehouse", e.target.value);
