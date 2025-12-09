@@ -288,7 +288,13 @@ export default function OrderDetailPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const rawOrder = localStorage.getItem("workflow.order");
-  const order: { request_id: number; permissions: string[] } =
+  const order: { 
+    request_id: number; 
+    permissions: string[];
+    message?: string;
+    notification?: string;
+    step_title?: string;
+  } =
     rawOrder && rawOrder !== "undefined"
       ? JSON.parse(rawOrder)
       : {};
@@ -554,6 +560,17 @@ export default function OrderDetailPage() {
               </div>
             </>
           )}
+          
+          {/* Display message above buttons */}
+         
+             
+              {order?.message && (
+                <div className="text-gray-600 mb-4">
+                  <span className="font-medium">{order.message}</span> 
+                </div>
+              )}
+              
+       
           
           <div className="flex gap-4 flex-wrap">
             {order?.permissions?.includes("APPROVE") && (
