@@ -178,7 +178,7 @@ const Config = createContext<configContextType>({
 });
 
 export type TableDataType = {
-    [key: string]: string;
+    [key: string]: any;
 };
 
 type tableDetailsContextType = {

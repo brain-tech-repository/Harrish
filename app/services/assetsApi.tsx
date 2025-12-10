@@ -523,7 +523,7 @@ export const callRegisterByUUID = async (uuid: string, params?: Params) => {
 
 export const updateCallRegister = async (uuid: string, body: chiller) => {
   try {
-    const res = await API.put(`/api/assets/call-register/update/${uuid}`, body);
+    const res = await API.put(`/api/assets/call-register/${uuid}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -718,6 +718,61 @@ export const serviceTerritoryByUUID = async (uuid: string, params?: Params) => {
 export const updateServiceTerritory = async (uuid: string, body: object) => {
   try {
     const res = await API.put(`/api/assets/service-territory/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const assetsStatusList = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/settings/fridge-status/list`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+// export const CallRegisterByUUID = async (uuid: string, params?: Params) => {
+//   try {
+//     const res = await API.get(`/api/assets/call-register/${uuid}`, {
+//       params: params,
+//     });
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+
+// export const updateServiceTerritory = async (uuid: string, body: object) => {
+//   try {
+//     const res = await API.put(`/api/assets/service-territory/${uuid}`, body);
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+
+
+export const ServiceVisitList = async (params: any) => {
+  try {
+    const res = await API.get(`/api/assets/service-visit/list`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const serviceVisitByUUID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/service-visit/${uuid}`, {
+      params: params,
+    });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

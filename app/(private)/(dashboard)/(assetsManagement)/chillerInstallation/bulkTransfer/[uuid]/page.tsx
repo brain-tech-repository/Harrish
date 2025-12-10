@@ -23,8 +23,13 @@ export default function AddRoute() {
   const uuid = params?.uuid as string;
   const mode = uuid === "addAllocate" ? "allocate" : "add";
 
-  const { regionOptions, warehouseAllOptions, areaOptions } =
-    useAllDropdownListData();
+  const {
+    regionOptions,
+    warehouseOptions,
+    areaOptions,
+    fetchAreaOptions,
+    fetchWarehouseOptions,
+  } = useAllDropdownListData();
 
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
@@ -153,6 +158,21 @@ export default function AddRoute() {
     setForm((prev: any) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
 
+    if (field === "region_id") {
+      fetchAreaOptions(value);
+      setForm((prev: any) => ({
+        ...prev,
+        [field]: value,
+        area_id: "",
+        warehouse_id: "",
+      }));
+    } else if (field === "area_id") {
+      fetchWarehouseOptions(value);
+      setForm((prev: any) => ({ ...prev, [field]: value, warehouse_id: "" }));
+    } else {
+      setForm((prev: any) => ({ ...prev, [field]: value }));
+    }
+
     if (field === "model_id") {
       fetchModelStock(value);
     }
@@ -264,13 +284,17 @@ export default function AddRoute() {
           label="Area"
           value={form.area_id}
           options={areaOptions}
+          disabled={!form.region_id}
+          showSkeleton={loading}
           onChange={(e) => handleChange("area_id", e.target.value)}
         />
 
         <InputFields
           label="Distributor"
           value={form.warehouse_id}
-          options={warehouseAllOptions}
+          options={warehouseOptions}
+          disabled={!form.area_id}
+          showSkeleton={loading}
           onChange={(e) => handleChange("warehouse_id", e.target.value)}
         />
 

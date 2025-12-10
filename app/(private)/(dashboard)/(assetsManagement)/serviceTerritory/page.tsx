@@ -113,7 +113,7 @@ export default function ServiceTerritoryListPage() {
                 setLoading(true);
 
                 const result = await irServiceTerrtList({
-                    page: page.toString(),
+                    current_page: page.toString(),
                     per_page: pageSize.toString(),
                     ...appliedFilters,
                 });
@@ -123,29 +123,35 @@ export default function ServiceTerritoryListPage() {
                 // console.log("🔍 Is Array?:", Array.isArray(result));
 
                 // Handle direct array response
+                if (result?.data && result?.pagination) {
+                    const totalPages = Math.ceil(result.pagination.total / result.pagination.per_page);
+                    return {
+                        data: Array.isArray(result.data) ? result.data : [],
+                        total: totalPages, // total number of PAGES, not records
+                        currentPage: result.pagination.current_page,
+                        pageSize: result.pagination.per_page,
+                    };
+                }
+
                 if (Array.isArray(result)) {
-                    // console.log("✅ Direct array response detected");
                     return {
                         data: result,
                         total: result.length,
                         currentPage: page,
-                        pageSize: result.length,
+                        pageSize: pageSize,
                     };
                 }
 
-                // Handle object response with data property
+                // Handle object response without pagination
                 if (result?.data) {
-                    console.log("✅ Object response with data property");
                     return {
                         data: Array.isArray(result.data) ? result.data : [],
-                        total: result?.pagination?.total || result.data.length || 0,
+                        total: result?.pagination?.total || (Array.isArray(result.data) ? result.data.length : 0),
                         currentPage: result?.pagination?.current_page || page,
                         pageSize: result?.pagination?.per_page || pageSize,
                     };
                 }
 
-                // Fallback
-                // console.warn("⚠️ Unexpected response structure");
                 return {
                     data: [],
                     total: 0,
@@ -153,7 +159,6 @@ export default function ServiceTerritoryListPage() {
                     pageSize: pageSize,
                 };
             } catch (error) {
-                console.error("❌ Error fetching service territory:", error);
                 showSnackbar("Failed to fetch service territory list", "error");
 
                 return {
@@ -174,7 +179,6 @@ export default function ServiceTerritoryListPage() {
     }, []);
 
 
-    // Refresh table when dropdown options load
     useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions]);

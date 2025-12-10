@@ -42,31 +42,50 @@ export default function AddOrEditChiller() {
     console.log(params)
     const { setLoading } = useLoading();
 
-    const isEditMode = params?.id && params.id !== "add";
+    const isEditMode = params?.uuid && params.uuid !== "add";
     console.log(isEditMode)
-    const chillerId = isEditMode ? String(params.id) : null;
+    const chillerId = isEditMode ? String(params.uuid) : null;
 
     /* ----------------------------------------------------
        INITIAL VALUES
     ---------------------------------------------------- */
     const [chiller, setChiller] = useState({
-        osa_code: "",
         ticket_type: "",
-        serial_number: "",
-        model_number: "",
-        acquisition: "",
-        vender: "",
-        manufacturer: "",
-        country_id: "",
+        osa_code: "",
+        ticket_date: "",
+        chiller_serial_number: "",
         assets_category: "",
-        sap_code: "",
+        model_number: "",
+        chiller_code: "",
+        brand: "",
+        outlet_code: "",
+        outlet_name: "",
+        owner_name: "",
+        street: "",
+        landmark: "",
+        town: "",
+        district: "",
+        contact_no1: "",
+        contact_no2: "",
+        current_outlet_code: "",
+        current_outlet_name: "",
+        current_owner_name: "",
+        current_warehouse: "",
+        current_asm: "",
+        current_rm: "",
+        current_road_street: "",
+        current_landmark: "",
+        current_town: "",
+        current_district: "",
+        current_contact_no1: "",
+        current_contact_no2: "",
+        technician_id: "",
+        ctc_status: "",
         status: "1",
-        assets_type: "",
-        branding: "",
-        trading_partner_number: "",
-        capacity: "",
-        manufacturing_year: "",
-        remarks: "",
+        sales_valume: "",
+        followup_status: "",
+        nature_of_call: "",
+        follow_up_action: "",
     });
 
     /* ----------------------------------------------------
@@ -88,23 +107,42 @@ export default function AddOrEditChiller() {
                 const d = res.data;
 
                 setChiller({
+                    ticket_type: d.ticket_type || "",
                     osa_code: d.osa_code || "",
-                    ticket_type: d.ticket_type || "",   // add this
-                    serial_number: d.serial_number || "",
-                    model_number: String(d.model_number?.id || ""),
-                    assets_category: String(d.assets_category?.id || ""),
-                    sap_code: d.sap_code || "",
-                    acquisition: d.acquisition || "",
-                    vender: String(d.vendor?.id || ""),
-                    manufacturer: String(d.manufacturer?.id || ""),
-                    country_id: String(d.country?.id || ""),
-                    branding: String(d.branding?.id || ""),
-                    trading_partner_number: String(d.trading_partner_number || ""),
-                    capacity: d.capacity || "",
-                    manufacturing_year: d.manufacturing_year || "",
-                    assets_type: d.assets_type || "",
-                    remarks: d.remarks || "",
+                    ticket_date: d.ticket_date || "",
+                    chiller_serial_number: d.chiller_serial_number || "",
+                    assets_category: d.assets_category || "",
+                    model_number: d.model_number || "",
+                    chiller_code: d.chiller_code || "",
+                    brand: d.brand || "",
+                    outlet_code: d.outlet_code || "",
+                    outlet_name: d.outlet_name || "",
+                    owner_name: d.owner_name || "",
+                    street: d.road_street || "",
+                    landmark: d.landmark || "",
+                    town: d.town || "",
+                    district: d.district || "",
+                    contact_no1: d.contact_no1 || "",
+                    contact_no2: d.contact_no2 || "",
+                    current_outlet_code: d.current_outlet_code || "",
+                    current_outlet_name: d.current_outlet_name || "",
+                    current_owner_name: d.current_owner_name || "",
+                    current_warehouse: d.current_warehouse || "",
+                    current_asm: d.current_asm || "",
+                    current_rm: d.current_rm || "",
+                    current_road_street: d.current_road_street || "",
+                    current_landmark: d.current_landmark || "",
+                    current_town: d.current_town || "",
+                    current_district: d.current_district || "",
+                    current_contact_no1: d.current_contact_no1 || "",
+                    current_contact_no2: d.current_contact_no2 || "",
+                    technician_id: d.technician_id || "",
+                    ctc_status: d.ctc_status || "",
                     status: String(d.status ?? "1"),
+                    sales_valume: d.sales_valume || "",
+                    followup_status: d.followup_status || "",
+                    nature_of_call: d.nature_of_call || "",
+                    follow_up_action: d.follow_up_action || "",
                 });
 
             } else {
@@ -142,40 +180,40 @@ export default function AddOrEditChiller() {
     );
 
     const handleSerialNumber = async (serial: string, setFieldValue: any) => {
-    setFieldValue("chiller_serial_number", serial);
+        setFieldValue("chiller_serial_number", serial);
 
-    if (serial.length < 3) return;
+        if (serial.length < 3) return;
 
-    try {
-        const res = await callRegisterGlobalSearch({ serial_number: serial });
+        try {
+            const res = await callRegisterGlobalSearch({ serial_number: serial });
 
-        if (!res?.data?.length) {
-            showSnackbar("No record found for this serial number", "warning");
-            return;
+            if (!res?.data?.length) {
+                showSnackbar("No record found for this serial number", "warning");
+                return;
+            }
+
+            const d = res.data[0];
+
+            // Ticket No
+            setFieldValue("chiller_code", d.chiller_code || "");
+
+            // CATEGORY → show NAME but save ID
+            setFieldValue("assets_category", d.assets_category?.name || "");
+            setFieldValue("assets_category_id", d.assets_category?.id || "");
+
+            // MODEL NUMBER → show NAME but save ID
+            setFieldValue("model_number", d.model_number?.name || "");
+            setFieldValue("model_number_id", d.model_number?.id || "");
+
+            // BRANDING → show NAME but save ID
+            setFieldValue("brand", d.brand?.name || "");
+            setFieldValue("brand_id", d.brand?.id || "");
+
+        } catch (error) {
+            console.error(error);
+            showSnackbar("Error fetching serial number details", "error");
         }
-
-        const d = res.data[0];
-
-        // Ticket No
-        setFieldValue("chiller_code", d.chiller_code || "");
-
-        // CATEGORY → show NAME but save ID
-        setFieldValue("assets_category", d.assets_category?.name || "");
-        setFieldValue("assets_category_id", d.assets_category?.id || "");
-
-        // MODEL NUMBER → show NAME but save ID
-        setFieldValue("model_number", d.model_number?.name || "");
-        setFieldValue("model_number_id", d.model_number?.id || "");
-
-        // BRANDING → show NAME but save ID
-        setFieldValue("brand", d.brand?.name || "");
-        setFieldValue("brand_id", d.brand?.id || "");
-
-    } catch (error) {
-        console.error(error);
-        showSnackbar("Error fetching serial number details", "error");
-    }
-};
+    };
 
 
 
