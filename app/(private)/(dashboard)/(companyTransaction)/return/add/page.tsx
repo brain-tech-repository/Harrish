@@ -215,9 +215,9 @@ export default function PurchaseOrderAddEditPage() {
     const updatedData = data.map((item: any) => {
       const item_uoms = item?.item_uoms ? item?.item_uoms?.map((uom: any) => {
         if (uom?.uom_type === "primary") {
-          return { ...uom, price: item.pricing?.auom_pc_price }
-        } else if (uom?.uom_type === "secondary") {
           return { ...uom, price: item.pricing?.buom_ctn_price }
+        } else if (uom?.uom_type === "secondary") {
+          return { ...uom, price: item.pricing?.auom_pc_price }
         }
       }) : item?.item_uoms;
       return { ...item, item_uoms }

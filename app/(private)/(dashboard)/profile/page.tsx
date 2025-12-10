@@ -596,9 +596,9 @@ export default function ProfilePage() {
           {/* SYSTEM SETTINGS TAB */}
           {activeTab === "settings" && (
             <ContainerCard>
-              <div className="space-y-4">
+              <div className="space-y-4 cursor-pointer">
                 {/* LANGUAGE */}
-                <div className="flex items-center p-4 bg-gray-50 rounded-xl  border-1 border-gray-200">
+                <div className="flex items-center p-4 bg-gray-50 rounded-xl  border-1 border-gray-200 cursor-pointer">
                   <Icon
                     icon="lucide:languages"
                     width={28}
@@ -622,7 +622,7 @@ export default function ProfilePage() {
                     width={28}
                     className="text-gray-500 mr-4"
                   />
-                  <div>
+                  <div className="cursor-pointer" onClick={() => setShowSidebar(true)}>
                     <h4 className="font-medium">Reset Password</h4>
                     <p className="text-sm text-gray-500">
                       Update or change your account password
