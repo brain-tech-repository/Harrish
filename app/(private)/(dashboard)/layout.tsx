@@ -104,7 +104,7 @@ function LayoutSelector({ children }: { children: React.ReactNode }) {
             const res = await isVerify();
             if(res.error) {
                 // localStorage.removeItem("token");
-                return router.push("/");
+                // return router.push("/");
             }
             try {
                 await preload();

@@ -122,7 +122,7 @@ export default function OrderAddEditPage() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
-  const { warehouseAllOptions } = useAllDropdownListData();
+  const { warehouseAllOptions,warehouseOptions } = useAllDropdownListData();
   const [skeleton, setSkeleton] = useState({
     route: false,
     customer: false,
@@ -198,13 +198,27 @@ export default function OrderAddEditPage() {
         await itemRowSchema.validate(toValidate, { abortEarly: false });
       }
 
-      // Additional stock validation
-      if (rowData.item_id && rowData.available_stock && rowData.Quantity) {
+      // Additional stock validation - check total quantity across all rows with same item and UOM
+      if (rowData.item_id && rowData.uom_id && rowData.available_stock && rowData.Quantity) {
         const availableStock = Number(rowData.available_stock);
         const requestedQuantity = Number(rowData.Quantity);
         
-        if (requestedQuantity > availableStock) {
-          validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+        // Calculate total quantity used for this item+UOM combination in other rows
+        const totalUsedInOtherRows = itemData.reduce((sum, item, i) => {
+          if (i !== index && item.item_id === rowData.item_id && item.uom_id === rowData.uom_id) {
+            return sum + (Number(item.Quantity) || 0);
+          }
+          return sum;
+        }, 0);
+        
+        const totalRequested = requestedQuantity + totalUsedInOtherRows;
+        
+        if (totalRequested > availableStock) {
+          if (totalUsedInOtherRows > 0) {
+            validationErrors["Quantity"] = `Total quantity (${totalRequested}) exceeds available stock (${availableStock}). Already used: ${totalUsedInOtherRows}`;
+          } else {
+            validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+          }
         }
       }
 
@@ -229,12 +243,26 @@ export default function OrderAddEditPage() {
       }
 
       // Additional stock validation even when other validations fail
-      if (rowData.item_id && rowData.available_stock && rowData.Quantity) {
+      if (rowData.item_id && rowData.uom_id && rowData.available_stock && rowData.Quantity) {
         const availableStock = Number(rowData.available_stock);
         const requestedQuantity = Number(rowData.Quantity);
         
-        if (requestedQuantity > availableStock) {
-          validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+        // Calculate total quantity used for this item+UOM combination in other rows
+        const totalUsedInOtherRows = itemData.reduce((sum, item, i) => {
+          if (i !== index && item.item_id === rowData.item_id && item.uom_id === rowData.uom_id) {
+            return sum + (Number(item.Quantity) || 0);
+          }
+          return sum;
+        }, 0);
+        
+        const totalRequested = requestedQuantity + totalUsedInOtherRows;
+        
+        if (totalRequested > availableStock) {
+          if (totalUsedInOtherRows > 0) {
+            validationErrors["Quantity"] = `Total quantity (${totalRequested}) exceeds available stock (${availableStock}). Already used: ${totalUsedInOtherRows}`;
+          } else {
+            validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+          }
         }
       }
 
@@ -277,14 +305,13 @@ export default function OrderAddEditPage() {
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
       
       const processedItems = filteredStocks.map((stockItem: any) => {
-        // Process UOMs with pricing from warehouseStockTopOrders response
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
           // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            price = stockItem.auom_pc_price || uom.price;
+            price = stockItem.buom_ctn_price || "-";
           } else if (uom?.uom_type === "secondary") {
-            price = stockItem.buom_ctn_price || uom.price;
+            price = stockItem.auom_pc_price || "-";
           }
           return { 
             ...uom, 
@@ -503,7 +530,6 @@ export default function OrderAddEditPage() {
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
         
-        // Use UOM data from itemsWithUOM which includes pricing from warehouseStockTopOrders
         if (itemUOMData?.uoms) {
           item.UOM = itemUOMData.uoms.map(uom => ({ 
             label: uom.name, 
@@ -593,10 +619,22 @@ export default function OrderAddEditPage() {
     // item.Discount = discount.toFixed(2);
     // item.gross = gross.toFixed(2);
 
+    setItemData(newData);
+
     if (field !== "item_id") {
       validateRow(index, newData[index]);
+      
+      // If quantity changed, revalidate all other rows with the same item and UOM
+      if (field === "Quantity" && item.item_id && item.uom_id) {
+        newData.forEach((otherItem, otherIndex) => {
+          if (otherIndex !== index && 
+              otherItem.item_id === item.item_id && 
+              otherItem.uom_id === item.uom_id) {
+            validateRow(otherIndex, newData[otherIndex]);
+          }
+        });
+      }
     }
-    setItemData(newData);
   };
 
   const handleAddNewItem = () => {
@@ -704,6 +742,38 @@ export default function OrderAddEditPage() {
         showSnackbar(itemErr.inner.map((err: any) => err.message).join(", "), "error");
         // set a top-level form error to prevent submission
         formikHelpers.setErrors({ items: "Item rows validation failed" } as any);
+        return;
+      }
+
+      // Additional validation: Check for stock availability violations
+      const stockViolations: string[] = [];
+      const itemStockMap = new Map<string, number>();
+
+      itemData.forEach((item, index) => {
+        if (!item.item_id || !item.uom_id || !item.available_stock) return;
+
+        const itemKey = `${item.item_id}_${item.uom_id}`;
+        const currentQty = Number(item.Quantity) || 0;
+        const availableStock = Number(item.available_stock);
+
+        // Accumulate quantities for the same item+UOM combination
+        const totalQty = (itemStockMap.get(itemKey) || 0) + currentQty;
+        itemStockMap.set(itemKey, totalQty);
+
+        // Check if total quantity exceeds available stock
+        if (totalQty > availableStock) {
+          const itemName = item.item_name || item.item_label || `Item ${index + 1}`;
+          stockViolations.push(
+            `${itemName}: Total quantity (${totalQty}) exceeds available stock (${availableStock})`
+          );
+        }
+      });
+
+      if (stockViolations.length > 0) {
+        showSnackbar(
+          `Cannot submit order: ${stockViolations.join("; ")}`,
+          "error"
+        );
         return;
       }
 
@@ -855,9 +925,9 @@ export default function OrderAddEditPage() {
                       name="warehouse"
                       placeholder="Search Distributor"
                       value={values.warehouse}
-                      options={warehouseAllOptions}
+                      options={warehouseOptions}
                       searchable={true}
-                      showSkeleton={warehouseAllOptions.length === 0}
+                      showSkeleton={warehouseOptions.length === 0}
                       onChange={(e) => {
                         if (values.warehouse !== e.target.value) {
                           setFieldValue("warehouse", e.target.value);
@@ -1037,6 +1107,19 @@ export default function OrderAddEditPage() {
                           const currentItem = itemData[idx];
                           const availableStock = currentItem?.available_stock;
                           
+                          // Calculate total quantity used for this item in other rows
+                          const itemId = currentItem?.item_id;
+                          const uomId = currentItem?.uom_id;
+                          const totalUsedInOtherRows = itemData.reduce((sum, item, i) => {
+                            if (i !== idx && item.item_id === itemId && item.uom_id === uomId) {
+                              return sum + (Number(item.Quantity) || 0);
+                            }
+                            return sum;
+                          }, 0);
+                          
+                          const remainingStock = availableStock ? Number(availableStock) - totalUsedInOtherRows : null;
+                          const effectiveMaxStock = remainingStock !== null ? Math.max(0, remainingStock) : null;
+                          
                           return (
                             <div className={`${ availableStock ? "pt-5" : ""}`}>
                               <InputFields
@@ -1053,13 +1136,14 @@ export default function OrderAddEditPage() {
                                   recalculateItem(Number(row.idx), "Quantity", sanitized);
                                 }}
                                 min={1}
-                                max={availableStock}
+                                max={effectiveMaxStock || undefined}
                                 integerOnly={true}
-                                error={err && err}
+                                // error={err && err}
                               />
                               {availableStock && (
                                 <div className="text-xs text-gray-500 mt-1">
                                   Stock: {availableStock}
+                                  
                                 </div>
                               )}
                             </div>
@@ -1088,7 +1172,7 @@ export default function OrderAddEditPage() {
                       { key: "Net", label: "Net", render: (row) => <span>{toInternationalNumber(row.Net) || "0.00"}</span> },
                       { key: "Vat", label: "VAT", render: (row) => <span>{toInternationalNumber(row.Vat) || "0.00"}</span> },
                       // { key: "gross", label: "Gross", render: (row) => <span>{toInternationalNumber(row.gross) || "0.00"}</span> },
-                      { key: "Total", label: "Total", render: (row) => <span>{toInternationalNumber(row.Total) || "0.00"}</span> },
+                      { key: "Total", label: "Total", render: (row) => <span>{toInternationalNumber(Number(row.Total)) || "0.00"}</span> },
                       {
                         key: "action",
                         label: "Action",
@@ -1155,7 +1239,7 @@ export default function OrderAddEditPage() {
                       ))}
                       <div className="font-semibold text-[#181D27] text-[18px] flex justify-between">
                         <span>Total</span>
-                        <span>{CURRENCY} {toInternationalNumber(finalTotal)}</span>
+                        <span>{CURRENCY} {toInternationalNumber(Number(finalTotal))}</span>
                       </div>
                     </div>
                   </div>

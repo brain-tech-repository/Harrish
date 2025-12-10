@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import InputFields from "@/app/components/inputFields";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -14,7 +14,7 @@ import Button from "@mui/material/Button";
 import { Icon } from "@iconify-icon/react";
 import Toggle from "@/app/components/toggle";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { authUserList } from "@/app/services/allApi";
+// import { authUserList } from "@/app/services/allApi"; // Removed internal fetch
 import { customer } from "@/app/(private)/data/customerDetails";
 import Skeleton from "@mui/material/Skeleton";
 
@@ -24,6 +24,7 @@ type SelectedOption = OptionType | null;
 
 interface ApprovalStep {
     id: string;
+    step_id: string;
     targetType: string;
     condition: string;
     roleOrCustomer: string;
@@ -33,8 +34,9 @@ interface ApprovalStep {
     canEditBeforeApproval: boolean;
     approvalMessage: string;
     notificationMessage: string;
-    conditionType: string; // AND / OR
-    relatedSteps: string[]; // multi-selection
+    confirmationMessage: string;
+    conditionType: string; // AND / OR    relatedSteps: string[]; // multi-selection
+    relatedSteps: string[];
     formType: string[] | string; // allow array or single value
     selectedRole?: SelectedOption[];
     selectedCustomer?: SelectedOption[];
@@ -63,44 +65,44 @@ const conditionOptions: OptionType[] = [
     { value: "OR", label: "OR" },
 ];
 
-const formTypeOptions: OptionType[] =[
-    { value: "ADD", label: "ADD" },
-    { value: "APPROVE", label: "APPROVE" },
-    { value: "REJECT", label: "REJECT" },
-    { value: "UPDATE", label: "UPDATE" },
-    { value: "RETURN_BACK", label: "RETURN_BACK" },
+const formTypeOptions: OptionType[] = [
+  { value: "APPROVE", label: "APPROVE" },
+  { value: "REJECT", label: "REJECT" },
+  { value: "RETURN_BACK", label: "RETURN BACK" },
+  { value: "EDIT_BEFORE_APPROVAL", label: "EDIT BEFORE APPROVAL" },
 ];
-
 export default function ApprovalFlowTable({ roleListData, usersData, steps, setSteps }: { roleListData: OptionType[], usersData: OptionType[], steps: ApprovalStep[], setSteps: React.Dispatch<React.SetStateAction<ApprovalStep[]>> }) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingIndex, setEditingIndex] = useState<number | any>(null);
 
-    const [userOptions, setUserOptions] = useState<OptionType[]>([]);
+    // Removed internal userOptions state
+    // const [userOptions, setUserOptions] = useState<OptionType[]>([]);
 
-    type FormState = {
-        formType: string[];
+    // type FormState = {
+    //     formType: string[];
 
-        condition: string;
-        targetType: string;
-        role_id?: string;
-        selectedRole?: SelectedOption[];
-        selectedCustomer?: SelectedOption[];
-        customer_id?: string;
-        allowApproval: boolean;
-        allowReject: boolean;
-        returnToStepNo: boolean;
-        canEditBeforeApproval: boolean;
-        approvalMessage: string;
-        notificationMessage: string;
-        conditionType: string;
-        relatedSteps: string[];
-    };
+    //     condition: string;
+    //     targetType: string;
+    //     role_id?: string;
+    //     selectedRole?: SelectedOption[];
+    //     selectedCustomer?: SelectedOption[];
+    //     customer_id?: string;
+    //     allowApproval: boolean;
+    //     allowReject: boolean;
+    //     returnToStepNo: boolean;
+    //     canEditBeforeApproval: boolean;
+    //     approvalMessage: string;
+    //     notificationMessage: string;
+    //     confirmationMessage: string;
+    //     conditionType: string;
+    // };
 
     const [form, setForm] = useState<any>({
         formType: [],
         condition: "",
         targetType: "",
         role_id: undefined,
+        confirmationMessage: "",
         selectedRole: [],
         selectedCustomer: [],
         customer_id: undefined,
@@ -119,19 +121,25 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
             return alert("Please select target type and role/customer!");
 
         if (editingId) {
-            
-            console.log(editingId,"editi")
-             steps[editingIndex] = {...form}
-             setSteps([...steps])
-            
+            console.log(editingId, "editingId", editingIndex);
+            // Update the step at the editing index
+            const updatedSteps = [...steps];
+            updatedSteps[editingIndex] = {
+                ...updatedSteps[editingIndex],
+                ...form,
+                id: updatedSteps[editingIndex].id,
+                step_id: updatedSteps[editingIndex].step_id,
+            };
+            setSteps(updatedSteps);
             setEditingId(null);
+            setEditingIndex(null);
         } else {
             // ensure boolean flags are set according to selected form types
-           
             const newStep: ApprovalStep = { id: Date.now().toString(), ...form } as ApprovalStep;
             setSteps([...steps, newStep]);
         }
 
+        // Reset form
         setForm({
             formType: [],
             condition: "",
@@ -146,29 +154,34 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
             canEditBeforeApproval: false,
             approvalMessage: "",
             notificationMessage: "",
+            confirmationMessage: "",
             conditionType: "",
             relatedSteps: [],
         });
     };
 
-    const handleEdit = (id: string,index:number) => {
-        console.log(id,"editId")
-        const step = steps.find((s) => s.id === id)?steps.find((s) => s.id === id):steps.find((s:any) => s.step_id === id);
+    const handleEdit = (id: string, index: number) => {
+        console.log(id, "editId");
+        // Find step by either id or step_id
+        const step = steps.find((s) => s.id === id || s.step_id === id);
         if (step) {
-
-         
+            console.log("Found step:", step);
             // normalize formType to array and keep boolean flags
             setForm({
                 ...step,
                 formType: Array.isArray(step?.formType) ? step?.formType : step?.formType ? [String(step?.formType)] : [],
                 selectedRole: step?.selectedRole ?? [],
-                condition:step.condition,
+                condition: step.condition,
+                targetType: step.targetType,
                 role_id: step?.selectedRole ?? [],
                 customer_id: step?.selectedCustomer ?? [],
                 selectedCustomer: step?.selectedCustomer ?? [],
+                approvalMessage: step?.approvalMessage ?? "",
+                notificationMessage: step?.notificationMessage ?? "",
+                confirmationMessage: step?.confirmationMessage ?? "",
             } as any);
-            setEditingId(id);
-            setEditingIndex(index)
+            setEditingId(step.id || step.step_id);
+            setEditingIndex(index);
         }
     };
 
@@ -187,7 +200,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     const updateCondition = (id: string, condition: string) => {
         setSteps((prev) =>
             prev.map((s) =>
-                s.id === id ? { ...s, conditionType: condition } : s
+                s.step_id === id ? { ...s, conditionType: condition } : s
             )
         );
     };
@@ -195,28 +208,15 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     const updateRelatedSteps = (id: string, selectedIds: string[]) => {
         setSteps((prev) =>
             prev.map((s) =>
-                s.id === id ? { ...s, relatedSteps: selectedIds } : s
+                s.step_id === id ? { ...s, relatedSteps: selectedIds } : s
             )
         );
     };
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await authUserList({});
+    // Removed internal useEffect for fetching users
 
-                const usersData: OptionType[] = (res?.data ?? []).map((user: User) => ({
-                    value: String(user.id),
-                    label: user.name,
-                }));
-                setUserOptions(usersData);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        fetchUsers();
-    }, []);
+    // Memoize the items IDs for SortableContext
+    const itemIds = useMemo(() => steps.map((s) => s.id), [steps]);
 
     return (
         <div className="p-6 space-y-6">
@@ -226,8 +226,9 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                     {/* New Form Type */}
                     <InputFields
                         required
-                        label="Form Type"
+                        label="Permissions"
                         name="formType"
+                        multiSelectChips={true}
                         value={form.formType}
                         isSingle={false}
                         options={formTypeOptions}
@@ -303,13 +304,13 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                                     name="user_id"
                                     value={form.customer_id}
                                     isSingle={false}
-                                    options={userOptions}
+                                    options={usersData} // Changed to use props
                                     multiSelectChips={true}
 
                                     width="full"
                                     onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                                         const val = e.target.value;
-                                        const selected = userOptions.find((u) => u.value === val) ?? null;
+                                        const selected = usersData.find((u) => u.value === val) ?? null; // Changed to use props
                                         console.log(e.target.value, "mlk")
                                         setForm({ ...form, customer_id: val, selectedCustomer: e.target.value });
                                     }}
@@ -331,78 +332,14 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                         }
                     /> : ""}
                 </div>
-                {/* {form.targetType?   <div className="grid grid-cols-2 gap-4">
-
-        <InputFields
-                required
-                label="Optional Approval Roles"
-              
-                name="roleOrCustomer"
-                value={form.role_id}
-                isSingle={false}
-                options={roleListData}
-                width="full"
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                  const val = e.target.value;
-                  const selected = roleListData.find((r) => r.value === val) ?? null;
-                  setForm({ ...form, role_id: val, selectedRole: selected });
-                }}
-              />
-
-               <InputFields
-                required
-                label="User"
-                name="user_id"
-                value={form.customer_id}
-                isSingle={false}
-                options={userOptions}
-                width="full"
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-                  const val = e.target.value;
-                  const selected = userOptions.find((u) => u.value === val) ?? null;
-                  setForm({ ...form, customer_id: val, selectedCustomer: selected });
-                }}
-              />
-              </div>:""} */}
-
-                {/* Role / Customer */}
-
-
-                {/* Checkboxes */}
-                {/* <div className="grid grid-cols-4 gap-2 mt-3">
-          {[
-            "allowApproval",
-            "allowReject",
-            "returnToStepNo",
-            "canEditBeforeApproval",
-          ].map((key) => (
-            <label
-              key={key}
-              className="flex items-center space-x-2 bg-white-50 p-2 rounded-md border border-gray-500"
-            >
-              <input
-                type="checkbox"
-                checked={form[key]}
-                 className="appearance-none w-5 h-5 border-2 border-gray-400 rounded-md 
-               checked:bg-[var(--primary-btn-color)] checked:border-[var(--primary-btn-color)] 
-               cursor-pointer transition-all duration-200"
-                onChange={(e) =>
-                  setForm({ ...form, [key]: e.target.checked })
-                }
-              />
-              <span className="capitalize text-sm text-gray-700">
-                {key.replace(/([A-Z])/g, " $1")}
-              </span>
-            </label>
-          ))}
-        </div> */}
 
                 {/* Messages */}
                 <div className="grid grid-cols-2 gap-4">
                     <InputFields
                         required
                         width="full"
-                        label="Approval Message"
+                        placeholder="Pending,Success,Reject"
+                        label="Approval Status"
                         value={form.approvalMessage}
                         onChange={(e) =>
                             setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
@@ -419,6 +356,20 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                         }
                     />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <InputFields
+                        required
+                        width="full"
+                        label="Confirmation Message"
+                        value={form.confirmationMessage}
+                        onChange={(e) =>
+                            setForm({ ...form, confirmationMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+                        }
+                    />
+
+
+                </div>
+
 
                 <SidebarBtn
                     onClick={handleAddOrUpdate}
@@ -439,39 +390,40 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                     >
                         <table className="table-auto min-w-max w-full text-sm">
                             <thead>
-                               <tr className="relative h-[44px] border-b-[1px] border-[#E9EAEB]">
-                  <th className="p-2">Step</th>
-                  <th className="p-2">Form Type</th>
-                  <th className="p-2">Target Type</th>
-                  <th className="p-2">Role</th>
-                  <th className="p-2">User</th>
+                                <tr className="relative h-[44px] border-b-[1px] border-[#E9EAEB]">
+                                    <th className="p-2">Step</th>
+                                    <th className="p-2">Permission</th>
+                                    <th className="p-2">Target Type</th>
+                                    <th className="p-2">Role</th>
+                                    <th className="p-2">User</th>
 
-                  {/* <th className="p-2 text-center">Approval</th>
+                                    {/* <th className="p-2 text-center">Approval</th>
                   <th className="p-2 text-center">Reject</th>
                   <th className="p-2 text-center">Return</th>
                   <th className="p-2 text-center">Edit Before</th> */}
-                  <th className="p-2 text-center">Condition</th>
-                  {/* <th className="p-2">Related Steps</th> */}
-                  <th className="p-2">Approval Msg</th>
-                  <th className="p-2">Notification Msg</th>
-                  <th className="p-2 text-center">Action</th>
-                </tr>
+                                    <th className="p-2 text-center">Condition</th>
+                                    {/* <th className="p-2">Related Steps</th> */}
+                                    <th className="p-2">Approval Msg</th>
+                                    <th className="p-2">Notification Msg</th>
+                                    <th className="p-2">Confirmation  Msg</th>
+                                    <th className="p-2 text-center">Action</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {steps.map((step, idx) => {
-                                    return(
-                                    <SortableRow
-                                        key={step.id}
-                                        step={step}
-                                        index={idx}
-                                        allSteps={steps}
-                                        onEdit={handleEdit}
-                                        onConditionChange={updateCondition}
-                                        onRelatedStepsChange={updateRelatedSteps}
-                                        roleOptions={roleListData}
-                                        userOptions={userOptions}
-                                    />
-                                )})}
+                                    return (
+                                        <SortableRow
+                                            key={step.id}
+                                            step={step}
+                                            index={idx}
+                                            onEdit={handleEdit}
+                                            onConditionChange={updateCondition}
+                                            onRelatedStepsChange={updateRelatedSteps}
+                                            roleOptions={roleListData}
+                                            userOptions={usersData} // Changed to use props
+                                        />
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </SortableContext>
@@ -481,10 +433,12 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     );
 }
 
+// Optimization: Memoize the row component to prevent unnecessary re-renders
+const MemoizedSortableRow = React.memo(SortableRow);
+
 function SortableRow({
     step,
     index,
-    allSteps,
     onEdit,
     onConditionChange,
     onRelatedStepsChange,
@@ -493,8 +447,7 @@ function SortableRow({
 }: {
     step: any;
     index: number;
-    allSteps: ApprovalStep[];
-    onEdit: (id: string,index:number) => void;
+    onEdit: (id: string, index: number) => void;
     onConditionChange: (id: string, condition: string) => void;
     onRelatedStepsChange: (id: string, selected: string[]) => void;
     roleOptions: OptionType[];
@@ -535,10 +488,11 @@ function SortableRow({
                 <td className="px-[24px] py-[12px] bg-white">{step.condition}</td>
                 <td className="px-[24px] py-[12px] bg-white">{step.approvalMessage}</td>
                 <td className="px-[24px] py-[12px] bg-white">{step.notificationMessage}</td>
+                <td className="px-[24px] py-[12px] bg-white">{step.confirmationMessage}</td>
                 <td className="px-[24px] py-[12px] bg-white text-center">
                     <SidebarBtn
                         onClick={() => onEdit(step.id ? step.id : step.step_id, index)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-red-600 hover:text-red-800"
                     >
                         <Icon icon="mdi:pencil" width="20" height="20" />
                     </SidebarBtn>

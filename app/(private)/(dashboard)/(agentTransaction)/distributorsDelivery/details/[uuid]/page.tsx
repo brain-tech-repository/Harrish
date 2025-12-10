@@ -353,7 +353,7 @@ export default function OrderDetailPage() {
                 )}
                 {(deliveryData?.salesman?.code || deliveryData?.salesman?.name) && (
                   <div className="mt-2">
-                    Salesman:{" "}
+                    Sales Team:{" "}
                     <span className="font-bold">
                       {deliveryData?.salesman?.code && deliveryData?.salesman?.name
                         ? `${deliveryData.salesman.code} - ${deliveryData.salesman.name}`
@@ -405,7 +405,7 @@ export default function OrderDetailPage() {
                 ))}
                 <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
                   <span>Total</span>
-                  <span>{CURRENCY} {toInternationalNumber(finalTotal)}</span>
+                  <span>{CURRENCY} {toInternationalNumber(Number(finalTotal))}</span>
                 </div>
               </div>
 

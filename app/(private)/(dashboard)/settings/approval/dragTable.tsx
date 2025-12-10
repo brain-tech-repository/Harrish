@@ -32,6 +32,7 @@ interface ApprovalStep {
   canEditBeforeApproval: boolean;
   approvalMessage: string;
   notificationMessage: string;
+  confirmationMessage: string;
   conditionType: string; // AND / OR
   relatedSteps: string[]; // multi-selection
   formType: string[] | string; // allow array or single value
@@ -40,9 +41,9 @@ interface ApprovalStep {
 }
 
 interface User {
-          id: string | number;
-          name: string;
-        }
+  id: string | number;
+  name: string;
+}
 
 
 const targetTypeOptions: OptionType[] = [
@@ -73,7 +74,7 @@ const formTypeOptions: OptionType[] = [
   { value: "Can Edit Before Approval", label: "Can Edit Before Approval" },
 ];
 
-export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps}: {roleListData:OptionType[],usersData:OptionType[],steps:ApprovalStep[],setSteps:React.Dispatch<React.SetStateAction<ApprovalStep[]>>}) {
+export default function ApprovalFlowTable({roleListData, usersData, steps, setSteps }: { roleListData: OptionType[], usersData: OptionType[], steps: ApprovalStep[], setSteps: React.Dispatch<React.SetStateAction<ApprovalStep[]>> }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [userOptions,setUserOptions] = useState<OptionType[]>([]);
 
@@ -91,6 +92,7 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
     canEditBeforeApproval: boolean;
     approvalMessage: string;
     notificationMessage: string;
+    confirmationMessage: string;
     conditionType: string;
     relatedSteps: string[];
   };
@@ -109,6 +111,7 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
     canEditBeforeApproval: false,
     approvalMessage: "",
     notificationMessage: "",
+    confirmationMessage: "",
     conditionType: "",
     relatedSteps: [],
   });
@@ -154,6 +157,7 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
       canEditBeforeApproval: false,
       approvalMessage: "",
       notificationMessage: "",
+      confirmationMessage: "",
       conditionType: "",
       relatedSteps: [],
     });
@@ -224,37 +228,38 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
       <div className="bg-white shadow-md rounded-2xl p-6 space-y-5">
         <div className="grid grid-cols-2 gap-4">
           {/* New Form Type */}
-            <InputFields
+          <InputFields
             required
-            label="Form Type"
+            label="Permissions"
             name="formType"
+            multiSelectChips={true}
             value={form.formType}
             isSingle={false}
             options={formTypeOptions}
             width="full"
-              onChange={(e: unknown) => {
-                // Normalize InputFields output which may be an array of strings
-                let selected: string[] = [];
-                if (Array.isArray(e)) {
-                  selected = e as string[];
-                } else if (typeof e === 'object' && e !== null && 'target' in e) {
-                  const target = (e as unknown as { target?: { value?: string | string[]; selectedOptions?: HTMLCollectionOf<HTMLOptionElement> } }).target;
-                  if (Array.isArray(target?.value)) {
-                    selected = target.value as string[];
-                  } else if (target?.selectedOptions) {
-                    selected = Array.from(target.selectedOptions as HTMLCollectionOf<HTMLOptionElement>).map((o) => o.value);
-                  } else if (typeof target?.value === 'string' && target.value !== '') {
-                    selected = [target.value];
-                  }
+            onChange={(e: unknown) => {
+              // Normalize InputFields output which may be an array of strings
+              let selected: string[] = [];
+              if (Array.isArray(e)) {
+                selected = e as string[];
+              } else if (typeof e === 'object' && e !== null && 'target' in e) {
+                const target = (e as unknown as { target?: { value?: string | string[]; selectedOptions?: HTMLCollectionOf<HTMLOptionElement> } }).target;
+                if (Array.isArray(target?.value)) {
+                  selected = target.value as string[];
+                } else if (target?.selectedOptions) {
+                  selected = Array.from(target.selectedOptions as HTMLCollectionOf<HTMLOptionElement>).map((o) => o.value);
+                } else if (typeof target?.value === 'string' && target.value !== '') {
+                  selected = [target.value];
                 }
-                const flags = {
-                  allowApproval: selected.includes("Allow Approval"),
-                  allowReject: selected.includes("Allow Reject"),
-                  returnToStepNo: selected.includes("Return To Step No"),
-                  canEditBeforeApproval: selected.includes("Can Edit Before Approval"),
-                };
-                setForm({ ...form, formType: selected, ...flags });
-              }}
+              }
+              const flags = {
+                allowApproval: selected.includes("Allow Approval"),
+                allowReject: selected.includes("Allow Reject"),
+                returnToStepNo: selected.includes("Return To Step No"),
+                canEditBeforeApproval: selected.includes("Can Edit Before Approval"),
+              };
+              setForm({ ...form, formType: selected, ...flags });
+            }}
           />
           <InputFields
             required
@@ -359,10 +364,10 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
 
         {/* Messages */}
         <div className="grid grid-cols-2 gap-4">
-            <InputFields
+          <InputFields
             required
             width="full"
-            label="Approval Message"
+            label="Approval Status"
             value={form.approvalMessage}
             onChange={(e) =>
               setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
@@ -378,13 +383,21 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
               setForm({ ...form, notificationMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
             }
           />
+           <InputFields
+            required
+            width="full"
+            label="Confirmation Message"
+            value={form.confirmationMessage}
+            onChange={(e) =>
+              setForm({ ...form, confirmationMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+            }
+          />
         </div>
 
         <SidebarBtn
           onClick={handleAddOrUpdate}
           className="bg-[]-600 text-white"
           isActive={true}
-         
         >
           {editingId ? "Update Step" : "Add Step"}
         </SidebarBtn>
@@ -401,7 +414,7 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
               <thead>
                 <tr className="relative h-[44px] border-b-[1px] border-[#E9EAEB]">
                   <th className="p-2">Step</th>
-                  <th className="p-2">Form Type</th>
+                  <th className="p-2">Permission</th>
                   <th className="p-2">Target Type</th>
                   <th className="p-2">Role/Customer</th>
                   <th className="p-2 text-center">Approval</th>
@@ -412,6 +425,7 @@ export default function ApprovalFlowTable({roleListData,usersData,steps,setSteps
                   <th className="p-2">Related Steps</th>
                   <th className="p-2">Approval Msg</th>
                   <th className="p-2">Notification Msg</th>
+                  <th className="p-2">Confirmation  Msg</th>
                   <th className="p-2 text-center">Action</th>
                 </tr>
               </thead>
@@ -470,25 +484,25 @@ function SortableRow({
     }));
 
   return (
-    <tr  className="text-[14px] bg-white text-[#535862]">
+    <tr className="text-[14px] bg-white text-[#535862]">
       <td ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-2 text-center font-semibold">{index + 1}</td>
-  <td className="px-[24px] py-[12px] bg-white   ">{Array.isArray(step.formType) ? step.formType.join(", ") : step.formType}</td>
+      <td className="px-[24px] py-[12px] bg-white   ">{Array.isArray(step.formType) ? step.formType.join(", ") : step.formType}</td>
       <td className="px-[24px] py-[12px] bg-white   ">{step.targetType === "1" ? "Role" : "User"}</td>
-  <td className="px-[24px] py-[12px] bg-white   ">{(step.selectedCustomer?.label ?? step.selectedRole?.label) || step.roleOrCustomer}</td>
+      <td className="px-[24px] py-[12px] bg-white   ">{(step.selectedCustomer?.label ?? step.selectedRole?.label) || step.roleOrCustomer}</td>
       <td className="px-[24px] py-[12px] bg-white    text-center">
-        <Toggle isChecked={step.allowApproval} onChange={() => {}} disabled={true} />
+        <Toggle isChecked={step.allowApproval} onChange={() => { }} disabled={true} />
       </td>
       <td className="px-[24px] py-[12px] bg-white    text-center">
-        <Toggle isChecked={step.allowReject} onChange={() => {}} disabled={true} />
+        <Toggle isChecked={step.allowReject} onChange={() => { }} disabled={true} />
       </td>
       <td className="px-[24px] py-[12px] bg-white    text-center">
-        <Toggle isChecked={step.returnToStepNo} onChange={() => {}} disabled={true} />
+        <Toggle isChecked={step.returnToStepNo} onChange={() => { }} disabled={true} />
       </td>
       <td className="px-[24px] py-[12px] bg-white    text-center">
-        <Toggle isChecked={step.canEditBeforeApproval} onChange={() => {}} disabled={true} />
+        <Toggle isChecked={step.canEditBeforeApproval} onChange={() => { }} disabled={true} />
       </td>
 
-     <td className="px-[24px] py-[12px] bg-white   ">{step.condition}</td>
+      <td className="px-[24px] py-[12px] bg-white   ">{step.condition}</td>
       {/* === Related Steps Multi Select === */}
       <td className="px-[24px] py-[12px] bg-white   ">
 
@@ -519,10 +533,11 @@ function SortableRow({
 
       <td className="px-[24px] py-[12px] bg-white   ">{step.approvalMessage}</td>
       <td className="px-[24px] py-[12px] bg-white   ">{step.notificationMessage}</td>
+      <td className="px-[24px] py-[12px] bg-white   ">{step.confirmationMessage}</td>
       <td className="px-[24px] py-[12px] bg-white    text-center">
         <SidebarBtn
           onClick={() => onEdit(step.id)}
-          className="text-blue-600 hover:text-blue-800"
+          className="text-red-600 hover:text-red-800"
         >
           <Icon icon="mdi:pencil" width="20" height="20" />
         </SidebarBtn>

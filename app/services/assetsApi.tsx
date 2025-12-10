@@ -1,4 +1,4 @@
-import { Params } from "next/dist/server/request/params";
+﻿import { Params } from "next/dist/server/request/params";
 import { API, handleError } from "./allApi";
 
 export const exportServiceTypes = async (params?: Params) => {
@@ -415,7 +415,7 @@ export const addAcf = async (body: object) => {
 };
 
 
-export const iroList = async ( params: Params) => {
+export const iroList = async (params: Params) => {
   try {
     const res = await API.get(`/api/assets/iro/count`, {
       params: params,
@@ -437,7 +437,7 @@ export const iroViewList = async (id: string) => {
 };
 
 
-export const bulkTransferList = async ( params: Params) => {
+export const bulkTransferList = async (params: Params) => {
   try {
     const res = await API.get(`/api/assets/bulk-transfer/list`, {
       params: params,
@@ -467,7 +467,7 @@ export const addAllocate = async (body: object) => {
   }
 };
 
-export const irList = async ( params: Params) => {
+export const irList = async (params: Params) => {
   try {
     const res = await API.get(`/api/assets/ir/list`, {
       params: params,
@@ -478,7 +478,7 @@ export const irList = async ( params: Params) => {
   }
 };
 
-export const callRegisterList = async ( params: Params) => {
+export const callRegisterList = async (params: Params) => {
   try {
     const res = await API.get(`/api/assets/call-register/list`, {
       params: params,
@@ -524,6 +524,200 @@ export const callRegisterByUUID = async (uuid: string, params?: Params) => {
 export const updateCallRegister = async (uuid: string, body: chiller) => {
   try {
     const res = await API.put(`/api/assets/call-register/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const getBtrByRegion = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/assets/bulk-transfer/get-BTR`,
+      { params }
+
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getWarehouseChillers = async (btrId: string, params = {}) => {
+  if (!btrId) throw new Error("BTR ID is required");
+
+  const res = await API.get(
+    `/api/assets/bulk-transfer/gteChillerByBTR/${btrId}`, // ✅ URL FIXED
+    {
+      headers: {
+        id: String(btrId), // ✅ HEADER FIXED
+      },
+      params,
+    }
+  );
+  // console.log(res)
+  return res.data;
+};
+
+
+
+
+
+
+
+
+// export const getStockOfWarehouse = async (id?: string, params?: Params) => {
+//   try {
+//     const res = await API.get(`/api/settings/warehouse-stocks/warehouseStockInfo/${id}`, { params });
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+
+export const BulkTransferByUUID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/bulk-transfer/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getModelNumbers = async (params?: any) => {
+  try {
+    const res = await API.get(`/api/assets/bulk-transfer/model-numbers`,
+      { params }
+
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const getModelStock = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/assets/bulk-transfer/model-stock`,
+      { params }
+
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+// Installation Report
+export const irReportList = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/assets/ir/get-ir-list`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const addInstallationReport = async (body: object) => {
+  try {
+    const res = await API.post(`/api/assets/ir/add`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const getIROList = async (params?: any) => {
+  try {
+    const res = await API.get(`/api/assets/ir/iro`,
+      { params }
+
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const getIROTable = async (iroId: string, warehouseId: string, params = {}) => {
+  if (!iroId) throw new Error("IRO ID is required");
+  if (!warehouseId) throw new Error("Warehouse ID is required");
+
+  try {
+    const url = `/api/assets/iro/${iroId}/${warehouseId}`;
+    console.log("🔍 Calling getIROTable with URL:", url);
+
+    const res = await API.get(url, { params });
+
+    console.log("✅ getIROTable response:", res);
+    return res.data;
+  } catch (error: unknown) {
+    console.error("❌ getIROTable error:", error);
+    return handleError(error);
+  }
+};
+
+
+export const getTechicianList = async (params?: any) => {
+  try {
+    const res = await API.get(`/api/assets/ir/salesman`,
+      { params }
+
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+
+export const irServiceTerrtList = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/assets/service-territory/list`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const addServiceTerritory = async (body: object) => {
+  try {
+    const res = await API.post(`/api/assets/service-territory/add`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const serviceTerritoryByUUID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/service-territory/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const updateServiceTerritory = async (uuid: string, body: object) => {
+  try {
+    const res = await API.put(`/api/assets/service-territory/${uuid}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

@@ -15,7 +15,7 @@ import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import PrintButton from "@/app/components/printButton";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { formatWithPattern } from "@/app/(private)/utils/date";
-import { invoiceExportHeader, invoiceListByUUID } from "@/app/services/companyTransaction";
+import { invoiceExportHeader, invoiceListByUUID, exportInvoiceViewPdf } from "@/app/services/companyTransaction";
 
 const columns = [
   { key: "index", label: "#" },
@@ -139,7 +139,7 @@ export default function OrderDetailPage() {
   const exportFile = async () => {
     try {
       setLoadingState(true);
-      const response = await invoiceExportHeader({ uuid: UUID, format: "pdf" });
+      const response = await exportInvoiceViewPdf({ uuid: UUID, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -306,7 +306,7 @@ export default function OrderDetailPage() {
                 <div className="font-semibold text-[#181D27] text-[18px] flex justify-between">
                   <span>Total</span>
                   {/* <span>AED {toInternationalNumber(finalTotal) || 0}</span> */}
-                  <span>{CURRENCY} {toInternationalNumber(finalTotal) || 0}</span>
+                  <span>{CURRENCY} {toInternationalNumber(Number(finalTotal)) || 0}</span>
                 </div>
               </div>
 

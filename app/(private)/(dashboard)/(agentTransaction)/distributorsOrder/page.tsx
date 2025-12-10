@@ -71,7 +71,7 @@ const columns = [
 
   {
     key: "customer_name",
-    label: "Customer Name",
+    label: "Customer",
     showByDefault: true,
     render: (row: TableDataType) => {
       const code = row.customer_code ?? "";
@@ -82,7 +82,8 @@ const columns = [
   },
   {
     key: "salesman_name",
-    label: "Salesman Name",
+    label: "Sales Team",
+    showByDefault: true,
     render: (row: TableDataType) => {
       const code = row.salesman_code ?? "";
       const name = row.salesman_name ?? "";
@@ -92,7 +93,8 @@ const columns = [
   },
   {
     key: "route_name",
-    label: "Route Name",
+    label: "Route",
+    showByDefault: true,
     render: (row: TableDataType) => {
       const code = row.route_code ?? "";
       const name = row.route_name ?? "";
@@ -130,7 +132,7 @@ const columns = [
     key: "approval_status",
     label: "Approval Status",
     showByDefault: true,
-    render: (row: TableDataType) => <ApprovalStatus status={row.approval_status} />,
+    render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
   },
   {
     key: "order_flag",
@@ -362,7 +364,7 @@ export default function CustomerInvoicePage() {
                 },
                 {
                   key: "salesman_id",
-                  label: "Salesman",
+                  label: "Sales Team",
                   isSingle: false,
                   multiSelectChips: true,
                   options: Array.isArray(salesmanOptions)

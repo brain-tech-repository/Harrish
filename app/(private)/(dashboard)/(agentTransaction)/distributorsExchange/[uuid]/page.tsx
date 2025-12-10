@@ -3,6 +3,7 @@
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import AutoSuggestion from "@/app/components/autoSuggestion";
 import ContainerCard from "@/app/components/containerCard";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Table from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
@@ -22,7 +23,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
 
 interface FormData {
@@ -72,16 +73,35 @@ interface Reason {
   reason?: string;
 }
 
+interface WarehouseStock {
+  item_id: number;
+  warehouse_id: number;
+  qty: string;
+}
+
+interface ItemUOM {
+  id: number;
+  item_id: number;
+  uom_type: string;
+  name: string;
+  price: string;
+  is_stock_keeping: boolean;
+  upc: string;
+  enable_for: string;
+  uom_id: number;
+}
+
 interface ItemData {
   item_id: string;
   item_name: string;
   // stored human-readable label for a selected item (used when server results don't include it)
   item_label?: string;
-  UOM: { label: string; value: string; price?: string }[];
+  UOM: { label: string; value: string; price?: string; uom_type?: string }[];
   uom_id?: string;
   Quantity: string;
   Price: string;
   Total: string;
+  available_stock?: string;
   return_type?: string;
   region?: string;
   Vat?: string | number;
@@ -118,30 +138,31 @@ export default function ExchangeAddEditPage() {
   const [rowReasonOptions, setRowReasonOptions] = useState<Record<string, { label: string; value: string }[]>>({});
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
+  const { warehouseOptions } = useAllDropdownListData();
 
-  // 🔹 Fetch invoices (for AutoSuggestion multi-select)
-  const fetchInvoices = async (searchText: string) => {
-    try {
-      const res = await invoiceList({ search: searchText || "", per_page: "50" });
-      if (res && !res.error && Array.isArray(res.data)) {
-        return res.data.map((inv: { id: number | string; invoice_code?: string; customer_name?: string }) => ({
-          value: String(inv.id),
-          label: `${inv.invoice_code ?? ""}${inv.invoice_code ? " - " : ""}${inv.customer_name ?? ""}`,
-        }));
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  };
+  // // 🔹 Fetch invoices (for AutoSuggestion multi-select)
+  // const fetchInvoices = async (searchText: string) => {
+  //   try {
+  //     const res = await invoiceList({ search: searchText || "", per_page: "50" });
+  //     if (res && !res.error && Array.isArray(res.data)) {
+  //       return res.data.map((inv: { id: number | string; invoice_code?: string; customer_name?: string }) => ({
+  //         value: String(inv.id),
+  //         label: `${inv.invoice_code ?? ""}${inv.invoice_code ? " - " : ""}${inv.customer_name ?? ""}`,
+  //       }));
+  //     }
+  //     return [];
+  //   } catch (e) {
+  //     return [];
+  //   }
+  // };
 
-  const [skeleton, setSkeleton] = useState({
-    route: false,
-    customer: false,
-    item: false,
-  });
+  // const [skeleton, setSkeleton] = useState({
+  //   route: false,
+  //   customer: false,
+  //   item: false,
+  // });
   const [filteredCustomerOptions, setFilteredCustomerOptions] = useState<{ label: string; value: string }[]>([]);
-  const [filteredWarehouseOptions, setFilteredWarehouseOptions] = useState<{ label: string; value: string }[]>([]);
+  // const [filteredWarehouseOptions, setFilteredWarehouseOptions] = useState<{ label: string; value: string }[]>([]);
   const form = {
     warehouse: "",
     customer: "",
@@ -150,7 +171,15 @@ export default function ExchangeAddEditPage() {
   };
 
   const [exchangeData, setExchangeData] = useState<FormData[]>([]);
+  const [skeleton, setSkeleton] = useState({
+    route: false,
+    customer: false,
+    item: false,
+  });
+  const [orderData, setOrderData] = useState<FormData[]>([]);
   const [itemsOptions, setItemsOptions] = useState<{ label: string; value: string }[]>([]);
+  const [warehouseStocks, setWarehouseStocks] = useState<Record<string, WarehouseStock[]>>({});
+  const [itemsWithUOM, setItemsWithUOM] = useState<Record<string, { uoms: ItemUOM[], stock_qty: string }>>({});
   const [itemData, setItemData] = useState<ItemData[]>([
     {
       item_id: "",
@@ -161,6 +190,7 @@ export default function ExchangeAddEditPage() {
       Quantity: "1",
       Price: "",
       Total: "0.00",
+      available_stock: "",
       return_type: "",
       region: "",
       Vat: "0",
@@ -173,6 +203,7 @@ export default function ExchangeAddEditPage() {
   // per-row loading (for UOM / price) so UI can show skeletons while fetching
   const [itemLoading, setItemLoading] = useState<Record<number, { uom?: boolean; price?: boolean }>>({});
 
+  const warehouseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const validateRow = async (index: number, row?: ItemData, options?: { skipUom?: boolean }) => {
     const rowData = row ?? itemData[index];
     if (!rowData) return;
@@ -201,6 +232,15 @@ export default function ExchangeAddEditPage() {
           const msg = typeof e === "object" && e !== null && "message" in e ? (e as any).message : undefined;
           if (msg) partialErrors["Quantity"] = String(msg);
         }
+
+        // Stock validation when warehouse stock is available
+        if (rowData?.item_id && rowData?.available_stock && rowData?.Quantity) {
+          const availableStock = Number(rowData.available_stock);
+          const requestedQty = Number(rowData.Quantity);
+          if (requestedQty > availableStock) {
+            partialErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+          }
+        }
         if (Object.keys(partialErrors).length === 0) {
           setItemErrors((prev) => {
             const copy = { ...prev };
@@ -212,6 +252,18 @@ export default function ExchangeAddEditPage() {
         }
       } else {
         await itemRowSchema.validate(toValidate, { abortEarly: false });
+
+        // Stock validation when warehouse stock is available
+        if (rowData?.item_id && rowData?.available_stock && rowData?.Quantity) {
+          const availableStock = Number(rowData.available_stock);
+          const requestedQty = Number(rowData.Quantity);
+          if (requestedQty > availableStock) {
+            const validationErrors: Record<string, string> = {};
+            validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+            setItemErrors((prev) => ({ ...prev, [index]: validationErrors }));
+            return;
+          }
+        }
         setItemErrors((prev) => {
           const copy = { ...prev };
           delete copy[index];
@@ -232,35 +284,146 @@ export default function ExchangeAddEditPage() {
     }
   };
 
-  // Function for fetching Item
-  const fetchItem = async (searchTerm: string, warehouse_id?: string) => {
-    // Don't fetch items if no warehouse is selected
-    if (!warehouse_id) {
-      return [];
-    }
-    setSkeleton((prev) => ({ ...prev, item: true }));
-    const res = await itemGlobalSearch({ perPage: "10", query: searchTerm, warehouse_id });
-    if (res?.error) {
-      showSnackbar(res.data?.message || "Failed to fetch items", "error");
-      setSkeleton((prev) => ({ ...prev, item: false }));
-      return [];
-    }
-    const data = res?.data || [];
-    setExchangeData(data);
-    const options = data.map((item: FormData) => ({
-      value: String(item.id),
-      label: (item?.erp_code ? item?.erp_code : item?.code) + (item.name ? " - " + item.name : ""),
-    }));
-    // Merge newly fetched options with existing ones so previously selected items remain available
-    setItemsOptions((prev: { label: string; value: string }[] = []) => {
-      const map = new Map<string, { label: string; value: string }>();
-      prev.forEach((o) => map.set(o.value, o));
-      options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
-      return Array.from(map.values());
-    });
-    setSkeleton((prev) => ({ ...prev, item: false }));
-    return options;
-  };
+   // Debounced function to fetch items when warehouse changes
+    const fetchWarehouseItems = useCallback(async (warehouseId: string, searchTerm: string = "") => {
+      if (!warehouseId) {
+        setItemsOptions([]);
+        setItemsWithUOM({});
+        setWarehouseStocks({});
+        return;
+      }
+  
+      try {
+        setSkeleton(prev => ({ ...prev, item: true }));
+        
+        // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
+        const stockRes = await warehouseStockTopOrders(warehouseId);
+        const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
+  
+        // Store warehouse stocks for validation
+        setWarehouseStocks(prev => ({
+          ...prev,
+          [warehouseId]: stocksArray
+        }));
+  
+        // Filter items based on search term and stock availability
+        const filteredStocks = stocksArray.filter((stock: any) => {
+          if (Number(stock.stock_qty) <= 0) return false;
+          if (!searchTerm) return true;
+          const searchLower = searchTerm.toLowerCase();
+          return stock.item_name?.toLowerCase().includes(searchLower) ||
+                 stock.item_code?.toLowerCase().includes(searchLower);
+        });
+  
+        // Create items with UOM data map for easy access
+        const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
+        
+        const processedItems = filteredStocks.map((stockItem: any) => {
+          // Process UOMs with pricing from warehouseStockTopOrders response
+          const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
+            let price = uom.price;
+            // Override with specific pricing from the API response
+            if (uom?.uom_type === "primary") {
+              price = stockItem.buom_ctn_price || "-";
+            } else if (uom?.uom_type === "secondary") {
+              price = stockItem.auom_pc_price || "-";
+            }
+            return { 
+              ...uom, 
+              price,
+              id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+              item_id: stockItem.item_id
+            };
+          }) : [];
+  
+          // Store UOM data for this item
+          itemsUOMMap[stockItem.item_id] = {
+            uoms: item_uoms,
+            stock_qty: stockItem.stock_qty
+          };
+  
+          return { 
+            id: stockItem.item_id,
+            name: stockItem.item_name,
+            item_code: stockItem.item_code,
+            erp_code: stockItem.erp_code,
+            item_uoms,
+            warehouse_stock: stockItem.stock_qty,
+            pricing: {
+              buom_ctn_price: stockItem.buom_ctn_price,
+              auom_pc_price: stockItem.auom_pc_price
+            }
+          };
+        });
+  
+        setItemsWithUOM(itemsUOMMap);
+        setOrderData(processedItems);
+  
+        // Create dropdown options
+        const options = processedItems.map((item: any) => ({
+          value: String(item.id),
+          label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
+        }));
+  
+        setItemsOptions(options);
+        setSkeleton(prev => ({ ...prev, item: false }));
+        
+        return options;
+      } catch (error) {
+        console.error("Error fetching warehouse items:", error);
+        setSkeleton(prev => ({ ...prev, item: false }));
+        return [];
+      }
+    }, []);
+  
+    // Debounced warehouse change handler
+    const handleWarehouseChange = useCallback((warehouseId: string) => {
+      // Clear existing timeout
+      if (warehouseDebounceRef.current) {
+        clearTimeout(warehouseDebounceRef.current);
+      }
+  
+      // Set new timeout for debounced API call
+      warehouseDebounceRef.current = setTimeout(() => {
+        fetchWarehouseItems(warehouseId);
+      }, 500); // 500ms debounce delay
+    }, [fetchWarehouseItems]);
+  
+    // Cleanup debounce timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (warehouseDebounceRef.current) {
+          clearTimeout(warehouseDebounceRef.current);
+        }
+      };
+    }, []);
+
+  // // Function for fetching Item
+  // const fetchItem = async (searchTerm: string, warehouse_id?: string) => {
+  //   // Don't fetch items if no warehouse is selected
+  //   if (!warehouse_id) {
+  //     return [];
+  //   }
+  //   const res = await itemGlobalSearch({ perPage: "10", query: searchTerm, warehouse_id });
+  //   if (res?.error) {
+  //     showSnackbar(res.data?.message || "Failed to fetch items", "error");
+  //     return [];
+  //   }
+  //   const data = res?.data || [];
+  //   setExchangeData(data);
+  //   const options = data.map((item: FormData) => ({
+  //     value: String(item.id),
+  //     label: (item?.erp_code ? item?.erp_code : item?.code) + (item.name ? " - " + item.name : ""),
+  //   }));
+  //   // Merge newly fetched options with existing ones so previously selected items remain available
+  //   setItemsOptions((prev: { label: string; value: string }[] = []) => {
+  //     const map = new Map<string, { label: string; value: string }>();
+  //     prev.forEach((o) => map.set(o.value, o));
+  //     options.forEach((o: { label: string; value: string }) => map.set(o.value, o));
+  //     return Array.from(map.values());
+  //   });
+  //   return options;
+  // };
 
   useEffect(() => {
     // Fetch reason list on component mount
@@ -346,28 +509,73 @@ export default function ExchangeAddEditPage() {
         item.return_type = "";
         item.item_label = "";
         item.Vat = "0";
+        item.available_stock = "";
       } else {
-        const selectedExchange = exchangeData.find((exchange: FormData) => exchange.id.toString() === value);
-        item.item_id = selectedExchange ? String(selectedExchange.id || value) : value;
-        item.item_name = selectedExchange?.name ?? "";
-        // Map UOMs to support both 'uom_price' and 'price'
-        item.UOM =
-          selectedExchange?.item_uoms?.map((uom) => {
-            // Support both 'uom_price' and 'price' if present
-            const price = 'uom_price' in uom ? (uom as any).uom_price : uom.price;
+        const selectedItem =
+          orderData?.find((it: any) => String(it.id) === value) ??
+          exchangeData.find((exchange: FormData) => exchange.id.toString() === value);
+
+        item.item_id = selectedItem ? String(selectedItem.id || value) : value;
+        item.item_name = selectedItem?.name ?? "";
+
+        // Build UOM options with warehouse pricing overrides when present
+        if (selectedItem?.item_uoms) {
+          item.UOM = selectedItem.item_uoms.map((uom: any) => {
+            let price = uom.price;
+            if ((selectedItem as any)?.pricing) {
+              if (uom.uom_type === "primary") {
+                price = (selectedItem as any).pricing?.auom_pc_price || uom.price;
+              } else if (uom.uom_type === "secondary") {
+                price = (selectedItem as any).pricing?.buom_ctn_price || uom.price;
+              }
+            } else if ('uom_price' in uom) {
+              price = (uom as any).uom_price;
+            }
             return {
               label: uom.name,
               value: String(uom.id),
-              price: String(price ?? "")
+              price: String(price ?? ""),
+              uom_type: uom.uom_type,
             };
-          }) || [];
-        item.uom_id = selectedExchange?.item_uoms?.[0]?.id ? String(selectedExchange.item_uoms[0].id) : "";
-        // Use type guard for price
-        const firstUom = selectedExchange?.item_uoms?.[0];
-        item.Price = firstUom ? ('uom_price' in firstUom ? String((firstUom as any).uom_price) : String(firstUom.price ?? "")) : "";
+          });
+        } else {
+          item.UOM = [];
+        }
+
+        // Default to first UOM
+        item.uom_id = selectedItem?.item_uoms?.[0]?.id
+          ? String(selectedItem.item_uoms[0].id)
+          : "";
+
+        // Price from first UOM with warehouse override
+        if (selectedItem?.item_uoms?.[0]) {
+          const firstUom = selectedItem.item_uoms[0];
+          let price = firstUom.price;
+          if ((selectedItem as any)?.pricing) {
+            if (firstUom.uom_type === "primary") {
+              price = (selectedItem as any).pricing?.auom_pc_price || firstUom.price;
+            } else if (firstUom.uom_type === "secondary") {
+              price = (selectedItem as any).pricing?.buom_ctn_price || firstUom.price;
+            }
+          } else if ('uom_price' in firstUom) {
+            price = (firstUom as any).uom_price;
+          }
+          item.Price = String(price ?? "");
+        } else {
+          item.Price = "";
+        }
+
         item.Quantity = "1";
-        const computedLabel = selectedExchange
-          ? `${selectedExchange.item_code ?? selectedExchange.erp_code ?? ""}${selectedExchange.item_code || selectedExchange.erp_code ? " - " : ""}${selectedExchange.name ?? ""}`
+
+        // Set available stock when present
+        if ((selectedItem as any)?.warehouse_stock) {
+          item.available_stock = String((selectedItem as any).warehouse_stock);
+        } else {
+          item.available_stock = "";
+        }
+
+        const computedLabel = selectedItem
+          ? `${selectedItem.item_code ?? selectedItem.erp_code ?? ""}${selectedItem.item_code || selectedItem.erp_code ? " - " : ""}${selectedItem.name ?? ""}`
           : "";
         item.item_label = computedLabel;
         if (item.item_label) {
@@ -376,6 +584,15 @@ export default function ExchangeAddEditPage() {
             return [...prev, { value: item.item_id, label: item.item_label as string }];
           });
         }
+      }
+    }
+
+    // If user changes UOM, update price based on selected UOM pricing
+    if (field === "uom_id" && value) {
+      item.uom_id = value;
+      const selectedUOM = item.UOM.find((uom: any) => uom.value === value);
+      if (selectedUOM?.price) {
+        item.Price = selectedUOM.price;
       }
     }
 
@@ -404,6 +621,7 @@ export default function ExchangeAddEditPage() {
         Quantity: "1",
         Price: "",
         Total: "0.00",
+        available_stock: "",
         region: "",
         return_type: "",
         Vat: "0",
@@ -432,6 +650,7 @@ export default function ExchangeAddEditPage() {
         return firstUom ? ('uom_price' in firstUom ? String((firstUom as any).uom_price) : String(firstUom.price ?? "")) : "";
       })(),
       Total: "0.00",
+      available_stock: "",
       region: "",
       return_type: "",
       Vat: "0",
@@ -456,6 +675,7 @@ export default function ExchangeAddEditPage() {
           Quantity: "1",
           Price: "",
           Total: "0.00",
+          available_stock: "",
           region: "",
           return_type: "",
           Vat: "0",
@@ -570,7 +790,7 @@ export default function ExchangeAddEditPage() {
     });
     if (res?.error) {
       showSnackbar(res.data?.message || "Failed to fetch customers", "error");
-      setSkeleton((prev) => ({ ...prev, customer: false }));
+      // setSkeleton((prev) => ({ ...prev, customer: false }));
       return [];
     }
     const data = res?.data || [];
@@ -579,29 +799,29 @@ export default function ExchangeAddEditPage() {
       label: `${customer.osa_code ?? ""} - ${customer.name ?? ""}`,
     }));
     setFilteredCustomerOptions(options);
-    setSkeleton((prev) => ({ ...prev, customer: false }));
+    // setSkeleton((prev) => ({ ...prev, customer: false }));
     return options;
   };
 
-  const fetchWarehouse = async (searchQuery?: string) => {
-    const res = await warehouseListGlobalSearch({
-      query: searchQuery || "",
-      dropdown: "1",
-      per_page: "50",
-    });
+  // const fetchWarehouse = async (searchQuery?: string) => {
+  //   const res = await warehouseListGlobalSearch({
+  //     query: searchQuery || "",
+  //     dropdown: "1",
+  //     per_page: "50",
+  //   });
 
-    if (res?.error) {
-      showSnackbar(res.data?.message || "Failed to fetch customers", "error");
-      return [];
-    }
-    const data = res?.data || [];
-    const options = data.map((warehouse: { id: number | string; warehouse_code?: string; warehouse_name?: string }) => ({
-      value: String(warehouse.id),
-      label: `${warehouse.warehouse_code ?? ""} - ${warehouse.warehouse_name ?? ""}`,
-    }));
-    setFilteredWarehouseOptions(options);
-    return options;
-  };
+  //   if (res?.error) {
+  //     showSnackbar(res.data?.message || "Failed to fetch customers", "error");
+  //     return [];
+  //   }
+  //   const data = res?.data || [];
+  //   const options = data.map((warehouse: { id: number | string; warehouse_code?: string; warehouse_name?: string }) => ({
+  //     value: String(warehouse.id),
+  //     label: `${warehouse.warehouse_code ?? ""} - ${warehouse.warehouse_name ?? ""}`,
+  //   }));
+  //   // setFilteredWarehouseOptions(options);
+  //   return options;
+  // };
 
 
   return (
@@ -633,19 +853,22 @@ export default function ExchangeAddEditPage() {
 
             return (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mt-6 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 mb-10">
                   <div>
-                    <AutoSuggestion
+                    <InputFields
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search Distributor"
-                      onSearch={(q) => fetchWarehouse(q)}
-                      initialValue={filteredWarehouseOptions.find((o) => o.value === String(values?.warehouse))?.label || ""}
-                      onSelect={(opt) => {
-                        if (values.warehouse !== opt.value) {
-                          setFieldValue("warehouse", opt.value);
-                          setSkeleton((prev) => ({ ...prev, customer: true }));
+                      // placeholder="Search Distributor"
+                      // onSearch={(q) => fetchWarehouse(q)}
+                      value={values.warehouse}
+                      options={warehouseOptions}
+                      searchable={true}
+                      // initialValue={filteredWarehouseOptions.find((o) => o.value === String(values?.warehouse))?.label || ""}
+                      onChange={(e) => {
+                        if (values.warehouse !== e.target.value) {
+                          setFieldValue("warehouse", e.target.value);
+                          // setSkeleton((prev) => ({ ...prev, customer: true }));
                           setFieldValue("customer", "");
                           setFilteredCustomerOptions([]);
                           // Clear items when warehouse changes
@@ -660,38 +883,18 @@ export default function ExchangeAddEditPage() {
                               Quantity: "1",
                               Price: "",
                               Total: "0.00",
+                              available_stock: "",
                               region: "",
                               return_type: "",
                               Vat: "0",
                             },
                           ]);
+                          handleWarehouseChange(e.target.value);
                         } else {
-                          setFieldValue("warehouse", opt.value);
+                          setFieldValue("warehouse", e.target.value);
                         }
                       }}
-                      onClear={() => {
-                        setFieldValue("warehouse", "");
-                        setFieldValue("customer", "");
-                        setFilteredCustomerOptions([]);
-                        setSkeleton((prev) => ({ ...prev, customer: false }));
-                        // Clear items when warehouse is cleared
-                        setItemsOptions([]);
-                        setItemData([
-                          {
-                            item_id: "",
-                            item_name: "",
-                            item_label: "",
-                            UOM: [],
-                            uom_id: "",
-                            Quantity: "1",
-                            Price: "",
-                            Total: "0.00",
-                            region: "",
-                            return_type: "",
-                            Vat: "0",
-                          },
-                        ]);
-                      }}
+                      showSkeleton={warehouseOptions.length === 0}
                       error={touched.warehouse && (errors.warehouse as string)}
                     />
                   </div>
@@ -751,22 +954,25 @@ export default function ExchangeAddEditPage() {
                             const initialLabel = matchedOption?.label ?? (row.item_label as string) ?? "";
                             return (
                               <div>
-                                <AutoSuggestion
+                                <InputFields
                                   label=""
                                   name={`item_id_${row.idx}`}
                                   placeholder="Search item"
-                                  onSearch={(q) => fetchItem(q, values.warehouse)}
-                                  initialValue={initialLabel}
-                                  minSearchLength={0}
-                                  onSelect={(opt) => {
-                                    if (opt.value !== row.item_id) {
-                                      recalculateItem(Number(row.idx), "item_id", opt.value);
+                                  // onSearch={(q) => fetchItem(q, values.warehouse)}
+                                  // initialValue={initialLabel}
+                                  value={row.item_id}
+                                  // minSearchLength={0}
+                                  options={itemsOptions}
+                                  searchable={true}
+                                  onChange={(e) => {
+                                    if (e.target.value !== row.item_id) {
+                                      recalculateItem(Number(row.idx), "item_id", e.target.value);
                                     }
                                   }}
-                                  onClear={() => {
-                                    recalculateItem(Number(row.idx), "item_id", "");
-                                  }}
-                                  disabled={!values.warehouse}
+                                  // onClear={() => {
+                                  //   recalculateItem(Number(row.idx), "item_id", "");
+                                  // }}
+                                  disabled={!values.warehouse || !values.customer}
                                   error={err && err}
                                   className="w-full"
                                 />
@@ -796,12 +1002,6 @@ export default function ExchangeAddEditPage() {
                                   onChange={(e) => {
                                     const chosen = (e.target as HTMLInputElement).value;
                                     recalculateItem(Number(row.idx), "uom_id", chosen);
-                                    // find price in options (they include 'price' if provided earlier)
-                                    const found = options.find((uom: any) => String(uom.value) === chosen);
-                                    const price = found?.price ?? found?.uom_price ?? "0.00";
-                                    if (price !== undefined) {
-                                      recalculateItem(Number(row.idx), "Price", String(price));
-                                    }
                                   }}
                                   error={err && err}
                                 />
@@ -816,8 +1016,10 @@ export default function ExchangeAddEditPage() {
                           render: (row) => {
                             const idx = Number(row.idx);
                             const err = itemErrors[idx]?.Quantity;
+                            const currentItem = itemData[idx];
+                            const availableStock = currentItem?.available_stock;
                             return (
-                              <div>
+                              <div className={`${availableStock ? "pt-5" : ""}`}>
                                 <InputFields
                                   label=""
                                   type="number"
@@ -832,9 +1034,13 @@ export default function ExchangeAddEditPage() {
                                     recalculateItem(Number(row.idx), "Quantity", sanitized);
                                   }}
                                   min={1}
+                                  max={availableStock}
                                   integerOnly={true}
                                   error={err && err}
                                 />
+                                {availableStock && (
+                                  <div className="text-xs text-gray-500 mt-1">Stock: {availableStock}</div>
+                                )}
                               </div>
                             );
                           },

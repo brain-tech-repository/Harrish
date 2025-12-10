@@ -13,7 +13,7 @@ import {
   RefObject,
   useMemo,
 } from "react";
-// import KeyValueData from "../master/customer/[customerId]/keyValueData";
+import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -139,6 +139,8 @@ export default function OrderDetailPage() {
   const { showSnackbar } = useSnackbar();
   const [data, setData] = useState<OrderData | null>(null);
   const [loading, setLoadingState] = useState<boolean>(false);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [approvalName, setApprovalName] = useState("");
   const params = useParams();
   const UUID = Array.isArray(params.id) ? params.id[0] : params.id ?? "";
   const CURRENCY = localStorage.getItem("country") || "";
@@ -182,14 +184,14 @@ export default function OrderDetailPage() {
   const keyValueData = [
     {
       key: "Net Total",
-      value: CURRENCY + " " + toInternationalNumber(netAmount ?? 0),
+      value: CURRENCY + " " + toInternationalNumber(Number(netAmount) || 0),
     },
     // { key: "Gross Total", value: "AED "+toInternationalNumber( grossTotal ?? 0 ) },
     // { key: "Discount", value: "AED "+toInternationalNumber( discount ?? 0 ) },
     // { key: "Excise", value: "AED 0.00" },
     {
       key: "Vat",
-      value: CURRENCY + " " + toInternationalNumber(totalVat ?? 0),
+      value: CURRENCY + " " + toInternationalNumber(Number(totalVat) || 0),
     },
     // { key: "Pre VAT", value: CURRENCY + " " + toInternationalNumber(preVat ?? 0) },
     // { key: "Delivery Charges", value: "AED 0.00" },
@@ -287,9 +289,18 @@ export default function OrderDetailPage() {
   const currentActionRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const order: { request_id: number; permissions: string[] } = JSON.parse(
-    localStorage.getItem("workflow.order") ?? "{}"
-  );
+  const rawOrder = localStorage.getItem("workflow.order");
+  const order: { 
+    request_id: number; 
+    permissions: string[];
+    message?: string;
+    notification?: string;
+    confirmationMessage?: string;
+    step_title?: string;
+  } =
+    rawOrder && rawOrder !== "undefined"
+      ? JSON.parse(rawOrder)
+      : {};
 
   const workflowAction = async (action: string) => {
     // Prevent double-clicking the same action
@@ -410,8 +421,17 @@ export default function OrderDetailPage() {
           break;
 
         case "editBeforeApproval":
-          router.push(`${PATH}${UUID}`);
-          return;
+          // Call the editBeforeApproval workflow API (if applicable) and then redirect to list on success
+          try {
+            res = await editBeforeApprovalWorkflow({
+              request_step_id: request_id,
+              approver_id: userId,
+            });
+          } catch (e) {
+            // fall through to final handling
+            res = (e as any) || null;
+          }
+          break;
 
         default:
           break;
@@ -428,6 +448,12 @@ export default function OrderDetailPage() {
         showSnackbar(res.data.message || "Action failed", "error");
       } else {
         showSnackbar("Action performed successfully", "success");
+        // After successful workflow action, redirect to list page
+        try {
+          router.push("/distributorsOrder");
+        } catch (e) {
+          // ignore navigation errors
+        }
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -500,8 +526,8 @@ export default function OrderDetailPage() {
             className="!h-[30px] !gap-[3px] !px-[5px] !pl-[10px]"
           />
         </div>
-
-        <div
+{order?.permissions && order?.permissions.length > 0 && data?.request_Step_id != null &&
+  <div
           style={{ zIndex: 30 }}
           className="absolute bottom-20 left-1/2 -translate-x-1/2 backdrop-blur-md bg-black/10 border border-white/30 shadow-lg rounded-xl p-8 text-black z-[60px]"
         >
@@ -537,15 +563,29 @@ export default function OrderDetailPage() {
               </div>
             </>
           )}
+          
+          {/* Display message above buttons */}
+         
+             
+              {order?.message && (
+                <div className="text-gray-600 mb-4">
+                  <span className="font-medium">{order.message}</span> 
+                </div>
+              )}
+              
+       
+          
           <div className="flex gap-4 flex-wrap">
-            {order.permissions.includes("APPROVE") && (
+            {order?.permissions?.includes("APPROVE") && (
               <BorderIconButton
                 icon={
                   loadingWorkflow.approve ? "line-md:loading-loop" : "mdi:tick"
                 }
                 label={"Approve"}
                 labelTw="font-medium text-[12px]"
-                onClick={() => workflowAction("approve")}
+                onClick={() => {
+                  setApprovalName("approve");
+                  setShowDeletePopup(true)}}
                 disabled={
                   loadingWorkflow.approve ||
                   (Object.values(loadingWorkflow).some((loading) => loading) &&
@@ -553,14 +593,16 @@ export default function OrderDetailPage() {
                 }
               />
             )}
-            {order.permissions.includes("REJECT") && (
+            {order?.permissions?.includes("REJECT") && (
               <BorderIconButton
                 icon={
                   loadingWorkflow.reject ? "line-md:loading-loop" : "mdi:times"
                 }
                 label={"Reject"}
                 labelTw="font-medium text-[12px]"
-                onClick={() => workflowAction("reject")}
+                onClick={() => {
+                  setApprovalName("reject");
+                  setShowDeletePopup(true)}}
                 disabled={
                   loadingWorkflow.reject ||
                   (Object.values(loadingWorkflow).some((loading) => loading) &&
@@ -568,7 +610,7 @@ export default function OrderDetailPage() {
                 }
               />
             )}
-            {order.permissions.includes("RETURN_BACK") && (
+            {order?.permissions?.includes("RETURN_BACK") && (
               <BorderIconButton
                 icon={
                   loadingWorkflow.returnBack
@@ -577,7 +619,9 @@ export default function OrderDetailPage() {
                 }
                 label={"Return Back"}
                 labelTw="font-medium text-[12px]"
-                onClick={() => workflowAction("returnBack")}
+                onClick={() => {
+                  setApprovalName("returnBack");
+                  setShowDeletePopup(true)}}
                 disabled={
                   loadingWorkflow.returnBack ||
                   (Object.values(loadingWorkflow).some((loading) => loading) &&
@@ -585,7 +629,7 @@ export default function OrderDetailPage() {
                 }
               />
             )}
-            {order.permissions.includes("EDIT_BEFORE_APPROVAL") && (
+            {order?.permissions?.includes("EDIT_BEFORE_APPROVAL") && (
               <BorderIconButton
                 icon={
                   loadingWorkflow.editBeforeApproval
@@ -594,7 +638,9 @@ export default function OrderDetailPage() {
                 }
                 label={"Edit Before Approval"}
                 labelTw="font-medium text-[12px]"
-                onClick={() => workflowAction("editBeforeApproval")}
+                onClick={() => {
+                  setApprovalName("editBeforeApproval");
+                  setShowDeletePopup(true)}}
                 disabled={
                   loadingWorkflow.editBeforeApproval ||
                   (Object.values(loadingWorkflow).some((loading) => loading) &&
@@ -604,6 +650,7 @@ export default function OrderDetailPage() {
             )}
           </div>
         </div>
+}
 
         {/* Action Buttons */}
         <div className="flex gap-[12px] relative">
@@ -781,7 +828,7 @@ export default function OrderDetailPage() {
                   <span>Total</span>
                   {/* <span>AED {toInternationalNumber(finalTotal) || 0}</span> */}
                   <span>
-                    {CURRENCY} {toInternationalNumber(finalTotal) || 0}
+                    {CURRENCY} {toInternationalNumber(Number(finalTotal) || 0)}
                   </span>
                 </div>
               </div>
@@ -830,6 +877,16 @@ export default function OrderDetailPage() {
           </div>
         </ContainerCard>
       </div>
+
+      {showDeletePopup && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+                <DeleteConfirmPopup
+                  title={order?.confirmationMessage}
+                  onClose={() => setShowDeletePopup(false)}
+                  onConfirm={() => workflowAction(approvalName)}
+                />
+              </div>
+            )}
     </>
   );
 }
