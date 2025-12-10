@@ -149,7 +149,7 @@ export default function CallRegister() {
                             {
                                 icon: "lucide:eye",
                                 onClick: (data: TableDataType) => {
-                                    router.push(`/callRegister/view/${data.uuid}`);
+                                    router.push(`/callRegister/details/${data.uuid}`);
                                 },
                             },
                             {
