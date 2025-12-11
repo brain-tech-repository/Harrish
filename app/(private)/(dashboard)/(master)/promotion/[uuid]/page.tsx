@@ -91,13 +91,34 @@ function SelectKeyCombinationInline({ keyCombo, setKeyCombo }: { keyCombo: KeyCo
   function onKeySelect(index: number, optionIndex: number) {
     setKeysArray((prev) => {
       const newKeys = prev.map((group, i) => {
-        if (i !== index) return group;
-        return {
-          ...group,
-          options: group.options.map((opt, j) =>
-            j === optionIndex ? { ...opt, isSelected: !opt.isSelected } : opt
-          ),
-        };
+        if (i !== index) return group; // If not the current group, return as is
+
+        // Determine if this group should be single-select
+        const isSingleSelectGroup = group.type === "Location" || group.type === "Item";
+
+        if (isSingleSelectGroup) {
+          // Single-select logic: Toggle the clicked option, deselect others
+          return {
+            ...group,
+            options: group.options.map((opt, j) => {
+              if (j === optionIndex) {
+                // Toggle the clicked option
+                return { ...opt, isSelected: !opt.isSelected };
+              } else {
+                // Deselect all other options in this group
+                return { ...opt, isSelected: false };
+              }
+            }),
+          };
+        } else {
+          // Multi-select logic (original behavior for Customer)
+          return {
+            ...group,
+            options: group.options.map((opt, j) =>
+              j === optionIndex ? { ...opt, isSelected: !opt.isSelected } : opt
+            ),
+          };
+        }
       });
       return newKeys;
     });
@@ -109,14 +130,20 @@ function SelectKeyCombinationInline({ keyCombo, setKeyCombo }: { keyCombo: KeyCo
 
   return (
     <ContainerCard className="h-fit mt-[20px] flex flex-col gap-2 p-6 bg-white border border-[#E5E7EB] rounded-[12px] shadow-none text-[#181D27]">
-      <div className="font-semibold text-[20px] mb-4">Key Combination</div>
+      <div className="flex justify-between items-center mb-4">
+        <div className="font-semibold text-[20px]">Key Combination</div>
+        <div className="text-sm text-gray-500"><span className="text-red-500">*</span> Required</div>
+      </div>
       <div className="grid grid-cols-3 gap-6">
         {keysArray.map((group, index) => (
           <div
             key={index}
             className="bg-white border border-[#E5E7EB] rounded-[12px] p-6 flex flex-col shadow-sm"
           >
-            <div className="font-semibold text-[18px] mb-4 text-[#181D27]">{group.type}</div>
+            <div className="font-semibold text-[18px] mb-4 text-[#181D27]">
+              {group.type}
+              {(group.type === "Location" || group.type === "Item") && <span className="text-red-500 ml-1">*</span>}
+            </div>
             <div className="flex flex-col gap-4">
               {group.options.map((option, optionIndex) => (
                 <CustomCheckbox
@@ -220,18 +247,26 @@ export default function AddPricing() {
   const [loading, setLoading] = useState(false);
   const validateStep = (step: number) => {
     if (step === 1) {
-      // Only require the Item key to be selected. Other key groups (Location, Customer)
-      // are optional per request.
-      return keyCombo.Item.length > 0;
+      // Require both Location and Item to be selected.
+      return keyCombo.Location.length > 0 && keyCombo.Item.length > 0;
     }
     if (step === 2) {
-      // Only require Item Category and Item values in Key Value step.
-      // If these selects are present they must have at least one selection.
-      const itemCategoryVals = keyValue["Item Category"] || [];
-      const itemVals = keyValue["Item"] || [];
-      if (!Array.isArray(itemCategoryVals) || itemCategoryVals.length === 0) return false;
-      if (!Array.isArray(itemVals) || itemVals.length === 0) return false;
-      return true;
+      // Validate all selected Location and Item key-value fields.
+      // Customer key-value fields are optional.
+      let allValid = true;
+
+      keyCombo.Location.forEach(locKey => {
+        if (!keyValue[locKey] || keyValue[locKey].length === 0) {
+          allValid = false;
+        }
+      });
+
+      keyCombo.Item.forEach(itemKey => {
+        if (!keyValue[itemKey] || keyValue[itemKey].length === 0) {
+          allValid = false;
+        }
+      });
+      return allValid;
     }
     if (step === 3) {
       return promotion.itemName && promotion.startDate && promotion.endDate;
@@ -240,7 +275,16 @@ export default function AddPricing() {
   };
 
   const handleNext = () => {
-    if (!validateStep(currentStep)) {
+    if (currentStep === 1) {
+      const missing = [];
+      if (keyCombo.Location.length === 0) missing.push("Location");
+      if (keyCombo.Item.length === 0) missing.push("Item");
+
+      if (missing.length > 0) {
+        showSnackbar(`Please select ${missing.join(" and ")} before proceeding.`, "warning");
+        return;
+      }
+    } else if (!validateStep(currentStep)) {
       showSnackbar("Please fill in all required fields before proceeding.", "warning");
       return;
     }
@@ -680,14 +724,20 @@ export default function AddPricing() {
       };
       return (
         <ContainerCard className="bg-[#fff] p-6 rounded-xl border border-[#E5E7EB]">
-          <h2 className="text-xl font-semibold mb-6">Key Value</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Key Value</h2>
+            <div className="text-sm text-gray-500"><span className="text-red-500">*</span> Required</div>
+          </div>
           <div className="flex gap-6">
             <div className="flex-1">
               <ContainerCard className="bg-[#fff] border border-[#E5E7EB] rounded-xl p-6">
                 <div className="font-semibold text-lg mb-4">Location</div>
                 {keyCombo.Location.map((locKey) => (
                   <div key={locKey} className="mb-4">
-                    <div className="mb-2 text-base font-medium">{locKey}</div>
+                    <div className="mb-2 text-base font-medium">
+                      {locKey}
+                      <span className="text-red-500 ml-1">*</span>
+                    </div>
                     <InputFields
                       label=""
                       type="select"
@@ -701,6 +751,7 @@ export default function AddPricing() {
                 ))}
               </ContainerCard>
             </div>
+            {keyCombo.Customer.length > 0 && (
             <div className="flex-1">
               <ContainerCard className="bg-[#fff] border border-[#E5E7EB] rounded-xl p-6">
                 <div className="font-semibold text-lg mb-4">Customer</div>
@@ -713,19 +764,28 @@ export default function AddPricing() {
                       isSingle={false}
                       options={customerDropdownMap[custKey] ? [{ label: `Select ${custKey}`, value: "" }, ...customerDropdownMap[custKey]] : [{ label: `Select ${custKey}`, value: "" }]}
                       value={keyValue[custKey] || []}
-                      onChange={e => setKeyValue(s => ({ ...s, [custKey]: Array.isArray(e.target.value) ? e.target.value : [] }))}
+                      onChange={e => {
+                        const selectedValues = Array.isArray(e.target.value)
+                            ? e.target.value
+                            : (e.target.value ? [e.target.value] : []);
+                        setKeyValue(s => ({ ...s, [custKey]: selectedValues.filter(val => val !== "") }));
+                      }}
                       width="w-full"
                     />
                   </div>
                 ))}
               </ContainerCard>
             </div>
+            )}
             <div className="flex-1">
               <ContainerCard className="bg-[#fff] border border-[#E5E7EB] rounded-xl p-6">
                 <div className="font-semibold text-lg mb-4">Item</div>
                 {keyCombo.Item.map((itemKey) => (
                   <div key={itemKey} className="mb-4">
-                    <div className="mb-2 text-base font-medium">{itemKey}</div>
+                    <div className="mb-2 text-base font-medium">
+                      {itemKey}
+                      <span className="text-red-500 ml-1">*</span>
+                    </div>
                     <InputFields
                       label=""
                       type="select"
@@ -733,6 +793,7 @@ export default function AddPricing() {
                       options={itemDropdownMap[itemKey] ? [{ label: `Select ${itemKey}`, value: "" }, ...itemDropdownMap[itemKey]] : [{ label: `Select ${itemKey}`, value: "" }]}
                       value={keyValue[itemKey] || []}
                       onChange={e => setKeyValue(s => ({ ...s, [itemKey]: Array.isArray(e.target.value) ? e.target.value : [] }))}
+
                       width="w-full"
                     />
                   </div>
