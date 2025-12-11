@@ -18,7 +18,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import getExcise from "@/app/(private)/utils/excise";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { companyCustomersGlobalSearch, genearateCode, itemGlobalSearch, saveFinalCode } from "@/app/services/allApi";
+import { agentCustomerGlobalSearch, companyCustomersGlobalSearch, genearateCode, itemGlobalSearch, saveFinalCode } from "@/app/services/allApi";
 
 interface FormData {
   id: number,
@@ -89,13 +89,17 @@ export default function PurchaseOrderAddEditPage() {
   });
 
   const validationSchema = Yup.object({
-    warehouse: Yup.string().required("Warehouse is required"),
+    // warehouse: Yup.string().required("Warehouse is required"),
+    turnman: Yup.string().required("Turnman is required"),
+    truckNo: Yup.string().required("Truck Number is required"),
+    contact: Yup.string().required("Contact is required"),
+    returnNo: Yup.string().required("Return No is required"),
     customer: Yup.string().required("Customer is required"),
-    delivery_date: Yup.string()
-      .required("Delivery date is required")
-      .test("is-date", "Delivery date must be a valid date", (val) => {
-        return Boolean(val && !Number.isNaN(new Date(val).getTime()));
-      }),
+    // delivery_date: Yup.string()
+    //   .required("Delivery date is required")
+    //   .test("is-date", "Delivery date must be a valid date", (val) => {
+    //     return Boolean(val && !Number.isNaN(new Date(val).getTime()));
+    //   }),
     note: Yup.string().max(1000, "Note is too long"),
     items: Yup.array().of(itemRowSchema),
   });
@@ -115,7 +119,7 @@ export default function PurchaseOrderAddEditPage() {
   // const [filteredWarehouseOptions, setFilteredWarehouseOptions] = useState<{ label: string; value: string }[]>([]);
   const { warehouseAllOptions } = useAllDropdownListData();
   const form = {
-    warehouse: "",
+    // warehouse: "",
     route: "",
     customer: "",
     note: "",
@@ -504,7 +508,7 @@ export default function PurchaseOrderAddEditPage() {
   ];
 
   const fetchAgentCustomers = async (values: FormikValues, search: string) => {
-    const res = await companyCustomersGlobalSearch({
+    const res = await agentCustomerGlobalSearch({
       warehouse_id: values.warehouse,
       query: search || "",
       per_page: "10"
@@ -624,7 +628,7 @@ export default function PurchaseOrderAddEditPage() {
             return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 mb-10">
-                  <div>
+                  {/* <div>
                     <InputFields
                       required
                       label="distributor"
@@ -642,7 +646,7 @@ export default function PurchaseOrderAddEditPage() {
                         (errors.warehouse as string)
                       }
                     />
-                  </div>
+                  </div> */}
                   <div>
                     <AutoSuggestion
                       required
@@ -662,7 +666,7 @@ export default function PurchaseOrderAddEditPage() {
                         setFieldValue("customer", "");
                         setItemData([{ item_id: "", item_name: "", item_label: "", UOM: [], Quantity: "1", Price: "", Excise: "", Discount: "", Net: "", Vat: "", Total: "" }]);
                       }}
-                      disabled={values.warehouse === ""}
+                      // disabled={values.warehouse === ""}
                       error={touched.customer && (errors.customer as string)}
                       className="w-full"
                     />
@@ -670,24 +674,34 @@ export default function PurchaseOrderAddEditPage() {
                   <div>
                     <InputFields
                       required
-                      label="Truck Number"
+                      label="Turnman"
                       type="text"
-                      name="truck_number"
-                      value={values.truck_number}
+                      name="turnman"
+                      value={values.turnman}
                       onChange={handleChange}
                     />
                   </div>
                   <div>
                     <InputFields
                       required
-                      label="Invoices"
+                      label="Truck Number"
                       type="text"
-                      name="invoices"
-                      value={values.invoices}
+                      name="truckNo"
+                      value={values.truckNo}
                       onChange={handleChange}
                     />
                   </div>
                   <div>
+                    <InputFields
+                      required
+                      label="Contact Number"
+                      type="text"
+                      name="contactNo"
+                      value={values.contactNo}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {/* <div>
                     <InputFields
                       required
                       label="Delivery Date"
@@ -697,7 +711,7 @@ export default function PurchaseOrderAddEditPage() {
                       min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
                       onChange={handleChange}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 <Table
@@ -831,7 +845,7 @@ export default function PurchaseOrderAddEditPage() {
                           return <span>{price}</span>;
                         }
                       },
-                      { key: "excise", label: "Excise", render: (row) => <>{toInternationalNumber(row.Excise) || "0.00"}</> },
+                      // { key: "excise", label: "Excise", render: (row) => <>{toInternationalNumber(row.Excise) || "0.00"}</> },
                       // { key: "discount", label: "Discount", render: (row) => <span>{toInternationalNumber(row.Discount) || "0.00"}</span> },
                       // { key: "preVat", label: "Pre VAT", render: (row) => <span>{toInternationalNumber(row.preVat) || "0.00"}</span> },
                       { key: "Net", label: "Net", render: (row) => <span>{toInternationalNumber(row.Net) || "0.00"}</span> },
@@ -920,7 +934,7 @@ export default function PurchaseOrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !values.salesteam || !itemData || itemData.length < 0} onClick={() => submitForm()} />
+                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.customer || !values.turnman || !values.truckNo || !values.contactNo || !itemData || itemData.length < 0} onClick={() => submitForm()} />
                 </div>
               </>
             );
