@@ -2871,7 +2871,7 @@ export const pricingDetailById = async (uuid: string) => {
 
 export const editPricingDetail = async (uuid: string, payload: object) => {
   try {
-    const res = await API.put(`/api/master/pricing-details/${uuid}`, payload);
+    const res = await API.put(`/api/master/pricing-details/update/${uuid}`, payload);
 
     return res.data;
   } catch (error: unknown) {

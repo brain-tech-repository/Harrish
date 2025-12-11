@@ -123,7 +123,7 @@ const Buom = ({ row, details, setDetails }: any) => {
         })
 
         if (isAvailable) {
-          details[indexVal] = { ...details[indexVal], buom_ctn_price: e.target.value }
+          details[indexVal] = { ...details[indexVal], auom_pc_price: e.target.value }
           setDetails(details)
         }
         else {
@@ -186,7 +186,7 @@ const Auom = ({ row, details, setDetails }: any) => {
         })
 
         if (isAvailable) {
-          details[indexVal] = { ...details[indexVal], auom_pc_price: e.target.value }
+          details[indexVal] = { ...details[indexVal], buom_ctn_price: e.target.value }
           setDetails(details)
         }
         else {
@@ -801,7 +801,7 @@ export default function AddPricing() {
     try {
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       setLoading(true);
-      const res = isEditMode && id ? await editPricingHeader(id, payload) : await addPricingDetail(payload);
+      const res = isEditMode && id ? await editPricingDetail(id, payload) : await addPricingDetail(payload);
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit pricing", "error");
       } else {
