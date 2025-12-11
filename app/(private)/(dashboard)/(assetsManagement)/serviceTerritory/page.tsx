@@ -12,6 +12,8 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import Drawer from "@mui/material/Drawer";
+import ServiceTerritoryDetailsDrawer from "./ServiceTerritoryDetailsDrawer";
 
 
 // ✅ TYPE FOR SERVICE TERRITORY API ITEM
@@ -26,15 +28,10 @@ interface ServiceTerritoryRow {
         name: string | null;
         code: string | null;
     };
-    // created_user: number;
-    // updated_user: number;
-    // deleted_user: number | null;
-    // created_at: string;
-    // updated_at: string;
-    // deleted_at: string | null;
+
 }
 
-// ✅ TABLE COLUMNS FUNCTION FOR SERVICE TERRITORY
+
 const getColumns = (
     regionOptions: Array<{ value: string; label: string }>,
     areaOptions: Array<{ value: string; label: string }>,
@@ -45,39 +42,69 @@ const getColumns = (
             label: "ST Code",
             render: (row: any) => <p>{row.osa_code || "-"}</p>,
         },
+        // {
+        //     key: "region_id",
+        //     label: "Region",
+        //     render: (row: any) =>
+        //         typeof row.region === "object" &&
+        //             row.region !== null &&
+        //             "code" in row.region
+        //             ? (row.region as { code?: string }).code || "-"
+        //             : "-",
+        // },
+        // {
+        //     key: "area_id",
+        //     label: "Area",
+        //     render: (row: any) =>
+        //         typeof row.area === "object" &&
+        //             row.area !== null &&
+        //             "code" in row.area
+        //             ? (row.area as { code?: string }).code || "-"
+        //             : "-",
+        // },
+
+        // {
+        //     key: "warehouse_id",
+        //     label: "Warehouse",
+        //     render: (row: any) => {
+        //         const warehouse = warehouseOptions.find(w => w.value === String(row.warehouse_id));
+        //         return <p>{warehouse?.label || row.warehouse_id || "-"}</p>;
+        //     },
+        // },
+        // {
+        //     key: "warehouse",
+        //     label: "Warehouse",
+        //     // showByDefault: true,
+        //     render: (row: any) =>
+        //         typeof row.warehouse === "object" &&
+        //             row.warehouse !== null &&
+        //             "code" in row.warehouse
+        //             ? (row.warehouse as { code?: string }).code || "-"
+        //             : "-",
+
+        // },
         {
-            key: "region_id",
-            label: "Region",
+            key: "technician",
+            label: "Code",
             render: (row: any) => {
-                const region = regionOptions.find(r => r.value === String(row.region_id));
-                return <p>{region?.label || row.region_id || "-"}</p>;
-            },
-        },
-        {
-            key: "area_id",
-            label: "Area",
-            render: (row: any) => {
-                const area = areaOptions.find(a => a.value === String(row.area_id));
-                return <p>{area?.label || row.area_id || "-"}</p>;
-            },
-        },
-        {
-            key: "warehouse_id",
-            label: "Warehouse",
-            render: (row: any) => {
-                const warehouse = warehouseOptions.find(w => w.value === String(row.warehouse_id));
-                return <p>{warehouse?.label || row.warehouse_id || "-"}</p>;
+                const code = row.technician?.code;
+                // const name = row.technician?.name;
+
+                if (code) return <p>{`${code} `}</p>;
+                if (code) return <p>{code}</p>;
+                // if (name) return <p>{name}</p>;
+                return <p>-</p>;
             },
         },
         {
             key: "technician",
-            label: "Technician",
+            label: "Name",
             render: (row: any) => {
-                const code = row.technician?.code;
+                // const code = row.technician?.code;
                 const name = row.technician?.name;
 
-                if (code && name) return <p>{`${code} - ${name}`}</p>;
-                if (code) return <p>{code}</p>;
+                if (name) return <p>{`${name}`}</p>;
+                // if (code) return <p>{code}</p>;
                 if (name) return <p>{name}</p>;
                 return <p>-</p>;
             },
@@ -99,6 +126,8 @@ export default function ServiceTerritoryListPage() {
         useAllDropdownListData();
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
 
     // -----------------------------------------
     // 🔥 FETCH FUNCTION FOR TABLE
@@ -113,7 +142,7 @@ export default function ServiceTerritoryListPage() {
                 setLoading(true);
 
                 const result = await irServiceTerrtList({
-                    page: page.toString(),
+                    current_page: page.toString(),
                     per_page: pageSize.toString(),
                     ...appliedFilters,
                 });
@@ -123,29 +152,35 @@ export default function ServiceTerritoryListPage() {
                 // console.log("🔍 Is Array?:", Array.isArray(result));
 
                 // Handle direct array response
+                if (result?.data && result?.pagination) {
+                    const totalPages = Math.ceil(result.pagination.total / result.pagination.per_page);
+                    return {
+                        data: Array.isArray(result.data) ? result.data : [],
+                        total: totalPages, // total number of PAGES, not records
+                        currentPage: result.pagination.current_page,
+                        pageSize: result.pagination.per_page,
+                    };
+                }
+
                 if (Array.isArray(result)) {
-                    // console.log("✅ Direct array response detected");
                     return {
                         data: result,
                         total: result.length,
                         currentPage: page,
-                        pageSize: result.length,
+                        pageSize: pageSize,
                     };
                 }
 
-                // Handle object response with data property
+                // Handle object response without pagination
                 if (result?.data) {
-                    console.log("✅ Object response with data property");
                     return {
                         data: Array.isArray(result.data) ? result.data : [],
-                        total: result?.pagination?.total || result.data.length || 0,
+                        total: result?.pagination?.total || (Array.isArray(result.data) ? result.data.length : 0),
                         currentPage: result?.pagination?.current_page || page,
                         pageSize: result?.pagination?.per_page || pageSize,
                     };
                 }
 
-                // Fallback
-                // console.warn("⚠️ Unexpected response structure");
                 return {
                     data: [],
                     total: 0,
@@ -153,7 +188,6 @@ export default function ServiceTerritoryListPage() {
                     pageSize: pageSize,
                 };
             } catch (error) {
-                console.error("❌ Error fetching service territory:", error);
                 showSnackbar("Failed to fetch service territory list", "error");
 
                 return {
@@ -174,7 +208,6 @@ export default function ServiceTerritoryListPage() {
     }, []);
 
 
-    // Refresh table when dropdown options load
     useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions]);
@@ -257,7 +290,8 @@ export default function ServiceTerritoryListPage() {
                         {
                             icon: "lucide:eye",
                             onClick: (row: any) => {
-                                router.push(`/assetsManagement/serviceTerritory/view/${row.uuid}`);
+                                setSelectedUuid(row.uuid);
+                                setDrawerOpen(true);
                             },
                         },
                     ],
@@ -266,6 +300,27 @@ export default function ServiceTerritoryListPage() {
                     localStorageKey: "service-territory-table",
                 }}
             />
+
+            {/* Drawer for Details */}
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                sx={{
+                    '& .MuiDrawer-paper': {
+                        width: '33.333%',
+                        minWidth: '400px',
+                        maxWidth: '600px',
+                    },
+                }}
+            >
+                {selectedUuid && (
+                    <ServiceTerritoryDetailsDrawer
+                        uuid={selectedUuid}
+                        onClose={() => setDrawerOpen(false)}
+                    />
+                )}
+            </Drawer>
         </div>
     );
 }
