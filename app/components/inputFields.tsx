@@ -42,7 +42,8 @@ type Props = {
     | "radio"
     | "number"
     | "textarea"
-    | "contact";
+      | "contact"
+      | "contact2";
   /** If provided, used to determine whether the date was changed compared to original value */
   originalValue?: string | null;
   id?: string;
@@ -531,7 +532,7 @@ export default function InputFields({
                     leadingElement ? "pl-10" : "pl-3"
                   } ${
                     trailingElement ? "pr-10" : "pr-3"
-                  } mt-0 text-gray-900 placeholder-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                  } mt-0 text-gray-900 placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 ${
                     error ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder={placeholder || `Enter ${label}`}
@@ -578,7 +579,7 @@ export default function InputFields({
                   showBorder === true && "border"
                 } h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] px-3 mt-0 flex items-center cursor-pointer w-full ${
                   error ? "border-red-500" : "border-gray-300"
-                } ${disabled ? "bg-gray-100" : "bg-white"}`}
+                } ${disabled ? "cursor-not-allowed bg-gray-100" : "bg-white"}`}
                 onClick={() => {
                   if (!loading && !isSearchable) {
                     computeDropdownProps();
@@ -921,7 +922,7 @@ export default function InputFields({
               )}
             </div>
           ) : (
-            <div className={`relative select-none`} ref={dropdownRef}>
+            <div className={`relative select-none`} style={{ width }} ref={dropdownRef}>
               <div
                 tabIndex={0}
                 onMouseDown={() => {
@@ -940,7 +941,7 @@ export default function InputFields({
                   showBorder === true && "border"
                 } h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] mt-0 flex items-center cursor-pointer min-w-0 ${
                   error ? "border-red-500" : "border-gray-300"
-                } ${disabled ? "bg-gray-200" : "bg-white"}`}
+                } ${disabled ? "cursor-not-allowed bg-gray-100" : "bg-white"}`}
                 onClick={() => {
                   if (!loading && !isSearchable && !disabled) {
                     computeDropdownProps();
@@ -1146,7 +1147,7 @@ export default function InputFields({
                           width: dropdownProperties.width,
                           maxHeight: dropdownProperties.maxHeight,
                         }}
-                        className="inputfields-dropdown-content fixed overflow-y-scroll z-10 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-75 mt-[6px]"
+                        className="inputfields-dropdown-content fixed overflow-y-scroll z-30 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-75 mt-[6px]"
                       >
                         <ul className="py-2 text-sm text-gray-700">
                           {countries.map(
@@ -1192,6 +1193,113 @@ export default function InputFields({
                         className="tracking-[1px] block p-2.5 pl-[5px] w-full z-20 h-[44px] text-sm text-gray-900 rounded-e-lg outline-none shadow-[0px_1px_2px_0px_#0A0D120D]"
                         value={phone}
                         onChange={handlePhoneChange}
+                        disabled={disabled}
+                        required={required}
+                        onBlur={onBlur}
+                        minLength={9}
+                        maxLength={10}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        );
+
+      case "contact2":
+        return (
+          <div className="relative mt-0 w-full">
+            {(() => {
+              // Parse combined value: "+256-712345678" or fallback to defaults
+              const parseCombined = (v?: string) => {
+                if (!v || typeof v !== "string") return { code: "+256", number: "" };
+                if (v.includes("-")) {
+                  const [code, number] = v.split("-");
+                  return { code: code || "+256", number: number || "" };
+                }
+                // If only number provided, default country code
+                return { code: "+256", number: v };
+              };
+
+              const combined = typeof value === "string" ? value : "";
+              const { code: parsedCode, number: parsedNumber } = parseCombined(combined);
+              const selected = countries.find((c) => c.code === parsedCode) || { name: "Uganda", code: "+256", flag: "🇺🇬" };
+
+              const handleSelect2 = (country?: { name?: string; code?: string; flag?: string }) => {
+                const newCode = country?.code || selected.code || "+256";
+                const newCombined = `${newCode}-${parsedNumber || ""}`;
+                safeOnChange({ target: { value: newCombined, name } } as any);
+                setDropdownOpen(false);
+              };
+
+              const handlePhoneChange2 = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const cleaned = e.target.value.replace(/\D/g, "");
+                const newCombined = `${parsedCode || "+256"}-${cleaned}`;
+                safeOnChange({ target: { value: newCombined, name } } as any);
+              };
+
+              return (
+                <div
+                  className={`mx-auto border-[1px] ${
+                    error ? "border-red-500" : "border-gray-300"
+                  } rounded-md`}
+                  ref={dropdownRef}
+                >
+                  <div className="flex items-center relative">
+                    {/* Dropdown Button */}
+                    <button
+                      type="button"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="shrink-0 z-10 h-[44px] inline-flex items-center py-2.5 px-4 pr-[3px] text-sm font-medium text-gray-900 rounded-s-lg focus:outline-none"
+                      disabled={disabled}
+                    >
+                      {selected?.flag} {selected?.code}
+                    </button>
+                    {/* Dropdown List */}
+                    {dropdownOpen && (
+                      <div
+                        style={{
+                          left: dropdownProperties.left,
+                          top: dropdownProperties.top,
+                          width: dropdownProperties.width,
+                          maxHeight: dropdownProperties.maxHeight,
+                        }}
+                        className="inputfields-dropdown-content fixed overflow-y-scroll z-30 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-75 mt-[6px]"
+                      >
+                        <ul className="py-2 text-sm text-gray-700">
+                          {countries.map((country, index) => (
+                            <li key={`${country?.code}-${index}`}>
+                              <button
+                                type="button"
+                                onClick={() => handleSelect2(country)}
+                                className="inline-flex w-full px-4 py-2 text-sm"
+                                disabled={disabled}
+                              >
+                                <span className="inline-flex items-center">
+                                  {country?.flag} {country?.name} ({country?.code})
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {/* Input Field */}
+                    <label
+                      htmlFor="phone-input2"
+                      className="mb-2 text-sm font-medium text-gray-900 sr-only"
+                    >
+                      Phone number:
+                    </label>
+                    <div className="relative w-full">
+                      <input
+                        type="tel"
+                        id="phone-input2"
+                        placeholder={placeholder || "Enter phone number"}
+                        className="tracking-[1px] block p-2.5 pl-[5px] w-full z-20 h-[44px] text-sm text-gray-900 rounded-e-lg outline-none shadow-[0px_1px_2px_0px_#0A0D120D]"
+                        value={parsedNumber}
+                        onChange={handlePhoneChange2}
                         disabled={disabled}
                         required={required}
                         onBlur={onBlur}
@@ -1299,7 +1407,7 @@ export default function InputFields({
   }
 
   return (
-    <div className={`flex flex-col gap-[6px] w-full ${width} relative`}>
+    <div className={`flex flex-col gap-[6px] min-w-0 ${width} relative`}>
       {showSkeleton && (
         <div className="absolute h-[90px] w-full rounded-[5px] bg-white z-40 flex flex-col gap-[5px]">
           {label && <Skeleton variant="rounded" width={"50%"} height={"20%"} />}

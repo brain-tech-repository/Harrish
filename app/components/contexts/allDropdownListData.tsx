@@ -594,7 +594,6 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.name ?? ''
   }))
-  console.log(brandingOptions, "abcdefgf")
 
   const uomOptions = (Array.isArray(uom) ? uom : []).map((c: UOM) => ({
     value: String(c.id ?? ''),
