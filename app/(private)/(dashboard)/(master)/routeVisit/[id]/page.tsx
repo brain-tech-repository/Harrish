@@ -51,6 +51,7 @@ type Area = {
 type Warehouse = {
   id: number;
   warehouse_name?: string;
+  warehouse_code?: string;
   name?: string;
 };
 
@@ -442,8 +443,10 @@ export default function AddEditRouteVisit() {
       try {
         setSkeleton({ ...skeleton, region: true });
         // Pass company IDs as parameters to regionList
+        // In edit mode, pass allData = true to get all regions
         const regions: ApiResponse<Region[]> = await regionList({
           company_id: form.company.join(","),
+          ...(isEditMode && { allData: "true" }),
         });
         setRegionOptions(
           regions?.data?.map((r: Region) => ({
@@ -513,7 +516,7 @@ export default function AddEditRouteVisit() {
         setWarehouseOptions(
           warehousesList.map((w: Warehouse) => ({
             value: String(w.id),
-            label: w.warehouse_name || w.name || "",
+            label: `${w.warehouse_code} - ${w.warehouse_name || w.name || ""}`,
           }))
         );
         setSkeleton({ ...skeleton, warehouse: false });

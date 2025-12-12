@@ -34,14 +34,14 @@ export default function AddEditServiceTerritory() {
     const params = useParams();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
+    const { regionOptions, areaOptions, warehouseAllOptions , ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded, warehouseOptions, fetchAreaOptions, fetchWarehouseOptions } = useAllDropdownListData();
 
-    const {
-        regionOptions,
-        areaOptions,
-        warehouseOptions,
-        fetchAreaOptions,
-        fetchWarehouseOptions,
-    } = useAllDropdownListData();
+  // Load dropdown data
+  useEffect(() => {
+    ensureAreaLoaded();
+    ensureRegionLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
 
     // Get UUID safely
     let uuid = "";

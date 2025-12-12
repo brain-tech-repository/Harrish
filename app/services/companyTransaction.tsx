@@ -381,3 +381,12 @@ export const exportTempReturnViewPdf = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const getDirectCustomer = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/companycustomer/customers`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

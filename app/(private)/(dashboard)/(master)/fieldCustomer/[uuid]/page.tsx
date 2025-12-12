@@ -74,10 +74,22 @@ export default function AddEditAgentCustomer() {
     const {
         loading,
         warehouseOptions,
+        warehouseAllOptions,
         customerTypeOptions,
         channelOptions,
         // onlyCountryOptions
-    } = useAllDropdownListData();
+     ensureChannelLoaded, ensureCustomerTypeLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded} = useAllDropdownListData();
+    const params = useParams();
+    const agentCustomerId = params?.uuid as string | undefined;
+    const isEditMode =
+        agentCustomerId !== undefined && agentCustomerId !== "new";
+  // Load dropdown data
+  useEffect(() => {
+    ensureChannelLoaded();
+    ensureCustomerTypeLoaded();
+    ensureWarehouseLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureChannelLoaded, ensureCustomerTypeLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded]);
     const [isOpen, setIsOpen] = useState(false);
     const [codeMode, setCodeMode] = useState<"auto" | "manual">("auto");
     const [prefix, setPrefix] = useState("");
@@ -97,10 +109,8 @@ export default function AddEditAgentCustomer() {
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const router = useRouter();
-    const params = useParams();
-    const agentCustomerId = params?.uuid as string | undefined;
-    const isEditMode =
-        agentCustomerId !== undefined && agentCustomerId !== "new";
+    
+    
     const steps: StepperStep[] = [
         { id: 1, label: "Customer" },
         { id: 2, label: "Location" },
@@ -185,7 +195,7 @@ export default function AddEditAgentCustomer() {
         const options = filteredOptions?.data || [];
         setFilteredCustomerCategoryOptions(options.map((category: { id: number; customer_category_code: string; customer_category_name: string }) => ({
             value: String(category.id),
-            label: category.customer_category_name + " - " + category.customer_category_code,
+            label: category.customer_category_name ,
         })));
         setSkeleton({ ...skeleton, customerCategory: false });
     }
@@ -203,7 +213,7 @@ export default function AddEditAgentCustomer() {
         const options = filteredOptions?.data || [];
         setFilteredCustomerSubCategoryOptions(options.map((subCategory: { id: number; customer_sub_category_code: string; customer_sub_category_name: string }) => ({
             value: String(subCategory.id),
-            label: subCategory.customer_sub_category_name + " - " + subCategory.customer_sub_category_code,
+            label: subCategory.customer_sub_category_name ,
         })));
         setSkeleton({ ...skeleton, customerSubCategory: false });
     }
@@ -731,8 +741,8 @@ export default function AddEditAgentCustomer() {
                                         label="Distributor"
                                         name="warehouse"
                                         value={values?.warehouse || ""}
-                                        options={warehouseOptions}
-                                        disabled={warehouseOptions.length === 0}
+                                        options={isEditMode ? warehouseAllOptions :  warehouseOptions}
+                                        disabled={isEditMode ? warehouseAllOptions.length === 0 : warehouseOptions.length === 0}
                                         onChange={(e) => {
                                             setFieldValue("warehouse", e.target.value);
                                             if (values.warehouse !== e.target.value) {
@@ -1114,7 +1124,7 @@ export default function AddEditAgentCustomer() {
                                 <div>
                                     <InputFields
                                         required
-                                        label="Subcategory"
+                                        label="Sub Category"
                                         name="subcategory_id"
                                         value={
                                             filteredCustomerSubCategoryOptions.length === 0 ? "" : values.subcategory_id?.toString()
