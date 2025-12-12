@@ -80,10 +80,30 @@ export default function AddEditSalesman() {
   const isEditMode = salesmanId && salesmanId !== "add";
   const codeGeneratedRef = useRef(false);
 
-  const { salesmanTypeOptions, warehouseOptions, routeOptions, projectOptions } =
-    useAllDropdownListData();
+  const { 
+    salesmanTypeOptions, 
+    warehouseOptions, 
+    warehouseAllOptions,
+    routeOptions, 
+    projectOptions,
+    ensureWarehouseLoaded,
+    ensureWarehouseAllLoaded,
+    ensureSalesmanTypeLoaded,
+    ensureProjectLoaded
+  } = useAllDropdownListData();
+  
   const [filteredRouteOptions, setFilteredRouteOptions] =
     useState(routeOptions);
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureWarehouseLoaded();
+    ensureSalesmanTypeLoaded();
+    ensureProjectLoaded();
+    if (isEditMode) {
+      ensureWarehouseAllLoaded();
+    }
+  }, [ensureWarehouseLoaded, ensureWarehouseAllLoaded, ensureSalesmanTypeLoaded, ensureProjectLoaded, isEditMode]);
 
   const [country, setCountry] = useState<Record<string, contactCountry>>({
     contact_no: { name: "Uganda", code: "+256", flag: "🇺🇬" },
@@ -511,8 +531,8 @@ export default function AddEditSalesman() {
                   type="select"
                   name="warehouse_id"
                   value={values.warehouse_id || []}
-                  options={warehouseOptions}
-                  disabled={warehouseOptions.length === 0}
+                  options={isEditMode ? warehouseAllOptions : warehouseOptions}
+                  disabled={isEditMode ? warehouseAllOptions.length === 0 : warehouseOptions.length === 0}
                   isSingle={false}
                   onChange={(e) => {
                     const selectedValues = Array.from(
@@ -540,8 +560,8 @@ export default function AddEditSalesman() {
                   type="select"
                   name="warehouse_id"
                   value={values.warehouse_id}
-                  options={warehouseOptions}
-                  disabled={warehouseOptions.length === 0}
+                  options={isEditMode ? warehouseAllOptions : warehouseOptions}
+                  disabled={isEditMode ? warehouseAllOptions.length === 0 : warehouseOptions.length === 0}
                   isSingle={true}
                   onChange={(e) => {
                     setFieldValue("warehouse_id", e.target.value);
