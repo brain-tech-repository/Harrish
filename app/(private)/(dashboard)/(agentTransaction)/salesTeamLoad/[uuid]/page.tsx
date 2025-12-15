@@ -326,7 +326,7 @@ export default function AddEditSalesmanLoad() {
         setSubmitting(false);
         return;
       }
-      let details: any = []
+      const details: any = [];
 
       validItems.flatMap((singleItems: any) => {
         if (!Array.isArray(singleItems.uom)) return [];
