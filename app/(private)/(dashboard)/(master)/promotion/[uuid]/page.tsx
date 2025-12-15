@@ -78,51 +78,51 @@ function SelectKeyCombinationInline({ keyCombo, setKeyCombo }: { keyCombo: KeyCo
   }, [keyCombo]);
 
   function onKeySelect(index: number, optionIndex: number) {
-    setKeysArray((prev) => {
-      const newKeys = prev.map((group, i) => {
-        if (i !== index) return group; // If not the current group, return as is
+    // 1. Calculate the new state for keysArray based on the previous state
+    const newKeys = keysArray.map((group, i) => {
+      if (i !== index) return group; // If not the current group, return as is
 
-        // Determine if this group should be single-select
-        // Location and Customer are single-select, Item is multi-select
-        const isSingleSelectGroup = (group.type === "Location" || group.type === "Customer");
+      // Determine if this group should be single-select
+      // Location, Customer and Item are single-select
+      const isSingleSelectGroup = (group.type === "Location" || group.type === "Customer" || group.type === "Item");
 
-        if (isSingleSelectGroup) {
-          // Single-select logic: Toggle the clicked option, deselect others
-          return {
-            ...group,
-            options: group.options.map((opt, j) => {
-              if (j === optionIndex) {
-                // Toggle the clicked option
-                return { ...opt, isSelected: !opt.isSelected };
-              } else {
-                // Deselect all other options in this group
-                return { ...opt, isSelected: false };
-              }
-            }),
-          };
-        } else {
-          // Multi-select logic (for Item group)
-          return {
-            ...group,
-            options: group.options.map((opt, j) =>
-              j === optionIndex ? { ...opt, isSelected: !opt.isSelected } : opt
-            ),
-          };
-        }
-      });
-
-      // Update parent state directly
-      const selected: { Location: string; Customer: string; Item: string } = { Location: "", Customer: "", Item: "" };
-      newKeys.forEach((group) => {
-        if (group.type === "Location" || group.type === "Customer" || group.type === "Item") {
-          const found = group.options.find((o) => o.isSelected);
-          selected[group.type as keyof KeyComboType] = found ? found.label : "";
-        }
-      });
-      setKeyCombo(selected);
-
-      return newKeys;
+      if (isSingleSelectGroup) {
+        // Single-select logic: Toggle the clicked option, deselect others
+        return {
+          ...group,
+          options: group.options.map((opt, j) => {
+            if (j === optionIndex) {
+              // Toggle the clicked option
+              return { ...opt, isSelected: !opt.isSelected };
+            } else {
+              // Deselect all other options in this group
+              return { ...opt, isSelected: false };
+            }
+          }),
+        };
+      } else {
+        // Multi-select logic (for Item group)
+        return {
+          ...group,
+          options: group.options.map((opt, j) =>
+            j === optionIndex ? { ...opt, isSelected: !opt.isSelected } : opt
+          ),
+        };
+      }
     });
+
+    // 2. Update local state
+    setKeysArray(newKeys);
+
+    // 3. Update parent state
+    const selected: { Location: string; Customer: string; Item: string } = { Location: "", Customer: "", Item: "" };
+    newKeys.forEach((group) => {
+      if (group.type === "Location" || group.type === "Customer" || group.type === "Item") {
+        const found = group.options.find((o) => o.isSelected);
+        selected[group.type as keyof KeyComboType] = found ? found.label : "";
+      }
+    });
+    setKeyCombo(selected);
   }
 
 
@@ -206,7 +206,6 @@ export default function AddPricing() {
       try {
         // Only call promotionHeaderById for edit mode
         const headerRes = await promotionHeaderById(id);
-        console.log(headerRes,"hearder")
         if (headerRes && typeof headerRes === "object") {
           const data = headerRes.data; // Alias for easier access
           setPromotion(s => ({
@@ -218,8 +217,8 @@ export default function AddPricing() {
             promotionType: data.promotion_type || "", // Map promotion_type -> promotionType
             bundle_combination: data.bundle_combination || s.bundle_combination || "",
             status: data.status !== undefined ? String(data.status) : s.status,
-            salesTeamType: String(data.sales_team_type || ""),
-            projectList: String(data.project_list || ""),
+            salesTeamType: Array.isArray(data.sales_team_type) ? data.sales_team_type.map(String) : (data.sales_team_type ? [String(data.sales_team_type)] : []),
+            projectList: Array.isArray(data.project_list) ? data.project_list.map(String) : (data.project_list ? [String(data.project_list)] : []),
           }));
 
           // Set Key Combo
@@ -243,11 +242,11 @@ export default function AddPricing() {
             }
             // Populate Items if available
             if (data.items && data.items.length > 0) {
-               newKeyValue["Item"] = data.items.map(String);
+              newKeyValue["Item"] = data.items.map(String);
             }
           }
           if (newKeyCombo.Item === "Item") {
-             newKeyValue["Item"] = data.items?.map(String) || [];
+            newKeyValue["Item"] = data.items?.map(String) || [];
           }
           setKeyValue(newKeyValue);
 
@@ -256,18 +255,18 @@ export default function AddPricing() {
 
           // Set Order Tables (Promotion Details)
           if (Array.isArray(data.promotion_details) && data.promotion_details.length > 0) {
-             const details = data.promotion_details.map((d: any) => ({
-               promotionGroupName: "", // Not in response, maybe infer?
-               itemName: "", // Will be filled by item fetch logic if needed
-               itemCode: "", 
-               quantity: String(d.from_qty || ""),
-               toQuantity: String(d.to_qty || ""),
-               uom: String(data.uom || "CTN"), // Use header UOM as fallback?
-               price: "",
-               free_qty: String(d.free_qty || ""),
-               idx: String(d.id || Math.random())
-             }));
-             setOrderTables([details]);
+            const details = data.promotion_details.map((d: any) => ({
+              promotionGroupName: "", // Not in response, maybe infer?
+              itemName: "", // Will be filled by item fetch logic if needed
+              itemCode: "",
+              quantity: String(d.from_qty || ""),
+              toQuantity: String(d.to_qty || ""),
+              uom: String(data.uom || "CTN"), // Use header UOM as fallback?
+              price: "",
+              free_qty: String(d.free_qty || ""),
+              idx: String(d.id || Math.random())
+            }));
+            setOrderTables([details]);
           }
 
           // Set Offer Items
@@ -334,16 +333,23 @@ export default function AddPricing() {
       return allValid;
     }
     if (step === 3) {
-      if (keyCombo.Item === "Item Category") {
-        if (!keyValue["Item Category"] || keyValue["Item Category"].length === 0) {
+      if (promotion.promotionType === "percentage") {
+        // Validate Percentage Discount Table
+        const isPercentageValid = percentageDiscounts.every(pd => pd.key && pd.percentage);
+        if (!isPercentageValid) {
           return false;
         }
-        if (!keyValue["Item"] || keyValue["Item"].length === 0) {
-          return false;
-        }
-      } else if (keyCombo.Item === "Item") {
-        if (!keyValue["Item"] || keyValue["Item"].length === 0) {
-          return false;
+        // In percentage mode, we don't enforce the global keyValue dropdowns for Item/Category
+        // because they are populated from the table.
+      } else {
+        if (keyCombo.Item === "Item Category") {
+          if (!keyValue["Item Category"] || keyValue["Item Category"].length === 0) {
+            return false;
+          }
+        } else if (keyCombo.Item === "Item") {
+          if (!keyValue["Item"] || keyValue["Item"].length === 0) {
+            return false;
+          }
         }
       }
       return promotion.itemName && promotion.startDate && promotion.endDate;
@@ -388,13 +394,18 @@ export default function AddPricing() {
           return new Date(value) > new Date(from_date);
         }
       ),
-    sales_team_type: yup.string().required("Sales Team Type is required"),
-    project_list: yup.string().when("sales_team_type", {
-      is: "6",
-      then: (schema) => schema.required("Project List is required"),
+    sales_team_type: yup.array().of(yup.string()).min(1, "Sales Team Type is required"),
+    project_list: yup.array().when("sales_team_type", {
+      is: (val: string[]) => val && val.includes("6"),
+      then: (schema) => schema.of(yup.string()).min(1, "Project List is required"),
       otherwise: (schema) => schema.notRequired(),
     }),
-    item: yup.array().of(yup.string()).min(1, "At least one item is required"),
+    items: yup.array().when("item_category", {
+      is: (val: any[]) => val && val.length > 0,
+      then: (schema) => schema.notRequired(),
+      otherwise: (schema) => schema.of(yup.string()).min(1, "At least one item is required"),
+    }),
+    item_category: yup.array(),
     promotion_details: yup.array().of(
       yup.object().shape({
         from_qty: yup.number()
@@ -405,7 +416,7 @@ export default function AddPricing() {
           .required("To Quantity is required")
           .moreThan(0, "To Quantity must be greater than 0")
           .transform((value) => (isNaN(value) ? undefined : value))
-          .test('is-greater', 'To Quantity must be greater than From Quantity', function(value) {
+          .test('is-greater', 'To Quantity must be greater than From Quantity', function (value) {
             const { from_qty } = this.parent;
             return !from_qty || !value || value > from_qty;
           }),
@@ -468,7 +479,22 @@ export default function AddPricing() {
     // ].filter(Boolean);
     // const description = descriptionIds.join(",");
 
-    const selectedItemIds = keyValue["Item"] || [];
+        let selectedItemIds = keyValue["Item"] || [];
+
+        if (keyCombo.Item === "Item Category") {
+
+          selectedItemIds = [];
+
+        }
+
+        // Validate Percentage Discounts before payload construction
+    if (promotion.promotionType === "percentage") {
+      const isPercentageValid = percentageDiscounts.every(pd => pd.key && pd.percentage);
+      if (!isPercentageValid) {
+        showSnackbar("Please fill in all Item/Category and Percentage fields in the Percentage Discount table.", "error");
+        return;
+      }
+    }
 
     // ✅ Fix: Flatten promotion details properly
     type PromotionDetailInput = {
@@ -520,19 +546,30 @@ export default function AddPricing() {
         // promotion_group_name: detail.promotionGroupName || "",
       })),
 
-      offer_items: (offerDetails || []).map(detail => ({
-        item_id: detail.itemCode || "",
-        uom: detail.uom || "",
-        // promotion_group_name: detail.promotionGroupName || "",
-        // is_discount: detail.is_discount || "0",
-        // quantity: Number(detail.toQuantity) || 0
-      })),
+      percentage_discounts: (promotion.promotionType === "percentage" 
+        ? percentageDiscounts.map(pd => ({
+            id: pd.key || "",
+            percentage: Number(pd.percentage) || 0,
+          }))
+        : []
+      ),
+
+      offer_items: (offerDetails || []).flatMap(detail => {
+        const itemCodes = Array.isArray(detail.itemCode) ? detail.itemCode : [detail.itemCode];
+        return itemCodes.map(code => ({
+          item_id: code || "",
+          uom: detail.uom || "",
+          // promotion_group_name: detail.promotionGroupName || "",
+          // is_discount: detail.is_discount || "0",
+          // quantity: Number(detail.toQuantity) || 0
+        }));
+      }),
 
       // ✅ Add key object for validation
       key: {
         Location: keyCombo.Location ? [keyCombo.Location] : [],
         Customer: keyCombo.Customer ? [keyCombo.Customer] : [],
-        // Item: keyCombo.Item ? [keyCombo.Item] : [],
+        Item: keyCombo.Item ? [keyCombo.Item] : [],
       }
     };
 
@@ -560,7 +597,7 @@ export default function AddPricing() {
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       console.log(payload, "payload")
       setLoading(true);
-      
+
       let res;
       if (isEditMode && id) {
         res = await editPromotionHeader(String(id), payload);
@@ -589,7 +626,7 @@ export default function AddPricing() {
           // Get the first error message to show in snackbar
           const firstError = validationError.inner[0];
           if (firstError) {
-             showSnackbar(firstError.message, "error");
+            showSnackbar(firstError.message, "error");
           }
 
           validationError.inner.forEach((e: yup.ValidationError) => {
@@ -634,8 +671,8 @@ export default function AddPricing() {
     promotionType: "",
     bundle_combination: "range",
     status: "1",
-    salesTeamType: "",
-    projectList: "",
+    salesTeamType: [] as string[],
+    projectList: [] as string[],
   });
 
   const [selectedUom, setSelectedUom] = useState("");
@@ -657,7 +694,7 @@ export default function AddPricing() {
   type OfferItemType = {
     promotionGroupName: string;
     itemName: string;
-    itemCode: string;
+    itemCode: string | string[];
     uom: string;
     toQuantity: string;
     is_discount: string;
@@ -671,6 +708,13 @@ export default function AddPricing() {
   const [offerItems, setOfferItems] = useState<OfferItemType[][]>([
     [{ promotionGroupName: "", itemName: "", itemCode: "", uom: "BAG", toQuantity: "", is_discount: "0" }],
   ]);
+
+  type PercentageDiscountType = {
+    key: string;
+    percentage: string;
+    idx: string;
+  };
+  const [percentageDiscounts, setPercentageDiscounts] = useState<PercentageDiscountType[]>([{ key: "", percentage: "", idx: "0" }]);
 
   type ItemDetail = {
     code?: string;
@@ -828,6 +872,8 @@ export default function AddPricing() {
         console.error("Failed to fetch item options for category", itemCategories, err);
       } finally {
       }
+    } else {
+      setItemOptions([]);
     }
   }, [keyValue["Item Category"], fetchItemsCategoryWise]);
 
@@ -861,6 +907,32 @@ export default function AddPricing() {
       setPromotion(s => ({ ...s, promotionType: "" }));
     }
   }, [promotion.bundle_combination, promotion.promotionType]);
+
+  // Sync percentageDiscounts to keyValue when in percentage mode
+  useEffect(() => {
+    if (promotion.promotionType === "percentage") {
+      const validKeys = percentageDiscounts.map(pd => pd.key).filter(k => k && k.trim() !== "");
+      const uniqueKeys = Array.from(new Set(validKeys));
+
+      if (keyCombo.Item === "Item Category") {
+        setKeyValue(prev => {
+          const current = prev["Item Category"] || [];
+          const sortedCurrent = [...current].sort();
+          const sortedNew = [...uniqueKeys].sort();
+          if (JSON.stringify(sortedCurrent) === JSON.stringify(sortedNew)) return prev;
+          return { ...prev, "Item Category": uniqueKeys };
+        });
+      } else if (keyCombo.Item === "Item") {
+        setKeyValue(prev => {
+          const current = prev["Item"] || [];
+          const sortedCurrent = [...current].sort();
+          const sortedNew = [...uniqueKeys].sort();
+          if (JSON.stringify(sortedCurrent) === JSON.stringify(sortedNew)) return prev;
+          return { ...prev, "Item": uniqueKeys };
+        });
+      }
+    }
+  }, [percentageDiscounts, promotion.promotionType, keyCombo.Item]);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1000,22 +1072,19 @@ export default function AddPricing() {
 
 
 
-        // Helper to set both itemCode and itemName for an offer row/table
-        function selectItemForOffer(tableIdx: number, rowIdx: string, value: string) {
-          const providerItems: ItemDetail[] = Array.isArray(item) ? (item as ItemDetail[]) : [];
-          const foundItem = providerItems.find((ci) => String((ci as Record<string, unknown>)['id'] ?? '') === String(value));
-          const name = foundItem ? String(foundItem.name || foundItem.itemName || foundItem.label || "") : "";
-          // choose primary UOM when available, otherwise first UOM
-          const uomListOffer = foundItem ? ((foundItem as Record<string, unknown>)['uomSummary'] ?? (foundItem as Record<string, unknown>)['uom']) : undefined;
-          const primaryUom = Array.isArray(uomListOffer) && uomListOffer.length > 0 ? ((uomListOffer as Uom[]).find((uu) => String(uu.uom_type || '').toLowerCase() === 'primary') || (uomListOffer as Uom[])[0]) : undefined;
 
+        // Helper to set itemCode for an offer row/table
+        function selectItemForOffer(tableIdx: number, rowIdx: string, value: string | string[]) {
+          // If value is array, we might want to default UOM based on the first item or leave it.
+          // For now, let's just update the itemCode.
+          
           setOfferItems((prev: OfferItemType[][] | any) => {
             // Always treat as nested array
             const tables = (Array.isArray(prev) && prev.length > 0 && Array.isArray(prev[0])) ? prev as OfferItemType[][] : [prev as unknown as OfferItemType[]];
 
             return tables.map((arr: OfferItemType[], idx: number) =>
               idx === tableIdx
-                ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value, itemName: name, uom: primaryUom ? String((primaryUom as Record<string, unknown>)['name'] ?? '') : (oi.uom ?? '') } : oi))
+                ? arr.map((oi, i) => (String(i) === String(rowIdx) ? { ...oi, itemCode: value } : oi))
                 : arr
             );
           });
@@ -1091,6 +1160,126 @@ export default function AddPricing() {
         //   }));
         // }
 
+        const renderPercentageDiscountTable = () => {
+          const isCategoryMode = keyCombo.Item === "Item Category";
+          const dropdownLabel = isCategoryMode ? "Item Category" : "Item";
+          const dropdownOptions = isCategoryMode
+            ? (itemDropdownMap["Item Category"] ? [{ label: `Select ${dropdownLabel}`, value: "" }, ...itemDropdownMap["Item Category"]] : [])
+            : (itemDropdownMap["Item"] ? [{ label: `Select ${dropdownLabel}`, value: "" }, ...itemDropdownMap["Item"]] : []);
+          
+          return (
+            <div className="mb-6 mt-8">
+              <div className="flex justify-between items-center mb-4">
+                <div className="font-semibold text-lg">Percentage Discount</div>
+              </div>
+              <Table
+                data={percentageDiscounts}
+                config={{
+                  showNestedLoading: false,
+                  columns: [
+                    {
+                      key: "key",
+                      label: (
+                        <span>
+                          {dropdownLabel}
+                          <span className="text-red-500 ml-1">*</span>
+                        </span>
+                      ),
+                      width: 250,
+                      render: (row) => {
+                        const currentVal = String((row as Record<string, unknown>)['key'] ?? "");
+                        const otherSelectedValues = percentageDiscounts
+                          .filter(p => String(p.idx) !== String((row as Record<string, unknown>)['idx']))
+                          .map(p => p.key)
+                          .filter(k => k && k !== "");
+                        
+                        const filteredOptions = dropdownOptions.filter(opt => 
+                          opt.value === "" || opt.value === currentVal || !otherSelectedValues.includes(opt.value)
+                        );
+
+                        return (
+                          <InputFields
+                            label=""
+                            type="select"
+                            isSingle={true}
+                            placeholder={`Select ${dropdownLabel}`}
+                            options={filteredOptions}
+                            value={currentVal}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setPercentageDiscounts(prev => prev.map((p) => String(p.idx) === String((row as Record<string, unknown>)['idx']) ? { ...p, key: val } : p));
+                            }}
+                            width="w-full"
+                          />
+                        );
+                      },
+                    },
+                    {
+                      key: "percentage",
+                      label: (
+                        <span>
+                          Percentage
+                          <span className="text-red-500 ml-1">*</span>
+                        </span>
+                      ),
+                      width: 150,
+                      render: (row) => (
+                        <InputFields
+                          label=""
+                          type="number"
+                          placeholder="Percentage"
+                          value={String((row as Record<string, unknown>)['percentage'] ?? "")}
+                          onChange={e => {
+                            const val = e.target.value;
+                            // Clamp 0-100
+                            const n = Number(val);
+                            if (Number.isNaN(n)) return;
+                            const clamped = Math.max(0, Math.min(100, n));
+                            setPercentageDiscounts(prev => prev.map((p) => String(p.idx) === String((row as Record<string, unknown>)['idx']) ? { ...p, percentage: String(clamped) } : p));
+                          }}
+                          width="w-full"
+                          trailingElement={<span className="text-gray-500 font-semibold">%</span>}
+                        />
+                      ),
+                    },
+                    {
+                      key: "action",
+                      label: "Action",
+                      width: 50,
+                      render: (row) => (
+                        <button
+                          type="button"
+                          disabled={percentageDiscounts.length === 1 && String((row as Record<string, unknown>)['idx']) === "0"}
+                          className={`flex items-center justify-center w-full h-full ${percentageDiscounts.length === 1 && String((row as Record<string, unknown>)['idx']) === "0" ? "text-gray-300 cursor-not-allowed" : "text-red-500"}`}
+                          onClick={() => {
+                             if (percentageDiscounts.length === 1 && String((row as Record<string, unknown>)['idx']) === "0") return;
+                             setPercentageDiscounts(prev => prev.filter(p => String(p.idx) !== String((row as Record<string, unknown>)['idx'])));
+                          }}
+                        >
+                          <Icon icon="lucide:trash-2" width={20} />
+                        </button>
+                      ),
+                    },
+                  ],
+                  pageSize: 10,
+                }}
+              />
+              <div className="mt-4">
+                <button
+                  type="button"
+                  className="text-[#E53935] font-medium text-[16px] flex items-center gap-2"
+                  onClick={() => {
+                    setPercentageDiscounts(prev => [...prev, { key: "", percentage: "", idx: String(Math.random()) }]);
+                  }}
+                >
+                  <Icon icon="material-symbols:add-circle-outline" width={20} />
+                  Add New Item
+                </button>
+              </div>
+            </div>
+          );
+        };
+
         // Render all order tables
         const renderOrderTables = () => {
           return orderTables.map((orderItems, tableIdx) => {
@@ -1137,7 +1326,7 @@ export default function AddPricing() {
                           key: "quantity",
                           label: (
                             <span>
-                              {(promotion.promotionType === "percentage") ? "Percentage" : "From Quantity"}
+                              From Quantity
                               <span className="text-red-500 ml-1">*</span>
                             </span>
                           ),
@@ -1146,11 +1335,10 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              placeholder={(promotion.promotionType === "percentage") ? "Percentage" : "From Qty"}
+                              placeholder="From Qty"
                               value={String((row as Record<string, unknown>)['quantity'] ?? "")}
                               onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "quantity", clampPercentInput(e.target.value))}
                               width="w-full"
-                              trailingElement={promotion.promotionType === "percentage" ? <span className="text-gray-500 font-semibold">%</span> : null}
                             />
                           ),
                         },
@@ -1158,7 +1346,7 @@ export default function AddPricing() {
                           key: "toQuantity",
                           label: (
                             <span>
-                              {(promotion.promotionType === "percentage") ? "To Percentage" : "To Quantity"}
+                              To Quantity
                               <span className="text-red-500 ml-1">*</span>
                             </span>
                           ),
@@ -1167,11 +1355,10 @@ export default function AddPricing() {
                             <InputFields
                               label=""
                               type="number"
-                              placeholder={(promotion.promotionType === "percentage") ? "To Percentage" : "To Qty"}
+                              placeholder="To Qty"
                               value={String((row as Record<string, unknown>)['toQuantity'] ?? "")}
                               onChange={e => updateOrderItem(tableIdx, String((row as Record<string, unknown>)['idx']), "toQuantity", clampPercentInput(e.target.value))}
                               width="w-full"
-                              trailingElement={promotion.promotionType === "percentage" ? <span className="text-gray-500 font-semibold">%</span> : null}
                             />
                           ),
                         },
@@ -1422,22 +1609,45 @@ export default function AddPricing() {
               <div>
                 <label className="block mb-1 font-medium">Sales Team Type<span className="text-red-500 ml-1">*</span></label>
                 <InputFields
-                  isSingle={true}
+                  isSingle={false}
                   options={salesmanTypeOptions.map((o: any) => ({ ...o, value: String(o.value) }))}
-                  value={promotion.salesTeamType}
-                  onChange={e => setPromotion(s => ({ ...s, salesTeamType: e.target.value }))}
+                  value={Array.isArray(promotion.salesTeamType) ? promotion.salesTeamType : (promotion.salesTeamType ? [String(promotion.salesTeamType)] : [])}
+                  onChange={e => {
+                    const val = e.target.value;
+                    let selectedValues: string[];
+                    if (Array.isArray(val)) {
+                      selectedValues = val;
+                    } else {
+                      selectedValues = val ? [String(val)] : [];
+                    }
+                    setPromotion(s => ({ 
+                      ...s, 
+                      salesTeamType: selectedValues,
+                      // Clear projectList if "6" (Project) is not in the selection
+                      projectList: selectedValues.includes("6") ? s.projectList : [] 
+                    }))
+                  }}
                   width="w-full"
                 />
               </div>
-              {/* Show Project List only when salesTeamType id = 6 */}
-              {promotion.salesTeamType === "6" && (
+              {/* Show Project List only when salesTeamType includes id = 6 */}
+              {(Array.isArray(promotion.salesTeamType) ? promotion.salesTeamType : [promotion.salesTeamType]).includes("6") && (
                 <div>
                   <label className="block mb-1 font-medium">Project List<span className="text-red-500 ml-1">*</span></label>
                   <InputFields
-                    isSingle={true}
+                    isSingle={false}
                     options={projectOptions.map((o: any) => ({ ...o, value: String(o.value) }))}
-                    value={promotion.projectList}
-                    onChange={e => setPromotion(s => ({ ...s, projectList: e.target.value }))}
+                    value={Array.isArray(promotion.projectList) ? promotion.projectList : (promotion.projectList ? [String(promotion.projectList)] : [])}
+                    onChange={e => {
+                      const val = e.target.value;
+                      let selectedValues: string[];
+                      if (Array.isArray(val)) {
+                        selectedValues = val;
+                      } else {
+                        selectedValues = val ? [String(val)] : [];
+                      }
+                      setPromotion(s => ({ ...s, projectList: selectedValues }))
+                    }}
                     width="w-full"
                   />
                 </div>
@@ -1493,7 +1703,7 @@ export default function AddPricing() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-6 mb-5">
-                  {keyCombo.Item === "Item Category" && (
+                  {((keyCombo.Item === "Item Category" && promotion.promotionType !== "percentage") || keyCombo.Item === "Item") && (
                     <>
                       <div>
                         <div className="mb-2 text-base font-medium">
@@ -1520,34 +1730,9 @@ export default function AddPricing() {
                           width="w-full"
                         />
                       </div>
-                      <div>
-                        <div className="mb-2 text-base font-medium">
-                          Item
-                          <span className="text-red-500 ml-1">*</span>
-                        </div>
-                        <InputFields
-                          label=""
-                          type="select"
-                          isSingle={false}
-                          options={itemDropdownMap["Item"] ? [{ label: `Select Item`, value: "" }, ...itemDropdownMap["Item"]] : [{ label: `Select Item`, value: "" }]}
-                          value={keyValue["Item"] || []}
-                          showSkeleton={itemLoading}
-                          onChange={e => {
-                            const val = e.target.value;
-                            let selectedValues: string[];
-                            if (Array.isArray(val)) {
-                              selectedValues = val;
-                            } else {
-                              selectedValues = val ? [String(val)] : [];
-                            }
-                            setKeyValue(s => ({ ...s, "Item": selectedValues.filter(v => v !== "") }));
-                          }}
-                          width="w-full"
-                        />
-                      </div>
                     </>
                   )}
-                  {keyCombo.Item === "Item" && (
+                  {keyCombo.Item === "Item" && promotion.promotionType !== "percentage" && (
                     <div>
                       <div className="mb-2 text-base font-medium">
                         Item
@@ -1597,6 +1782,7 @@ export default function AddPricing() {
                   </div>
                 </div>
                 {renderOrderTables()}
+                {promotion.promotionType === "percentage" && renderPercentageDiscountTable()}
 
               </ContainerCard>
 
@@ -1673,27 +1859,21 @@ export default function AddPricing() {
                                   <InputFields
                                     label=""
                                     type="select"
-                                    isSingle={true}
+                                    isSingle={false}
                                     placeholder="Select Item"
                                     showSkeleton={itemLoading}
                                     options={[{ label: `Select Item`, value: "" }, ...selectedItemOptions]}
-                                    value={String((row as Record<string, unknown>)['itemCode'] ?? "")}
-                                    onChange={e => selectItemForOffer(tableIdx, row.idx, e.target.value)}
-                                    width="w-full"
-                                  />
-                                ),
-                              },
-                              {
-                                key: "itemName",
-                                label: "Item Name",
-                                width: 300,
-                                render: (row) => (
-                                  <InputFields
-                                    label=""
-                                    type="text"
-                                    placeholder="Item Name"
-                                    value={String((row as Record<string, unknown>)['itemName'] ?? "")}
-                                    onChange={e => updateOfferItemTable(tableIdx, row.idx, "itemName", e.target.value)}
+                                    value={Array.isArray(row.itemCode) ? row.itemCode : (row.itemCode ? [String(row.itemCode)] : [])}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      let selectedValues: string[];
+                                      if (Array.isArray(val)) {
+                                        selectedValues = val;
+                                      } else {
+                                        selectedValues = val ? [String(val)] : [];
+                                      }
+                                      selectItemForOffer(tableIdx, row.idx, selectedValues);
+                                    }}
                                     width="w-full"
                                   />
                                 ),
@@ -1755,34 +1935,6 @@ export default function AddPricing() {
                           }}
                         />
                         {offerItemsData.length > pageSize && renderPaginationBar(totalPages)}
-                        <div className="mt-4">
-                          <button
-                            type="button"
-                            className="text-[#E53935] font-medium text-[16px] flex items-center gap-2"
-                            onClick={() => {
-                              setOfferItems((prev: OfferItemType[][] | any) => {
-                                const tables = (Array.isArray(prev) && prev.length > 0 && Array.isArray(prev[0])) ? prev as OfferItemType[][] : [prev as unknown as OfferItemType[]];
-                                return tables.map((arr, idx) => {
-                                  if (idx !== tableIdx) return arr;
-                                  return [
-                                    ...arr,
-                                    {
-                                      promotionGroupName: arr[0]?.promotionGroupName || "",
-                                      itemName: "",
-                                      itemCode: "",
-                                      uom: "BAG",
-                                      toQuantity: "",
-                                      is_discount: "0"
-                                    }
-                                  ];
-                                });
-                              });
-                            }}
-                          >
-                            <Icon icon="material-symbols:add-circle-outline" width={20} />
-                            Add New Item
-                          </button>
-                        </div>
                       </div>
                     </React.Fragment>
                   );
