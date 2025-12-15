@@ -3795,6 +3795,15 @@ export const addProject = async (body: object) => {
   }
 };
 
+export const editLocation = async (uuid: string, payload: object) => {
+  try {
+    const res = await API.put(`/api/settings/location/${uuid}`, payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const editProject = async (uuid: string, payload: object) => {
   try {
     const res = await API.put(`/api/settings/projects-list/${uuid}`, payload);

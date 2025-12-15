@@ -11,8 +11,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const title = "Bulk Transfer Details";
-const backBtnUrl = "/chillerInstallation/bulkTransfer";
+const title = "Stock Transfer Details";
+const backBtnUrl = "/stockTransfer";
 
 export default function ViewPage() {
     const params = useParams();
