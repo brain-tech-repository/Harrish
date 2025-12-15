@@ -44,6 +44,7 @@ const columns = [
         {row.country_code}
       </span>
     ),
+    showBydefault: true,
   },
   { key: "country_name", label: "Country Name", showByDefault: true },
   { key: "currency", label: "Currency", showByDefault: true },
@@ -53,6 +54,7 @@ const columns = [
     render: (row: TableDataType) => (
       <StatusBtn isActive={row.status ? true : false} />
     ),
+    showBydefault: true,
   },
 ];
 
@@ -130,7 +132,7 @@ export default function Country() {
                 />,
               ],
             },
-            localStorageKey: "country",
+            localStorageKey: "country-table-settings",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowSelection: true,

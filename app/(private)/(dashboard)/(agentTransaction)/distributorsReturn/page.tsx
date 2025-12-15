@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Table, {
@@ -19,6 +19,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import { downloadFile } from "@/app/services/allApi";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import FilterComponent from "@/app/components/filterComponent";
 
 const dropdownDataList = [
     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
@@ -100,7 +101,15 @@ export default function CustomerInvoicePage() {
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
-    const { warehouseOptions, salesmanOptions, routeOptions, agentCustomerOptions } = useAllDropdownListData();
+    const { warehouseOptions, salesmanOptions, routeOptions, agentCustomerOptions , ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureAgentCustomerLoaded();
+    ensureRouteLoaded();
+    ensureSalesmanLoaded();
+    ensureWarehouseLoaded();
+  }, [ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
     const handleChange = (name: string, value: string) => {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
@@ -258,43 +267,8 @@ export default function CustomerInvoicePage() {
                                 }
                             },
                         ],
-                        filterByFields: [
-                            {
-                                key: "date_change",
-                                label: "Date Range",
-                                type: "dateChange"
-                            },
-                            {
-                                key: "warehouse",
-                                label: "Warehouse",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-                            },
-                            {
-                                key: "salesman",
-                                label: "Sales Team",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                            },
-                            {
-                                key: "route_id",
-                                label: "Route",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(routeOptions) ? routeOptions : [],
-                            },
-                            {
-                                key: "customer",
-                                label: "Customer",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(agentCustomerOptions) ? agentCustomerOptions : [],
-                            },
-
-                        ],
-                        wholeTableActions: [
+                            filterRenderer: FilterComponent,
+                            wholeTableActions: [
                             <div key={0} className="flex gap-[12px] relative">
                                 <DismissibleDropdown
                                     isOpen={showDropdown}

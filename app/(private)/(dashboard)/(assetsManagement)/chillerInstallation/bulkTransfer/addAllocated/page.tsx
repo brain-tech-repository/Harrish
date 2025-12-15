@@ -13,12 +13,18 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useState,useEffect } from "react";
 import * as yup from "yup";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 
 export default function AddRoute() {
-  const { regionOptions, warehouseAllOptions } = useAllDropdownListData();
+  const { regionOptions, warehouseAllOptions , ensureRegionLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureRegionLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureRegionLoaded, ensureWarehouseAllLoaded]);
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
@@ -40,6 +46,8 @@ export default function AddRoute() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [warehouseName, setWarehouseName] = useState("");
+  const [selectedRowIndices, setSelectedRowIndices] = useState<number[]>([]);
+  const [chillerData, setChillerData] = useState<any[]>([]);
 
   // ✅ VALIDATION
   const validationSchema = yup.object().shape({
@@ -161,6 +169,7 @@ export default function AddRoute() {
         truck_no: form.truck_no,
         turnmen_name: form.turnmen_name,
         contact: form.contact,
+        checked_data: selectedRowIndices.map(index => chillerData[index].id),
       };
 
       await addAllocate(payload);
@@ -192,12 +201,14 @@ export default function AddRoute() {
     try {
       const res = await getWarehouseChillers(btrId);
       console.log(res)
+      const data = res?.data?.chillers || [];
+      setChillerData(data);
       return {
 
-        data: res?.data?.chillers || [],
+        data: data,
         currentPage: 1,
-        pageSize: res?.data?.chillers?.length || 0,
-        total: res?.data?.chillers?.length || 0,
+        pageSize: data.length || 0,
+        total: data.length || 0,
       };
     } catch {
       showSnackbar("Error fetching chillers", "error");
@@ -255,6 +266,7 @@ export default function AddRoute() {
           label="Region"
           value={form.region_id}
           options={regionOptions}
+          error={errors.region_id}
           onChange={(e) => {
             const val = e?.target?.value || "";
             handleChange("region_id", val);
@@ -268,13 +280,14 @@ export default function AddRoute() {
           value={form.btr}
           options={btrOptions}
           disabled={!form.region_id || loadingBtr}
+          error={errors.btr}
           onChange={(e) => handleChange("btr", e?.target?.value || "")}
         />
 
-        <InputFields required label="Distributor" value={warehouseName} disabled onChange={(e) => handleChange("warehouse_id", e?.target?.value || "")} />
-        <InputFields required label="Truck Number" value={form.truck_no} onChange={(e) => handleChange("truck_no", e.target.value)} />
-        <InputFields required label="Turnmen Name" value={form.turnmen_name} onChange={(e) => handleChange("turnmen_name", e.target.value)} />
-        <InputFields required label="Contact" value={form.contact} onChange={(e) => handleChange("contact", e.target.value)} />
+        <InputFields required label="Distributor" value={warehouseName} disabled onChange={(e) => handleChange("warehouse_id", e?.target?.value || "")} error={errors.warehouse_id} />
+        <InputFields required label="Truck Number" value={form.truck_no} onChange={(e) => handleChange("truck_no", e.target.value)} error={errors.truck_no} />
+        <InputFields required label="Turnmen Name" value={form.turnmen_name} onChange={(e) => handleChange("turnmen_name", e.target.value)} error={errors.turnmen_name} />
+        <InputFields required label="Contact" value={form.contact} onChange={(e) => handleChange("contact", e.target.value)} error={errors.contact} />
       </div>
 
       {form.btr && (
@@ -315,6 +328,7 @@ export default function AddRoute() {
                     : "-",
               },
             ],
+            onRowSelectionChange: setSelectedRowIndices,
           }}
         />
       )}

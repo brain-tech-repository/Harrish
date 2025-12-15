@@ -13,6 +13,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { downloadFile } from "@/app/services/allApi";
+import FilterComponent from "@/app/components/filterComponent";
 
 const dropdownDataList = [
     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
@@ -192,12 +193,12 @@ export default function CustomerInvoicePage() {
                                 label="Add"
                                 labelTw="hidden lg:block"
                             />
-                        ]
+                        ],
+                        filterRenderer: FilterComponent,
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
                     rowSelection: true,
-
                     localStorageKey: "invoice-table",
                     rowActions: [
                         {

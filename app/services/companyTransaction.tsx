@@ -192,6 +192,16 @@ export const compensationReportExport = async (params?: Params) => {
   }
 };
 
+// Invoice Hariss Transaction APIs
+export const invoiceBatch = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/ht_invoice/invoicebatch`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 // Return Hariss Transaction APIs
 export const returnList = async (params?: Params) => {
   try {
@@ -232,6 +242,15 @@ export const returnExportHeader = async (params?: Params) => {
 export const returnExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/hariss_transaction/ht_returns/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const returnWarehouseStockByCustomer = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/ht_returns/getwarehousestocks`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -357,6 +376,15 @@ export const exportCapsViewPdf = async (params?: Params) => {
 export const exportTempReturnViewPdf = async (params?: Params) => {
   try {
     const res = await API.get(`/api/hariss_transaction/temp_returns/export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getDirectCustomer = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/companycustomer/customers`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

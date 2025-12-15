@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React,{useState,useEffect} from 'react';
 import InputFields from "@/app/components/inputFields";
 import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
@@ -20,10 +20,17 @@ type Props = {
 
 export default function WarehouseDetails({ values, errors, touched, handleChange, setFieldValue, isEditMode }: Props) {
     const [skeleton, setSkeleton] = useState({
-        region_id: false,
-        area_id: false,
-    });
-    const { companyOptions, agentCustomerOptions, companyCustomersOptions, fetchAreaOptions } = useAllDropdownListData();
+            region_id: false,
+            area_id: false,
+        });
+    const { companyOptions, agentCustomerOptions, companyCustomersOptions, fetchAreaOptions , ensureAgentCustomerLoaded, ensureCompanyCustomersLoaded, ensureCompanyLoaded} = useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureAgentCustomerLoaded();
+    ensureCompanyCustomersLoaded();
+    ensureCompanyLoaded();
+  }, [ensureAgentCustomerLoaded, ensureCompanyCustomersLoaded, ensureCompanyLoaded]);
     const [isOpen, setIsOpen] = React.useState(false);
     const [codeMode, setCodeMode] = React.useState<'auto' | 'manual'>('auto');
     const [prefix, setPrefix] = React.useState('');
@@ -128,14 +135,29 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
             </div>
             <div className="flex flex-col gap-2">
                 <InputFields
-                    type='number'
+                    type="number"
                     name="tin_no"
                     label="TIN NO."
                     value={values.tin_no}
-                    onChange={(e) => setFieldValue('tin_no', e.target.value)}
+                    onChange={(e) => {
+                        const val = e.target.value;
+
+                        // Prevent negative values
+                        if (Number(val) < 0) return;
+
+                        setFieldValue("tin_no", val);
+                    }}
                     placeholder="Enter TIN No."
+                    min={0}                // ← prevents negative input
+                    onKeyDown={(e) => {
+                        // Block "-" key
+                        if (e.key === "-" || e.key === "e") {
+                            e.preventDefault();
+                        }
+                    }}
                 />
             </div>
+
             <div className="flex flex-col gap-2">
                 <InputFields
                     required

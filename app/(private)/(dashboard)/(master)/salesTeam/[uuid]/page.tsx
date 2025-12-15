@@ -80,11 +80,31 @@ export default function AddEditSalesman() {
   const isEditMode = salesmanId && salesmanId !== "add";
   const codeGeneratedRef = useRef(false);
 
-  const { salesmanTypeOptions, warehouseOptions, routeOptions, projectOptions } =
-    useAllDropdownListData();
+  const { 
+    salesmanTypeOptions, 
+    warehouseOptions, 
+    warehouseAllOptions,
+    routeOptions, 
+    projectOptions,
+    ensureWarehouseLoaded,
+    ensureWarehouseAllLoaded,
+    ensureSalesmanTypeLoaded,
+    ensureProjectLoaded
+  } = useAllDropdownListData();
+  
   const [filteredRouteOptions, setFilteredRouteOptions] =
     useState(routeOptions);
   const [extraTypeOption, setExtraTypeOption] = useState<{ value: string; label: string } | null>(null);
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureWarehouseLoaded();
+    ensureSalesmanTypeLoaded();
+    ensureProjectLoaded();
+    if (isEditMode) {
+      ensureWarehouseAllLoaded();
+    }
+  }, [ensureWarehouseLoaded, ensureWarehouseAllLoaded, ensureSalesmanTypeLoaded, ensureProjectLoaded, isEditMode]);
 
   const [country, setCountry] = useState<Record<string, contactCountry>>({
     contact_no: { name: "Uganda", code: "+256", flag: "🇺🇬" },
@@ -353,26 +373,26 @@ export default function AddEditSalesman() {
 
       await SalesmanSchema.validate(values, { abortEarly: false });
 
-      // const formData = new FormData();
-      // (Object.keys({ ...values, warehouse_id: [values.warehouse_id] }) as (keyof SalesmanFormValues)[]).forEach((key) => {
-      //   const val = values[key];
+      const formData = new FormData();
+      (Object.keys({...values,warehouse_id:[values.warehouse_id]}) as (keyof SalesmanFormValues)[]).forEach((key) => {
+        const val = values[key];
 
-      //   if (Array.isArray(val)) {
-      //     console.log("Submitting form data: 2", Array.from(formData.entries()));
+        if (Array.isArray(val)) {
+      console.log("Submitting form data: 2", Array.from(formData.entries()));
 
-      //     // For arrays (like warehouse_id when multiple selected)
-      //     val.forEach((v) => formData.append(`${key}[]`, v));
-      //   } else if (val !== undefined && val !== null) {
-      //     console.log("Submitting form data: 3", Array.from(formData.entries()));
+          // For arrays (like warehouse_id when multiple selected)
+          val.forEach((v) => formData.append(`${key}[]`, v));
+        } else if (val !== undefined && val !== null) {
+      console.log("Submitting form data: 3", Array.from(formData.entries()));
 
-      //     // Normal string or single value
-      //     formData.append(key, val.toString());
-      //   } else {
-      //     console.log("Submitting form data: 4", Array.from(formData.entries()));
+          // Normal string or single value
+          formData.append(key, val.toString());
+        } else {
+      console.log("Submitting form data: 4", Array.from(formData.entries()));
 
-      //     formData.append(key, "");
-      //   }
-      // });
+          formData.append(key, "");
+        }
+      });
       // console.log("Submitting form data: 5", formData);
 
       const payload = {
@@ -419,14 +439,14 @@ export default function AddEditSalesman() {
             reserved_code: values.osa_code,
             model_name: "salesman",
           });
-        } catch { }
+        } catch { /** */ }
       }
     } catch {
       showSnackbar("Validation failed, please check your inputs", "error");
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   // ✅ Step content renderer
   const renderStepContent = (
@@ -545,9 +565,9 @@ export default function AddEditSalesman() {
                   label="Distributor"
                   type="select"
                   name="warehouse_id"
-                  value={values.warehouse_id}
-                  options={warehouseOptions}
-                  disabled={warehouseOptions.length === 0}
+                  value={values.warehouse_id || []}
+                  options={isEditMode ? warehouseAllOptions : warehouseOptions}
+                  disabled={isEditMode ? warehouseAllOptions.length === 0 : warehouseOptions.length === 0}
                   isSingle={false}
                   onChange={(e: any) => {
                     if (values.type === "6") {
@@ -592,6 +612,7 @@ export default function AddEditSalesman() {
 
 
                 />
+
                 <ErrorMessage
                   name="warehouse_id"
                   component="span"
@@ -604,8 +625,8 @@ export default function AddEditSalesman() {
                   type="select"
                   name="warehouse_id"
                   value={values.warehouse_id}
-                  options={warehouseOptions}
-                  disabled={warehouseOptions.length === 0}
+                  options={isEditMode ? warehouseAllOptions : warehouseOptions}
+                  disabled={isEditMode ? warehouseAllOptions.length === 0 : warehouseOptions.length === 0}
                   isSingle={true}
                   onChange={(e) => {
                     setFieldValue("warehouse_id", e.target.value);
