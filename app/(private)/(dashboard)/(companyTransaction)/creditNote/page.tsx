@@ -9,7 +9,7 @@ import Table, {
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { agentOrderExport, agentOrderList, changeStatusAgentOrder } from "@/app/services/agentTransaction";
+import { agentOrderExport, agentOrderList } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { downloadFile } from "@/app/services/allApi";
@@ -74,7 +74,20 @@ const columns = [
 
 export default function CustomerInvoicePage() {
     const { setLoading } = useLoading();
-    const { customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions } = useAllDropdownListData();
+    const { customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions , ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureAgentCustomerLoaded();
+    ensureAreaLoaded();
+    ensureChannelLoaded();
+    ensureCompanyLoaded();
+    ensureCustomerSubCategoryLoaded();
+    ensureRegionLoaded();
+    ensureRouteLoaded();
+    ensureSalesmanLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
     const [refreshKey, setRefreshKey] = useState(0);

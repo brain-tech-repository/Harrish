@@ -1,54 +1,128 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { Icon } from "@iconify-icon/react";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import { salesTeamRecontionOrders, salesTeamRecontionOrdersTop, addSalesTeamRecontionOrders, blockSalesTeamRecontionOrders } from "@/app/services/agentTransaction";
+import { useSnackbar } from "@/app/services/snackbarContext";
 
-/* ---------------- MOCK DATA ---------------- */
-
-const warehouseOptions = [
-    { value: "1", label: "Warehouse A" },
-    { value: "2", label: "Warehouse B" },
-];
-
-const salesmanOptions = [
-    { value: "1", label: "Salesman John" },
-    { value: "2", label: "Salesman Alex" },
-];
-
-const initialItems: TableDataType[] = [
-    {
-        id: 1,
-        item_code: "ITEM-001",
-        name: "Product One",
-        cse_qty: "",
-        pcs_qty: "",
-        warehouse_stocks: [{ warehouse_id: "1", qty: 120 }],
-    },
-    {
-        id: 2,
-        item_code: "ITEM-002",
-        name: "Product Two",
-        cse_qty: "",
-        pcs_qty: "",
-        warehouse_stocks: [{ warehouse_id: "1", qty: 80 }],
-    },
-];
+const initialItems: TableDataType[] = [];
 
 /* ---------------- COMPONENT ---------------- */
 
 export default function AddSalesmanLoadUI() {
     const router = useRouter();
+    const { showSnackbar } = useSnackbar();
 
     /* -------- FORM STATE -------- */
     const [form, setForm] = useState({
         warehouse: "",
         salesman: "",
+        reconsile_date: "",
     });
+
+    /* -------- DROPDOWN DATA -------- */
+    const {
+        warehouseOptions,
+        ensureWarehouseLoaded,
+    } = useAllDropdownListData();
+
+    const [salesmanOptions, setSalesmanOptions] = useState<{ value: string; label: string }[]>([]);
+
+    /* -------- FETCH DATA -------- */
+    useEffect(() => {
+        ensureWarehouseLoaded();
+    }, [ensureWarehouseLoaded]);
+
+    useEffect(() => {
+        if (!form.warehouse) {
+            setSalesmanOptions([]);
+            return;
+        }
+
+        const fetchSalesmen = async () => {
+            try {
+                const res = await salesTeamRecontionOrders(form.warehouse);
+                console.log("fetchSalesmen raw response:", res);
+                const list = res?.data || res || [];
+                console.log("fetchSalesmen list:", list);
+
+                const opts = Array.isArray(list)
+                    ? list.map((s: any) => ({
+                        value: String(s.sales_man_id || s.id), // Fallback to s.id if s.sales_man_id is missing
+                        label: s.osa_code && s.name ? `${s.osa_code} - ${s.name}` : s.name || "",
+                        // debug: s // Keep for reference if needed, but not in Option type usually
+                    }))
+                    : [];
+                console.log("fetchSalesmen generated options:", opts);
+                setSalesmanOptions(opts);
+            } catch (err) {
+                console.error("Failed to fetch salesmen", err);
+                setSalesmanOptions([]);
+            }
+        };
+
+        fetchSalesmen();
+    }, [form.warehouse]);
+
+    useEffect(() => {
+        if (!form.salesman || !form.reconsile_date) return;
+
+        const fetchData = async () => {
+            try {
+                console.log("Fetching reconciliation with:", {
+                    salesman_id: form.salesman,
+                    reconsile_date: form.reconsile_date,
+                });
+                const res = await salesTeamRecontionOrdersTop({
+                    salesman_id: Number(form.salesman),
+                    reconsile_date: form.reconsile_date,
+                });
+                console.log("Reconciliation Response:", res);
+
+                // Relaxed check: accept if data array is present
+                const dataList = Array.isArray(res?.data) ? res.data : [];
+                console.log("Extracted Data List:", dataList);
+
+                if (dataList.length > 0) {
+                    const newItems = dataList.map((item: any) => ({
+                        id: item.item_id,
+                        item_code: item.erp_code || "",
+                        name: item.item_name || "",
+                        load_qty: item.load_qty,
+                        unload_qty: item.unload_qty,
+                        invoice_qty: item.invoice_qty,
+                        // Maintain other required TableDataType fields if any
+                    }));
+                    console.log("Setting item items:", newItems);
+                    setItemData(newItems);
+                } else {
+                    // Handle Empty Data
+                    console.log("No data found for this selection (List empty)");
+                    setItemData([]);
+                }
+
+                // Update Grand Total
+                if (res?.grand_total_amount !== undefined) {
+                    setPayment(prev => ({
+                        ...prev,
+                        total: String(res.grand_total_amount)
+                    }));
+                } else {
+                    setPayment(prev => ({ ...prev, total: "0" }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch reconciliation data", err);
+            }
+        };
+
+        fetchData();
+    }, [form.salesman, form.reconsile_date]);
 
     /* -------- ITEM TABLE STATE -------- */
     const [itemData, setItemData] = useState<TableDataType[]>(initialItems);
@@ -73,8 +147,15 @@ export default function AddSalesmanLoadUI() {
 
     /* -------- HANDLERS -------- */
 
-    const handleChange = (field: string, value: string) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+    const handleChange = (field: string, value: any) => {
+        console.log(`handleChange for ${field}:`, value);
+        // Handle various input event types or direct values
+        let val = value;
+        if (value && typeof value === 'object' && 'target' in value) {
+            val = value.target.value;
+        }
+        console.log(`handleChange setForm ${field}:`, val);
+        setForm((prev) => ({ ...prev, [field]: val }));
     };
 
     const updateQty = (index: number, field: string, value: string) => {
@@ -86,17 +167,12 @@ export default function AddSalesmanLoadUI() {
     };
 
     const handlePaymentChange = (field: string, value: string) => {
-        setPayment((prev) => {
-            const updated = { ...prev, [field]: value };
-
-            const cash = Number(updated.cash || 0);
-            const credit = Number(updated.credit || 0);
-
-            return {
-                ...updated,
-                total: String(cash + credit),
-            };
-        });
+        // Only update the specific field, don't recalculate total
+        // Total comes from API's grand_total_amount
+        setPayment((prev) => ({
+            ...prev,
+            [field]: value
+        }));
     };
 
     /* -------- SUBMIT LOGIC -------- */
@@ -115,14 +191,55 @@ export default function AddSalesmanLoadUI() {
         submitData();
     };
 
-    const submitData = () => {
-        console.log("Submitted Data:", {
-            form,
-            itemData,
-            payment,
-        });
+    const submitData = async () => {
+        try {
+            const payload = {
+                warehouse_id: Number(form.warehouse),
+                salesman_id: Number(form.salesman),
+                reconsile_date: form.reconsile_date,
+                grand_total_amount: Number(payment.total),
+                cash_amount: Number(payment.cash || 0),
+                credit_amount: Number(payment.credit || 0),
+                items: itemData.map((item) => ({
+                    item_id: item.id,
+                    load_qty: item.load_qty,
+                    unload_qty: item.unload_qty,
+                    invoice_qty: item.invoice_qty,
+                })),
+            };
 
-        // API call or navigation here
+            console.log("Submitting payload:", payload);
+            const response = await addSalesTeamRecontionOrders(payload);
+            console.log("API Response:", response);
+
+            if (response?.status === "success" || response?.success) {
+                showSnackbar("Sales Team Reconciliation created successfully!", "success");
+                router.back();
+            } else {
+                // Handle error response with errors object
+                if (response?.errors) {
+                    const errorMessages = Object.values(response.errors)
+                        .flat()
+                        .join(", ");
+                    showSnackbar(errorMessages, "error");
+                } else {
+                    showSnackbar(response?.message || "Failed to create reconciliation", "error");
+                }
+            }
+        } catch (error: any) {
+            console.error("Failed to submit data:", error);
+            // Handle API error response
+            if (error?.response?.data?.errors) {
+                const errorMessages = Object.values(error.response.data.errors)
+                    .flat()
+                    .join(", ");
+                showSnackbar(errorMessages, "error");
+            } else if (error?.response?.data?.message) {
+                showSnackbar(error.response.data.message, "error");
+            } else {
+                showSnackbar("An error occurred while submitting the data.", "error");
+            }
+        }
     };
 
     /* ---------------- UI ---------------- */
@@ -159,8 +276,18 @@ export default function AddSalesmanLoadUI() {
                         value={form.salesman}
                         options={salesmanOptions}
                         onChange={(e) =>
-                            handleChange("salesman", e.target.value)
+                            handleChange("salesman", e)
                         }
+                        type="select"
+                    />
+
+                    <InputFields
+                        label="Date"
+                        name="reconsile_date"
+                        value={form.reconsile_date}
+                        onChange={(e) => handleChange("reconsile_date", e.target.value)}
+                        type="date"
+                        placeholder="Select Date"
                     />
                 </div>
 
@@ -172,49 +299,24 @@ export default function AddSalesmanLoadUI() {
                         columns: [
                             {
                                 key: "item",
-                                label: "Item",
+                                label: "Item Name",
                                 render: (row: any) =>
                                     `${row.item_code} - ${row.name}`,
                             },
                             {
-                                key: "stock",
-                                label: "Available Stock",
-                                render: (row: any) =>
-                                    row.warehouse_stocks?.[0]?.qty ?? 0,
+                                key: "load_qty",
+                                label: "Load Qty",
+                                render: (row: any) => row.load_qty,
                             },
                             {
-                                key: "cse_qty",
-                                label: "CSE",
-                                render: (row: any) => (
-                                    <InputFields
-                                        type="number"
-                                        value={row.cse_qty}
-                                        onChange={(e) =>
-                                            updateQty(
-                                                row.idx,
-                                                "cse_qty",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                ),
+                                key: "unload_qty",
+                                label: "Unload Qty",
+                                render: (row: any) => row.unload_qty,
                             },
                             {
-                                key: "pcs_qty",
-                                label: "PCS",
-                                render: (row: any) => (
-                                    <InputFields
-                                        type="number"
-                                        value={row.pcs_qty}
-                                        onChange={(e) =>
-                                            updateQty(
-                                                row.idx,
-                                                "pcs_qty",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                ),
+                                key: "invoice_qty",
+                                label: "Invoice Qty",
+                                render: (row: any) => row.invoice_qty,
                             },
                         ],
                         pageSize: 100,
@@ -227,7 +329,7 @@ export default function AddSalesmanLoadUI() {
                         label="Total Amount"
                         type="number"
                         value={payment.total}
-                        // disabled
+                        disabled
                         onChange={(e) =>
                             handlePaymentChange("total", e.target.value)
                         }
@@ -278,7 +380,7 @@ export default function AddSalesmanLoadUI() {
                         </h2>
                         <p className="text-sm text-gray-600 mb-6">
                             Cash + Credit does not match the total amount.
-                            Do you want to proceed anyway?
+                            Do you want to Block this user?
                         </p>
 
                         <div className="flex justify-end gap-3">
@@ -291,8 +393,46 @@ export default function AddSalesmanLoadUI() {
 
                             <button
                                 className="px-4 py-2 bg-[#181D27] text-white rounded-md"
-                                onClick={() => {
+                                onClick={async () => {
                                     setShowMismatchModal(false);
+                                    // Block the salesman
+                                    try {
+                                        const blockPayload = {
+                                            salesman_id: Number(form.salesman),
+                                            reconsile_date: form.reconsile_date
+                                        };
+                                        console.log("Blocking salesman with payload:", blockPayload);
+                                        const blockResponse = await blockSalesTeamRecontionOrders(blockPayload);
+                                        console.log("Block API Response:", blockResponse);
+
+                                        if (blockResponse?.status === "success" || blockResponse?.success) {
+                                            showSnackbar("Salesman blocked successfully!", "success");
+                                        } else {
+                                            // Handle error response with errors object
+                                            if (blockResponse?.errors) {
+                                                const errorMessages = Object.values(blockResponse.errors)
+                                                    .flat()
+                                                    .join(", ");
+                                                showSnackbar(errorMessages, "error");
+                                            } else {
+                                                showSnackbar(blockResponse?.message || "Failed to block salesman", "error");
+                                            }
+                                        }
+                                    } catch (error: any) {
+                                        console.error("Failed to block salesman:", error);
+                                        // Handle API error response
+                                        if (error?.response?.data?.errors) {
+                                            const errorMessages = Object.values(error.response.data.errors)
+                                                .flat()
+                                                .join(", ");
+                                            showSnackbar(errorMessages, "error");
+                                        } else if (error?.response?.data?.message) {
+                                            showSnackbar(error.response.data.message, "error");
+                                        } else {
+                                            showSnackbar("An error occurred while blocking the salesman.", "error");
+                                        }
+                                    }
+                                    // Then submit the data
                                     submitData();
                                 }}
                             >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Table, {
@@ -17,6 +17,8 @@ import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/util
 import { formatDate } from "@/app/(private)/utils/date";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { formatWithPattern } from "@/app/(private)/utils/date";
+import FilterComponent from "@/app/components/filterComponent";
+import ApprovalStatus from "@/app/components/approvalStatus";
 
 
 
@@ -79,6 +81,12 @@ const columns = [
             } as FormatNumberOptions);
         },
     },
+    {
+        key: "approval_status",
+        label: "Approval Status",
+        showByDefault: true,
+        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+    },
 
 ];
 
@@ -90,7 +98,17 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions } = useAllDropdownListData();
+    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+
+    // Load dropdown data
+    useEffect(() => {
+        ensureAreaLoaded();
+        ensureCompanyLoaded();
+        ensureRegionLoaded();
+        ensureRouteLoaded();
+        ensureSalesmanLoaded();
+        ensureWarehouseAllLoaded();
+    }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const [filters, setFilters] = useState({
         fromDate: new Date().toISOString().split("T")[0],
         toDate: new Date().toISOString().split("T")[0],
@@ -351,63 +369,7 @@ export default function CustomerInvoicePage() {
                             },
                         ],
                         columnFilter: true,
-                        filterByFields: [
-                            {
-                                key: "start_date",
-                                label: "Start Date",
-                                type: "date",
-                                applyWhen: (filters) => !!filters.start_date && !!filters.end_date
-                            },
-                            {
-                                key: "end_date",
-                                label: "End Date",
-                                type: "date",
-                                applyWhen: (filters) => !!filters.start_date && !!filters.end_date
-                            },
-                            {
-                                key: "company_id",
-                                label: "Company",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(companyOptions) ? companyOptions : [],
-                            },
-                            {
-                                key: "warehouse_id",
-                                label: "Warehouse",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                            },
-                            {
-                                key: "region_id",
-                                label: "Region",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(regionOptions) ? regionOptions : [],
-                            },
-                            {
-                                key: "sub_region_id",
-                                label: "Sub Region",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(areaOptions) ? areaOptions : [],
-                            },
-                            {
-                                key: "route_id",
-                                label: "Route",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(routeOptions) ? routeOptions : [],
-                            },
-                            {
-                                key: "salesman_id",
-                                label: "Sales Team",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                            }
-
-                        ],
+                        filterRenderer: FilterComponent,
                         searchBar: false,
                         actions: [
                             <SidebarBtn

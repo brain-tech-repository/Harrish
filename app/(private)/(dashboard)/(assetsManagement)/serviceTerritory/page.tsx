@@ -6,7 +6,6 @@ import Table, {
     searchReturnType
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import StatusBtn from "@/app/components/statusBtn2";
 import { irServiceTerrtList } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -125,8 +124,16 @@ export default function ServiceTerritoryListPage() {
     const { setLoading } = useLoading();
     const router = useRouter();
 
-    const { warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions } =
+    const { warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded} =
         useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureAreaLoaded();
+    ensureAssetsModelLoaded();
+    ensureRegionLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -145,14 +152,21 @@ export default function ServiceTerritoryListPage() {
                 setLoading(true);
 
                 const result = await irServiceTerrtList({
-                    current_page: page.toString(),
+                    current_current_page: page.toString(),
                     per_page: pageSize.toString(),
                     ...appliedFilters,
                 });
 
-                // console.log("🔍 API Response:", result);
-                // console.log("🔍 Result Type:", typeof result);
-                // console.log("🔍 Is Array?:", Array.isArray(result));
+                // Handle object response with data property (your actual API response)
+                if (result?.data && result?.pagination) {
+                    const totalPages = Math.ceil(result.pagination.total / result.pagination.per_page);
+                    return {
+                        data: Array.isArray(result.data) ? result.data : [],
+                        total: totalPages, // total number of PAGES, not records
+                        currentPage: result.pagination.current_page,
+                        pageSize: result.pagination.per_page,
+                    };
+                }
 
                 // Handle direct array response
                 if (result?.data && result?.pagination) {
