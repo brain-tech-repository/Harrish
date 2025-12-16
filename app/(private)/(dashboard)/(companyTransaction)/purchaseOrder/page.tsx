@@ -262,6 +262,12 @@ export default function CustomerInvoicePage() {
                                     router.push(
                                         `/purchaseOrder/details/${row.uuid}`
                                     ),
+                            },
+                            {
+                                icon: "uil:process",
+                                onClick: (row: TableDataType) => {
+                                    router.push(`/settings/processFlow?order_code=${row.order_code}`);
+                                }
                             }
                         ],
                         pageSize: 10,
