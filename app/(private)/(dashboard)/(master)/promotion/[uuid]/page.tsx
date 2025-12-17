@@ -663,6 +663,7 @@ export default function AddPricing() {
       // ✅ Validate payload-level required pieces (items)
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       console.log(payload, "payload")
+      return
       setLoading(true);
 
       let res;
@@ -885,6 +886,26 @@ export default function AddPricing() {
     }
   }, [keyValue["Item Category"], fetchItemsCategoryWise]);
 
+  // Filter keyValue["Item"] based on selected item categories (available in itemOptions)
+  useEffect(() => {
+    if (itemLoading) return;
+
+    setKeyValue(prev => {
+      const currentSelectedItems = prev["Item"] || [];
+      if (currentSelectedItems.length === 0) return prev;
+
+      const validItemIds = new Set(itemOptions.map(opt => String(opt.value)));
+      const newSelectedItems = currentSelectedItems.filter(id => validItemIds.has(String(id)));
+
+      if (newSelectedItems.length === currentSelectedItems.length) return prev;
+
+      return {
+        ...prev,
+        "Item": newSelectedItems
+      };
+    });
+  }, [itemOptions, itemLoading]);
+
   // Filter offerItems to ensure only valid items (present in itemOptions) are kept
   useEffect(() => {
     if (itemLoading) return;
@@ -924,6 +945,8 @@ export default function AddPricing() {
   // When Item Category selection changes, prefill category on existing table rows
   useEffect(() => {
     const itemCategories = keyValue["Item Category"];
+    console.log(itemCategories,"itemcategory")
+    console.log(orderTables,"keyValue[item]")
     if (Array.isArray(itemCategories) && itemCategories.length > 0) {
       const firstCat = itemCategories[0];
       // Prefill orderTables' promotionGroupName if empty
