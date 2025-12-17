@@ -281,8 +281,8 @@ export const initialLinkData: SidebarDataType[] = [
           },
           {
             isActive: false,
-            href: "/salesTeamRecosite",
-            label: "Sales Team Reconsite",
+            href: "/salesTeamReconcile",
+            label: "Sales Team Reconcile",
             leadingIcon: "mdi:package-variant",
             iconColor: "text-cyan-500"
           },
