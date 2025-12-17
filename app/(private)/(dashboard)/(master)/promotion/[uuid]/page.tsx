@@ -636,7 +636,6 @@ export default function AddPricing() {
       // ✅ Validate payload-level required pieces (items)
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       console.log(payload, "payload")
-      return
       setLoading(true);
 
       let res;
