@@ -48,21 +48,15 @@ export default function AddSalesmanLoadUI() {
         const fetchSalesmen = async () => {
             try {
                 const res = await salesTeamRecontionOrders(form.warehouse);
-                console.log("fetchSalesmen raw response:", res);
                 const list = res?.data || res || [];
-                console.log("fetchSalesmen list:", list);
-
                 const opts = Array.isArray(list)
                     ? list.map((s: any) => ({
-                        value: String(s.sales_man_id || s.id), // Fallback to s.id if s.sales_man_id is missing
+                        value: String(s.sales_man_id || s.id),
                         label: s.osa_code && s.name ? `${s.osa_code} - ${s.name}` : s.name || "",
-                        // debug: s // Keep for reference if needed, but not in Option type usually
                     }))
                     : [];
-                console.log("fetchSalesmen generated options:", opts);
                 setSalesmanOptions(opts);
             } catch (err) {
-                console.error("Failed to fetch salesmen", err);
                 setSalesmanOptions([]);
             }
         };
