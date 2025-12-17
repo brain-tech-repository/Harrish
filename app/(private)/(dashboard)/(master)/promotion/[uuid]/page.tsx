@@ -547,6 +547,7 @@ export default function AddPricing() {
       promotionGroupName?: string;
     };
 
+    console.log(orderTables,"promotion Details")
     let promotionDetails: PromotionDetailInput[] = [];
     if (Array.isArray(orderTables) && orderTables.length > 0 && Array.isArray(orderTables[0])) {
       promotionDetails = (orderTables as unknown as PromotionDetailInput[][]).flat();
@@ -858,6 +859,42 @@ export default function AddPricing() {
     }
   }, [keyValue["Item Category"], fetchItemsCategoryWise]);
 
+  // Filter offerItems to ensure only valid items (present in itemOptions) are kept
+  useEffect(() => {
+    if (itemLoading) return;
+
+    setOfferItems((prevOrTables: any) => {
+      // Handle nested array structure of offerItems
+      const tables = (Array.isArray(prevOrTables) && prevOrTables.length > 0 && Array.isArray(prevOrTables[0]))
+        ? prevOrTables as OfferItemType[][]
+        : [prevOrTables as unknown as OfferItemType[]];
+
+      // If itemOptions is empty, it might mean no category selected or just cleared.
+      // If no category selected (and we rely on category), we should clear selections.
+      // Construct a Set for O(1) lookup
+      const validItemValues = new Set(itemOptions.map(opt => opt.value));
+
+      // We only want to filter if we actually have some options or if we explicitly have 0 options (but not loading)
+      // If validItemValues is empty, we clear all selected items.
+
+      return tables.map(table =>
+        table.map(row => {
+          const codes = Array.isArray(row.itemCode) ? row.itemCode : (row.itemCode ? [String(row.itemCode)] : []);
+          // If it has a code, check if it is valid.
+          // If code is empty string, it's already "not selected".
+          if (codes.length === 0 || (codes.length === 1 && codes[0] === "")) return row;
+
+          const isInvalid = codes.some(c => !validItemValues.has(c));
+
+          if (isInvalid) {
+             return { ...row, itemCode: "" };
+          }
+          return row;
+        })
+      );
+    });
+  }, [itemOptions, itemLoading]);
+
   // When Item Category selection changes, prefill category on existing table rows
   useEffect(() => {
     const itemCategories = keyValue["Item Category"];
@@ -891,7 +928,7 @@ export default function AddPricing() {
 
   // Sync percentageDiscounts to keyValue when in percentage mode
   useEffect(() => {
-    if (promotion.promotionType === "percentage") {
+    if (promotion.promotionType === "percentage" || promotion.bundle_combination === "slab") {
       const validKeys = percentageDiscounts.map(pd => pd.key).filter(k => k && k.trim() !== "");
       const uniqueKeys = Array.from(new Set(validKeys));
 
@@ -1048,7 +1085,7 @@ export default function AddPricing() {
 
         // Clamp percentage inputs to 0-100 when promotionType is Percentage
         function clampPercentInput(val: string) {
-          if (promotion.promotionType !== "percentage") return val;
+          if (promotion.bundle_combination !== "slab") return val;
           const n = Number(val);
           if (Number.isNaN(n)) return "";
           const clamped = Math.max(0, Math.min(100, n));
@@ -1152,6 +1189,7 @@ export default function AddPricing() {
                         const filteredOptions = dropdownOptions.filter(opt =>
                           opt.value === "" || opt.value === currentVal || !otherSelectedValues.includes(opt.value)
                         );
+                        console.log(filteredOptions,"filtedOptions")
 
                         return (
                           <InputFields
@@ -1684,7 +1722,7 @@ export default function AddPricing() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-6 mb-5">
-                  {((keyCombo.Item === "Item Category" && promotion.promotionType !== "percentage") || keyCombo.Item === "Item") && (
+                  {((keyCombo.Item === "Item Category" && promotion.bundle_combination !== "slab") || keyCombo.Item === "Item") && (
                     <>
                       <div>
                         {/* <div className="mb-2 text-base font-medium">
@@ -1714,7 +1752,7 @@ export default function AddPricing() {
                       </div>
                     </>
                   )}
-                  {keyCombo.Item === "Item" && promotion.promotionType !== "percentage" && (
+                  {keyCombo.Item === "Item" && promotion.bundle_combination !== "slab" && (
                     <div>
                       <div className="mb-2 text-base font-medium">
                         Item
@@ -1811,6 +1849,7 @@ export default function AddPricing() {
                   }
                   const totalPages = Math.ceil(offerItemsData.length / pageSize);
                   const paginatedData = offerItemsData.slice((page - 1) * pageSize, page * pageSize);
+                  console.log(offerItemsData,"offerItemsData")
                   return (
                     <React.Fragment key={tableIdx}>
                       {tableIdx > 0 && (
@@ -1838,8 +1877,6 @@ export default function AddPricing() {
                                 width: 300,
                                 render: (row: any) => (
                                   <InputFields
-                                    label="Item"
-                                    required={true}
                                     type="select"
                                     isSingle={false}
                                     placeholder="Select Item"
