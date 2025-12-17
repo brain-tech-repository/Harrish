@@ -29,7 +29,7 @@ interface SearchTerms {
 }
 
 const SalesReportDashboard = () => {
-  const [viewType, setViewType] = useState('graph');
+  const [viewType, setViewType] = useState('');
   const [dateRange, setDateRange] = useState('dd-mm-yyyy - dd-mm-yyyy');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -359,8 +359,8 @@ const data = await response.json();
       // Get only the lowest-level filter for export data
       const lowestLevelFilters = getLowestLevelFilters();
       
-      // Build the request payload with dates, dataview and only the lowest filter
-      const payload = {
+      // Build the base payload with dates, dataview and only the lowest filter
+      const payload: any = {
         from_date: startDate,
         to_date: endDate,
         search_type: selectedSearchType,
@@ -368,6 +368,23 @@ const data = await response.json();
         display_quantity: selectedDisplayQuantity,
         ...lowestLevelFilters // Spread only the lowest-level filter IDs
       };
+
+      // If dataview is 'default', include a `show` array that mirrors the table columns
+      // so backend can return the same columns as the on-screen table export.
+      if (dataview === 'default') {
+        const dynamicColumn = getDynamicFilterColumn();
+        const showFields: string[] = [
+          'item_code',
+          'item_name',
+          'item_category',
+          'invoice_date',
+          // add dynamic columns' field names
+          ...(dynamicColumn.columns || []).map((c: any) => c.field),
+          'total_quantity'
+        ];
+        // Deduplicate while preserving order
+        payload.show = Array.from(new Set(showFields));
+      }
 
       console.log('Export Payload (lowest-level filter only):', payload);
 
@@ -436,10 +453,13 @@ const data = await response.json();
       
       // Only add columns for filters that have selections
       if (selectedChildItems['channel-categories']?.length > 0) {
-        columns.push({ label: 'Channel Name', field: 'channel_name' });
+        // API may return channel category under several keys; prefer the explicit key used elsewhere
+        columns.push({ label: 'Channel Name', field: 'channel_category_name' });
+        columns.push({ label: 'Customer Name', field: 'customer_name' });
       }
       if (selectedChildItems['customer-category']?.length > 0) {
-        columns.push({ label: 'Customer Category', field: 'customer_category' });
+        columns.push({ label: 'Customer Category', field: 'customer_category_name' });
+        columns.push({ label: 'Customer Name', field: 'customer_name' });
       }
       if (selectedChildItems['customer']?.length > 0) {
         columns.push({ label: 'Customer Name', field: 'customer_name' });
@@ -539,6 +559,28 @@ const data = await response.json();
     }
 
     return payload;
+  };
+
+  // Resolve a value for a dynamic column from a table row, with common API field fallbacks
+  const resolveRowValue = (row: any, field: string) => {
+    if (!row) return undefined;
+    // direct match
+    if (row[field] !== undefined && row[field] !== null) return row[field];
+
+    // common fallbacks
+    const fallbacks: Record<string, string[]> = {
+      channel_category_name: ['channel_category_name', 'channel_name', 'outlet_channel'],
+      channel_name: ['channel_name', 'channel_category_name', 'outlet_channel'],
+      customer_category_name: ['customer_category_name', 'customer_category'],
+      customer_name: ['customer_name', 'customer']
+    };
+
+    const keys = fallbacks[field] || [field];
+    for (const k of keys) {
+      if (row[k] !== undefined && row[k] !== null) return row[k];
+    }
+
+    return undefined;
   };
 
   // Fetch on mount
@@ -677,7 +719,7 @@ const data = await response.json();
       <header className="bg-white border-b border-gray-200">
         <div className="h-[60px] flex items-center">
           <div className="w-[80px] lg:w-[80px] h-[60px] border-r border-b border-[#E9EAEB] flex items-center justify-center">
-            <img src="img1.png" alt="Logo" className="w-[44px] h-[44px] object-contain" />
+            <img src="shortLogo.png" alt="Logo" className="w-[44px] h-[44px] object-contain" />
           </div>
           <TopBar />
         </div>
@@ -1012,9 +1054,9 @@ const data = await response.json();
                                   <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
                                   <td className="px-4 py-3 text-sm text-gray-700">{row.item_category || '-'}</td>
                                   <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_date || '-'}</td>
-                                  {dynamicColumn.columns.map((col: any, idx: number) => (
-                                    <td key={idx} className="px-4 py-3 text-sm text-gray-700">{row[col.field] || '-'}</td>
-                                  ))}
+                                      {dynamicColumn.columns.map((col: any, idx: number) => (
+                                        <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
+                                        ))}
                                   <td className="px-4 py-3 text-sm text-gray-700">{row.total_quantity || '-'}</td>
                                 </tr>
                               ))}

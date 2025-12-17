@@ -64,13 +64,13 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ onExportCSV, onExportXLSX
 
   return (
     <div className="flex gap-2 w-full sm:w-auto justify-start sm:justify-end">
-      <button 
+      {/* <button 
         onClick={onExportCSV}
         className="flex items-center justify-center gap-2 py-2 px-[10px] border border-[#D5D7DA] rounded-[8px] flex-1 sm:flex-none hover:bg-gray-50 transition-colors"
       >
         <Icon icon="bi:filetype-csv" width="16" height="16" />
         <span className="font-medium text-xs text-[#252B37]">CSV</span>
-      </button>
+      </button> */}
       
       <div className="relative" ref={dropdownRef}>
         <button 
