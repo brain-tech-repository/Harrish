@@ -272,6 +272,20 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:package-variant",
             iconColor: "text-cyan-500"
           },
+          {
+            isActive: false,
+            href: "/salesTeamTracking",
+            label: "Sales Team Tracking",
+            leadingIcon: "mdi:package-variant",
+            iconColor: "text-cyan-500"
+          },
+          {
+            isActive: false,
+            href: "/salesTeamRecosite",
+            label: "Sales Team Reconsite",
+            leadingIcon: "mdi:package-variant",
+            iconColor: "text-cyan-500"
+          },
         ]
       },
       {
@@ -335,6 +349,13 @@ export const initialLinkData: SidebarDataType[] = [
             isActive: false,
             href: "/creditNote",
             label: "Credit Note",
+            leadingIcon: "hugeicons:invoice",
+            iconColor: "text-cyan-500"
+          },
+          {
+            isActive: false,
+            href: "/sapIntegration",
+            label: "SAP Integration",
             leadingIcon: "hugeicons:invoice",
             iconColor: "text-cyan-500"
           },

@@ -325,12 +325,11 @@ export default function Page() {
                 });
 
                 if (res.error) {
-                  throw new Error(res.data?.message || "Unable to fetch sales data");
+                  throw new Error(res.data?.message || "Unable to fetch model stock");
                 }
 
                 const list = res.data || [];
 
-                // map API data to table row format
                 const tableData = list.map((item: any) => ({
                   id: item.id,
                   uuid: item.uuid,
@@ -338,12 +337,12 @@ export default function Page() {
                   item_name: item?.item?.name || "",
                   item_uom: item?.item?.uom || "-",
                   capacity: item.capacity || "0",
-                  total_no_of_fatching: item.total_no_of_fatching || "0"
+                  total_no_of_fatching: item.total_no_of_fatching || "0",
                 }));
 
                 return {
                   data: tableData,
-                  total: res.pagination?.total || 1,
+                  total: res.pagination?.last_page || 1,
                   currentPage: res.pagination?.current_page || 1,
                   pageSize: res.pagination?.per_page || pageSize,
                 };
@@ -407,41 +406,38 @@ export default function Page() {
           config={{
             api: {
               list: async (page: number = 1, pageSize: number = 50) => {
-                const res = await viewStockList({
+                const res = await modelStockList({
                   page: page.toString(),
                   per_page: pageSize.toString(),
                 });
 
                 if (res.error) {
-                  throw new Error(res.data?.message || "Unable to fetch sales data");
+                  throw new Error(res.data?.message || "Unable to fetch model stock");
                 }
 
                 const list = res.data || [];
 
-                // map API data to table row format
                 const tableData = list.map((item: any) => ({
                   id: item.id,
-                  date: item.date,
-                  merchandiser: item.merchandiser,
-                  customer_code: item.customer_code,
-                  customer_name: item.customer_name,
-                  item_code: item.item_code,
-                  item_name: item.item_name,
-                  item_uom: item.item_uom,
-
-                  capacity: item.capacity,
-                  good_salable: item.good_salable,
-
-                  is_out_of_stock: item.out_of_stock ? "Yes" : "No",
+                  uuid: item.uuid,
+                  item_code: item?.item?.code || "",
+                  item_name: item?.item?.name || "",
+                  item_uom: item?.item?.uom || "-",
+                  capacity: item.capacity || "0",
+                  total_no_of_fatching: item.total_no_of_fatching || "0",
                 }));
 
                 return {
                   data: tableData,
-                  total: res.pagination?.total || 1,
-                  currentPage: res.pagination?.current_page || 1,
-                  pageSize: res.pagination?.per_page || pageSize,
+
+                  // ✅ IMPORTANT FOR PAGINATION
+                  total: res.pagination?.last_page ?? 1,
+                  currentPage: res.pagination?.current_page ?? page,
+                  pageSize: res.pagination?.per_page ?? pageSize,
+                  lastPage: res.pagination?.last_page ?? 1,
                 };
               }
+
 
             },
             footer: { nextPrevBtn: true, pagination: true },
@@ -449,8 +445,8 @@ export default function Page() {
               height: "400px"
             },
             columns: [
-              { key: "date", label: "Date" },
-              { key: "merchandiser", label: "Merchandiser" },
+              { key: "date", label: "Date", render: (item: any) => formatDate(item.date) },
+              { key: "merchandisher_name", label: "merchandisher_name" },
               { key: "customer_code", label: "Customer Code" },
               { key: "customer_name", label: "Customer Name" },
               { key: "item_code", label: "Item Code" },
@@ -483,7 +479,7 @@ export default function Page() {
                 const tableData = list.map((item: any) => ({
                   id: item.id,
                   date: item.date,
-                  merchandiser: item.merchandiser,
+                  merchandisher_name: item.merchandisher_name,
                   customer_code: item.customer_code,
                   customer_name: item.customer_name,
                   shelf_id: item.shelf_id,
@@ -496,7 +492,7 @@ export default function Page() {
 
                 return {
                   data: tableData,
-                  total: res.pagination?.total || 1,
+                  total: res.pagination?.last_page || 1,
                   currentPage: res.pagination?.current_page || 1,
                   pageSize: res.pagination?.per_page || pageSize,
                 };
@@ -508,15 +504,15 @@ export default function Page() {
               height: "400px"
             },
             columns: [
-              { key: "date", label: "Date" },
-              { key: "merchandiser", label: "Merchandiser" },
+              { key: "date", label: "Date", render: (item: any) => formatDate(item.date) },
+              { key: "merchandisher_name", label: "merchandisher_name" },
               { key: "customer_code", label: "Customer Code" },
               { key: "customer_name", label: "Customer Name" },
               { key: "shelf_id", label: "Distribution Name" },
               { key: "item_code", label: "Item Code" },
               { key: "item_name", label: "Item Name" },
-              { key: "damage_qty", label: "Damage Item" },
-              { key: "expiry_qty", label: "Expiry Date" },
+              { key: "damage_qty", label: "Damage" },
+              { key: "expiry_qty", label: "Expiry" },
               { key: "salable_qty", label: "Saleable Item" },
             ],
             pageSize: 50
@@ -543,7 +539,7 @@ export default function Page() {
                 const tableData = list.map((item: any) => ({
                   id: item.id,
                   date: item.date,
-                  merchandiser: item.merchandiser,
+                  merchandisher_name: item.merchandisher_name,
                   customer_code: item.customer_code,
                   customer_name: item.customer_name,
                   shelf_id: item.shelf_id,
@@ -558,7 +554,7 @@ export default function Page() {
 
                 return {
                   data: tableData,
-                  total: res.pagination?.total || 1,
+                  total: res.pagination?.last_page || 1,
                   currentPage: res.pagination?.current_page || 1,
                   pageSize: res.pagination?.per_page || pageSize,
                 };
@@ -570,15 +566,15 @@ export default function Page() {
               height: "400px"
             },
             columns: [
-              { key: "date", label: "Date" },
-              { key: "merchandiser", label: "Merchandiser" },
+              { key: "date", label: "Date", render: (item: any) => formatDate(item.date) },
+              { key: "merchandisher_name", label: "Merchandiser" },
               { key: "customer_code", label: "Customer Code" },
               { key: "customer_name", label: "Customer Name" },
               { key: "item_code", label: "Item Code" },
               { key: "item_name", label: "Item Name" },
               { key: "quantity", label: "Quantity" },
               { key: "shelf_id", label: "Distribution Name" },
-              { key: "expiry_date", label: "Expiry Date" },
+              { key: "expiry_date", label: "Expiry Date", render: (item: any) => formatDate(item.expiry_date) },
             ],
             pageSize: 50
           }}
