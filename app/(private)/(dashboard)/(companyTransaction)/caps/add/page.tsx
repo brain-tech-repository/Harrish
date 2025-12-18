@@ -348,14 +348,14 @@ export default function CapsAddPage() {
       id: "1",
       item_id: "",
       uom_id: "",
-      quantity: "1",
-      receive_qty: "0.00",
-      receive_amount: "0.00",
-      receive_date: "",
-      remarks: "",
-      remarks2: "",
+      quantity: "-",
+      deposit_qty: "",
+      price: "-",
+      total: "-"
     },
   ]);
+
+  const [rowSkeletons, setRowSkeletons] = useState<Record<string, boolean>[]>([]);
 
   // 🧩 Fetch data in edit mode
   // useEffect(() => {
@@ -444,21 +444,10 @@ export default function CapsAddPage() {
   const itemsValidationSchema = yup.object().shape({
     item_id: yup.string().required("Item is required"),
     uom_id: yup.string().required("UOM is required"),
-    quantity: yup
-      .number()
-      .typeError("Quantity must be a number")
-      .required("Quantity is required"),
-    receive_qty: yup
+    deposit_qty: yup
       .number()
       .typeError("Receive Qty must be a number")
       .required("Receive Qty is required"),
-    receive_amount: yup
-      .number()
-      .typeError("Receive Amount must be a number")
-      .required("Receive Amount is required"),
-    receive_date: yup.string().required("Receive Date is required"),
-    remarks: yup.string().required("Remarks is required"),
-    remarks2: yup.string(), // Optional field
   });
 
   // 🪄 Handlers
@@ -467,7 +456,7 @@ export default function CapsAddPage() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleTableChange = (idx: number, field: string, value: string) => {
+  const handleTableChange = async (idx: number, field: string, value: string) => {
     const newData = [...tableData];
     const item = newData[idx];
     (item as any)[field] = value;
@@ -480,28 +469,37 @@ export default function CapsAddPage() {
         upc: String(uom.upc ?? ""),
         price: uom.uom_type == "primary" ? String(selectedItem.auom_pc_price ?? "0") 
         : uom.uom_type == "secondary" ? String(selectedItem.buom_ctn_price ?? "0") 
-        : null,
+        : "-",
       })) || [];
       (item as any)["uom_id"] = item.UOM[0]?.value || "";
-      item.qtyLoading = true;
+      item.price = item.UOM[0]?.price || "0";
 
-      capsQuantityCollected({ item_id: value, warehouse_id: form.warehouse_id }).then((res) => {
-        item.quantity = res?.quantity || "0";
-        item.qtyLoading = false;
-        setTableData(newData);
-      }).catch(() => {
-        item.quantity = "0";
-        item.qtyLoading = false;
-        setTableData(newData);
-      });
+      setRowSkeletons((prev) => ({
+        ...prev,
+        [idx]: { ...(prev[idx] || {}), qty: true },
+      }));
+
+      const res = await capsQuantityCollected({ item_id: value, warehouse_id: form.warehouse_id });
+      if(res.error) {
+        item.quantity = "-";
+      } else {
+        item.quantity = res?.data?.quantity || "0";
+        item.total = (String((parseFloat(item.deposit_qty) || 0) * (parseFloat(item.price) || 0)));
+      }
+
+      setRowSkeletons((prev) => ({
+        ...prev,
+        [idx]: { ...(prev[idx] || {}), qty: false },
+      }));
+      setTableData(newData);
     }
 
     if(field === "uom_id") {
       const selectedUom = item.UOM.find((u: any) => u.value === value);
       item.price = selectedUom.price || "0";
+      item.total = (String((parseFloat(item.deposit_qty) || 0) * (parseFloat(item.price) || 0)));
     }
 
-    console.log("Updated item:", newData);
     setTableData(newData);
   };
 
@@ -513,7 +511,10 @@ export default function CapsAddPage() {
         id: newId,
         item_id: "",
         uom_id: "",
-        quantity: "1"
+        quantity: "-",
+        deposit_qty: "0",
+        price: "-",
+        total: "-"
       },
     ]);
   };
@@ -530,12 +531,10 @@ export default function CapsAddPage() {
       id: "1",
       item_id: "",
       uom_id: "",
-      quantity: "1",
-      receive_qty: "1",
-      receive_amount: "0.00",
-      receive_date: new Date().toISOString().split("T")[0],
-      remarks: "",
-      remarks2: "",
+      quantity: "-",
+      deposit_qty: "0",
+      price: "-",
+      total: "-"
     }]);
   };
 
@@ -632,11 +631,7 @@ export default function CapsAddPage() {
           item_id: parseInt(r.item_id),
           uom_id: parseInt(r.uom_id),
           quantity: parseFloat(r.quantity || "0"),
-          receive_qty: parseFloat(r.receive_qty || "0"),
-          receive_amount: parseFloat(r.receive_amount || "0"),
-          receive_date: r.receive_date,
-          remarks: r.remarks,
-          remarks2: r.remarks2 || "",
+          deposit_qty: parseFloat(r.deposit_qty || "0"),
         })),
       };
 
@@ -697,7 +692,7 @@ export default function CapsAddPage() {
 
         <hr className="my-6 w-full text-[#D5D7DA]" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
 
           <div>
             <InputFields
@@ -863,7 +858,7 @@ export default function CapsAddPage() {
               {
                 key: "quantity",
                 label: "Quantity",
-                render: (row) => (row.qtyLoading ? <div className="flex justify-center items-center"><Icon className="text-gray-400 animate-spin" icon="mingcute:loading-fill" width={20} /></div> : row.quantity ?? "-"),
+                render: (row) => (rowSkeletons[Number(row.idx)]?.qty ? <div className="flex justify-center items-center"><Icon className="text-gray-400 animate-spin" icon="mingcute:loading-fill" width={20} /></div> : toInternationalNumber(row.quantity, {minimumFractionDigits: 0}) ?? "-"),
               },
               {
                 key: "deposit_qty",
@@ -881,7 +876,7 @@ export default function CapsAddPage() {
                     onChange={(e) =>
                       handleTableChange(Number(row.idx), "deposit_qty", e.target.value)
                     }
-                    width="100px"
+                    width={"200px"}
                   />
                   </div>
                 ),
@@ -894,7 +889,7 @@ export default function CapsAddPage() {
               {
                 key: "total",
                 label: "Total",
-                render: (row) => toInternationalNumber(Number(row.price ?? 0) * Number(row.deposit_qty ?? 0)),
+                render: (row) => toInternationalNumber(Number(row.total) ?? "0" ) ?? "-",
               },
               {
                 key: "action",
@@ -960,7 +955,7 @@ export default function CapsAddPage() {
               tableData.some(row => {
                 return !row.item_id || 
                 !row.uom_id ||
-                !row.quantity;
+                !row.deposit_qty;
               })}
           />
         </div>
