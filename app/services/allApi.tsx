@@ -3791,24 +3791,28 @@ export const editBrand = async (uuid: string, payload: object) => {
     return handleError(error);
   }
 };
-<<<<<<< HEAD
+
 export const getWarehouseStockDetails = async (id: string) => {
   try {
     const res = await API.get(`/api/settings/warehouse-stocks/${id}/stock-details`);
-
-=======
-
-
-export const getFilters = async (params?: Params) => {
-  try {
-    const res =await API.post(`/api/filters`, { params: params });
->>>>>>> c361a65f70881397dcbf8ef7c92249cd7276de57
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
   }
-<<<<<<< HEAD
-};
+  catch(err){
+    console.log(err)
+  }
+}
+
+
+    export const getFilters = async (params?: Params) => {
+      try {
+        const res = await API.post(`/api/filters`, { params: params });
+
+        return res.data;
+      } catch (error: unknown) {
+        return handleError(error);
+      }
+    }
+  
+
 
 
 //project
@@ -3863,7 +3867,7 @@ export const addRouteTransfer = async (body: object) => {
 };
 
 
-=======
 
-};
->>>>>>> c361a65f70881397dcbf8ef7c92249cd7276de57
+
+
+
