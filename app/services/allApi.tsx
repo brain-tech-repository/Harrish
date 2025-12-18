@@ -3854,9 +3854,6 @@ export const getProjectById = async (uuid: string) => {
   }
 };
 
-
-
-
 export const addRouteTransfer = async (body: object) => {
   try {
     const res = await API.post(`/api/master/route-transfer/transfer`, body);
@@ -3865,9 +3862,3 @@ export const addRouteTransfer = async (body: object) => {
     return handleError(error);
   }
 };
-
-
-
-
-
-

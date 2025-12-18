@@ -23,7 +23,7 @@ interface SalesChartsProps {
 }
 
 const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isLoading, error, searchType }) => {
-  const showSnackbar = useSnackbar();
+  const {showSnackbar} = useSnackbar();
   const [selectedMaxView, setSelectedMaxView] = useState<string | null>(null);
   const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
   const [is3DLoaded, setIs3DLoaded] = useState(false);
@@ -33,9 +33,9 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
     let mounted = true;
 
     if (typeof window !== 'undefined' && Highcharts) {
-      import('highcharts/highcharts-3d').then((mod) => {
+      import('highcharts/highcharts-3d').then((mod: any) => {
         if (typeof mod.default === 'function') {
-          mod.default(Highcharts);
+          (mod.default as any)(Highcharts);
         }
         if (mounted) {
           setIs3DLoaded(true);
@@ -195,10 +195,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
         },
         labels: {
           formatter: function() {
-            if (isQuantity) {
-              return `${this.value.toLocaleString()}`;
-            }
-            return `UGX ${(this.value / 1000000).toFixed(1)}M`;
+            return `UGX ${((this.value as number) / 1000000).toFixed(1)}M`;
           },
           style: {
             color: '#4b5563'
@@ -365,9 +362,9 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
       if (typeof window !== 'undefined' && Highcharts) {
         try {
           if (!(Highcharts as any).__3dLoaded) {
-            import('highcharts/highcharts-3d').then((mod) => {
+            import('highcharts/highcharts-3d').then((mod: any) => {
               if (typeof mod.default === 'function') {
-                mod.default(Highcharts);
+                (mod.default as any)(Highcharts);
               }
               (Highcharts as any).__3dLoaded = true;
             });
@@ -637,7 +634,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
   const totalItems = topItemsChartData.reduce((sum: number, item: any) => sum + item.value, 0);
 
   // Custom Pie Chart component with 3D exploded style
-  const ExplodedPieChart = ({ data, innerRadius = 0, outerRadius = 80, labelType = 'percentage' }) => {
+  const ExplodedPieChart = ({ data, innerRadius = 0, outerRadius = 80, labelType = 'percentage' }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -674,7 +671,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
   };
 
   // Donut Chart with exploded effect
-  const ExplodedDonutChart = ({ data, innerRadius = 60, outerRadius = 100, labelType = 'percentage' }) => {
+  const ExplodedDonutChart = ({ data, innerRadius = 60, outerRadius = 100, labelType = 'percentage' }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -826,7 +823,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
                 paddingBottom: '20px',
                 color: '#1f2937'
               }}
-              onClick={(e) => handleLegendClick(e.value)}
+              onClick={(e) => e.value && handleLegendClick(e.value)}
               formatter={(value) => (
                 <span style={{ 
                   color: hiddenAreas.includes(value) ? '#9ca3af' : '#4b5563', 
@@ -891,7 +888,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
     if (!selectedMaxView) return null;
 
     // Maximized view versions of the charts
-    const MaximizedExplodedPieChart = ({ data, title, innerRadius = 0, outerRadius = 150 }) => {
+    const MaximizedExplodedPieChart = ({ data, title, innerRadius = 0, outerRadius = 150 }: any) => {
       const chartData = Array.isArray(data) ? data : [];
 
       if (chartData.length === 0) {
@@ -925,8 +922,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
         trendTitle = 'Area Sales Trend';
       } else if (dataLevel === 'warehouse') {
         const wh = dashboardData?.charts?.warehouse_trend || [];
-        const periods = Array.from(new Set(wh.map((r: any) => r.period)));
-        trendData = periods.map((p: string) => ({
+        const periods = Array.from(new Set(wh.map((r: any) => r.period))) as string[];
+        trendData = (periods as string[]).map((p: string) => ({
           period: p,
           value: wh.filter((x: any) => x.period === p).reduce((s: number, x: any) => s + (x.value || 0), 0)
         }));
@@ -969,7 +966,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Company Sales Distribution</h3>
-                  <MaximizedExplodedPieChart data={companyData} outerRadius={200} />
+                  <MaximizedExplodedPieChart data={companyData} title="Company Sales" outerRadius={200} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Company Sales Table</h3>
@@ -1057,6 +1054,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
                           value: r.value || 0, 
                           color: regionColors[i % regionColors.length] 
                         }))} 
+                        title="Region Performance"
                         innerRadius={100}
                         outerRadius={200}
                       />
@@ -1089,7 +1087,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
                   <>
                     <div className="bg-white p-6 border rounded-lg shadow-sm">
                       <h3 className="text-xl font-semibold text-gray-800 mb-4">Region Sales Distribution</h3>
-                      <MaximizedExplodedPieChart data={regionData} innerRadius={100} outerRadius={200} />
+                      <MaximizedExplodedPieChart data={regionData} title="Region Sales" innerRadius={100} outerRadius={200} />
                     </div>
                     <div className="bg-white p-6 border rounded-lg shadow-sm">
                       <h3 className="text-xl font-semibold text-gray-800 mb-4">Region Sales Table</h3>
@@ -1195,7 +1193,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Salesmen Distribution</h3>
-                  <MaximizedExplodedPieChart data={topSalesmenChartData} outerRadius={180} />
+                  <MaximizedExplodedPieChart data={topSalesmenChartData} title="Top Salesmen" outerRadius={180} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Salesmen Table</h3>
@@ -1234,7 +1232,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Warehouses Distribution</h3>
-                  <MaximizedExplodedPieChart data={topWarehousesChartData} outerRadius={180} />
+                  <MaximizedExplodedPieChart data={topWarehousesChartData} title="Top Warehouses" outerRadius={180} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Warehouses Table</h3>
@@ -1273,7 +1271,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Customers Distribution</h3>
-                  <Column3DChart data={topCustomersChartData} title="" />
+                  <MaximizedExplodedPieChart data={topCustomersChartData} title="Top Customers" outerRadius={180} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Customers Table</h3>
@@ -1312,7 +1310,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Items Distribution</h3>
-                  <Column3DChart data={topItemsChartData} title="" />
+                  <MaximizedExplodedPieChart data={topItemsChartData} title="Top Items" outerRadius={180} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Items Table</h3>
@@ -1446,7 +1444,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Area Contribution Distribution</h3>
                   <div className="w-full h-[400px]">
-                    <MaximizedExplodedPieChart data={props.warehouseAreaContributionData} outerRadius={150} />
+                    <MaximizedExplodedPieChart data={props.warehouseAreaContributionData} title="Warehouse Area Contribution" outerRadius={150} />
                   </div>
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
@@ -1536,7 +1534,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Region Contribution (Top Items)</h3>
               <button onClick={() => setSelectedMaxView('items')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               <ExplodedPieChart 
                 data={regionContributionPieData}
                 outerRadius={90}
@@ -1550,7 +1548,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Region Performance</h3>
               <button onClick={() => setSelectedMaxView('region')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               <ExplodedDonutChart 
                 data={regionPerformanceData}
                 innerRadius={60}
@@ -1604,7 +1602,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Top Salesmen</h3>
               <button onClick={() => setSelectedMaxView('salesmen')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               <ExplodedPieChart data={topSalesmenChartData} outerRadius={90} />
             </div>
           </div>
@@ -1615,8 +1613,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Top Customers</h3>
               <button onClick={() => setSelectedMaxView('customers')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
-              <Column3DChart data={topCustomersChartData} title="" xAxisKey="name" yAxisKey="value" colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} height="280px" />
+            <div className="w-full h-80">
+              <ExplodedPieChart data={topCustomersChartData} outerRadius={90} />
             </div>
           </div>
         </div>
@@ -1751,9 +1749,9 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
       color: areaColors[i % areaColors.length] 
     }));
 
-    const periods = Array.from(new Set(warehouseTrend.map((r: any) => r.period)));
-    const warehouseNames = Array.from(new Set(warehouseTrend.map((r: any) => r.warehouse_label)));
-    const trendSeries = periods.map((p: string) => {
+    const periods = Array.from(new Set(warehouseTrend.map((r: any) => r.period))) as string[];
+    const warehouseNames = Array.from(new Set(warehouseTrend.map((r: any) => r.warehouse_label))) as string[];
+    const trendSeries: any[] = periods.map((p: string) => {
       const obj: any = { period: p };
       warehouseNames.forEach((wn: string) => {
         const item = warehouseTrend.find((x: any) => x.period === p && x.warehouse_label === wn);
@@ -1792,7 +1790,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Area Contribution</h3>
               <button onClick={() => setSelectedMaxView('area')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               {areaContributionPieData.length === 0 ? (
                 <div className="flex items-center justify-center text-gray-500 text-sm">
                   <AlertCircle size={16} className="mr-2" /> No data available
@@ -2038,7 +2036,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Area Contribution (Top Items)</h3>
               <button onClick={() => setSelectedMaxView('items')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               {areaContributionPieData.length === 0 ? (
                 <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
                   <AlertCircle size={16} className="mr-2" /> No data available
@@ -2058,7 +2056,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Area Performance</h3>
               <button onClick={() => setSelectedMaxView('areaPerformance')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               {areaPerformanceData.length === 0 ? (
                 <div className="flex items-center justify-center text-gray-500 text-sm">
                   <AlertCircle size={16} className="mr-2" /> No data available
@@ -2129,7 +2127,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Top Salesmen</h3>
               <button onClick={() => setSelectedMaxView('salesmen')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               {topSalesmenChartData.length === 0 ? (
                 <div className="flex items-center justify-center text-gray-500 text-sm">
                   <AlertCircle size={16} className="mr-2" /> No data available
@@ -2146,7 +2144,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               <h3 className="text-lg font-semibold text-gray-800">Top Customers</h3>
               <button onClick={() => setSelectedMaxView('customers')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
-            <div className="w-full h-[320px]">
+            <div className="w-full h-80">
               {topCustomersChartData.length === 0 ? (
                 <div className="flex items-center justify-center text-gray-500 text-sm">
                   <AlertCircle size={16} className="mr-2" /> No data available
