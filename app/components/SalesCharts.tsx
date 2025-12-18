@@ -23,7 +23,7 @@ interface SalesChartsProps {
 }
 
 const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isLoading, error, searchType }) => {
-  const showSnackbar = useSnackbar();
+  const {showSnackbar} = useSnackbar();
   const [selectedMaxView, setSelectedMaxView] = useState<string | null>(null);
   const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
   const [is3DLoaded, setIs3DLoaded] = useState(false);
@@ -823,7 +823,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
                 paddingBottom: '20px',
                 color: '#1f2937'
               }}
-              onClick={(e) => handleLegendClick(e.value)}
+              onClick={(e) => e.value && handleLegendClick(e.value)}
               formatter={(value) => (
                 <span style={{ 
                   color: hiddenAreas.includes(value) ? '#9ca3af' : '#4b5563', 
