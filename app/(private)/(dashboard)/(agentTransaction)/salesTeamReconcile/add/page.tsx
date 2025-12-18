@@ -48,21 +48,15 @@ export default function AddSalesmanLoadUI() {
         const fetchSalesmen = async () => {
             try {
                 const res = await salesTeamRecontionOrders(form.warehouse);
-                console.log("fetchSalesmen raw response:", res);
                 const list = res?.data || res || [];
-                console.log("fetchSalesmen list:", list);
-
                 const opts = Array.isArray(list)
                     ? list.map((s: any) => ({
-                        value: String(s.sales_man_id || s.id), // Fallback to s.id if s.sales_man_id is missing
+                        value: String(s.sales_man_id || s.id),
                         label: s.osa_code && s.name ? `${s.osa_code} - ${s.name}` : s.name || "",
-                        // debug: s // Keep for reference if needed, but not in Option type usually
                     }))
                     : [];
-                console.log("fetchSalesmen generated options:", opts);
                 setSalesmanOptions(opts);
             } catch (err) {
-                console.error("Failed to fetch salesmen", err);
                 setSalesmanOptions([]);
             }
         };
@@ -208,13 +202,13 @@ export default function AddSalesmanLoadUI() {
                 })),
             };
 
-            console.log("Submitting payload:", payload);
+            // console.log("Submitting payload:", payload);
             const response = await addSalesTeamRecontionOrders(payload);
-            console.log("API Response:", response);
+            // console.log("API Response:", response);
 
             if (response?.status === "success" || response?.success) {
                 showSnackbar("Sales Team Reconciliation created successfully!", "success");
-                router.back();
+                router.push('/salesTeamRecosite');
             } else {
                 // Handle error response with errors object
                 if (response?.errors) {
@@ -227,7 +221,7 @@ export default function AddSalesmanLoadUI() {
                 }
             }
         } catch (error: any) {
-            console.error("Failed to submit data:", error);
+            // console.error("Failed to submit data:", error);
             // Handle API error response
             if (error?.response?.data?.errors) {
                 const errorMessages = Object.values(error.response.data.errors)
@@ -261,7 +255,7 @@ export default function AddSalesmanLoadUI() {
 
             <ContainerCard className="rounded-[10px]">
                 {/* -------- FORM -------- */}
-                <div className="flex flex-col w-full sm:w-[30%] gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
                     <InputFields
                         label="Distributor"
                         value={form.warehouse}
@@ -353,7 +347,7 @@ export default function AddSalesmanLoadUI() {
                 </div>
 
                 {/* -------- ACTIONS -------- */}
-                <hr className="my-6" />
+                <hr className="text-[#D5D7DA] my-6" />
 
                 <div className="flex justify-end gap-4">
                     <button

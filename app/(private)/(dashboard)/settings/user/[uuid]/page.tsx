@@ -76,14 +76,17 @@ export default function UserAddEdit() {
 
   const {
     roleOptions,
-    companyOptions
-    , ensureCompanyLoaded, ensureRolesLoaded } = useAllDropdownListData();
+    companyOptions, 
+    ensureCompanyLoaded, 
+    ensureRolesLoaded 
+  } = useAllDropdownListData();
 
-  // Load dropdown data
+  // Load dropdown data - runs every time page opens
   useEffect(() => {
     ensureCompanyLoaded();
     ensureRolesLoaded();
-  }, [ensureCompanyLoaded, ensureRolesLoaded]);
+  }, []); // Empty dependency array ensures it runs on every mount
+
 
   const checkEmail = async (
     type: "email" | "username",
