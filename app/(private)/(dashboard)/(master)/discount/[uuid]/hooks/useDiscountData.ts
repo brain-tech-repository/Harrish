@@ -11,10 +11,11 @@ type UseDiscountDataProps = {
   setKeyValue: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
   fetchItemsCategoryWise: (categories: string) => Promise<any>;
   router: AppRouterInstance;
+  showSnackbar: (message: string, type: "success" | "error" | "info" | "warning") => void;
 };
 
 export function useDiscountData({
-  isEditMode, id, setDiscount, setKeyCombo, setKeyValue, fetchItemsCategoryWise, router
+  isEditMode, id, setDiscount, setKeyCombo, setKeyValue, fetchItemsCategoryWise, router, showSnackbar
 }: UseDiscountDataProps) {
 
   const [loading, setLoading] = useState(false);
@@ -84,6 +85,8 @@ export function useDiscountData({
 
             setKeyValue(newValues);
           } else {
+            showSnackbar(`Unable to load the requested data. Please verify the URL or contact support.`,"warning")
+
             router.push("/discount");
           }
         }

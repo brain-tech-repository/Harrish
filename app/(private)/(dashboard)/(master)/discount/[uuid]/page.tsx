@@ -43,9 +43,11 @@ export default function AddDiscount() {
     ensureCompanyLoaded, ensureChannelLoaded, ensureItemCategoryLoaded, ensureDiscountTypeLoaded, ensureSalesmanTypeLoaded, ensureProjectLoaded, ensureItemLoaded
   } = useAllDropdownListData();
 
-  const { loading: dataLoading } = useDiscountData({
-    isEditMode, id, setDiscount, setKeyCombo, setKeyValue, fetchItemsCategoryWise,router
-  });
+    const { loading: dataLoading } = useDiscountData({
+
+      isEditMode, id, setDiscount, setKeyCombo, setKeyValue, fetchItemsCategoryWise, router, showSnackbar
+
+    });
 
   const [itemOptions, setItemOptions] = useState<any[]>([]);
   const [itemLoading, setItemLoading] = useState(false);
