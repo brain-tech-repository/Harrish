@@ -48,8 +48,25 @@ export default function AddDiscount() {
   });
 
   const [itemOptions, setItemOptions] = useState<any[]>([]);
+  const [itemCache, setItemCache] = useState<Record<string, any[]>>({});
   const [itemLoading, setItemLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Wrapper for user interactions to trigger resets
+  const handleKeyComboChangeWrapper: React.Dispatch<React.SetStateAction<any>> = (value) => {
+    setKeyCombo((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      // Reset logic only on user interaction
+      if (prev.Item !== next.Item) {
+        setKeyValue(kv => ({ ...kv, "Item": [], "Item Category": [] }));
+        setDiscount(prevD => ({
+           ...prevD,
+           discountItems: [{ key: "", rate: "", idx: "0" }]
+        }));
+      }
+      return next;
+    });
+  };
 
   // 3. Derived Data (Memoized Maps)
   const locationDropdownMap = useMemo(() => ({
@@ -372,7 +389,7 @@ export default function AddDiscount() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <StepKeyCombination keyCombo={keyCombo} setKeyCombo={setKeyCombo} />;
+        return <StepKeyCombination keyCombo={keyCombo} setKeyCombo={handleKeyComboChangeWrapper} />;
       case 2:
         return (
           <StepKeyValue

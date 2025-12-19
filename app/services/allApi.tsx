@@ -1972,7 +1972,7 @@ export const getDiscountById = async (uuid?: string) => {
 };
 export const updateDiscount = async (uuid: string, body: object) => {
   try {
-    const res = await API.put(`/api/master/discount/update/${uuid}`, body);
+    const res = await API.put(`/api/master/discount/${uuid}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

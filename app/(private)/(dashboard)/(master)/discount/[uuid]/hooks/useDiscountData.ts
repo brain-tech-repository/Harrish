@@ -21,7 +21,12 @@ export function useDiscountData({
     async function fetchData() {
       setLoading(true);
       try {
-        if (isEditMode && id && id !== "add") {
+        if (
+          isEditMode &&
+          id &&
+          id !== "add" &&
+          typeof id === "string"
+        ) {
           const res = await getDiscountById(id);
           if (res && !res.error && res.data) {
             const d = res.data;
