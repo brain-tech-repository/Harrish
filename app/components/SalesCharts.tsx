@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, Legend } from 'recharts';
 import { Maximize2, Loader2, AlertCircle, BarChart3, X } from 'lucide-react';
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify-icon/react";
 import Highcharts from 'highcharts';
-import Highcharts3D from 'highcharts/highcharts-3d';
 import HighchartsReact from 'highcharts-react-official';
 import { useSnackbar } from '../services/snackbarContext';
 
