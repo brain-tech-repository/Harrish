@@ -19,6 +19,7 @@ import Drawer from "@mui/material/Drawer";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { reasonObj } from "./add/page";
 import { formatWithPattern } from "@/app/utils/formatDate";
+import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 const columns = [
   { key: "return_code", label: "Return Code", showByDefault: true },
@@ -63,6 +64,7 @@ const columns = [
 ];
 
 export default function CustomerInvoicePage() {
+  const { can, permissions } = usePagePermissions();
   const {
     customerSubCategoryOptions,
     companyOptions,
@@ -88,6 +90,14 @@ export default function CustomerInvoicePage() {
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
   const [threeDotLoading, setThreeDotLoading] = useState({
     csv: false,
     xlsx: false,
@@ -226,7 +236,7 @@ export default function CustomerInvoicePage() {
                   type: "date",
                 },
               ],
-              actions: [
+              actions: can("create") ? [
                 <SidebarBtn
                   key={1}
                   href="/return/add"
@@ -235,7 +245,7 @@ export default function CustomerInvoicePage() {
                   label="Add"
                   labelTw="hidden lg:block"
                 />,
-              ],
+              ] : [],
             },
             rowSelection: true,
             footer: { nextPrevBtn: true, pagination: true },

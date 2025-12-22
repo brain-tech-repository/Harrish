@@ -130,6 +130,7 @@ export default function InputFields({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedOptionsDropdownOpen, showSelectedOptionsDropdown] = useState(false);
+  const [selectedOptionsDropdownOpen, showSelectedOptionsDropdown] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
