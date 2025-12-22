@@ -97,7 +97,7 @@ export default function ShelfDisplay() {
   const fetchShelfDisplay = useCallback(
     async (
       pageNo: number = 1,
-      pageSize: number = 10
+      pageSize: number = 50
     ): Promise<listReturnType> => {
       setLoading(true);
       const res = await shelvesList({
@@ -231,7 +231,7 @@ export default function ShelfDisplay() {
               //   },
               // },
             ],
-            pageSize: 10,
+            pageSize: 50,
           }}
         />
       </div>
