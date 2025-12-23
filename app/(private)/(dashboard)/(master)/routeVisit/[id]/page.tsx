@@ -263,7 +263,7 @@ export default function AddEditRouteVisit() {
       !isEditMode && setLoading(true);
       // Fetch companies
       setSkeleton({ ...skeleton, company: true });
-      const companies: ApiResponse<Company[]> = await companyList();
+      const companies: ApiResponse<Company[]> = await companyList({ dropdown: 'true' });
       setCompanyOptions(
         companies?.data?.map((c: Company) => ({
           value: String(c.id),
@@ -381,9 +381,9 @@ export default function AddEditRouteVisit() {
       try {
         let res: ApiResponse<Customer[]> | null = null;
         if (isEditMode) {
-          res = await getAgentCusByRoute(route_id);
+          res = await getAgentCusByRoute(route_id, { dropdown: 'true' });
         } else {
-          res = await getAgentCusByRoute(route_id);
+          res = await getAgentCusByRoute(route_id, { dropdown: 'true' });
         }
         console.log("Fetched customers (agent):", res);
         setCustomers((res && res.data) || []);
@@ -446,6 +446,7 @@ export default function AddEditRouteVisit() {
         // In edit mode, pass allData = true to get all regions
         const regions: ApiResponse<Region[]> = await regionList({
           company_id: form.company.join(","),
+          dropdown: 'true',
           ...(isEditMode && { allData: "true" }),
         });
         setRegionOptions(
@@ -476,7 +477,7 @@ export default function AddEditRouteVisit() {
       try {
         setSkeleton({ ...skeleton, area: true });
         const res: ApiResponse<{ data: Area[] } | Area[]> = await subRegionList(
-          { region_id: form.region.join(",") }
+          { region_id: form.region.join(","), dropdown: 'true' },
         );
         const areaList =
           (res as { data: Area[] })?.data || (res as Area[]) || [];
@@ -509,7 +510,7 @@ export default function AddEditRouteVisit() {
       try {
         setSkeleton({ ...skeleton, warehouse: true });
         const res: ApiResponse<{ data: Warehouse[] } | Warehouse[]> =
-          await warehouseList({ area_id: form.area.join(",") });
+          await warehouseList({ area_id: form.area.join(","), dropdown: 'true' });
         const warehousesList =
           (res as { data: Warehouse[] })?.data || (res as Warehouse[]) || [];
 
@@ -543,6 +544,7 @@ export default function AddEditRouteVisit() {
         setSkeleton({ ...skeleton, route: true });
         const res: ApiResponse<{ data: Route[] } | Route[]> = await routeList({
           warehouse_id: form.warehouse.join(","),
+          dropdown: 'true'
         });
         console.log(res);
         const routeListData =

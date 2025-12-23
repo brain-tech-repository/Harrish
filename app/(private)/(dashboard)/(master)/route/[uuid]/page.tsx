@@ -64,7 +64,7 @@ export default function AddEditRoute() {
     setSkeleton(true);
     const filteredOptions = await vehicleListData({
       warehouse_id: warehouseId,
-      per_page: "10",
+      dropdown: 'true' 
     });
     setSkeleton(false);
 

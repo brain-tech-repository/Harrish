@@ -163,7 +163,8 @@ export default function AddEditAgentCustomer() {
         setSkeleton({ ...skeleton, route: true });
         const filteredOptions = await routeList({
             warehouse_id: value,
-            per_page: "10",
+            dropdown: "true"
+            // per_page: "10",
         });
         if (filteredOptions.error) {
             showSnackbar(filteredOptions.data?.message || "Failed to fetch routes", "error");
@@ -181,7 +182,8 @@ export default function AddEditAgentCustomer() {
         setSkeleton({ ...skeleton, customerCategory: true });
         const filteredOptions = await customerCategoryList({
             outlet_channel_id: value,
-            per_page: "10",
+            dropdown:"true",
+            // per_page: "10",
         });
         if (filteredOptions.error) {
             showSnackbar(filteredOptions.data?.message || "Failed to fetch Customer Categories", "error");
@@ -199,7 +201,8 @@ export default function AddEditAgentCustomer() {
         setSkeleton({ ...skeleton, customerSubCategory: true });
         const filteredOptions = await customerSubCategoryList({
             customer_category_id: value,
-            per_page: "10",
+             dropdown: "true"
+            // per_page: "10",
         });
         if (filteredOptions.error) {
             showSnackbar(filteredOptions.data?.message || "Failed to fetch Customer Sub Categories", "error");
