@@ -64,10 +64,14 @@ const validationSchema = Yup.object({
 export default function StockInStoreAddPage() {
     const router = useRouter();
     const { id } = useParams<{ id?: string }>();
-    const isEditMode = Boolean(id);
+    // Only treat as edit if id exists and is not 'add'
+    const isEditMode = Boolean(id && id !== 'add');
 
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
+const [itemUomMap, setItemUomMap] = useState<Record<string, any[]>>({});
+
+const [searchedItemOptions, setSearchedItemOptions] = useState<any[]>([]);
 
     const {
         companyCustomersOptions,
@@ -163,21 +167,26 @@ export default function StockInStoreAddPage() {
         });
     };
 
-    const handleItemChange = (index: number, item: any) => {
-        setItemData((prev) => {
-            const copy = [...prev];
-            copy[index] = {
-                ...copy[index],
-                item_id: item.value,
-                uom_id: "",
-                UOM: item.uoms.map((u: any) => ({
-                    label: u.uom,
-                    value: String(u.id),
-                })),
-            };
-            return copy;
-        });
+const handleItemChange = (index: number, itemId: string) => {
+  setItemData(prev => {
+    const copy = [...prev];
+
+    const uoms = itemUomMap[itemId] || [];
+
+    copy[index] = {
+      ...copy[index],
+      item_id: itemId,
+      uom_id: "",
+      UOM: uoms.map((u: any) => ({
+        label: u.name,        // PCS / BOX
+        value: String(u.uom)  // uom id
+      })),
     };
+
+    return copy;
+  });
+};
+
 
     const addNewItem = () => {
         setItemData((prev) => [
@@ -195,16 +204,29 @@ export default function StockInStoreAddPage() {
     /*                                ITEM SEARCH                                 */
     /* -------------------------------------------------------------------------- */
 
-    const fetchItems = async (search: string) => {
-        const res = await itemGlobalSearch({ query: search, per_page: "50" });
-        if (res?.error) return [];
+const fetchItems = async (search: string) => {
+  const res = await itemGlobalSearch({ query: search, per_page: "50" });
+  if (res?.error) return [];
 
-        return res.data.map((item: any) => ({
-            value: String(item.id),
-            label: `${item.code || item.item_code} - ${item.name}`,
-            uoms: item.uoms || [],
-        }));
+  const mapped = res.data.map((item: any) => {
+    // 🔥 store uoms separately
+    setItemUomMap(prev => ({
+      ...prev,
+      [String(item.id)]: item.item_uoms || [],
+    }));
+
+    return {
+      value: String(item.id),
+      label: `${item.item_code} - ${item.name}`,
     };
+  });
+
+  setSearchedItemOptions(mapped);
+  return mapped;
+};
+
+
+
 
     /* -------------------------------------------------------------------------- */
     /*                                SUBMIT                                      */
@@ -343,26 +365,24 @@ export default function StockInStoreAddPage() {
                                 <Table
                                     data={itemData.map((r, i) => ({ ...r, idx: i }))}
                                     config={{
+                                        showNestedLoading:false,
                                         columns: [
-                                            {
-                                                key: "item_id",
-                                                label: "Item",
-                                                render: (row) => (
-                                                    <InputFields
-                                                        searchable
-                                                        options={itemOptions}
-                                                        onSearch={fetchItems}
-                                                        value={row.item_id}
-                                                        onChange={(e) => {
-                                                            const selected = itemOptions.find(
-                                                                (o) => o.value === e.target.value
-                                                            );
-                                                            if (selected)
-                                                                handleItemChange(row.idx, selected);
-                                                        }}
-                                                    />
-                                                ),
-                                            },
+                                           {
+  key: "item_id",
+  label: "Item",
+  render: (row) => (
+    <InputFields
+      searchable
+      options={searchedItemOptions.length ? searchedItemOptions : itemOptions}
+      onSearch={fetchItems}
+      value={row.item_id}
+           onChange={(e) => {
+    handleItemChange(row.idx, e.target.value);
+  }}
+    />
+  ),
+},
+
                                             {
                                                 key: "uom_id",
                                                 label: "UOM",
