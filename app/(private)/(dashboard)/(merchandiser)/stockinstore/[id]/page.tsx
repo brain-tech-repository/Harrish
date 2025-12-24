@@ -22,10 +22,6 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
-/* -------------------------------------------------------------------------- */
-/*                                   TYPES                                    */
-/* -------------------------------------------------------------------------- */
-
 interface ItemRow {
     item_id: string;
     uom_id: string;
@@ -33,6 +29,7 @@ interface ItemRow {
     UOM: { label: string; value: string }[];
 }
 
+<<<<<<< HEAD
 interface FormikForm {
     code: string;
     activity_name: string;
@@ -45,6 +42,8 @@ interface FormikForm {
 /*                              VALIDATION                                    */
 /* -------------------------------------------------------------------------- */
 
+=======
+>>>>>>> f39bfe6a95ef04d6fa6a4e0d86bbcf96606e0bcb
 const itemRowSchema = Yup.object({
     item_id: Yup.string().required(),
     uom_id: Yup.string().required(),
@@ -57,10 +56,6 @@ const validationSchema = Yup.object({
     to: Yup.string().required("Required"),
     customer: Yup.array().min(1, "Select at least one customer"),
 });
-
-/* -------------------------------------------------------------------------- */
-/*                                   PAGE                                     */
-/* -------------------------------------------------------------------------- */
 
 export default function StockInStoreAddPage() {
     const router = useRouter();
@@ -80,6 +75,7 @@ export default function StockInStoreAddPage() {
         { item_id: "", uom_id: "", capacity: "", UOM: [] },
     ]);
 
+<<<<<<< HEAD
     const [searchedItemOptions, setSearchedItemOptions] = useState<any[]>([]);
     const [itemUomMap, setItemUomMap] = useState<Record<string, any[]>>({});
 
@@ -96,6 +92,8 @@ export default function StockInStoreAddPage() {
     /*                                  EFFECTS                                   */
     /* -------------------------------------------------------------------------- */
 
+=======
+>>>>>>> f39bfe6a95ef04d6fa6a4e0d86bbcf96606e0bcb
     useEffect(() => {
         ensureCompanyCustomersLoaded();
     }, [ensureCompanyCustomersLoaded]);
@@ -209,12 +207,18 @@ export default function StockInStoreAddPage() {
         setItemData((prev) => prev.filter((_, i) => i !== index));
     };
 
+<<<<<<< HEAD
     /* -------------------------------------------------------------------------- */
     /*                               ITEM SEARCH                                  */
     /* -------------------------------------------------------------------------- */
 
     const fetchItems = useCallback(async (search = "") => {
         const res = await itemGlobalSearch({ qsearch: search, per_page: "50" });
+=======
+const fetchItems = async (search: string) => {
+  const res = await itemGlobalSearch({ query: search, per_page: "50" });
+  if (res?.error) return [];
+>>>>>>> f39bfe6a95ef04d6fa6a4e0d86bbcf96606e0bcb
 
         const options =
             res?.data?.map((item: any) => {
