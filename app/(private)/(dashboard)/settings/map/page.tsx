@@ -148,7 +148,7 @@ export default function SalesMapGoogle() {
           return (
             <React.Fragment key={s.id}>
               <ListItem
-                button
+                button="true"
                 selected={selectedSalesman?.id === s.id}
                 onClick={() => handleSalesmanSelect(s)}
               >
