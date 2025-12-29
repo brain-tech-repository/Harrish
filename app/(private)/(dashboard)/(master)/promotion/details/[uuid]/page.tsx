@@ -15,7 +15,7 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 export default function PromotionDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const uuid = Array.isArray(params.uuid) ? params.uuid[0] : (params.uuid as string);
+  const uuid = Array.isArray(params?.uuid) ? params?.uuid[0] : (params?.uuid as string);
   const [promotion, setPromotion] = useState<any>(null);
   console.log(promotion?.location,"promotion?.location")
   const { setLoading } = useLoading();

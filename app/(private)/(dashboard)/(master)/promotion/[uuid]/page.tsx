@@ -24,7 +24,7 @@ import StepPromotion from "./components/StepPromotion";
 export default function AddPricing() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams:any = useSearchParams();
   const copyFromId = searchParams.get('copy_from');
 
   const { showSnackbar } = useSnackbar();
