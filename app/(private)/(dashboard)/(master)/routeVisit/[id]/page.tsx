@@ -152,6 +152,7 @@ export default function AddEditRouteVisit() {
   const [customerSchedules, setCustomerSchedules] = useState<CustomerSchedules>(
     {}
   );
+  const [globalDays, setGlobalDays] = useState<string[]>([]);
 
   const [selectedCustomerType, setSelectedCustomerType] = useState<string>();
 
@@ -738,6 +739,7 @@ export default function AddEditRouteVisit() {
           to_date: form.to_date,
           status: Number(form.status),
         })),
+        global_days: globalDays.join(","),
       };
 
       // If salesman type is Merchandiser, include selected merchandiser id in payload
@@ -1024,6 +1026,7 @@ export default function AddEditRouteVisit() {
                 hasMore={customerPagination.hasMore}
                 onLoadMore={handleLoadMoreCustomers}
                 isLoadingMore={customerPagination.loadingMore}
+                onGlobalChange={setGlobalDays}
               />
             </div>
           </div>

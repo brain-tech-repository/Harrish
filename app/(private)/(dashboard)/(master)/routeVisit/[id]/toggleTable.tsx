@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Toggle from "@/app/components/toggle";
 import Loading from "@/app/components/Loading";
 import Skeleton from "@mui/material/Skeleton";
+import CustomCheckbox from "@/app/components/customCheckbox";
 
 // Add your API function import
 import { getRouteVisitDetails } from "@/app/services/allApi";
@@ -26,13 +27,6 @@ const TableRowSkeleton = () => (
   </tr>
 );
 
-const transformCustomerList = (apiResponse: any[]) => {
-  return apiResponse.map((item) => ({
-    id: item.id,
-    name: `${item.osa_code} - ${item.name.toUpperCase()}`,
-  }));
-};
-
 // Types for customer schedule
 type CustomerSchedule = {
   customer_id: number;
@@ -49,6 +43,7 @@ type TableProps = {
   hasMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  onGlobalChange?: (days: string[]) => void;
 };
 
 export default function Table({
@@ -61,7 +56,15 @@ export default function Table({
   hasMore = false,
   onLoadMore,
   isLoadingMore = false,
+  onGlobalChange,
 }: TableProps) {
+
+  const transformCustomerList = (apiResponse: any[]) => {
+    return apiResponse.map((item) => ({
+      id: item.id,
+      name: `${item.osa_code} - ${item.name.toUpperCase()}`,
+    }));
+  };
   const data = transformCustomerList(customers);
   const isInitialMount = useRef(true);
   const [internalLoading, setInternalLoading] = useState(false);
@@ -80,7 +83,7 @@ export default function Table({
           onLoadMore();
         }
       },
-      { 
+      {
         root: scrollContainerRef.current,
         threshold: 0.0,
         rootMargin: '300px'
@@ -133,7 +136,7 @@ export default function Table({
   const filteredData = data.filter(
     (customer) => !editMode || prefilledCustomerIds.has(customer.id) || customer.id >= 5000
   );
-  console.log(filteredData,"filteredData")
+  console.log(filteredData, "filteredData")
 
   // ✅ Load visit data for editing
   const loadVisitData = useCallback(async (uuid: string) => {
@@ -246,6 +249,46 @@ export default function Table({
   const previousFirstCustomerId = useRef<number | null>(null);
 
   useEffect(() => {
+    // Also apply global selections to NEW customers if any column is selected
+    if (filteredData.length > 0) {
+      setRowStates(prev => {
+        const next = { ...prev };
+        let hasChanges = false;
+        filteredData.forEach(c => {
+          if (!next[c.id]) {
+            // Initialize with global selections
+            next[c.id] = { ...columnSelection };
+            hasChanges = true;
+          } else {
+            // Optionally enforce global selection on existing? 
+            // For now, let's only apply to new/missing ones to respect individual toggles, 
+            // UNLESS we want "Select All" to strictly enforce. 
+            // But the requirement is "apply for all customers automatically when i click on next page"
+            // So if columnSelection is true, we should probably ensure it's true?
+            // But that might overwrite user deselects. 
+            // Let's assume: If I have column selected, any NEW row gets it.
+            // Existing rows: handled by handleColumnSelect.
+
+            // Ensure consistency for keys that are globally true? 
+            // "apply for all customers automatically" -> likely means enforcement.
+            let rowChanged = false;
+            const rowState = { ...next[c.id] };
+            Object.entries(columnSelection).forEach(([day, isSelected]) => {
+              if (isSelected && !rowState[day as keyof typeof columnSelection]) {
+                rowState[day as keyof typeof columnSelection] = true;
+                rowChanged = true;
+              }
+            });
+            if (rowChanged) {
+              next[c.id] = rowState;
+              hasChanges = true;
+            }
+          }
+        });
+        return hasChanges ? next : prev;
+      });
+    }
+
     if (!editMode) {
       const currLength = customers.length;
       const firstId = customers.length > 0 ? customers[0].id : null;
@@ -257,6 +300,8 @@ export default function Table({
 
       if (isFreshFetch) {
         console.log("Fresh customer list detected, resetting table states");
+        // Don't fully reset if we want to keep global selections?
+        // But "Fresh Fetch" implies new route/filter, so maybe we SHOULD reset.
         setRowStates({});
         setPrefilledCustomerIds(new Set());
         setColumnSelection({
@@ -268,11 +313,12 @@ export default function Table({
           Saturday: false,
           Sunday: false,
         });
+        if (onGlobalChange) onGlobalChange([]);
       }
       previousCustomersLength.current = currLength;
       previousFirstCustomerId.current = firstId;
     }
-  }, [customers, editMode]);
+  }, [customers, editMode, columnSelection]); // Added columnSelection dependency to re-apply if needed
 
   // Handle individual toggle
   const handleToggle = (
@@ -309,10 +355,19 @@ export default function Table({
 
     console.log(`Column ${day} selection:`, newColumnState);
 
-    setColumnSelection((prev) => ({
-      ...prev,
+    const newColumnSelection = {
+      ...columnSelection,
       [day]: newColumnState,
-    }));
+    };
+    setColumnSelection(newColumnSelection);
+
+    // Notify parent of global selection change
+    if (onGlobalChange) {
+      const selectedDays = Object.entries(newColumnSelection)
+        .filter(([_, isSelected]) => isSelected)
+        .map(([d]) => d);
+      onGlobalChange(selectedDays);
+    }
 
     setRowStates((prev) => {
       const updatedStates = { ...prev };
@@ -375,29 +430,16 @@ export default function Table({
 
   // Check if all toggles in a column are selected - UPDATED to use filteredData
   const isColumnFullySelected = (day: keyof typeof columnSelection) => {
-    if (filteredData.length === 0) return false;
-
-    return filteredData.every((customer) => {
-      const customerState = rowStates[customer.id];
-      return customerState?.[day] === true;
-    });
+    // If global selection is on, show check
+    return columnSelection[day];
   };
 
   // Check if some toggles in a column are selected - UPDATED to use filteredData
   const isColumnPartiallySelected = (day: keyof typeof columnSelection) => {
-    if (filteredData.length === 0) return false;
-
-    const hasTrue = filteredData.some((customer) => {
-      const customerState = rowStates[customer.id];
-      return customerState?.[day] === true;
-    });
-
-    const hasFalse = filteredData.some((customer) => {
-      const customerState = rowStates[customer.id];
-      return customerState?.[day] === false;
-    });
-
-    return hasTrue && hasFalse;
+    // Simplify: Just return false if fully selected is true, to avoid indeterminate state conflicting with "Select All"
+    // Or check if some rows disagree with global?
+    // User wants "Select All" checkbox.
+    return false;
   };
 
   // Check if all toggles in a row are selected
@@ -435,7 +477,7 @@ export default function Table({
   return (
     <div className="w-full flex flex-col overflow-hidden">
       <div className="rounded-lg border border-[#E9EAEB] overflow-hidden">
-        <div 
+        <div
           ref={scrollContainerRef}
           className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-gray-300"
         >
@@ -450,25 +492,23 @@ export default function Table({
 
                 {Object.keys(columnSelection).map((day) => {
                   const dayKey = day as keyof typeof columnSelection;
-                  const isFullySelected = isColumnFullySelected(dayKey);
-                  const isPartiallySelected = isColumnPartiallySelected(dayKey);
+                  // Use local state for immediate feedback
+                  const isChecked = columnSelection[dayKey];
 
                   return (
                     <th
                       key={day}
                       className="px-4 py-3 font-[500] text-center min-w-[120px] border-l border-[#E9EAEB]"
                     >
-                      <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex flex-row items-center justify-center gap-2">
                         <span className="text-xs">{day}</span>
                         <div className="flex items-center">
-                          {!editMode && (
-                            <Toggle
-                              isChecked={isFullySelected}
+                            <CustomCheckbox
+                              id={`header-checkbox-${day}`}
+                              label=""
+                              checked={isChecked}
                               onChange={() => handleColumnSelect(dayKey)}
-                            // ✅ Disable column toggle if no filtered customers
-                            // disabled={filteredData.length === 0}
                             />
-                          )}
                         </div>
                       </div>
                     </th>
