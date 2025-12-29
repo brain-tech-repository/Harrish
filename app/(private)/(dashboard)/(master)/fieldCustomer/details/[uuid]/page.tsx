@@ -1,11 +1,12 @@
 "use client";
 
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import ContainerCard from "@/app/components/containerCard";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
-import { agentCustomerReturnExport, exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
+import { exportAllInvoices,agentCustomerReturnExport, exportSpecificCustomerReturn,exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
 import { agentCustomerById, downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -63,6 +64,7 @@ const tabs = ["Overview", "Sales", "Market Return"];
 
 export default function CustomerDetails() {
     const router = useRouter();
+    const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [activeTab, setActiveTab] = useState("Overview");
 
     const onTabClick = (name: string) => {
@@ -320,7 +322,23 @@ export default function CustomerDetails() {
     const exportReturnFile = async (uuid: string, format: string) => {
         try {
             console.log(uuid, "uuid")
-            const response = await agentCustomerReturnExport({ uuid, format }); // send proper body object
+            const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+
+            if (response && typeof response === "object" && response.download_url) {
+                await downloadFile(response.download_url);
+                showSnackbar("File downloaded successfully", "success");
+            } else {
+                showSnackbar("Failed to get download URL", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showSnackbar("Failed to download data", "error");
+        }
+    };
+    const allInvoices = async (uuid: string, format: string) => {
+        try {
+            console.log(uuid, "uuid")
+            const response = await exportAllInvoices(uuid, { from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
 
             if (response && typeof response === "object" && response.download_url) {
                 await downloadFile(response.download_url);
@@ -419,6 +437,25 @@ export default function CustomerDetails() {
         },
         [setLoading]
     );
+
+     const exportReturn = async (uuid: string,format: string) => {
+                try {
+                    setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                    const response = await exportSpecificCustomerReturn({ uuid, format  });
+                    if (response && typeof response === 'object' && response.download_url) {
+                        await downloadFile(response.download_url);
+                        showSnackbar("File downloaded successfully", "success");
+                    } else {
+                        showSnackbar("Failed to get download URL", "error");
+                        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                    }
+                } catch (error) {
+                    showSnackbar("Failed to download vehicle data", "error");
+                    setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                } finally {
+                }
+            };
+    
     return (
         <>
             {/* header */}
@@ -514,6 +551,14 @@ export default function CustomerDetails() {
                                     filterBy: filterBySales
                                 },
                                 header: {
+                                     actions: [
+                                <ExportDropdownButton
+                                    key="export-dropdown"
+                                    threeDotLoading={threeDotLoading}
+                                    exportReturnFile={allInvoices}
+                                    uuid={uuid}
+                                />
+                            ],
                                     filterByFields: [
                                         {
                                             key: "start_date",
@@ -581,7 +626,14 @@ export default function CustomerDetails() {
 
 
                                 ],
-
+                            actions: [
+                                <ExportDropdownButton
+                                    key="export-dropdown"
+                                    threeDotLoading={threeDotLoading}
+                                    exportReturnFile={exportReturnFile}
+                                    uuid={uuid}
+                                />
+                            ],
                             },
                             showNestedLoading: true,
                             footer: { nextPrevBtn: true, pagination: true },
@@ -594,7 +646,7 @@ export default function CustomerDetails() {
                                 {
                                     icon: "material-symbols:download",
                                     onClick: (data: TableDataType) => {
-                                        exportReturnFile(data.uuid, "csv"); // or "excel", "csv" etc.
+                                        exportReturn(data.uuid, "xlsx"); // or "excel", "csv" etc.
                                     },
                                 }
                             ],

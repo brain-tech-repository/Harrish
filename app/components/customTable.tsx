@@ -95,6 +95,7 @@ export type configType = {
             showWhen?: (data: TableDataType[], selectedRow?: number[]) => boolean;
         }[],
         selectedCount?: {
+            
             label?: string | React.ReactNode;
             labelTw?: string;
             onClick?: (data: TableDataType[], selectedRow?: number[]) => void;

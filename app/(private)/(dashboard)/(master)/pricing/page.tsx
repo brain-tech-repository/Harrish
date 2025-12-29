@@ -15,6 +15,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
     pricingHeaderList,
     pricingDetailGlobalSearch,
+    pricingHeaderGlobalSearch
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
@@ -31,7 +32,6 @@ const dropdownDataList: DropdownItem[] = [
 ];
 
 const columns = [
-    { key: "osa_code", label: "Pricing Code" },
     { key: "code", label: "Pricing Code" },
     { key: "name", label: "Name" },
     { key: "applicable_for", label: "Pricing Type" },

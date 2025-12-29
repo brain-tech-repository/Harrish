@@ -3949,3 +3949,15 @@ export const warehouseStockItem = async (id: string, params?: Params) => {
     return handleError(error);
   }
 };
+
+
+export const pricingHeaderGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/pricing-header/global_search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
