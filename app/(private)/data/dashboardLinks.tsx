@@ -53,7 +53,7 @@ export const initialLinkData: SidebarDataType[] = [
             isActive: false,
             href: "/routeTransfer",
             label: "Route Transfer",
-            leadingIcon: "mdi-light:transfer",
+            leadingIcon: "icon-park-outline:transfer",
             iconColor: "text-yellow-400",
           },
           {

@@ -2,8 +2,6 @@
 
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
-import IconButton from "@/app/components/iconButton";
-import SettingPopUp from "@/app/components/settingPopUp";
 import {
   createItemCategory,
   updateItemCategory,
@@ -40,7 +38,7 @@ export default function CreateUpdate({
   const formik = useFormik({
     initialValues: {
       categoryName: updateItemCategoryData?.category_name || "",
-      status: updateItemCategoryData?.status || 0,
+      status: updateItemCategoryData?.status || 1,
       category_code: updateItemCategoryData?.category_code || "",
     },
     validationSchema: Yup.object({
@@ -57,7 +55,8 @@ export default function CreateUpdate({
       if (type === "create") {
         const res = await createItemCategory(
           values.categoryName,
-          values.status as 0 | 1
+          Number(values.status) as 0 | 1,
+          values.category_code,
         );
         if (res.error) return showSnackbar(res.data.message, "error");
         await saveFinalCode({
@@ -80,14 +79,14 @@ export default function CreateUpdate({
         }
 
         if (values.status !== updateItemCategoryData?.status) {
-          payload.status = values.status as 0 | 1;
+          payload.status = Number(values.status) as 0 | 1;
         }
 
         if (Object.keys(payload).length > 0) {
           const res = await updateItemCategory(
             updateItemCategoryData?.id || 0,
             values.categoryName,
-            values.status as 0 | 1
+            Number(values.status) as 0 | 1
           );
 
           if (res.error) return showSnackbar(res.data.message, "error");
@@ -141,6 +140,7 @@ export default function CreateUpdate({
             label="Item Category Code"
             name="category_code"
             value={formik.values.category_code}
+            showSkeleton={!formik.values.category_code}
             onChange={formik.handleChange}
             disabled={codeMode === 'auto'}
             error={formik.touched?.category_code && formik.errors?.category_code}

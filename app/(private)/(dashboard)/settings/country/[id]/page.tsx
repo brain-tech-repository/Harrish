@@ -164,6 +164,7 @@ export default function AddEditCountry() {
                         required
                         label="Country Code"
                         value={values.country_code}
+                        showSkeleton={ !values.country_code}
                         onChange={(e) => setFieldValue("country_code", e.target.value)}
                         disabled={isEditMode || (codeMode === 'auto' && !isEditMode)}
                       />
@@ -262,6 +263,7 @@ export default function AddEditCountry() {
               <button
                 type="reset"
                 className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                onClick={() => router.push("/settings/country")}
               >
                 Cancel
               </button>

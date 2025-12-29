@@ -218,6 +218,7 @@ export default function AddEditVendor() {
 
                 {/* Vendor Name */}
                 <InputFields
+                required
                   label="Vendor Name"
                   type="text"
                   name="name"
@@ -233,6 +234,7 @@ export default function AddEditVendor() {
 
                 {/* Address */}
                 <InputFields
+                required
                   label="Address"
                   type="text"
                   name="address"
@@ -248,8 +250,9 @@ export default function AddEditVendor() {
 
                 {/* Contact */}
                 <InputFields
+                required
                   label="Contact Number"
-                  type="text"
+                  type="contact"
                   name="contact"
                   value={formik.values.contact}
                   onChange={formik.handleChange}
@@ -263,6 +266,7 @@ export default function AddEditVendor() {
 
                 {/* Email */}
                 <InputFields
+                required
                   label="Email Address"
                   type="text"
                   name="email"

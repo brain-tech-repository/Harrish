@@ -190,35 +190,31 @@ export default function CustomerInvoicePage() {
     xlsx: false,
   });
 
-  // In-memory cache for agentOrderList API calls
-  const agentOrderListCache = useRef<{ [key: string]: any }>({});
-
   const fetchOrders = useCallback(
-    async (page: number = 1, pageSize: number = 5): Promise<listReturnType> => {
-      const params: Record<string, string> = {
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      };
-      const cacheKey = JSON.stringify(params);
-      if (agentOrderListCache.current[cacheKey]) {
-        const listRes = agentOrderListCache.current[cacheKey];
+    async (
+      page: number = 1,
+      pageSize: number = 50
+    ): Promise<listReturnType> => {
+      try {
+        // setLoading(true);
+        const listRes = await agentOrderList({
+          limit: pageSize.toString(),
+          page: page.toString(),
+        });
+        // setLoading(false);
         return {
-          data: Array.isArray(listRes.data) ? listRes.data : [],
-          total: listRes?.pagination?.totalPages || 1,
-          currentPage: listRes?.pagination?.page || 1,
-          pageSize: listRes?.pagination?.limit || pageSize,
+          data: listRes.data || [],
+          total: listRes.pagination.totalPages,
+          currentPage: listRes.pagination.page,
+          pageSize: listRes.pagination.limit,
         };
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
       }
-      const listRes = await agentOrderList(params);
-      agentOrderListCache.current[cacheKey] = listRes;
-      return {
-        data: Array.isArray(listRes.data) ? listRes.data : [],
-        total: listRes?.pagination?.totalPages || 1,
-        currentPage: listRes?.pagination?.page || 1,
-        pageSize: listRes?.pagination?.limit || pageSize,
-      };
     },
-    [showSnackbar],
+    [agentOrderList]
   );
 
   // In-memory cache for filterBy API calls
@@ -385,7 +381,7 @@ export default function CustomerInvoicePage() {
                 }
               }
             ],
-            pageSize: 10,
+            pageSize: 50,
           }}
         />
       </div>

@@ -44,7 +44,7 @@ interface CustomerItem {
   status: string;
 }
 
-const title = "Route Visit Details";
+const title = "Route Visit Plan Details";
 const backBtnUrl = "/routeVisit";
 export function getPaymentType(value: string): string {
   switch (value) {

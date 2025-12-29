@@ -8,6 +8,7 @@ import BorderIconButton from "@/app/components/borderIconButton";
 import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
     listReturnType,
+    searchReturnType,
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -15,6 +16,7 @@ import {
     discountList,
     deleteDiscount,
     updateDiscountStatus,
+    discountGlobalSearch
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -182,6 +184,32 @@ const DiscountPage = () => {
         setSelectedRow(null);
     };
 
+        const searchDiscounts = useCallback(
+            async (
+                searchQuery: string,
+                pageSize: number
+            ): Promise<searchReturnType> => {
+                setLoading(true);
+                const result = await discountGlobalSearch({
+                    query: searchQuery,
+                    per_page: pageSize.toString(),
+                });
+                setLoading(false);
+                if (result.error) throw new Error(result.data.message);
+                else {
+                    // Defensive: handle missing pagination or nested pagination
+                    const pagination = result.pagination?.pagination || result.pagination || {};
+                    return {
+                        data: result.data || [],
+                        total: pagination.totalPages || 0,
+                        currentPage: pagination.current_page || 0,
+                        pageSize: pagination.limit || pageSize,
+                    };
+                }
+            },
+            []
+        );
+
     return (
         <>
             {/* Table */}
@@ -191,6 +219,7 @@ const DiscountPage = () => {
                     config={{
                         api: {
                             list: fetchDiscounts,
+                            search: searchDiscounts
                         },
                         header: {
                             title: "Discount",

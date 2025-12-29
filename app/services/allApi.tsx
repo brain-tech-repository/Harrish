@@ -3957,3 +3957,26 @@ export const warehouseStockItem = async (id: string, params?: Params) => {
     return handleError(error);
   }
 };
+
+
+export const promotionHeaderGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get(`api/master/promotion-headers/global-search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const discountGlobalSearch = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/discount/global-search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

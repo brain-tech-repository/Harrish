@@ -135,7 +135,7 @@ export default function AddProject() {
                         <Icon icon="lucide:arrow-left" width={24} />
                     </Link>
                     <h1 className="text-xl font-semibold text-gray-900">
-                        {isEditMode ? "Edit Project" : "Add Project"}
+                        {isEditMode ? "Update Project" : "Add Project"}
                     </h1>
                 </div>
             </div>

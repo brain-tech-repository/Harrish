@@ -12,7 +12,7 @@ import {
   saveFinalCode,
   updateRoute,
   vehicleListData,
-  warehouseList
+  
 } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -28,15 +28,20 @@ interface Warehouse {
 }
 
 export default function AddEditRoute() {
-  const { routeTypeOptions, warehouseAllOptions, vehicleListOptions , ensureRouteTypeLoaded, ensureVehicleListLoaded, ensureWarehouseAllLoaded} =
+  const { routeTypeOptions,warehouseOptions,routeTypeAllOptions, warehouseAllOptions, vehicleListOptions , ensureRouteTypeLoaded, ensureVehicleListLoaded, ensureWarehouseAllLoaded,ensureWarehouseLoaded,ensureAllRouteTypeLoaded} =
     useAllDropdownListData();
-  const [warehouses, setWarehouses] = useState<{ value: string; label: string }[]>([]);
-  // Load dropdown data
   useEffect(() => {
-    ensureRouteTypeLoaded();
     // ensureVehicleListLoaded();
-    // ensureWarehouseAllLoaded();
-  }, [ensureRouteTypeLoaded]);
+    if(!isEditMode){
+      ensureRouteTypeLoaded();
+
+      ensureWarehouseLoaded();
+    }
+    if(isEditMode){
+      ensureAllRouteTypeLoaded();
+      ensureWarehouseAllLoaded();
+    }
+  }, [ensureRouteTypeLoaded,ensureWarehouseAllLoaded,ensureWarehouseLoaded]);
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const params = useParams();
@@ -121,11 +126,11 @@ export default function AddEditRoute() {
       (async () => {
         try {
           const res = await getRouteById(String(routeId));
-          const data = res?.data ?? res;
+          const data = res?.data ;
           setForm({
             routeCode: data?.route_code || "",
             routeName: data?.route_name || "",
-            routeType: data?.getrouteType?.id?.toString(),
+            routeType: data?.getrouteType?.id.toString(),
             vehicleType: data?.vehicle?.id.toString() ? String(data?.vehicle.id) : "",
             warehouse: data?.warehouse?.id ? String(data?.warehouse.id) : "",
             status:
@@ -145,26 +150,7 @@ export default function AddEditRoute() {
     }
   }, [isEditMode, routeId]);
 
-    useEffect(() => {
-      const fetchWarehouses = async () => {
-        try {
-          let res;
-          if (!isEditMode) {
-            res = await warehouseList({ dropdown: "true" });
-          } else {
-            res = await warehouseList();
-          }
-          if (res?.data && Array.isArray(res.data)) {
-            const options = res.data.map((w: Warehouse) => ({ value: w.id?.toString(), label: `${w.warehouse_code} - ${w.warehouse_name}` }));
-            setWarehouses(options);
-          }
-          console.log(res?.data, "Warehouse List");
-        } catch (err) {
-          showSnackbar("Failed to fetch warehouses", "error");
-        }
-      };
-      fetchWarehouses();
-    }, [showSnackbar, isEditMode]);
+ 
   // Validation schema
   const validationSchema = yup.object().shape({
     routeCode: yup.string().required("Route Code is required"),
@@ -238,7 +224,7 @@ export default function AddEditRoute() {
     }
   };
 
-  if ((isEditMode && loading) || !warehouses || !routeTypeOptions) {
+  if ((isEditMode && loading) || !warehouseAllOptions || !routeTypeOptions) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <Loading />
@@ -318,11 +304,12 @@ export default function AddEditRoute() {
             {/* Route Type */}
             <div className="flex flex-col">
               <InputFields
+              searchable={true}
                 required
                 label="Route Type"
                 value={form.routeType}
                 onChange={(e) => handleChange("routeType", e.target.value)}
-                options={routeTypeOptions}
+                options={isEditMode ? routeTypeAllOptions : routeTypeOptions}
               />
               {errors.routeType && (
                 <p className="text-red-500 text-sm mt-1">{errors.routeType}</p>
@@ -337,7 +324,7 @@ export default function AddEditRoute() {
                 label="Distributor"
                 // isSingle={false}
                 value={form.warehouse}
-                options={warehouses}
+                options={isEditMode ? warehouseAllOptions : warehouseOptions}
                 onChange={(e) => {
                   const newWarehouse = e.target.value;
                   handleChange("warehouse", newWarehouse);

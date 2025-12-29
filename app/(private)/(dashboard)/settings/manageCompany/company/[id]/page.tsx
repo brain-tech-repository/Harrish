@@ -55,7 +55,12 @@ const CompanySchema = Yup.object().shape({
   company_name: Yup.string().required("Company name is required"),
   company_code: Yup.string().required("Company code is required"),
   company_type: Yup.string().required("Company type is required"),
-  website: Yup.string().required("Company website is required"),
+  website: Yup.string()
+    .required("Company website is required")
+    .matches(
+      /^(https?:\/\/)[\w.-]+(\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=.]+$/,
+      "Please enter a valid URL starting with https:// or http://"
+    ),
   logo: Yup.mixed().nullable().required("Company Logo is required"),
   email: Yup.string().nullable().email("Invalid email"),
   country_id: Yup.string().required("Country is required"),
@@ -438,7 +443,15 @@ export default function AddEditCompany() {
                   label="Website"
                   name="website"
                   value={values.website}
-                  onChange={(e) => setFieldValue("website", e.target.value)}
+                  onChange={(e) => {
+                    let val = e.target.value.trim();
+                    // Prevent direct entry of 'www.'
+                    if (/^www\./i.test(val)) {
+                      val = '';
+                    }
+                    setFieldValue("website", val);
+                  }}
+                  placeholder="https://yourcompany.com"
                   error={((touched.website || submitCount > 0) && errors.website) || false}
                 />
 

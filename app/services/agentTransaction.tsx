@@ -846,3 +846,30 @@ export const salesTeamTracking = async (params: Params) => {
     return handleError(error);
   }
 };
+
+export const getSalesmanByWarehouse = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/load/getsalesmanbywarehouse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportSpecificCustomerReturn = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/returns/exportall`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exportAllInvoices = async (uuid:string,params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/invoices/exportinvoiceagentcustomer/${uuid}`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
