@@ -172,7 +172,7 @@ export default function RouteVisits() {
               search: searchRouteVisits,
             },
             header: {
-              title: "Route Visits",
+              title: "Route Visit Plan",
               threeDot: [
                 {
                   icon: "gala:file-document",

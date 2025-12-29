@@ -55,6 +55,7 @@ interface DropdownDataContextType {
   routeList: RouteItem[];
   warehouseList: WarehouseItem[];
   warehouseAllList: WarehouseAll[];
+  routeTypeAllList: RouteTypeAll[];
   routeType: RouteTypeItem[];
   areaList: AreaItem[];
   companyCustomers: CustomerItem[];
@@ -92,6 +93,7 @@ interface DropdownDataContextType {
   routeOptions: { value: string; label: string }[];
   warehouseOptions: { value: string; label: string }[];
   warehouseAllOptions: { value: string; label: string }[];
+  routeTypeAllOptions: { value: string; label: string }[];
   routeTypeOptions: { value: string; label: string }[];
   areaOptions: { value: string; label: string, region_id: number; }[];
   companyCustomersOptions: { value: string; label: string }[];
@@ -159,6 +161,7 @@ interface DropdownDataContextType {
   ensureWarehouseLoaded: () => void;
   ensureWarehouseAllLoaded: () => void;
   ensureRouteTypeLoaded: () => void;
+  ensureAllRouteTypeLoaded: () => void;
   ensureAreaLoaded: () => void;
   ensureCompanyCustomersLoaded: () => void;
   ensureCompanyCustomersTypeLoaded: () => void;
@@ -258,6 +261,11 @@ interface WarehouseAll {
   id?: number | string;
   warehouse_code?: string;
   warehouse_name?: string;
+}
+interface RouteTypeAll {
+  id?: number | string;
+  route_type_code?: string;
+  route_type_name?: string;
 }
 
 interface RouteTypeItem {
@@ -609,6 +617,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [routeListBySalesman, setRouteListBySalesman] = useState<RouteItem[]>([]);
   const [warehouseListData, setWarehouseListData] = useState<WarehouseItem[]>([]);
   const [warehouseAllList, setWarehouseAllList] = useState<WarehouseAll[]>([]);
+  const [routeTypeAllList, setRouteTypeAllList] = useState<RouteTypeAll[]>([]);
   const [routeTypeData, setRouteTypeData] = useState<RouteTypeItem[]>([]);
   const [areaListData, setAreaListData] = useState<AreaItem[]>([]);
   const [companyCustomersData, setCompanyCustomersData] = useState<CustomerItem[]>([]);
@@ -748,13 +757,25 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureWarehouseAllLoaded = useCallback(() => {
     // if (fetchedRef.current.has('warehouseAll') || fetchingRef.current.has('warehouseAll')) return;
     // fetchingRef.current.add('warehouseAll');
-    warehouseList().then(res => {
+    warehouseList({allData:"true"}).then(res => {
       setWarehouseAllList(normalizeResponse(res) as WarehouseAll[]);
       fetchedRef.current.add('warehouseAll');
       fetchingRef.current.delete('warehouseAll');
     }).catch(() => {
       setWarehouseAllList([]);
       fetchingRef.current.delete('warehouseAll');
+    });
+  }, [normalizeResponse]);
+  const ensureAllRouteTypeLoaded = useCallback(() => {
+    // if (fetchedRef.current.has('warehouseAll') || fetchingRef.current.has('warehouseAll')) return;
+    // fetchingRef.current.add('warehouseAll');
+    routeType({allData:"true"}).then(res => {
+      setRouteTypeAllList(normalizeResponse(res) as RouteTypeAll[]);
+      fetchedRef.current.add('routeTypeAll');
+      fetchingRef.current.delete('routeTypeAll');
+    }).catch(() => {
+      setRouteTypeAllList([]);
+      fetchingRef.current.delete('routeTypeAll');
     });
   }, [normalizeResponse]);
 
@@ -1244,6 +1265,10 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const warehouseAllOptions = (Array.isArray(warehouseAllList) ? warehouseAllList : []).map((c: WarehouseItem) => ({
     value: String(c.id ?? ''),
     label: c.warehouse_code && c.warehouse_name ? `${c.warehouse_code} - ${c.warehouse_name}` : (c.warehouse_name ?? '')
+  }));
+  const routeTypeAllOptions = (Array.isArray(routeTypeAllList) ? routeTypeAllList : []).map((c: RouteTypeAll) => ({
+    value: String(c.id ?? ''),
+    label: c.route_type_code && c.route_type_name ? `${c.route_type_code} - ${c.route_type_name}` : (c.route_type_name ?? '')
   }));
 
   const routeTypeOptions = (Array.isArray(routeTypeData) ? routeTypeData : []).map((c: RouteTypeItem) => ({
@@ -2084,6 +2109,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         routeList: routeListData,
         warehouseList: warehouseListData,
         warehouseAllList: warehouseAllList,
+        routeTypeAllList: routeTypeAllList,
         routeType: routeTypeData,
         areaList: areaListData,
         companyCustomers: companyCustomersData,
@@ -2125,6 +2151,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         routeOptions,
         warehouseOptions,
         warehouseAllOptions,
+        routeTypeAllOptions,
         routeTypeOptions,
         areaOptions,
         companyCustomersOptions,
@@ -2184,6 +2211,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         ensureRouteLoaded,
         ensureWarehouseLoaded,
         ensureWarehouseAllLoaded,
+        ensureAllRouteTypeLoaded,
         ensureRouteTypeLoaded,
         ensureAreaLoaded,
         ensureCompanyCustomersLoaded,

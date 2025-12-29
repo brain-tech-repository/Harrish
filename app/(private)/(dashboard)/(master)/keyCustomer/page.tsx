@@ -15,6 +15,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 
 interface CustomerItem {
   id: number;
@@ -118,8 +119,15 @@ export default function CompanyCustomers() {
     },
     { key: "business_name", label: "Business Name", },
     { key: "district", label: "District", },
-    { key: "creditlimit", label: "Credit Limit" },
-    { key: "totalcreditlimit", label: "Total Credit Limit" },
+    { key: "creditlimit", label: "Credit Limit",render: (row: TableDataType) => {
+        
+        return toInternationalNumber(row.creditlimit || "-");
+      },
+    },
+    { key: "totalcreditlimit", label: "Total Credit Limit" ,render: (row: TableDataType) => {
+        
+        return toInternationalNumber(row.totalcreditlimit || "-");
+      },},
     {
       key: "payment_type", label: "Payment Type",
       render: (row: TableDataType) => {

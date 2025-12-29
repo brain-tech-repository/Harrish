@@ -18,7 +18,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 export default function AgentCustomer() {
     const { can, permissions } = usePagePermissions();
-    const { customerSubCategoryOptions, itemCategoryOptions, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const { customerSubCategoryOptions, itemCategoryOptions,customerCategoryOptions,ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
 
     // Load dropdown data
     useEffect(() => {
@@ -27,10 +27,12 @@ export default function AgentCustomer() {
         ensureItemCategoryLoaded();
         ensureRouteLoaded();
         ensureWarehouseAllLoaded();
+        ensureCustomerCategoryLoaded();
     }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [channelId, setChannelId] = useState<string>("");
+    const [customerCategoryId, setCustomerCategoryId] = useState<string>("");
     const [routeId, setRouteId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,6 +54,63 @@ export default function AgentCustomer() {
             // showByDefault: true,
         },
         { key: "owner_name", label: "Owner Name" },
+        {
+            key: "customer_type",
+            label: "Customer Type",
+            render: (row: TableDataType) => {
+                if (
+                    typeof row.customer_type === "object" &&
+                    row.customer_type !== null &&
+                    "name" in row.customer_type
+                ) {
+                    return (row.customer_type as { name?: string }).name || "-";
+                }
+                return row.customer_type || "-";
+            },
+        },
+          {
+            key: "category",
+            label: "Customer Category",
+            render: (row: TableDataType) =>
+                typeof row.category === "object" &&
+                    row.category !== null &&
+                    "customer_category_name" in row.category
+                    ? (row.category as { customer_category_name?: string })
+                        .customer_category_name || "-"
+                    : "-",
+                     filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
+                onSelect: (selected) => {
+                    setCustomerCategoryId((prev) => prev === selected ? "" : (selected as string));
+                },
+                selectedValue: customerCategoryId,
+            },
+            // showByDefault: true
+        },
+          {
+            key: "outlet_channel",
+            label: "Outlet Channel",
+            render: (row: TableDataType) =>
+                typeof row.outlet_channel === "object" &&
+                    row.outlet_channel !== null &&
+                    "outlet_channel" in row.outlet_channel
+                    ? (row.outlet_channel as { outlet_channel?: string })
+                        .outlet_channel || "-"
+                    : "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
+                onSelect: (selected) => {
+                    setChannelId((prev) => prev === selected ? "" : (selected as string));
+                },
+                selectedValue: channelId,
+            },
+
+            // showByDefault: true,
+        },
         {
             key: "getWarehouse",
             label: "Distributor",
@@ -113,62 +172,17 @@ export default function AgentCustomer() {
 
             // showByDefault: true,
         },
-        {
-            key: "outlet_channel",
-            label: "Outlet Channel",
-            render: (row: TableDataType) =>
-                typeof row.outlet_channel === "object" &&
-                    row.outlet_channel !== null &&
-                    "outlet_channel" in row.outlet_channel
-                    ? (row.outlet_channel as { outlet_channel?: string })
-                        .outlet_channel || "-"
-                    : "-",
-            filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
-                onSelect: (selected) => {
-                    setChannelId((prev) => prev === selected ? "" : (selected as string));
-                },
-                selectedValue: channelId,
-            },
-
-            // showByDefault: true,
-        },
-        {
-            key: "category",
-            label: "Customer Category",
-            render: (row: TableDataType) =>
-                typeof row.category === "object" &&
-                    row.category !== null &&
-                    "customer_category_name" in row.category
-                    ? (row.category as { customer_category_name?: string })
-                        .customer_category_name || "-"
-                    : "-",
-            // showByDefault: true
-        },
-        {
-            key: "customer_type",
-            label: "Customer Type",
-            render: (row: TableDataType) => {
-                if (
-                    typeof row.customer_type === "object" &&
-                    row.customer_type !== null &&
-                    "name" in row.customer_type
-                ) {
-                    return (row.customer_type as { name?: string }).name || "-";
-                }
-                return row.customer_type || "-";
-            },
-        },
-        { key: "landmark", label: "Landmark" },
-        { key: "district", label: "District" },
-        { key: "street", label: "Street" },
-        { key: "town", label: "Town" },
         { key: "contact_no", label: "Contact No." },
         { key: "whatsapp_no", label: "Whatsapp No." },
+        { key: "street", label: "Street" },
+        { key: "town", label: "Town" },
+        { key: "landmark", label: "Landmark" },
+        { key: "district", label: "District" },
         { key: "buyertype", label: "Buyer Type", render: (row: TableDataType) => (row.buyertype === "0" ? "B2B" : "B2C") },
         { key: "payment_type", label: "Payment Type", render: (row: TableDataType) => getPaymentType(String(row.payment_type)) },
+      
+      
+        
         {
             key: "status",
             label: "Status",
@@ -212,6 +226,9 @@ export default function AgentCustomer() {
                 if (channelId) {
                     params.outlet_channel_id = String(channelId);
                 }
+                if (customerCategoryId) {
+                    params.category_id = String(customerCategoryId);
+                }
                 if (routeId) {
                     params.route_id = String(routeId);
                 }
@@ -233,7 +250,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [selectedSubCategoryId, warehouseId, channelId, routeId, setLoading]
+        [selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId, setLoading]
     );
 
     const exportfile = async (format: string) => {
@@ -308,7 +325,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, routeId]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId]);
 
     return (
         <>

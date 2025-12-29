@@ -272,6 +272,8 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 }
 
 function TableContainer({ refreshKey, data, config }: TableProps) {
+    // Ref to track last API call params
+    const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData } = useContext(TableDetails);
@@ -303,7 +305,6 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
         if (data) {
             const date = new Date();
             setNestedLoading(true);
-            // If data is an array, wrap in pagination object
             let tableDataWithPagination: TableDataWithPagination;
             if (Array.isArray(data)) {
                 tableDataWithPagination = {
@@ -320,57 +321,60 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
             setTableDetails(tableDataWithPagination);
             setDisplayedData(tableDataWithPagination.data);
             try {
-                                setInitialTableData(tableDataWithPagination);
-                            } catch (err) {
-                                /* ignore */
-                            }
-                            setTimeout(() => setNestedLoading(false), Math.max(0, 1000 - (new Date().getTime() - date.getTime())));
-                        }
-
-                        // if api is passed, use default values
-                        else if (config.api?.list) {
-                            const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
-                            const start = Date.now();
-                            try {
-                                setNestedLoading(true);
-                                const result = await config.api.list(
-                                    1,
-                                    config.pageSize || defaultPageSize
-                                );
-                                const resolvedResult =
-                                    result instanceof Promise ? await result : result;
-                                const { data, total, currentPage } = resolvedResult;
-                                const tableInit = {
-                                    data,
-                                    total,
-                                    currentPage: currentPage - 1,
-                                    pageSize: config.pageSize || defaultPageSize,
-                                };
-                                setTableDetails(tableInit);
-                                setDisplayedData(data);
-                                try {
-                                    setInitialTableData(tableInit);
-                                } catch (err) {
-                                    /* ignore */
-                                }
-                            } finally {
-                                // guarantee minimum display time for nested loading
-                                const elapsed = Date.now() - start;
-                                const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                                if (wait > 0) {
-                                    await new Promise((res) => setTimeout(res, wait + 500));
-                                }
-                                setNestedLoading(false);
-                            }
-                        }
-
-                        // nothing is passed
-                        else {
-                            throw new Error(
-                                "Either pass data or list API function in Table config prop"
-                            );
-                        }
+                setInitialTableData(tableDataWithPagination);
+            } catch (err) {
+                /* ignore */
+            }
+            setTimeout(() => setNestedLoading(false), Math.max(0, 1000 - (new Date().getTime() - date.getTime())));
+        }
+        // if api is passed, use default values
+        else if (config.api?.list) {
+            const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
+            const start = Date.now();
+            const pageNo = 1;
+            const pageSize = config.pageSize || defaultPageSize;
+            // Only call API if params changed
+            if (
+                !lastApiCallRef.current ||
+                lastApiCallRef.current.pageNo !== pageNo ||
+                lastApiCallRef.current.pageSize !== pageSize
+            ) {
+                lastApiCallRef.current = { pageNo, pageSize };
+                try {
+                    setNestedLoading(true);
+                    const result = await config.api.list(pageNo, pageSize);
+                    const resolvedResult = result instanceof Promise ? await result : result;
+                    const { data, total, currentPage } = resolvedResult;
+                    const tableInit = {
+                        data,
+                        total,
+                        currentPage: currentPage - 1,
+                        pageSize,
+                    };
+                    setTableDetails(tableInit);
+                    setDisplayedData(data);
+                    try {
+                        setInitialTableData(tableInit);
+                    } catch (err) {
+                        /* ignore */
                     }
+                } finally {
+                    const elapsed = Date.now() - start;
+                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+                    if (wait > 0) {
+                        await new Promise((res) => setTimeout(res, wait + 500));
+                    }
+                    setNestedLoading(false);
+                }
+            }
+        }
+        // nothing is passed
+        else {
+            throw new Error(
+                "Either pass data or list API function in Table config prop"
+            );
+        }
+    }
 
                     useEffect(() => {
                         setConfig(config);
@@ -427,6 +431,45 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                                                 (action) => action
                                             )}
                                         {/* If you want to add threeDot dropdown, do it in the correct place in header */}
+                                         {config.header?.threeDot &&
+                            <div className="flex gap-[12px] relative">
+                                <DismissibleDropdown
+                                    isOpen={showDropdown}
+                                    setIsOpen={setShowDropdown}
+                                    button={
+                                        <BorderIconButton icon="ic:sharp-more-vert" />
+                                    }
+                                    dropdown={
+                                        <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                                            <CustomDropdown>
+                                                {config.header?.threeDot?.map((option, idx) => {
+                                                    const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
+                                                    if (!shouldShow) return null;
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
+                                                            onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
+                                                        >
+                                                            {option?.icon && (
+                                                                <Icon
+                                                                    icon={option.icon}
+                                                                    width={option.iconWidth || 20}
+                                                                    className="text-[#717680]"
+                                                                />
+                                                            )}
+                                                            <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
+                                                                {option.label}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </CustomDropdown>
+                                        </div>
+                                    }
+                                />
+                            </div>
+                        }
                                     </div>
                                 </div>
                             )}
