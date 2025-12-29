@@ -50,15 +50,25 @@ const title = "Fridge Update Customer Details";
 
 export default function ViewPage() {
     const params = useParams();
-    const uuid: string = Array.isArray(params.uuid)
-        ? params.uuid[0]
-        : (params.uuid as string);
+    const uuid: string = Array.isArray(params?.uuid)
+        ? params?.uuid[0]
+        : (params?.uuid as string);
 
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const [fridgeUpdate, setfridgeUpdate] = useState<fridgeUpdate | null>(
         null
     );
+
+    const Status: Record<string, string> = {
+        "1": "Sales Team Requested",
+        "2": "Area Sales Manager Accepted",
+        "3": "Area Sales Manager Rejected",
+        "4": "Chiller officer Accepted",
+        "5": "Chiller officer Rejected",
+        "6": "Completed",
+        "7": "Chiller Manager Rejected",
+    };
 
     const base_url_img = "https://api.coreexl.com/osa_developmentV2/public";
 
@@ -252,10 +262,9 @@ export default function ViewPage() {
                             },
                             { key: "Remarks", value: fridgeUpdate?.remark || "-" },
                             {
-                                key: "Request Status",
-                                value: "",
-                                component: <StatusBtn isActive={!!fridgeUpdate?.status} />,
-                            },
+                                key: "Status",
+                                value: Status[String(fridgeUpdate?.status)] ?? "-",
+                            }
                         ]}
                     />
                 </ContainerCard>

@@ -71,11 +71,11 @@ export default function CustomerDetails() {
 
     const params = useParams();
     let uuid: string = "";
-    if (params.uuid) {
-        if (Array.isArray(params.uuid)) {
-            uuid = params.uuid[0] || "";
+    if (params?.uuid) {
+        if (Array.isArray(params?.uuid)) {
+            uuid = params?.uuid[0] || "";
         } else {
-            uuid = params.uuid as string;
+            uuid = params?.uuid as string;
         }
     }
     const { showSnackbar } = useSnackbar();
@@ -179,13 +179,13 @@ export default function CustomerDetails() {
             label: "Route"
         },
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
-        {
-            key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
+        // {
+        //     key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
 
 
-                return (<IconComponentData2 row={row} />)
-            }
-        }
+        //         return (<IconComponentData2 row={row} />)
+        //     }
+        // }
 
     ];
 
@@ -365,7 +365,7 @@ export default function CustomerDetails() {
                         params[k] = String(v);
                     }
                 });
-                result = await getAgentCustomerBySalesId(uuid, { from_date: params.start_date, to_date: params.end_date });
+                result = await getAgentCustomerBySalesId(uuid, { from_date: params?.start_date, to_date: params?.end_date });
             } finally {
                 setLoading(false);
             }
@@ -400,7 +400,7 @@ export default function CustomerDetails() {
                         params[k] = String(v);
                     }
                 });
-                result = await getAgentCustomerByReturnId(uuid, { from_date: params.start_date, to_date: params.end_date });
+                result = await getAgentCustomerByReturnId(uuid, { from_date: params?.start_date, to_date: params?.end_date });
             } finally {
                 setLoading(false);
             }
@@ -536,15 +536,15 @@ export default function CustomerDetails() {
                                     height: 500,
                                 },
                                 rowSelection: false,
-                                // rowActions: [
-                                //     {
-                                //         icon: "material-symbols:download",
-                                //         onClick: (data: TableDataType) => {
-                                //             return(<IconComponentData2 row={data} />)
-                                //             // exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
-                                //         },
-                                //     }
-                                // ],
+                                rowActions: [
+                                    {
+                                        icon: "material-symbols:download",
+                                        onClick: (data: TableDataType) => {
+                                            // return(<IconComponentData2 row={data} />)
+                                            exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
+                                        },
+                                    }
+                                ],
                                 pageSize: 50,
                             }}
                         />
@@ -594,8 +594,7 @@ export default function CustomerDetails() {
                                 {
                                     icon: "material-symbols:download",
                                     onClick: (data: TableDataType) => {
-                                        return (<IconComponentData2 row={data} />)
-                                        // exportReturnFile(uuid, "excel"); // or "excel", "csv" etc.
+                                        exportReturnFile(data.uuid, "csv"); // or "excel", "csv" etc.
                                     },
                                 }
                             ],

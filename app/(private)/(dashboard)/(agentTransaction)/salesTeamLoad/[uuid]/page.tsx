@@ -12,6 +12,7 @@ import {
   salesmanLoadHeaderAdd,
   salesmanLoadHeaderById,
   salesmanLoadHeaderUpdate,
+  getSalesmanByWarehouse
 } from "@/app/services/agentTransaction";
 import { genearateCode, itemList, getWarehouseStockDetails, warehouseStockTopOrders } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
@@ -40,7 +41,7 @@ export default function AddEditSalesmanLoad() {
     ensureSalesmanTypeLoaded();
     ensureWarehouseLoaded();
   }, [ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded]);
-  console.log(useAllDropdownListData())
+  // console.log(useAllDropdownListData())
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
@@ -105,6 +106,36 @@ export default function AddEditSalesmanLoad() {
   const [itemData, setItemData] = useState<TableDataType[]>([]);
   const [isItemsLoaded, setIsItemsLoaded] = useState(false);
   const [itemOptions, setItemsOptions] = useState();
+  const [projectSalesmanOptions, setProjectSalesmanOptions] = useState<any[]>([]);
+  // Store last API data for mapping salesman_id to route_id
+  const [lastProjectSalesmanData, setLastProjectSalesmanData] = useState<any[]>([]);
+  // Fetch salesmen for project type (salesman_type === '6')
+  useEffect(() => {
+    const fetchProjectSalesmen = async () => {
+      if (form.salesman_type === "6" && form.warehouse) {
+        setSkeleton((prev) => ({ ...prev, salesman: true }));
+        try {
+          const res = await getSalesmanByWarehouse({ warehouse_id: form.warehouse });
+          const data = res?.data || [];
+          setLastProjectSalesmanData(data);
+          const options = data.map((item: any) => ({
+            value: String(item.salesman_id),
+            label: `${item.salesman_code ? item.salesman_code + ' - ' : ''}${item.salesman_name}`
+          }));
+          setProjectSalesmanOptions(options);
+        } catch (e) {
+          setProjectSalesmanOptions([]);
+          setLastProjectSalesmanData([]);
+        } finally {
+          setSkeleton((prev) => ({ ...prev, salesman: false }));
+        }
+      } else {
+        setProjectSalesmanOptions([]);
+        setLastProjectSalesmanData([]);
+      }
+    };
+    fetchProjectSalesmen();
+  }, [form.salesman_type, form.warehouse]);
   const [orderData, setOrderData] = useState<FormData[]>([]);
   const [skeleton, setSkeleton] = useState({
     route: false,
@@ -186,39 +217,83 @@ export default function AddEditSalesmanLoad() {
 
 
 
-  const recalculateItem = (index: number, field: string, value: string) => {
+  // Helper to get UPC for a given UOM type
+  const getUpc = (uoms: any[], type: 'primary' | 'secondary') => {
+    const uom = uoms?.find((u) => u.uom_type === type);
+    return uom ? Number(uom.upc) || 1 : 1;
+  };
+
+  // Helper to get available stock for an item
+  const getAvailableStock = (row: any) => {
+    const warehouseStock = row?.warehouse_stocks?.find(
+      (stock: any) => stock.warehouse_id?.toString() === form.warehouse
+    );
+    return warehouseStock?.qty ?? 0;
+  };
+
+  // OnChange: update value as-is (string), OnBlur: clamp/validate
+  const handleQtyInput = (index: number, field: 'pcs_qty' | 'cse_qty', value: string) => {
     const updated = [...itemData];
-    updated[index][field] = value;
+    updated[index] = {
+      ...updated[index],
+      [field]: value.replace(/[^0-9]/g, ''), // allow only numbers
+    };
+    setItemData(updated);
+  };
+
+  const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
+    const updated = [...itemData];
+    const row = updated[index];
+    const pcs_upc = getUpc(row.uom, 'primary');
+    const cse_upc = getUpc(row.uom, 'secondary');
+    const availableStock = getAvailableStock(row);
+    let pcs_qty = Number(row.pcs_qty || 0);
+    let cse_qty = Number(row.cse_qty || 0);
+
+    // Clamp values so total does not exceed available stock
+    let total = pcs_qty * pcs_upc + cse_qty * cse_upc;
+    if (total > availableStock) {
+      if (field === 'pcs_qty') {
+        pcs_qty = Math.max(0, Math.floor((availableStock - cse_qty * cse_upc) / pcs_upc));
+      } else {
+        cse_qty = Math.max(0, Math.floor((availableStock - pcs_qty * pcs_upc) / cse_upc));
+      }
+    }
+    updated[index] = {
+      ...row,
+      pcs_qty: pcs_qty ? pcs_qty.toString() : '',
+      cse_qty: cse_qty ? cse_qty.toString() : '',
+    };
     setItemData(updated);
   };
 
 
 
-  const fetchItem = async (searchTerm: string) => {
-    const res = await itemList({ allData: "true" });
-    if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch items", "error");
+  // const fetchItem = async (searchTerm: string) => {
+  //   const res = await itemList({ allData: "true" });
+  //   if (res.error) {
+  //     showSnackbar(res.data?.message || "Failed to fetch items", "error");
 
-      return;
-    }
-    const data = res?.data || [];
-    setOrderData(data);
-    const options = data.map((item: { id: number; name: string; item_code: string; }) => ({
-      value: String(item.id),
-      label: `${item.item_code} - ${item.name}`
-    }));
-    setItemsOptions(options);
+  //     return;
+  //   }
+  //   const data = res?.data || [];
+  //   setOrderData(data);
+  //   const options = data.map((item: { id: number; name: string; item_code: string; }) => ({
+  //     value: String(item.id),
+  //     label: `${item.item_code} - ${item.name}`
+  //   }));
+  //   setItemsOptions(options);
 
-  };
+  // };
 
-  useEffect(() => {
-    fetchItem("");
-  }, []);
+  // useEffect(() => {
+  //   fetchItem("");
+  // }, []);
 
   const [code, setCode] = useState("");
   useEffect(() => {
     setSkeleton({ ...skeleton, item: true });
-    fetchItem("");
+    // fetchItem("");
 
     // generate code
     if (!codeGeneratedRef.current) {
@@ -286,18 +361,26 @@ export default function AddEditSalesmanLoad() {
     }
   }, [isEditMode, loadUUID, isItemsLoaded, setLoading, showSnackbar]);
 
-  // ✅ Validation Schema
-  // ✅ Validation Schema
+  // Validation Schema: Route is required unless salesman_type is '6' (project)
   const validationSchema = yup.object().shape({
     salesman_type: yup.string().required("Sales Team Type is required"),
     warehouse: yup.string().required("Distributor is required"),
-    route: yup.string().required("Route is required"),
-
+    route: yup.string().when('salesman_type', {
+      is: (val: string) => val !== '6',
+      then: (schema) => schema.required('Route is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     salesman: yup.string().required("Sales Team is required"),
   });
 
   const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    // If selecting salesman in project mode, also set route from selected salesman option
+    if (field === "salesman" && form.salesman_type === "6") {
+      const match = lastProjectSalesmanData.find((item: any) => String(item.salesman_id) === value);
+      setForm((prev) => ({ ...prev, salesman: value, route: match ? String(match.route_id) : "" }));
+    } else {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
@@ -315,25 +398,20 @@ export default function AddEditSalesmanLoad() {
       setErrors({});
       setSubmitting(true);
 
-      const validItems = itemData.filter(
-        (i) =>
-          (i.cse_qty && Number(i.cse_qty) > 0) ||
-          (i.pcs_qty && Number(i.pcs_qty) > 0)
-      );
+      let validItems = itemData.filter((i) => (i.cse_qty && Number(i.cse_qty) > 0) || (i.pcs_qty && Number(i.pcs_qty) > 0));
+      console.log("Valid Items:", validItems);
 
       if (validItems.length === 0) {
         showSnackbar("Please add at least one item with quantity", "error");
         setSubmitting(false);
         return;
       }
-      const details: any = [];
-
-      validItems.flatMap((singleItems: any) => {
+      const details: any = validItems.flatMap((singleItems: any) => {
         if (!Array.isArray(singleItems.uom)) return [];
         return singleItems.uom.flatMap((singleUom: any) => {
           const name = singleUom.name?.toUpperCase?.() || "";
           const uomType = singleUom.uom_type?.toUpperCase?.() || "";
-          const isPcs = name.includes("CSE") || name.includes("PCS") || uomType.includes("OUT") || uomType.includes("BOX");
+          const isPcs = name.includes("PCS") || uomType.includes("OUT");
           const qty = isPcs ? singleItems.pcs_qty : singleItems.cse_qty;
 
           if (qty && Number(qty) > 0) {
@@ -346,16 +424,19 @@ export default function AddEditSalesmanLoad() {
           return [];
         });
       });
+      console.log("Details Payload:", details);
 
-      const payload = {
+      const payload: any = {
         salesman_type: Number(form.salesman_type),
-        project_type: form.project_type ? Number(form.project_type) : null, // ✅ fix here
         warehouse_id: Number(form.warehouse),
         route_id: Number(form.route),
         salesman_id: Number(form.salesman),
         status: 1,
-        details: validItems,
+        details: details,
       };
+      if (form.project_type) {
+        payload.project_type = Number(form.project_type);
+      }
 
       let res;
       if (isEditMode && loadUUID) {
@@ -462,6 +543,7 @@ export default function AddEditSalesmanLoad() {
             name="salesman_type"
             value={form.salesman_type}
             options={salesmanTypeOptions}
+            showSkeleton={salesmanTypeOptions.length === 0}
             onChange={(e) => handleChange("salesman_type", e.target.value)}
             error={errors.salesman_type}
             className="w-full"
@@ -469,7 +551,7 @@ export default function AddEditSalesmanLoad() {
 
           {/* Show Project List only when salesman_type id = 36 */}
           {form.salesman_type === "6" && (
-            <div className="flex flex-col w-full sm:w-[30%]">
+            <div>
               <InputFields
                 required
                 label="Project List"
@@ -488,45 +570,56 @@ export default function AddEditSalesmanLoad() {
             searchable={true}
             options={warehouseOptions}
             error={errors.warehouse}
-            onChange={(e) => {
+            showSkeleton={warehouseOptions.length === 0}
+            onChange={async (e) => {
               const val = e.target.value;
               handleChange("warehouse", val);
               // Clear customer when warehouse changes
               handleChange("route", "");
               // Fetch customers for selected warehouse
               if (val) {
-                fetchRouteOptions(val);
+                setSkeleton({ ...skeleton, route: true });
+                await fetchRouteOptions(val);
+                setSkeleton({ ...skeleton, route: false });
               }
             }
             }
           />
+          {form.salesman_type !== "6" && (
+            <InputFields
+              required
+              label="Route"
+              name="route"
+              value={form.route}
+              searchable={true}
+              options={routeOptions}
+              error={errors.route}
+              disabled={!form.warehouse}
+              showSkeleton={skeleton.route}
+              onChange={async (e) => {
+                const val = e.target.value;
+                handleChange("route", val);
+                // Clear customer when warehouse changes
+                handleChange("salesman", "");
+                // Fetch customers for selected warehouse
+                if (val) {
+                  setSkeleton({ ...skeleton, salesman: true });
+                  await fetchSalesmanByRouteOptions(val);
+                  setSkeleton({ ...skeleton, salesman: false });
+                }
+              }}
+            />
+          )}
           <InputFields
             required
-            label="Route"
-            name="route"
-            value={form.route}
-            searchable={true}
-            options={routeOptions}
-            error={errors.route}
-            showSkeleton={skeleton.route}
-            onChange={(e) => {
-              const val = e.target.value;
-              handleChange("route", val);
-              // Clear customer when warehouse changes
-              handleChange("salesman", "");
-              // Fetch customers for selected warehouse
-              if (val) {
-                fetchSalesmanByRouteOptions(val);
-              }
-            }}
-          />
-          <InputFields
             label="Sales Team"
             name="salesman"
             value={form.salesman}
+            disabled={form.salesman_type === "6" ? !form.warehouse : !form.route}
             searchable={true}
-            options={salesmanOptions}
+            options={form.salesman_type === "6" ? projectSalesmanOptions : salesmanOptions}
             error={errors.salesman}
+            showSkeleton={skeleton.salesman}
             onChange={(e) => handleChange("salesman", e.target.value)}
           />
         </div>
@@ -572,42 +665,58 @@ export default function AddEditSalesmanLoad() {
               },
               {
                 key: "cse_qty",
-                label: "CSE",
-                render: (row) => (
-                  <InputFields
-                    label=""
-                    type="number"
-                    name="cse_qty"
-                    value={row.cse_qty}
-                    onChange={(e) =>
-                      recalculateItem(
-                        Number(row.idx),
-                        "cse_qty",
-                        e.target.value
-                      )
-                    }
-                  />
-                ),
+                label: "Secondary",
+                render: (row) => {
+                  const pcs_upc = getUpc(row.uom, 'primary');
+                  const cse_upc = getUpc(row.uom, 'secondary');
+                  const availableStock = getAvailableStock(row);
+                  const pcs_qty = Number(row.pcs_qty || 0);
+                  const maxCseQty = cse_upc > 0 ? Math.floor((availableStock - pcs_qty * pcs_upc) / cse_upc) : 0;
+                  return (
+                    <InputFields
+                      label=""
+                      type="number"
+                      name="cse_qty"
+                      value={row.cse_qty}
+                      min={0}
+                      max={maxCseQty}
+                      disabled={!row.uom || row.uom.length === 0}
+                      trailingElement={
+                        <span className="text-sm text-gray-500">{maxCseQty}  {row.uom?.find((u: {uom_type: string; name:string}) => u.uom_type === 'secondary')?.name}</span>
+                      }
+                      onChange={(e) => handleQtyInput(Number(row.idx), 'cse_qty', e.target.value)}
+                      onBlur={() => handleQtyBlur(Number(row.idx), 'cse_qty')}
+                    />
+                  );
+                },
               },
 
               {
                 key: "pcs_qty",
-                label: "PCS",
-                render: (row) => (
-                  <InputFields
-                    label=""
-                    type="number"
-                    name="pcs_qty"
-                    value={row.pcs_qty}
-                    onChange={(e) =>
-                      recalculateItem(
-                        Number(row.idx),
-                        "pcs_qty",
-                        e.target.value
-                      )
-                    }
-                  />
-                ),
+                label: "Primary",
+                render: (row) => {
+                  const pcs_upc = getUpc(row.uom, 'primary');
+                  const cse_upc = getUpc(row.uom, 'secondary');
+                  const availableStock = getAvailableStock(row);
+                  const cse_qty = Number(row.cse_qty || 0);
+                  const maxPcsQty = pcs_upc > 0 ? Math.floor((availableStock - cse_qty * cse_upc) / pcs_upc) : 0;
+                  return (
+                    <InputFields
+                      label=""
+                      type="number"
+                      name="pcs_qty"
+                      value={row.pcs_qty}
+                      min={0}
+                      max={maxPcsQty}
+                      disabled={!row.uom || row.uom.length === 0}
+                      trailingElement={
+                        <span className="text-sm text-gray-500">{maxPcsQty} {row.uom?.find((u: {uom_type: string; name:string}) => u.uom_type === 'primary')?.name}</span>
+                      }
+                      onChange={(e) => handleQtyInput(Number(row.idx), 'pcs_qty', e.target.value)}
+                      onBlur={() => handleQtyBlur(Number(row.idx), 'pcs_qty')}
+                    />
+                  );
+                },
               },
             ],
             pageSize: itemData.length > 0 ? itemData.length : 10
