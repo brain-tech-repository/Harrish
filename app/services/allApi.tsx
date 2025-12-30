@@ -528,9 +528,9 @@ export const getRouteVisitList = async (params: {
   }
 };
 
-export const updateRouteVisitDetails = async (body: object) => {
+export const updateRouteVisitDetails = async (uuid: string, body: object) => {
   try {
-    const res = await API.put(`/api/master/route-visits/bulk-update`, body);
+    const res = await API.put(`/api/master/route-visits/update/${uuid}`, body);
     return res.data;
   } catch (error) {
     return handleError(error);

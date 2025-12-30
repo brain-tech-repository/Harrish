@@ -138,7 +138,7 @@ export default function Table({
   );
   console.log(filteredData, "filteredData")
 
-  // ✅ Load visit data for editing
+  // ✅ Load visit data for editing - UPDATED FOR ARRAY RESPONSE
   const loadVisitData = useCallback(async (uuid: string) => {
     if (!uuid || hasFetchedData.current) {
       console.log("Skipping data fetch - no UUID or already fetched");
@@ -151,36 +151,36 @@ export default function Table({
       const res = await getRouteVisitDetails(uuid);
       console.log("API Response for edit:", res);
 
-      if (res?.data) {
-        const existing = res.data;
-        console.log("Existing data:", existing);
+      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data;
+        const initialRowStates: typeof rowStates = {};
+        const prefilledIds = new Set<number>();
 
-        // Create customer schedule from the API response
-        if (existing.customer && existing.customer.id) {
-          const daysMap = {
-            Monday: existing.days?.includes("Monday") || false,
-            Tuesday: existing.days?.includes("Tuesday") || false,
-            Wednesday: existing.days?.includes("Wednesday") || false,
-            Thursday: existing.days?.includes("Thursday") || false,
-            Friday: existing.days?.includes("Friday") || false,
-            Saturday: existing.days?.includes("Saturday") || false,
-            Sunday: existing.days?.includes("Sunday") || false,
-          };
+        list.forEach((item: any) => {
+          if (item.customer && item.customer.id) {
+            const days = item.days || [];
+            const daysMap = {
+              Monday: days.includes("Monday"),
+              Tuesday: days.includes("Tuesday"),
+              Wednesday: days.includes("Wednesday"),
+              Thursday: days.includes("Thursday"),
+              Friday: days.includes("Friday"),
+              Saturday: days.includes("Saturday"),
+              Sunday: days.includes("Sunday"),
+            };
 
-          const initialRowStates: typeof rowStates = {};
-          initialRowStates[existing.customer.id] = daysMap;
+            initialRowStates[item.customer.id] = daysMap;
+            prefilledIds.add(item.customer.id);
+          }
+        });
 
-          setRowStates(initialRowStates);
-          // ✅ Store the pre-filled customer ID
-          setPrefilledCustomerIds(new Set([existing.customer.id]));
-          hasFetchedData.current = true;
-          console.log("Table initialized with schedule:", initialRowStates);
-          console.log("Prefilled customer IDs:", [existing.customer.id]);
-        } else {
-          console.log("No customer data found in API response");
-        }
+        setRowStates(initialRowStates);
+        setPrefilledCustomerIds(prefilledIds);
+        hasFetchedData.current = true;
+        console.log("Table initialized with schedules:", initialRowStates);
+        console.log("Prefilled customer IDs:", Array.from(prefilledIds));
       } else {
-        console.warn("Route visit not found in API response");
+        console.warn("Route visit not found in API response or empty");
       }
     } catch (error) {
       console.error("Error loading visit data:", error);

@@ -223,7 +223,7 @@ export default function RouteVisits() {
                 icon: "lucide:edit-2",
                 onClick: (data: object) => {
                   const row = data as TableRow;
-                  router.push(`/routeVisit/${row.uuid}`);
+                  router.push(`/routeVisit/${row.header.uuid}`);
                 },
               },
             ] : [],
