@@ -9,7 +9,6 @@ import CustomDropdown from "@/app/components/customDropdown";
 import Table, {
     listReturnType,
     searchReturnType,
-    searchReturnType,
     TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -123,30 +122,6 @@ const DiscountPage = () => {
             }
         },
         [showSnackbar, setLoading]
-    );
-
-    const searchDiscounts = useCallback(
-        async (
-            searchQuery: string,
-            pageSize: number
-        ): Promise<searchReturnType> => {
-            setLoading(true);
-            const result = await discountGlobalSearch({
-                query: searchQuery,
-                per_page: pageSize.toString(),
-            });
-            setLoading(false);
-            if (result.error) throw new Error(result.data.message);
-            else {
-                return {
-                    data: result.data || [],
-                    total: result.pagination.pagination.totalPages || 0,
-                    currentPage: result.pagination.pagination.current_page || 0,
-                    pageSize: result.pagination.pagination.limit || pageSize,
-                };
-            }
-        },
-        []
     );
 
     const handleStatusChange = async (

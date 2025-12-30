@@ -1992,15 +1992,6 @@ export const addDiscount = async (body: object) => {
   }
 };
 
-export const discountGlobalSearch = async (params?: Params) => {
-  try {
-    const res = await API.get(`/api/master/discount/global_search`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
 export const importCustomerExcel = async (body: FormData) => {
   try {
     const res = await APIFormData.post("api/master/promotion-headers/customers/upload-xlsx", body);
