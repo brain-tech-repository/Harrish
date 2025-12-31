@@ -819,7 +819,6 @@ export default function ExchangeAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      console.log("Submitting payload:", payload);
       const res = await addExchange(payload);
       if (res.error) {
         showSnackbar(res.data?.message || "Failed to create Exchange", "error");

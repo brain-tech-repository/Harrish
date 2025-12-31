@@ -16,7 +16,7 @@ import {
     discountList,
     deleteDiscount,
     updateDiscountStatus,
-    discountGlobalSearch
+    discountGlobalSearch,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
@@ -150,7 +150,6 @@ const DiscountPage = () => {
                 const selectedItem = data.filter((_, index) =>
                   selectedRow.includes(index)
                 );
-                // console.log(data, selectedRow)
               
                 const failedUpdates: string[] = [];
               

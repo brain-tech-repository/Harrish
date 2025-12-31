@@ -43,7 +43,6 @@ export default function SalesmanLoadDetailsUI() {
             try {
                 setLoading(true);
                 const res = await salesTeamRecontionOrderByUuid(String(params?.uuid));
-                console.log("Details Response:", res);
 
                 if (res?.data) {
                     const d = res.data;

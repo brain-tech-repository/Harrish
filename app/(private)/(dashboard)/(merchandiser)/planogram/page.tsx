@@ -106,7 +106,6 @@ export default function Planogram() {
     async (searchQuery: string): Promise<searchReturnType> => {
       setLoading(true);
       try {
-        console.log(searchQuery);
         // always start from page 1 for a new search
         const res = await planogramList({
           search: searchQuery,
@@ -148,7 +147,6 @@ export default function Planogram() {
       setLoading(true);
 
       const res = await exportPlanogram({ format: fileType });
-      console.log("Export API Response:", res);
 
       let downloadUrl = "";
 

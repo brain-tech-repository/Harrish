@@ -462,7 +462,6 @@ export default function PurchaseOrderAddEditPage() {
         item.Total = "0.00";
       } else {
         const selectedOrder = orderData.find((order: FormData) => order.id.toString() === value);
-        console.log(selectedOrder);
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
         item.UOM = selectedOrder?.item_uoms?.map(uom => ({ label: uom.name, value: String(uom.uom), price: uom.price })) || [];
@@ -478,7 +477,6 @@ export default function PurchaseOrderAddEditPage() {
         });
         const initialExcStr = (Math.round(initialExc * 100) / 100).toFixed(2);
         item.Excise = initialExcStr;
-        console.log("Excise calculated:", item.Excise);
         const computedLabel = selectedOrder ? `${selectedOrder.item_code ?? selectedOrder.erp_code ?? ''}${selectedOrder.item_code || selectedOrder.erp_code ? ' - ' : ''}${selectedOrder.name ?? ''}` : "";
         item.item_label = computedLabel;
         if (item.item_label) {
@@ -520,7 +518,6 @@ export default function PurchaseOrderAddEditPage() {
     const excise = (Math.round(exciseNumeric * 100) / 100).toFixed(2);
     // keep both `Excise` (existing row shape) and `excise` (table render key) in sync
     item.Excise = excise;
-    console.log(item.Excise, (selectedOrder as any).item_category?.id);
     // const discount = 0;
     // const gross = total;
 
@@ -662,7 +659,6 @@ export default function PurchaseOrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      // console.log("Submitting payload:", payload);
       const res = await purchaseOrderAdd(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create purchase order", "error");

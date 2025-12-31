@@ -302,7 +302,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                     const val = e.target.value;
                     const selected = roleListData.find((r) => r.value === val) ?? null;
-                    console.log(e.target.value, "mlk")
 
                     setForm({ ...form, role_id: val, selectedRole: e.target.value });
                   }}
@@ -320,7 +319,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                     const val = e.target.value;
                     const selected = userOptions.find((u) => u.value === val) ?? null;
-                    console.log(e.target.value, "mlk")
                     setForm({ ...form, customer_id: val, selectedCustomer: e.target.value });
                   }}
                 />
@@ -478,7 +476,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
               <tbody>
                 {steps.map((step, idx) => {
 
-                  console.log(step, "hii461")
 
 
                   return (

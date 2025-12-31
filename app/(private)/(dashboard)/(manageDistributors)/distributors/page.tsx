@@ -104,7 +104,7 @@ const columns = [
   { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-", },
   {
     key: "location", label: "Location", render: (row: WarehouseRow) => {
-      return row.location?.name || row.location?.location_name || '-';
+      return row.location?.name || row.location?.location_name || row.location_relation?.name || '-';
     }
   },
   // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
@@ -276,7 +276,6 @@ export default function Warehouse() {
         return;
       }
       const selectedRowsData: number[] = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
-      console.log("selectedRowsData", selectedRowsData);
       if (selectedRowsData.length === 0) {
         showSnackbar("No Distributors selected", "error");
         return;

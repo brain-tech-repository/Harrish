@@ -159,7 +159,6 @@ const SalesReportDashboard = () => {
         customer_ids: selectedChildItems['customer']?.map(id => parseInt(id)) || []
       };
 
-      console.log('Dashboard API Payload:', payload);
 
       const response = await axios.post(
         'http://172.16.6.205:8001/api/dashboard',
@@ -172,7 +171,6 @@ const SalesReportDashboard = () => {
         }
       );
 
-      console.log('Dashboard API Response:', response.data);
       setDashboardData(response.data);
     } catch (error) {
       console.error('Dashboard fetch failed:', error);
@@ -200,13 +198,13 @@ const SalesReportDashboard = () => {
   };
 
   // Fetch filters from API
-  const fetchFiltersData = async (currentFilterId?: string) => {
+  const fetchFiltersData = async (currentFilterId?: string, onDrop?: boolean) => {
     setFilterError(null);
 
     // Determine which filters need to be loaded based on selections
     const filtersToLoad = new Set<string>();
     let hierarchyReached = false;
-    hierarchyOrder.filter(filterId => {
+    hierarchyOrder.filter((filterId, index) => {
       if (!hierarchyReached && currentFilterId && filterId === currentFilterId) {
         hierarchyReached = true;
         return false;
@@ -218,6 +216,11 @@ const SalesReportDashboard = () => {
         return true;
       }
     });
+
+    console.log(filtersToLoad, currentFilterId);
+    if(onDrop && currentFilterId) {
+      filtersToLoad.add(currentFilterId);
+    }
 
     if(availableFilters.length > 0 && filtersToLoad.size === 0) return;
     // Set loading state for specific filters
@@ -258,7 +261,7 @@ const SalesReportDashboard = () => {
 
       const queryString = params?.toString();
       const url = `http://172.16.6.205:8001/api/filters${queryString ? `?${queryString}` : ''}`;
-
+      console.log('Fetching filters from URL:', url);
       const response = await fetch(url, {
         method: 'GET',
       });
@@ -292,7 +295,6 @@ const SalesReportDashboard = () => {
         
         if (metadata && Array.isArray(items)) {
           if (apiKey === 'routes' || apiKey === 'salesmen' || apiKey === 'channel_categories') {
-            console.log(`${apiKey} data from API:`, items.slice(0, 2));
           }
           
           transformedFilters.push({
@@ -465,7 +467,6 @@ const SalesReportDashboard = () => {
         payload.show = Array.from(new Set(showFields));
       }
 
-      console.log('Export Payload (lowest-level filter only):', payload);
 
       const response = await fetch('http://172.16.6.205:8001/api/export', {
         method: 'POST',
@@ -741,18 +742,18 @@ const SalesReportDashboard = () => {
     e.preventDefault();
     if (draggedFilter) {
       // setAvailableFilters(prev => prev.filter(f => f.id !== draggedFilter.id));
-      
+
       setDroppedFilters(prev => [...prev, draggedFilter]);
       setSelectedChildItems(prev => ({ ...prev, [draggedFilter.id]: [] }));
       setSearchTerms(prev => ({ ...prev, [draggedFilter.id]: '' }));
       setDraggedFilter(null);
-      
+
       // Close the dropdowns after dropping
       setShowMoreFilters(false);
       setSearchbyclose(false);
 
-      const index = hierarchyOrder.findIndex(id => id === draggedFilter.id) - 1;
-      fetchFiltersData( index >= 0 ? hierarchyOrder[index] : undefined );
+      // Load data for the newly dropped filter
+      fetchFiltersData(draggedFilter.id, true);
     }
   };
 
@@ -1246,7 +1247,6 @@ const SalesReportDashboard = () => {
                       const endIdx = Math.min(apiCurrentPage * rowsPerPage, totalRows);
 
                       const changePage = (page: number) => {
-                        console.log('Change to page:', page);
                         if (page < 1) page = 1;
                         if (page > totalPages) page = totalPages;
                         setCurrentPage(page);

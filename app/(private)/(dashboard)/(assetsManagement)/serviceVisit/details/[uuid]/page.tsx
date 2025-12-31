@@ -30,7 +30,6 @@ export default function ViewPage() {
             const res = await serviceVisitByUUID(uuid);
             setLoading(false);
 
-            console.log("Service Visit Response:", res);
 
             if (res.error) {
                 showSnackbar(res.data?.message || "Unable to fetch Service Visit", "error");

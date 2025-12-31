@@ -207,7 +207,6 @@ export default function VehiclePage() {
         return;
       }
       const selectedRowsData: number[] = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
-      console.log("selectedRowsData", selectedRowsData);
       if (selectedRowsData.length === 0) {
         showSnackbar("No vehicle selected", "error");
         return;

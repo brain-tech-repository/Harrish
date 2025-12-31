@@ -436,7 +436,6 @@ export default function AddSurveyTabs() {
         questions
       );
 
-      console.log("FINAL PAYLOAD 🔥", payload);
 
       // ✅ SINGLE API CALL
       await addSurveyQuestion(payload as any);
@@ -491,7 +490,6 @@ export default function AddSurveyTabs() {
         questions
       );
 
-      console.log("FINAL PAYLOAD 🔥", payload);
 
       // ✅ SINGLE API CALL
       await addSurveyQuestion(payload as any);

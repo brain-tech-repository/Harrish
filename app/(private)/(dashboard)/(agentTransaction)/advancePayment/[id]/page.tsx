@@ -102,7 +102,6 @@ export default function AddPaymentPage() {
       setLoadingBanks(true);
       const res = await getbankList();
 
-      console.log("Banks API Response:", res);
 
       if (res?.success === true || res?.status === "success") {
         const banksData = Array.isArray(res.data) ? res.data : [];
@@ -130,13 +129,11 @@ export default function AddPaymentPage() {
       setLoadingCustomers(true);
       const res = await getCompanyCustomers();
 
-      console.log("Customers API Response:", res);
 
       if (res?.success === true || res?.status === "success") {
         const customersData = Array.isArray(res.data) ? res.data : [];
         setCustomers(customersData);
 
-        // console.log(customersData)
 
         if (customersData.length === 0) {
           showSnackbar("No customers found", "info");
@@ -154,7 +151,6 @@ export default function AddPaymentPage() {
     }
   };
 
-  console.log(customers)
 
   // Handle bank selection change
   const handleBankChange = (bankId: string) => {
@@ -318,7 +314,6 @@ export default function AddPaymentPage() {
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        console.log("Form values:", values);
 
         // Create FormData object
         const formData = new FormData();
@@ -353,33 +348,22 @@ export default function AddPaymentPage() {
         }
 
         if (values.recipt_image && values.recipt_image instanceof File) {
-          console.log(
-            "Appending file:",
-            values.recipt_image.name,
-            values.recipt_image.type
-          );
+         
           formData.append("recipt_image", values.recipt_image);
         } else {
-          console.log("No file to append");
         }
 
         // Log FormData contents for debugging
-        console.log("FormData contents:");
         for (const [key, value] of formData.entries()) {
           if (value instanceof File) {
-            console.log(
-              key,
-              `File: ${value.name}, Type: ${value.type}, Size: ${value.size} bytes`
-            );
+           
           } else {
-            console.log(key, value);
           }
         }
 
         let res = null;
         res = await addPayment(formData);
 
-        console.log("API Response:", res);
 
         // Check for successful response
         const isSuccess = res?.status === "success";

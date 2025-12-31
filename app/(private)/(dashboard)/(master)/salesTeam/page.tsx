@@ -59,7 +59,6 @@ const SalesmanPage = () => {
     const selectedSalesmen = data.filter((_, index) =>
       selectedRow.includes(index)
     );
-    // console.log(data, selectedRow)
 
     const failedUpdates: string[] = [];
 

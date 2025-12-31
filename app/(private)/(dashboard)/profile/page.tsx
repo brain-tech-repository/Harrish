@@ -106,15 +106,7 @@ export default function ProfilePage() {
         formData.append('country_id', values.country_id ? String(values.country_id) : "");
         formData.append('profile_picture', profileImage);
 
-        console.log("🖼️ Image upload - File info:", {
-          name: profileImage.name,
-          size: profileImage.size,
-          type: profileImage.type
-        });
-        console.log("📤 FormData fields:");
-        for (const pair of formData.entries()) {
-          console.log(pair[0] + ':', pair[1]);
-        }
+        
 
         payload = formData;
         type = "form-data";
@@ -132,13 +124,9 @@ export default function ProfilePage() {
           country_id: values.country_id ? Number(values.country_id) : null,
         };
         type = "json";
-        console.log("📤 JSON Payload:", payload);
       }
 
-      console.log("🚀 Calling API - UUID:", profile.uuid, "Type:", type);
       const res = await updateAuthUser(profile.uuid, payload, type);
-      console.log("📥 API Response:", res);
-      console.log("📊 Response details - code:", res?.code, "error:", res?.error, "data:", res?.data);
 
       // Check if the update was successful
       // The API returns res.data directly, so if there's no error, it's successful
@@ -151,7 +139,6 @@ export default function ProfilePage() {
         (res.error === undefined && res !== null && typeof res === 'object')
       );
 
-      console.log("✅ Is Success?", isSuccess);
 
       if (isSuccess) {
         showSnackbar("Profile updated successfully", "success");

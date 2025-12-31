@@ -110,13 +110,7 @@ export default function AddInstallationReportPage() {
                     }
                 });
 
-                console.log("🔍 DOM Check:", {
-                    totalCheckboxes: allCheckboxes.length,
-                    checkedCheckboxes: checkedCheckboxes.length,
-                    currentState: selectedRows.length,
-                    allChillers: allChillers.length
-                });
-
+             
                 // If we found checked checkboxes, extract the data
                 if (checkedCheckboxes.length > 0) {
                     const selected: any[] = [];
@@ -170,12 +164,10 @@ export default function AddInstallationReportPage() {
                     // Only update if different
                     if (uniqueSelected.length !== selectedRows.length ||
                         !uniqueSelected.every(item => selectedRows.some(s => s.id === item.id))) {
-                        // console.log("✅ Updating selection from DOM:", uniqueSelected);
                         setSelectedRows(uniqueSelected);
                     }
                 } else if (selectedRows.length > 0) {
                     // No checkboxes checked but we have selections - clear them
-                    // console.log("❌ Clearing selections - no checkboxes checked");
                     setSelectedRows([]);
                 }
             } catch (error) {
@@ -251,7 +243,6 @@ export default function AddInstallationReportPage() {
 
         try {
             const res = await getIROList({ iro_id: iroId });
-            // console.log("🔍 IRO Response:", res);
 
             const rawData = Array.isArray(res) ? res[0] : res?.data?.[0] || res?.data || res;
             const warehouse = rawData?.warehouse || rawData;
@@ -335,7 +326,6 @@ export default function AddInstallationReportPage() {
                 showSnackbar("Invalid chiller selection detected", "error");
                 return;
             }
-            // console.log("📤 Submitting payload:", payload);
 
             await addInstallationReport(payload);
 
@@ -365,13 +355,9 @@ export default function AddInstallationReportPage() {
         }
 
         try {
-            // console.log("🔍 Fetching chillers for Warehouse ID:", warehouseId, "IRO ID:", form.iro_id);
             const res = await getIROTable(form.iro_id, warehouseId);
-            // console.log("✅ IRO Table Response:", res);
             const data = Array.isArray(res) ? res : res?.data || [];
-
             setAllChillers(data);
-            // console.log("📦 Stored chillers:", data);
 
             return {
                 data: data,
@@ -417,21 +403,14 @@ export default function AddInstallationReportPage() {
 
     // 🔧 HANDLE ROW SELECTION CALLBACK
     const handleRowSelection = useCallback((data: TableDataType[], selectedRowIndices?: number[]) => {
-        // console.log("🎯 rowSelectionOnClick CALLBACK triggered:", {
-        //     dataLength: data?.length,
-        //     selectedIndices: selectedRowIndices,
-        //     timestamp: new Date().toISOString()
-        // });
+      
 
         if (selectedRowIndices && selectedRowIndices.length > 0 && data) {
             const selected = selectedRowIndices
                 .map((index) => data[index])
                 .filter(Boolean);
-
-            // console.log("✅ Selected rows via CALLBACK:", selected);
             setSelectedRows(selected);
         } else {
-            // console.log("❌ No rows selected via CALLBACK");
             setSelectedRows([]);
         }
     }, []);

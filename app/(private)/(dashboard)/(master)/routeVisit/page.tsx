@@ -80,7 +80,6 @@ export default function RouteVisits() {
         };
 
         const listRes = await getRouteVisitListBasedOnHeader(params);
-        // console.log("Route Visits", listRes);
 
         // setLoading(false);
 

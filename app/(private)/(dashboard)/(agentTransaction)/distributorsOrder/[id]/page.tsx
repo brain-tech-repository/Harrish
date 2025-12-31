@@ -900,7 +900,6 @@ export default function OrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      // console.log("Submitting payload:", payload);
       const res = await addAgentOrder(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create order", "error");
@@ -1030,11 +1029,8 @@ export default function OrderAddEditPage() {
             //   if (errors && Object.keys(errors).length > 0) {
             //     console.warn("Formik validation errors:", errors);
             //   }
-            //   console.log("Current Formik errors:", errors);
-            //   console.log("Current Formik errors:", touched.comment);
-            //   console.log(values, "values")
+           
             // }, [errors]);
-            // console.log(values, "values");
 
             return (
               <>

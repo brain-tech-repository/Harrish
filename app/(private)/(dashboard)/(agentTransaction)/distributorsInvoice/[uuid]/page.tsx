@@ -617,7 +617,6 @@ export default function InvoiceddEditPage() {
     }, [form.warehouse, itemsOptions, suppressItemSearch, fetchWarehouseItems]);
 
     const handleDeliverySearch = useCallback(async (warehouseId?: string) => {
-        // console.log('Searching deliveries for warehouse:', warehouseId || form.warehouse);
         if (!warehouseId && !form.warehouse) return;
         try {
             setSkeleton((prev) => ({ ...prev, customer: true }));
@@ -1071,7 +1070,6 @@ export default function InvoiceddEditPage() {
                                 initialValue={form.warehouse_name}
                                 onSearch={(searchText) => handleWarehouseSearch(searchText)}
                                 onSelect={(option) => {
-                                    console.log(option)
                                     setForm(prev => ({
                                         ...prev,
                                         warehouse: option.value,

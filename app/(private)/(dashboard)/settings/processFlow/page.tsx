@@ -267,7 +267,6 @@ const ProcessFlow = () => {
     index?: number,
     cardWrapperRef?: React.Ref<HTMLDivElement>
   ) => {
-    console.log("orderProcessingCards",orderProcessingCards,index);
     const getStatusColor = (status?: string) => {
       switch (status) {
         case "Completed":

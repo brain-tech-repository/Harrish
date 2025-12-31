@@ -80,7 +80,6 @@ export function usePromotionData({
               percentage: String(pd.percentage || ""),
               idx: String(Math.random())
             }));
-            console.log(mappedPercentageDiscounts,"mappedPercentageDiscounts")
             setPercentageDiscounts(mappedPercentageDiscounts);
           }
 

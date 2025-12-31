@@ -159,7 +159,6 @@ export default function WorkflowTable() {
 
         // WORKFLOW_DATA.slice(start, end);
        const pageData:any =  await workFlowList()
-       console.log(pageData,"pageData")
         return {
             data: pageData.data,
             currentPage: 1,

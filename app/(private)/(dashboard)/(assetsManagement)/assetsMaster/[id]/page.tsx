@@ -99,7 +99,6 @@ export default function AddOrEditChiller() {
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams();
-  console.log(params)
   const { setLoading } = useLoading();
 
   const [assetsStatusOptions, setAssetsStatusOptions] = useState<
@@ -107,7 +106,6 @@ export default function AddOrEditChiller() {
   >([]);
 
   const isEditMode = params?.id && params?.id !== "add";
-  console.log(isEditMode)
   const chillerId = isEditMode ? String(params?.id) : null;
 
   /* ----------------------------------------------------

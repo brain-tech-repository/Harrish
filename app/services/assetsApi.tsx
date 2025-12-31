@@ -331,7 +331,6 @@ export const chillerRequestGlobalSearch = async (params: Params) => {
 export const getChillerRequestById = async (uuid: string) => {
   try {
     const res = await API.get(`/api/assets/chiller-request/${uuid}`);
-    console.log(res);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -429,7 +428,6 @@ export const iroList = async (params: Params) => {
 export const iroViewList = async (id: string) => {
   try {
     const res = await API.get(`/api/assets/iro/${id}`);
-    console.log(res, "ABCD");
     return res.data?.count?.headers;
   } catch (error: unknown) {
     return handleError(error);
@@ -553,7 +551,6 @@ export const getWarehouseChillers = async (btrId: string, params = {}) => {
       params,
     }
   );
-  // console.log(res)
   return res.data;
 };
 

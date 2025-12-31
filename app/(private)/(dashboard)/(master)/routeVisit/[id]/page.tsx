@@ -148,7 +148,6 @@ export default function AddEditRouteVisit() {
     loadingMore: false,
     hasMore: false
   });
-  console.log(customerPagination, "customerPagination")
   const [customerSchedules, setCustomerSchedules] = useState<CustomerSchedules>(
     {}
   );
@@ -277,9 +276,9 @@ export default function AddEditRouteVisit() {
       setCompanyOptions(
         Array.isArray(companies)
           ? companies.map((c: Company) => ({
-              value: String(c.id),
-              label: c.company_name || c.name || "",
-            }))
+            value: String(c.id),
+            label: c.company_name || c.name || "",
+          }))
           : []
       );
       setSkeleton({ ...skeleton, company: false });
@@ -308,7 +307,6 @@ export default function AddEditRouteVisit() {
     setLoading(true);
     try {
       const res = await getRouteVisitDetails(uuid);
-      console.log("API Response for edit:", res);
 
       if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
         const list = res.data;
@@ -327,7 +325,7 @@ export default function AddEditRouteVisit() {
         // Step 1: Populate form from the first item
         setForm({
           salesman_type: firstItem.customer_type || "1",
-          merchandiser: firstItem.merchandiser_id ? String(firstItem.merchandiser_id) : "",
+          merchandiser: firstItem?.merchandiser?.id ? String(firstItem.merchandiser?.id) : "",
           region: firstItem.region?.map((r: any) => String(r.id)) || [],
           area: firstItem.area?.map((a: any) => String(a.id)) || [],
           warehouse: firstItem.warehouse?.map((w: any) => String(w.id)) || [],
@@ -383,29 +381,6 @@ export default function AddEditRouteVisit() {
     try {
       let res: ApiResponse<Customer[]> | null = null;
 
-      // if (USE_total_DATA) {
-      //   // Simulate network delay
-      //   await new Promise(resolve => setTimeout(resolve, 800));
-
-      //   const last_page = 10; // Test with 10 current_pages
-      //   const itemsPerPage = 50;
-
-      //   const totalData = Array.from({ length: itemsPerPage }, (_, i) => ({
-      //     id: (current_page - 1) * itemsPerPage + i + 5000, // Offset IDs to avoid conflicts
-      //     name: `Test Customer ${(current_page - 1) * itemsPerPage + i + 1} (Page ${current_page})`,
-      //     owner_name: `Owner ${(current_page - 1) * itemsPerPage + i + 1}`,
-      //     osa_code: `CODE-${current_page}-${i + 1}`
-      //   }));
-
-      //   res = {
-      //     data: totalData as any,
-      //     pagination: {
-      //       current_page: current_page,
-      //       last_page: last_page,
-      //       limit: itemsPerPage
-      //     }
-      //   };
-      // } else {
       const salesmanType = form.salesman_type;
       const merchId = form.merchandiser;
       const route_id = Array.isArray(form.route) && form.route.length > 0 ? form.route.join(",") : undefined;
@@ -421,7 +396,6 @@ export default function AddEditRouteVisit() {
       } else if (salesmanType && route_id) {
         res = await getAgentCusByRoute(String(route_id), { page: String(current_page), limit: "50" });
       }
-      // }
 
       if (res) {
         const newData = (Array.isArray(res) ? res : (res.data || [])) as Customer[];
@@ -437,7 +411,7 @@ export default function AddEditRouteVisit() {
       }
     } catch (error: any) {
       console.error("Error fetching customers:", error);
-      
+
       // Handle 404 as "No Data Found"
       if (error?.response?.status === 404) {
         if (!isAppend) {
@@ -623,11 +597,9 @@ export default function AddEditRouteVisit() {
 
     fetchRoutes();
   }, [form.warehouse, isEditMode]);
-  console.log(skeleton, "skelliton")
   useEffect(() => {
     loadDropdownData();
     if (isEditMode && visitId) {
-      console.log("Loading edit data for ID:", visitId);
       loadVisitData(visitId);
     }
   }, [isEditMode, visitId]);
@@ -635,7 +607,6 @@ export default function AddEditRouteVisit() {
   // ✅ Multi-select handler
   const handleMultiSelectChange = (field: string, value: string[]) => {
     if (field == "salesman_type") {
-      console.log(value);
       setSelectedCustomerType(value[0] || "");
       setForm((prev) => ({ ...prev, [field]: value[0] || "" }));
     } else if (field === "merchandiser") {
@@ -719,13 +690,10 @@ export default function AddEditRouteVisit() {
         }
       }
 
-      console.log("Form data:", form);
-      console.log("Raw customerSchedules:", customerSchedules);
-
+     
       // ✅ Convert your raw object to expected format - customerSchedules is already in Record format
       const formattedSchedules = convertRowStatesToSchedules(customerSchedules);
 
-      console.log("✅ Converted customer schedules:", formattedSchedules);
 
       // Validate if at least one customer has days
       if (formattedSchedules.length === 0) {
@@ -758,14 +726,11 @@ export default function AddEditRouteVisit() {
         payload.merchandiser_id = Number(merchId);
       }
 
-      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
       let res: ApiResponse<Record<string, unknown>>;
       if (isEditMode && headerUuid) {
-        console.log("Updating existing route visit with header UUID:", headerUuid);
         res = await updateRouteVisitDetails(headerUuid, payload);
       } else {
-        console.log("Creating new route visit...");
         res = await saveRouteVisit(payload);
       }
 
@@ -842,6 +807,7 @@ export default function AddEditRouteVisit() {
               <div>
                 <InputFields
                   required
+                  disabled={isEditMode}
                   label="Customer Type"
                   value={form.salesman_type}
                   onChange={(e) =>

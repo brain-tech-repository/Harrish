@@ -43,7 +43,6 @@ const id = Array.isArray(rawId) ? rawId[0] : rawId;
           return;
         }
 
-        console.log("API Response:", res.data);
 
         // Map API response to form values
         setRegion({

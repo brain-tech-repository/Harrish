@@ -94,7 +94,6 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
     const validExtra = extraOptions.filter(eo => !base.some(b => b.value === eo.value));
     return [...base, ...validExtra];
   }, [customerDropdownMap, extraOptions, keyValue, keyCombo.Customer]);
-  console.log(allCustomerOptions,"allCustomerOptions",keyValue[keyCombo.Customer])
 
   const hasCustomerData = extraOptions.length > 0 || (keyValue[keyCombo.Customer] && keyValue[keyCombo.Customer].length > 0);
 

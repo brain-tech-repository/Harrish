@@ -41,7 +41,6 @@ useEffect(() => {
         return;
       }
 
-      console.log("API Response:", res.data);
 
       // Map API response to form values
       setRouteType({

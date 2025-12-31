@@ -138,7 +138,6 @@ export default function AddEditItem() {
     ensureUomLoaded();
     if(isEditMode){
     ensureAllItemCategoryLoaded();
-    // console.log("ensured all item category loaded",itemCategoryAllOptions);
     }
   }, [ensureItemCategoryLoaded, ensureUomLoaded,ensureAllItemCategoryLoaded]);
 
@@ -402,7 +401,6 @@ export default function AddEditItem() {
       })();
     }
   }, [isEditMode, itemId]);
-  // console.log(uomList, "uomlist")
 
   const validateCurrentStep = async (step: number) => {
     try {
@@ -490,7 +488,6 @@ export default function AddEditItem() {
       const itemId = Array.isArray(params?.id) ? params?.id[0] : params?.id ?? "";
 
       const reqType: "json" | "form-data" = values.itemImage instanceof File ? "form-data" : "json";
-      // console.log("Submitting payload with request type:", reqType);
       const res = isEditMode
         ? await editItem(itemId, payload, reqType)
         : await addItem(payload, reqType);
@@ -975,7 +972,6 @@ export default function AddEditItem() {
               <h2 className="text-xl font-bold mb-4">UOM List</h2>
               <Table
                 data={uomList.map((row, idx) => {
-                  // console.log(row, "row")
                   return ({ ...row, idx: idx.toString() })
                 })}
                 config={{
@@ -1060,9 +1056,6 @@ export default function AddEditItem() {
             isSubmitting,
             submitCount,
           }) => {
-            // console.log("Formik errors:", errors);
-            // console.log("Formik Values:", values);
-            // console.log("Formik Values:", errors);
             const handleNextStep = async () => {
               try {
                 const schema = StepSchemas[currentStep - 1];

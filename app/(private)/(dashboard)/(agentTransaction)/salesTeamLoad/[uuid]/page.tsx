@@ -41,11 +41,11 @@ export default function AddEditSalesmanLoad() {
     ensureSalesmanTypeLoaded();
     ensureWarehouseLoaded();
   }, [ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded]);
-  // console.log(useAllDropdownListData())
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
   const params = useParams();
+  const [nestedLoading, setNestedLoading] = useState(false);
   const loadUUID = params?.uuid as string | undefined;
   const isEditMode = loadUUID !== undefined && loadUUID !== "add";
 
@@ -149,7 +149,7 @@ export default function AddEditSalesmanLoad() {
     if (form.warehouse) {
       (async () => {
         try {
-          setLoading(true);
+          setNestedLoading(true);
 
           // Fetch warehouse stock details
           const stockRes = await warehouseStockTopOrders(form.warehouse);
@@ -209,11 +209,11 @@ export default function AddEditSalesmanLoad() {
           // console.error("❌ Error fetching warehouse stock:", error);
           showSnackbar("Failed to fetch items for the selected warehouse", "error");
         } finally {
-          setLoading(false);
+          setNestedLoading(false);
         }
       })();
     }
-  }, [form.warehouse, setLoading, showSnackbar]);
+  }, [form.warehouse, setNestedLoading, showSnackbar]);
 
 
 
@@ -399,7 +399,6 @@ export default function AddEditSalesmanLoad() {
       setSubmitting(true);
 
       let validItems = itemData.filter((i) => (i.cse_qty && Number(i.cse_qty) > 0) || (i.pcs_qty && Number(i.pcs_qty) > 0));
-      console.log("Valid Items:", validItems);
 
       if (validItems.length === 0) {
         showSnackbar("Please add at least one item with quantity", "error");
@@ -424,7 +423,6 @@ export default function AddEditSalesmanLoad() {
           return [];
         });
       });
-      console.log("Details Payload:", details);
 
       const payload: any = {
         salesman_type: Number(form.salesman_type),
@@ -623,7 +621,6 @@ export default function AddEditSalesmanLoad() {
             onChange={(e) => handleChange("salesman", e.target.value)}
           />
         </div>
-        {/* --- Table --- */}
         <div>
         </div>
         <Table
@@ -631,7 +628,7 @@ export default function AddEditSalesmanLoad() {
           data={itemData.map((row, idx) => ({ ...row, idx: idx.toString() }))}
           config={{
             table: { height: 500 },
-            showNestedLoading: false,
+            showNestedLoading: nestedLoading,
             columns: [
               {
                 key: "item",
