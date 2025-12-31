@@ -22,6 +22,7 @@ import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import { formatDateFlexible } from "@/app/utils/formatDate";
 
 interface DropdownItem {
     icon: string;
@@ -41,8 +42,20 @@ const columns = [
     // { key: "code", label: "Promotion Code" },
     { key: "promotion_name", label: "Name" },
     // { key: "description", label: "Description" },
-    { key: "from_date", label: "From Date" },
-    { key: "to_date", label: "To Date" },
+    { 
+        key: "from_date", 
+        label: "From Date",
+        render: (row: TableDataType) => {
+            return <span>{formatDateFlexible(row.from_date as string, { preset: "DD MMM YYYY" })}</span>;
+        }
+    },
+    { 
+        key: "to_date", 
+        label: "To Date",
+        render: (row: TableDataType) => {
+            return <span>{formatDateFlexible(row.to_date as string, { preset: "DD MMM YYYY" })}</span>;
+        }
+    },
 
     {
         key: "status",
