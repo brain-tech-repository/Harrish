@@ -724,8 +724,6 @@ export default function DeliveryAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      // console.log(payload)
-      // console.log("Submitting payload:", payload);
       const res = await createDelivery(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Delivery", "error");
@@ -953,9 +951,7 @@ export default function DeliveryAddEditPage() {
             //   if (errors && Object.keys(errors).length > 0) {
             //     console.warn("Formik validation errors:", errors);
             //   }
-            //   console.log("Current Formik errors:", errors);
-            //   console.log("Current Formik errors:", touched.comment);
-            //   console.log(values, "values")
+          
             // }, [errors]);
 
             return (
@@ -1224,7 +1220,6 @@ export default function DeliveryAddEditPage() {
                             : undefined;
                           const selectedOpt = matchedOption ?? fallbackOption;
                           const initialLabel = selectedOpt?.label ?? "";
-                          // console.log(row);
                           return (
                             <div>
                               <InputFields

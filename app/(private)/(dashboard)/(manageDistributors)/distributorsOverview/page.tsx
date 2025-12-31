@@ -146,8 +146,6 @@ const OverallPerformance: React.FC = () => {
       const topOrderRes = await warehouseStockTopOrders(id)
       //  const top5Orders = await warehouseStockTopOrders(id)
 
-      console.log(warehouseOptions, "hii")
-      console.log(topOrderRes, "hii")
 
       setStockData(res)
       setStockLowQty(lowCostRes)

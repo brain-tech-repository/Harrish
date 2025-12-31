@@ -131,6 +131,7 @@ export type configType = {
     dragableColumn?: boolean;
     floatingInfoBar?: {
         showByDefault?: boolean;
+       
         showSelectedRow?: boolean;
         rowSelectionOnClick?: (data: TableDataType[], selectedRow?: number[], selectedColumns?: number[]) => void;
         buttons?: {
@@ -152,7 +153,7 @@ export type configType = {
         sticky?: string;
         isSortable?: boolean;
         showByDefault?: boolean;
-        filter?: {
+         filter?: {
             isFilterable?: boolean;
             width?: number | string;
             height?: number | string;
@@ -519,7 +520,6 @@ function TableHeader() {
             );
             const resolvedResult = result instanceof Promise ? await result : result;
             const { data, pageSize, total, currentPage } = resolvedResult;
-            // console.log(resolvedResult);
             setTableDetails({
                 data,
                 total: total || 0,
@@ -1082,10 +1082,8 @@ function FilterTableHeader({
     useEffect(() => {
         if (filterConfig?.options) {
             setFilteredOptions(filterConfig.options);
-            // console.log('FilterTableHeader options:', filterConfig.options);
         } else {
             setFilteredOptions([]);
-            // console.log('FilterTableHeader options are empty or undefined');
         }
     }, [filterConfig?.options]);
 
@@ -1634,11 +1632,7 @@ function FilterBy() {
         if (config.api?.filterBy) {
             try {
                 setNestedLoading(true);
-                // convert array filter values into comma-separated strings for API
-                // Use `applyWhen` predicate (if provided on a FilterField) to
-                // decide whether to include a key in the payload. This makes the
-                // filter behavior reusable: e.g. date start/end can both be
-                // required before applying either.
+                
                 const payloadForApi: Record<string, string | number | null> = {};
                 const fields = config.header?.filterByFields || [];
                 Object.keys(filters || {}).forEach((k) => {

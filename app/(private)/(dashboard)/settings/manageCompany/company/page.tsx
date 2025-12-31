@@ -117,7 +117,6 @@ const CompanyPage = () => {
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
             });
-            console.log(result);
             setLoading(false);
             if (result.error) {
                 showSnackbar(result.data.message, "error");

@@ -260,7 +260,6 @@ export default function AddCompanyCustomer() {
       const res = await getCompanyCustomerById(uuid);
 
       const data = res.data;
-      console.log("Fetched data:", data);
 
 
 

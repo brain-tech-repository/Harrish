@@ -53,7 +53,6 @@ export default function AddOrder() {
       await validationSchema.validate(formData, { abortEarly: false });
       setSubmitting(true);
 
-      console.log("Submitted Data:", formData);
       showSnackbar("Form submitted successfully!", "success");
 
       // reset form after submit
@@ -70,7 +69,6 @@ export default function AddOrder() {
         err.inner.forEach((e) => {
           if (e.path) formErrors[e.path] = e.message;
         });
-        console.log(formErrors);
         setErrors(formErrors);
         showSnackbar("All fields are required", "error");
       } else {

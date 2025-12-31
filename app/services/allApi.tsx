@@ -1823,7 +1823,6 @@ export const brandingList = async (params?: Params) => {
     const res = await API.get(`/api/settings/assets-branding/list`, {
       params: params,
     });
-    console.log(res, "abs")
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

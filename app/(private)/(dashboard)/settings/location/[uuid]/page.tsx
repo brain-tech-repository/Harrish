@@ -50,7 +50,6 @@ export default function AddEditLocation() {
       (async () => {
         try {
           const res = await LocationById(String(params?.uuid));
-          console.log("Location fetch response:", res);
           if (res?.data) {
             setInitialValues({
               code: res.data.code || "",
@@ -72,7 +71,6 @@ export default function AddEditLocation() {
       (async () => {
         try {
           const res = await genearateCode({ model_name: "location" });
-          console.log("Code generation response:", res);
           if (res?.code) {
             setCode(res.code);
             setInitialValues((prev) => ({ ...prev, code: res.code }));

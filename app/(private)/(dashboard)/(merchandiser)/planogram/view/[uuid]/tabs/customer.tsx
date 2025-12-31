@@ -48,7 +48,6 @@ export const CustomerData = () => {
       try {
         const res = await getPlanogramById(String(uuid));
         const data = res?.data?.data || res?.data;
-        console.log("Planogram Data:", data);
 
         if (!data) {
           showSnackbar("Unable to fetch Planogram details", "error");

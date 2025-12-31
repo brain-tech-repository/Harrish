@@ -201,7 +201,6 @@ export default function CustomerInvoicePage() {
             confirmPassword: "",
         },
         onSubmit: (values) => {
-            console.log(values);
         },
     });
     const [showSidebar, setShowSidebar] = useState(false);
@@ -448,17 +447,13 @@ export default function CustomerInvoicePage() {
                             const ids = selectedRow
                                 ?.map((index) => {
                                     const row = data[index];
-                                    console.log("row", row)
-                                    console.log(hasChillerRequest(row))
                                     // if (hasChillerRequest(row)) {
-                                    //     console.log(row.id)
                                     return row.id;
                                     // }
                                     // return null;
                                 })
                                 .filter((id): id is number => id !== null);
 
-                            console.log(ids);
 
                             return [
                                 <SidebarBtn
@@ -471,7 +466,6 @@ export default function CustomerInvoicePage() {
                                         }
                                         try {
                                             const res = await addAcf({ crf_id: ids.join(",") });
-                                            console.log(res);
                                             if (res.error) {
                                                 showSnackbar(res.message || "Failed to add ACF", "error");
                                             } else {
@@ -501,7 +495,6 @@ export default function CustomerInvoicePage() {
                                 label: "Selected Rows",
                                 onClick: (data, selectedRow) => {
                                     const rows = selectedRow?.map(i => data[i]) || [];
-                                    console.log('Selected rows:', rows);
                                     setSelectedRowsData(rows);
                                     setSidebarRefreshKey(k => k + 1);
                                     setShowSidebar(true);

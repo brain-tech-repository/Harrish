@@ -50,7 +50,6 @@ export default function AddEditBrand() {
       (async () => {
         try {
           const res = await BrandById(String(params?.uuid));
-          console.log("Brand fetch response:", res);
           if (res?.data) {
             setInitialValues({
               osa_code: res.data.osa_code || "",
@@ -75,7 +74,6 @@ export default function AddEditBrand() {
         (async () => {
           try {
             const res = await genearateCode({ model_name: "brand" });
-            console.log("Code generation response:", res);
             if (res?.code) {
               setCode(res.code);
               setInitialValues((prev) => ({ ...prev, osa_code: res.code }));

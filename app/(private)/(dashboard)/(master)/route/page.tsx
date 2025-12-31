@@ -27,7 +27,6 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 export default function Route() {
     const { can, permissions } = usePagePermissions();
     const { warehouseAllOptions , ensureWarehouseAllLoaded} = useAllDropdownListData();
-    console.log(permissions)
   // Load dropdown data
   useEffect(() => {
     ensureWarehouseAllLoaded();

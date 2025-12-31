@@ -88,7 +88,6 @@ interface Survey {
 
 export default function Page() {
   const params = useParams();
-  console.log('Route params:', params); // Debug log
   const uuid = params.uuid;
   const { showSnackbar } = useSnackbar();
   const router = useRouter();

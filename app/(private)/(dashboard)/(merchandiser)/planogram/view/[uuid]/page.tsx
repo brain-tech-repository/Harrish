@@ -71,7 +71,6 @@ export default function Page() {
       setLoading(true);
       try {
         const res = await getPlanogramById(uuid.toString());
-        console.log("API Response:", res); // ✅ Now you will see the console
 
         // Handle response correctly
         const data = res?.data?.data || res?.data;

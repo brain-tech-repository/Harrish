@@ -69,19 +69,14 @@ export default function AddSalesmanLoadUI() {
 
         const fetchData = async () => {
             try {
-                console.log("Fetching reconciliation with:", {
-                    salesman_id: form.salesman,
-                    reconsile_date: form.reconsile_date,
-                });
+               
                 const res = await salesTeamRecontionOrdersTop({
                     salesman_id: Number(form.salesman),
                     reconsile_date: form.reconsile_date,
                 });
-                console.log("Reconciliation Response:", res);
 
                 // Relaxed check: accept if data array is present
                 const dataList = Array.isArray(res?.data) ? res.data : [];
-                console.log("Extracted Data List:", dataList);
 
                 if (dataList.length > 0) {
                     const newItems = dataList.map((item: any) => ({
@@ -93,11 +88,9 @@ export default function AddSalesmanLoadUI() {
                         invoice_qty: item.invoice_qty,
                         // Maintain other required TableDataType fields if any
                     }));
-                    console.log("Setting item items:", newItems);
                     setItemData(newItems);
                 } else {
                     // Handle Empty Data
-                    console.log("No data found for this selection (List empty)");
                     setItemData([]);
                 }
 
@@ -142,13 +135,11 @@ export default function AddSalesmanLoadUI() {
     /* -------- HANDLERS -------- */
 
     const handleChange = (field: string, value: any) => {
-        console.log(`handleChange for ${field}:`, value);
         // Handle various input event types or direct values
         let val = value;
         if (value && typeof value === 'object' && 'target' in value) {
             val = value.target.value;
         }
-        console.log(`handleChange setForm ${field}:`, val);
         setForm((prev) => ({ ...prev, [field]: val }));
     };
 
@@ -202,9 +193,7 @@ export default function AddSalesmanLoadUI() {
                 })),
             };
 
-            // console.log("Submitting payload:", payload);
             const response = await addSalesTeamRecontionOrders(payload);
-            // console.log("API Response:", response);
 
             if (response?.status === "success" || response?.success) {
                 showSnackbar("Sales Team Reconciliation created successfully!", "success");
@@ -395,9 +384,7 @@ export default function AddSalesmanLoadUI() {
                                             salesman_id: Number(form.salesman),
                                             reconsile_date: form.reconsile_date
                                         };
-                                        console.log("Blocking salesman with payload:", blockPayload);
                                         const blockResponse = await blockSalesTeamRecontionOrders(blockPayload);
-                                        console.log("Block API Response:", blockResponse);
 
                                         if (blockResponse?.status === "success" || blockResponse?.success) {
                                             showSnackbar("Salesman blocked successfully!", "success");

@@ -303,10 +303,8 @@ export default function AddEditRole() {
     try {
       if (refresh) {
         await refresh({ force: true });
-        console.log("Permissions refreshed after role change");
       } else {
         await preload();
-        console.log("Permissions preloaded after role change");
       } 
     } catch (cacheErr) {
       console.error("Failed to refresh permissions after role change:", cacheErr);
@@ -430,8 +428,6 @@ export default function AddEditRole() {
                           } catch (e) { }
                           setRoleTableData(menus || []);
                           setTablePermissionIds(permissionIds || []);
-                          console.log("Updated menus from table:", menus);
-                          console.log("Updated permission IDs from table:", permissionIds);
                         }, 0);
                       }}
                     />

@@ -262,7 +262,6 @@ export default function CustomerInvoicePage() {
                 onClick: (row: TableDataType) => {
                   setDrawerOpen(true);
                   setSelectedItemId(row.id as string);
-                  console.log("Selected Item ID:", row.id);
                 }
               },
             ],
@@ -310,7 +309,6 @@ export default function CustomerInvoicePage() {
                                 onClick: (row: TableDataType) => {
                                     setDrawerDetailOpen(true);
                                     setSelectedItemIdDetail(row.details);
-                                    console.log("Selected Item ID Details:", row.details);
                                 }
                             },
                             {

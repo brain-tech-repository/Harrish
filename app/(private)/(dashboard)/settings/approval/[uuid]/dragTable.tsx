@@ -122,7 +122,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
             return alert("Please select target type and role/customer!");
 
         if (editingId) {
-            console.log(editingId, "editingId", editingIndex);
             // Update the step at the editing index
             const updatedSteps = [...steps];
             updatedSteps[editingIndex] = {
@@ -162,11 +161,9 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     };
 
     const handleEdit = (id: string, index: number) => {
-        console.log(id, "editId");
         // Find step by either id or step_id
         const step = steps.find((s) => s.id === id || s.step_id === id);
         if (step) {
-            console.log("Found step:", step);
             // normalize formType to array and keep boolean flags
             setForm({
                 ...step,
@@ -188,7 +185,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
-        console.log("hii")
         const { active, over } = event;
         if (active.id !== over?.id) {
             setSteps((items) => {
@@ -302,7 +298,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                                     onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                                         const val = e.target.value;
                                         const selected = roleListData.find((r) => r.value === val) ?? null;
-                                        console.log(e.target.value, "mlk")
 
                                         setForm({ ...form, role_id: val, selectedRole: e.target.value });
                                     }}
@@ -322,7 +317,6 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                                     onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
                                         const val = e.target.value;
                                         const selected = usersData.find((u) => u.value === val) ?? null; // Changed to use props
-                                        console.log(e.target.value, "mlk")
                                         setForm({ ...form, customer_id: val, selectedCustomer: e.target.value });
                                     }}
                                 />

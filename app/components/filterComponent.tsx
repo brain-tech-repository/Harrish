@@ -237,7 +237,6 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     fetchRoutes();
   }, [warehouseVal.join(",")]);
 
-  // console.log("FilterComponent payload:", payload);
 
   // Helper to check if a filter should be shown
   const showFilter = (key: string) => {

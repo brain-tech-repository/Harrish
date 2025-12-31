@@ -384,7 +384,6 @@ export default function PurchaseOrderAddEditPage() {
         // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
         const stockRes = await returnWarehouseStock({warehouse_id: warehouseId});
 
-        console.log(stockRes.data)
   
         // setItemsWithUOM(itemsUOMMap);
         setOrderData(stockRes.data);
@@ -478,7 +477,6 @@ export default function PurchaseOrderAddEditPage() {
         return;
       } else {
         const selectedOrder = orderData.find((order: FormData) => order.item_id.toString() === value);
-        // console.log(selectedOrder);
         item.item_id = selectedOrder ? String(selectedOrder.item_id || value) : value;
         item.UOM = selectedOrder?.uoms?.map(uom => ({ 
           label: uom.name, 
@@ -488,8 +486,6 @@ export default function PurchaseOrderAddEditPage() {
           //   : "-",
           upc: uom.upc
         })) || [];
-          console.log(item.UOM, selectedOrder);
-        console.log(item.UOM, selectedOrder)
         item.uom_id = selectedOrder?.uoms?.[0]?.uom_id ? String(selectedOrder.uoms[0].uom_id) : "";
         // item.Price = item.UOM[0]?.price || "0";
         // availableStock(item.item_id, item.uom_id);
@@ -746,7 +742,6 @@ export default function PurchaseOrderAddEditPage() {
     try {
       // validate item rows separately (they live in local state)
       const itemsSchema = Yup.array().of(itemRowSchema);
-      // console.log("Validating rows", itemData);
       try {
         await itemsSchema.validate(itemData, { abortEarly: false });
       } catch (itemErr: any) {
@@ -770,7 +765,6 @@ export default function PurchaseOrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      // console.log("Submitting payload:", payload);
       const res = await returnCreate(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Return", "error");
@@ -913,9 +907,7 @@ export default function PurchaseOrderAddEditPage() {
             //   if (errors && Object.keys(errors).length > 0) {
             //     console.warn("Formik validation errors:", errors);
             //   }
-            //   console.log("Current Formik errors:", errors);
-            //   console.log("Current Formik errors:", touched.comment);
-            //   console.log(values, "values")
+       
             // }, [errors]);
 
             return (

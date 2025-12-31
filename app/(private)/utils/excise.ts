@@ -38,7 +38,6 @@ const formulas: Record<number, FormulaFn> = {
 		const temp_excise = (price / factor) * rate;
 		const vol = isBase ? safeNum(item.base_uom_vol) : safeNum(item.alter_uom_vol);
 		const temp_excise2 = vol * 250;
-        console.log("Excise calc for cat 8:", { temp_excise, temp_excise2, price, vol, isBase });
 		return { temp_excise, temp_excise2 };
 	},
 	3: ({ item, uom, itemPrice }) => {
@@ -82,13 +81,10 @@ export function getExcise({
 	itemPrice?: number | null | '';
 	orderType?: number;
 }): number {
-	console.log("Calculating excise for item:", item, "uom:", uom, "quantity:", quantity, "itemPrice:", itemPrice, "orderType:", orderType);
 	let excise = 0;
 	if (!item) return 0;
 	const hasExcies = item.excies === 1 || item.excies === true || safeNum(item.excies) === 1;
-	console.log("Item has excies:", hasExcies, item.excies);
 	if (!hasExcies) return 0;
-	console.log("is in formulas");
 
 	const cat = safeNum(item.item_category);
 	let temp_excise = 0;

@@ -106,7 +106,7 @@ export default function Pricing() {
                 setLoading(true);
 
                 const result = await pricingDetailGlobalSearch({
-                    search: searchQuery,
+                    query: searchQuery,
                     per_page: pageSize.toString(),
                 });
 

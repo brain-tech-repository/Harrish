@@ -707,8 +707,6 @@ export default function AddEditCompany() {
           isSubmitting,
           submitCount,
         }) => {
-          // console.log("Formik errors:", errors);
-          console.log("Formik Values:", values);
           const handleNextStep = async () => {
             try {
               const schema = stepSchemas[currentStep - 1];

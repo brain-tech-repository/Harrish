@@ -804,7 +804,6 @@ export default function InputFields({
                             const v = (e.target as HTMLInputElement).value;
                             setSearch(v);
                             onSearch(v);
-                            // console.log("Search input changed:", v);
                             if (!dropdownOpen) {
                               showSelectedOptionsDropdown(false);
                               setDropdownOpen(true);
@@ -952,7 +951,7 @@ export default function InputFields({
                             setSearch(e.target.value);
                             onSearch(
                               e.target.value
-                            ); /*console.log("Search input changed:", e.target.value);*/
+                            );
                           }}
                           className="w-full border-none outline-none"
                           disabled={disabled}
@@ -1155,7 +1154,6 @@ export default function InputFields({
                           const v = (e.target as HTMLInputElement).value;
                           setSearch(v);
                           onSearch(v);
-                          console.log("Search input changed:", v);
                           if (!dropdownOpen) setDropdownOpen(true);
                           if (v === "") {
                             // user cleared the input -> clear selected value for single-select
@@ -1248,7 +1246,7 @@ export default function InputFields({
                           setSearch(e.target.value);
                           onSearch(
                             e.target.value
-                          ); /*console.log("Search input changed:", e.target.value);*/
+                          );
                         }}
                         className="w-full border-none outline-none"
                         disabled={disabled}

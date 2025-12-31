@@ -233,7 +233,6 @@ export default function CustomerDetails() {
             pageNo: number = 1,
             pageSize: number = 50
         ): Promise<searchReturnType> => {
-            console.log("api")
 
             const result = await getAgentCustomerByReturnId(uuid, { from_date: "", to_date: "" });
             if (result.error) {
@@ -321,7 +320,6 @@ export default function CustomerDetails() {
 
     const exportReturnFile = async (uuid: string, format: string) => {
         try {
-            console.log(uuid, "uuid")
             const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
 
             if (response && typeof response === "object" && response.download_url) {
@@ -337,7 +335,6 @@ export default function CustomerDetails() {
     };
     const allInvoices = async (uuid: string, format: string) => {
         try {
-            console.log(uuid, "uuid")
             const response = await exportAllInvoices(uuid, { from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
 
             if (response && typeof response === "object" && response.download_url) {

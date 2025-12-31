@@ -38,8 +38,6 @@ export default function WarehouseDetails({ values, errors, touched, handleChange
     const [isOpen, setIsOpen] = React.useState(false);
     const [codeMode, setCodeMode] = React.useState<'auto' | 'manual'>('auto');
     const [prefix, setPrefix] = React.useState('');
-    console.log("Values", values);
-    console.log("Values", values.warehouse_name);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

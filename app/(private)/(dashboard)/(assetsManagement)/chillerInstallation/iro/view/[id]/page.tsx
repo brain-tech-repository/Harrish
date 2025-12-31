@@ -400,7 +400,6 @@ export default function CustomerInvoicePage() {
                         //                 }
                         //                 try {
                         //                     const res = await addAcf({ crf_id: ids.join(",") });
-                        //                     console.log(res);
                         //                     if (res.error) {
                         //                         showSnackbar(res.message || "Failed to add ACF", "error");
                         //                     } else {
@@ -430,7 +429,6 @@ export default function CustomerInvoicePage() {
                         //                 return null;
                         //             })
                         //             .filter((id): id is number => id !== null);
-                        //         console.log("Selected Rows:", ids);
                         //     }
                         // },
                     },

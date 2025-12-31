@@ -277,7 +277,6 @@ APIFormData.interceptors.request.use(
 );
 
 export default function AddCompanyWithStepper() {
-  console.log("ashdfvazbfavhj")
   const [warehouseOptions, setWarehouseOptions] = useState<DropdownOption[]>(
     []
   );
@@ -295,7 +294,6 @@ export default function AddCompanyWithStepper() {
 
   const params = useParams();
   const uuid = params?.id;
-  console.log("UUID from params:", params);
 
   const steps: StepperStep[] = [
     { id: 1, label: "Outlet Information" },

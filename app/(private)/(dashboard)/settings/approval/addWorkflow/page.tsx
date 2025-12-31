@@ -282,7 +282,6 @@ export default function AddApprovalFlow() {
         // Validate all steps and the full form before submitting
         const step1Valid = await validateCurrentStep(1);
         const step2Valid = await validateCurrentStep(2);
-            // console.log("Submitting Data:", { ...form, steps: stepsProccess });
             const newFormData:any = { ...form, steps: stepsProccess }
            const result:any = convertToNewFlow(newFormData )
         // if (!step1Valid || !step2Valid) {
@@ -294,7 +293,6 @@ export default function AddApprovalFlow() {
             // Full form schema validation
             // await ApprovalSchema.validate(form, { abortEarly: false });
             setLoading(true);
-            console.log("Submitting Data:", result);
             const resultData = await approvalAdd(result)
 
   
@@ -314,7 +312,6 @@ export default function AddApprovalFlow() {
         }
         catch(err)
         {
-            console.log(err)
         }
     };
    const fetchSubmenuList = async () => {     
@@ -324,7 +321,6 @@ export default function AddApprovalFlow() {
        res.data.map((item:{id:number,name:string}) => {
         subMenuListDta.push({ value: item.id.toString(), label: item.name });
        });
-       console.log("submenu list",res.data);
        setModulesList( subMenuListDta );
     }  
     catch(err){
@@ -336,7 +332,6 @@ export default function AddApprovalFlow() {
     try{
 
                const res = await roleList();
-               console.log("role list",res.data);
          const roleListDta:{value:string,label:string}[]= []
          res.data.map((item:{id:number,name:string}) => {  
         roleListDta.push({ value: item.id.toString(), label: item.name });
@@ -356,7 +351,6 @@ export default function AddApprovalFlow() {
     try{
 
                const res = await userList();
-               console.log("role list",res.data);
          const usersDataList:{value:string,label:string}[]= []
          res.data.map((item:{id:number,name:string}) => {  
         usersDataList.push({ value: item.id.toString(), label: item.name });

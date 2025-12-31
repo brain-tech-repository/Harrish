@@ -137,7 +137,6 @@ const DiscountPage = () => {
                 const selectedItem = data.filter((_, index) =>
                   selectedRow.includes(index)
                 );
-                // console.log(data, selectedRow)
               
                 const failedUpdates: string[] = [];
               

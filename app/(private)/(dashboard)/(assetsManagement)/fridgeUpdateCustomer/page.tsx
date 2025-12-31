@@ -119,7 +119,6 @@ export default function FridgeUpdateCustomer() {
     //         setLoading(true);
 
     //         const res = await assetsMasterExport({ format: fileType });
-    //         console.log("Export API Response:", res);
 
     //         let downloadUrl = "";
 

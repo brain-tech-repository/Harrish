@@ -148,7 +148,6 @@ export default function AddEditRouteVisit() {
     loadingMore: false,
     hasMore: false
   });
-  console.log(customerPagination,"customerPagination")
   const [customerSchedules, setCustomerSchedules] = useState<CustomerSchedules>(
     {}
   );
@@ -305,7 +304,6 @@ export default function AddEditRouteVisit() {
       const res: ApiResponse<RouteVisitDetails> = await getRouteVisitDetails(
         uuid
       );
-      console.log("API Response for edit:", res);
 
       if (res?.data) {
         const existing = res.data;
@@ -318,12 +316,6 @@ export default function AddEditRouteVisit() {
 
         // ✅ FIX: Properly handle status conversion
         const backendStatus = existing.status;
-        console.log(
-          "Backend status:",
-          backendStatus,
-          "Type:",
-          typeof backendStatus
-        );
 
         const statusValue = backendStatus === 0 ? "0" : "1";
 
@@ -589,7 +581,6 @@ export default function AddEditRouteVisit() {
           ...(!isEditMode && { allData: "true" }),
           dropdown: 'true'
         });
-        console.log(res);
         const routeListData =
           (res as { data: Route[] })?.data || (res as Route[]) || [];
 
@@ -614,7 +605,6 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     loadDropdownData();
     if (isEditMode && visitId) {
-      console.log("Loading edit data for ID:", visitId);
       loadVisitData(visitId);
     }
   }, [isEditMode, visitId]);
@@ -622,7 +612,6 @@ export default function AddEditRouteVisit() {
   // ✅ Multi-select handler
   const handleMultiSelectChange = (field: string, value: string[]) => {
     if (field == "salesman_type") {
-      console.log(value);
       setSelectedCustomerType(value[0] || "");
       setForm((prev) => ({ ...prev, [field]: value[0] || "" }));
     } else if (field === "merchandiser") {
@@ -706,13 +695,10 @@ export default function AddEditRouteVisit() {
         }
       }
 
-      console.log("Form data:", form);
-      console.log("Raw customerSchedules:", customerSchedules);
-
+     
       // ✅ Convert your raw object to expected format - customerSchedules is already in Record format
       const formattedSchedules = convertRowStatesToSchedules(customerSchedules);
 
-      console.log("✅ Converted customer schedules:", formattedSchedules);
 
       // Validate if at least one customer has days
       if (formattedSchedules.length === 0) {
@@ -746,14 +732,11 @@ export default function AddEditRouteVisit() {
         payload.merchandiser_id = Number(merchId);
       }
 
-      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
       let res: ApiResponse<Record<string, unknown>>;
       if (isEditMode && visitId) {
-        console.log("Updating existing route visit...");
         res = await updateRouteVisitDetails(payload);
       } else {
-        console.log("Creating new route visit...");
         res = await saveRouteVisit(payload);
       }
 

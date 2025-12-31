@@ -159,7 +159,6 @@ const SalesReportDashboard = () => {
         customer_ids: selectedChildItems['customer']?.map(id => parseInt(id)) || []
       };
 
-      console.log('Dashboard API Payload:', payload);
 
       const response = await axios.post(
         'http://172.16.6.205:8001/api/dashboard',
@@ -172,7 +171,6 @@ const SalesReportDashboard = () => {
         }
       );
 
-      console.log('Dashboard API Response:', response.data);
       setDashboardData(response.data);
     } catch (error) {
       console.error('Dashboard fetch failed:', error);
@@ -292,7 +290,6 @@ const SalesReportDashboard = () => {
         
         if (metadata && Array.isArray(items)) {
           if (apiKey === 'routes' || apiKey === 'salesmen' || apiKey === 'channel_categories') {
-            console.log(`${apiKey} data from API:`, items.slice(0, 2));
           }
           
           transformedFilters.push({
@@ -465,7 +462,6 @@ const SalesReportDashboard = () => {
         payload.show = Array.from(new Set(showFields));
       }
 
-      console.log('Export Payload (lowest-level filter only):', payload);
 
       const response = await fetch('http://172.16.6.205:8001/api/export', {
         method: 'POST',
@@ -1246,7 +1242,6 @@ const SalesReportDashboard = () => {
                       const endIdx = Math.min(apiCurrentPage * rowsPerPage, totalRows);
 
                       const changePage = (page: number) => {
-                        console.log('Change to page:', page);
                         if (page < 1) page = 1;
                         if (page > totalPages) page = totalPages;
                         setCurrentPage(page);

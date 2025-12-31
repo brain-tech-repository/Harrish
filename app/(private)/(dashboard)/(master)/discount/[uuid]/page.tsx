@@ -140,7 +140,6 @@ export default function AddDiscount() {
     }
 
   }, [keyValue["Item Category"], fetchItemsCategoryWise]);
-  // console.log(keyValue, "keyValue")
   // Filter keyValue["Item"]
   useEffect(() => {
     if (itemLoading) return;
@@ -359,7 +358,6 @@ export default function AddDiscount() {
         }
 
       };
-      console.log(payload, "payload")
 
 
       let res;

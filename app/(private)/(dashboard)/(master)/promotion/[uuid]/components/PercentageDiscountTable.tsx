@@ -20,7 +20,6 @@ export default function PercentageDiscountTable({ percentageDiscounts, setPercen
     : (itemDropdownMap["Item"] ? [ ...itemDropdownMap["Item"]] : []);
 
     useEffect(() => { 
-      console.log(percentageDiscounts,"percentageDiscounts")
     },[percentageDiscounts])
 
   return (

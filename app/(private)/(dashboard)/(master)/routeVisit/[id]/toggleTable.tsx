@@ -76,7 +76,6 @@ export default function Table({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          console.log("Observer triggered - loading more...");
           onLoadMore();
         }
       },
@@ -133,24 +132,19 @@ export default function Table({
   const filteredData = data.filter(
     (customer) => !editMode || prefilledCustomerIds.has(customer.id) || customer.id >= 5000
   );
-  console.log(filteredData,"filteredData")
 
   // ✅ Load visit data for editing
   const loadVisitData = useCallback(async (uuid: string) => {
     if (!uuid || hasFetchedData.current) {
-      console.log("Skipping data fetch - no UUID or already fetched");
       return;
     }
 
     setInternalLoading(true);
     try {
-      console.log("Fetching visit data for UUID:", uuid);
       const res = await getRouteVisitDetails(uuid);
-      console.log("API Response for edit:", res);
 
       if (res?.data) {
         const existing = res.data;
-        console.log("Existing data:", existing);
 
         // Create customer schedule from the API response
         if (existing.customer && existing.customer.id) {
@@ -171,10 +165,7 @@ export default function Table({
           // ✅ Store the pre-filled customer ID
           setPrefilledCustomerIds(new Set([existing.customer.id]));
           hasFetchedData.current = true;
-          console.log("Table initialized with schedule:", initialRowStates);
-          console.log("Prefilled customer IDs:", [existing.customer.id]);
         } else {
-          console.log("No customer data found in API response");
         }
       } else {
         console.warn("Route visit not found in API response");
@@ -189,23 +180,15 @@ export default function Table({
 
   // Initialize row states - FIXED VERSION
   useEffect(() => {
-    console.log("Initialization effect running:", {
-      editMode,
-      visitUuid,
-      initialSchedulesLength: initialSchedules.length,
-      isInitialMount: isInitialMount.current,
-      hasFetchedData: hasFetchedData.current,
-    });
+   
 
     if (editMode && visitUuid && !hasFetchedData.current) {
-      console.log("Table in edit mode, fetching data for UUID:", visitUuid);
       loadVisitData(visitUuid);
     } else if (
       initialSchedules.length > 0 &&
       isInitialMount.current &&
       !editMode
     ) {
-      console.log("Using initialSchedules:", initialSchedules);
       const initialRowStates: typeof rowStates = {};
       const prefilledIds = new Set<number>();
 
@@ -226,8 +209,6 @@ export default function Table({
 
       setRowStates(initialRowStates);
       setPrefilledCustomerIds(prefilledIds);
-      console.log("Initialized with initialSchedules:", initialRowStates);
-      console.log("Prefilled customer IDs:", Array.from(prefilledIds));
     }
 
     isInitialMount.current = false;
@@ -236,7 +217,6 @@ export default function Table({
   // Update parent when rowStates change - DEBOUNCED VERSION
   useEffect(() => {
     if (Object.keys(rowStates).length > 0) {
-      console.log("Row states updated, notifying parent:", rowStates);
       setCustomerSchedules(rowStates);
     }
   }, [rowStates, setCustomerSchedules]);
@@ -256,7 +236,6 @@ export default function Table({
       );
 
       if (isFreshFetch) {
-        console.log("Fresh customer list detected, resetting table states");
         setRowStates({});
         setPrefilledCustomerIds(new Set());
         setColumnSelection({
@@ -298,7 +277,6 @@ export default function Table({
         },
       };
 
-      console.log(`Toggled ${field} for customer ${rowId}:`, newState[rowId]);
       return newState;
     });
   };
@@ -307,7 +285,6 @@ export default function Table({
   const handleColumnSelect = (day: keyof typeof columnSelection) => {
     const newColumnState = !columnSelection[day];
 
-    console.log(`Column ${day} selection:`, newColumnState);
 
     setColumnSelection((prev) => ({
       ...prev,
@@ -335,7 +312,6 @@ export default function Table({
         };
       });
 
-      console.log(`Updated all rows for column ${day}:`, updatedStates);
       return updatedStates;
     });
   };
@@ -368,7 +344,6 @@ export default function Table({
         },
       };
 
-      console.log(`Row ${rowId} selection:`, newState[rowId]);
       return newState;
     });
   };

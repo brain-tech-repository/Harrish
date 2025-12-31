@@ -48,7 +48,6 @@ export default function ViewPage() {
         return;
       }
 
-      console.log("Complaint feedback API response:", res.data); // 🔍 check structure
       setFeedback(res.data.data); // ✅ API already returns `data: res.data`
     };
 

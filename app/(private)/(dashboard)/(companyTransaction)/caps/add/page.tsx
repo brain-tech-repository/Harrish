@@ -872,7 +872,6 @@ export default function CapsAddPage() {
         })),
       };
 
-      console.log("Payload:", payload);
 
       const res = await capsCreate(payload);
 

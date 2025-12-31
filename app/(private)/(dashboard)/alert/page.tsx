@@ -56,7 +56,7 @@ export default function TestPage() {
       name="owner_name"
       type="radio"
       value={"1"}
-      onChange={() => { console.log("radio"); }}
+      onChange={() => {  }}
       options={[
         { value: "1", label: "Owner 1" },
         { value: "2", label: "Owner 2" },

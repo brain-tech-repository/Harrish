@@ -76,7 +76,6 @@ export default function RouteVisits() {
         };
 
         const listRes = await getRouteVisitList(params);
-        // console.log("Route Visits", listRes);
 
         // setLoading(false);
 
