@@ -52,6 +52,7 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
+  // const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Refresh table when permissions load
@@ -179,6 +180,53 @@ export default function Page() {
     []
   );
 
+  // const handleExport = async (fileType: "csv" | "xlsx") => {
+  //   try {
+  //     setLoading(true);
+
+  //     const res = await assetsMasterExport({ format: fileType });
+  //     console.log("Export API Response:", res);
+
+  //     let downloadUrl = "";
+
+  //     if (res?.download_url && res.download_url.startsWith("blob:")) {
+  //       downloadUrl = res.download_url;
+  //     } else if (res?.download_url && res.download_url.startsWith("http")) {
+  //       downloadUrl = res.download_url;
+  //     } else if (typeof res === "string" && res.includes(",")) {
+  //       const blob = new Blob([res], {
+  //         type:
+  //           fileType === "csv"
+  //             ? "text/csv;charset=utf-8;"
+  //             : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //       });
+  //       downloadUrl = URL.createObjectURL(blob);
+  //     } else {
+  //       showSnackbar("No valid file or URL returned from server", "error");
+  //       return;
+  //     }
+
+  //     // ⬇️ Trigger browser download
+  //     const link = document.createElement("a");
+  //     link.href = downloadUrl;
+  //     link.download = `assets_export.${fileType}`;
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+
+  //     showSnackbar(
+  //       `Download started for ${fileType.toUpperCase()} file`,
+  //       "success"
+  //     );
+  //   } catch (error) {
+  //     console.error("Export error:", error);
+  //     showSnackbar("Failed to export Assets Master data", "error");
+  //   } finally {
+  //     setLoading(false);
+  //     setShowExportDropdown(false);
+  //   }
+  // };
+
   return (
     <>
       {/* Table */}
@@ -192,36 +240,22 @@ export default function Page() {
             },
             header: {
               title: "Assets Requests",
-              wholeTableActions: [
-                <div key={0} className="flex gap-[12px] relative">
-                  <DismissibleDropdown
-                    isOpen={showDropdown}
-                    setIsOpen={setShowDropdown}
-                    button={<BorderIconButton icon="ic:sharp-more-vert" />}
-                    dropdown={
-                      <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                        <CustomDropdown>
-                          {dropdownDataList.map((link, idx) => (
-                            <div
-                              key={idx}
-                              className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA]"
-                            >
-                              <Icon
-                                icon={link.icon}
-                                width={link.iconWidth}
-                                className="text-[#717680]"
-                              />
-                              <span className="text-[#181D27] font-[500] text-[16px]">
-                                {link.label}
-                              </span>
-                            </div>
-                          ))}
-                        </CustomDropdown>
-                      </div>
-                    }
-                  />
-                </div>,
-              ],
+              // threeDot: [
+              //   {
+              //     icon: "gala:file-document",
+              //     label: "Export CSV",
+              //     onClick: (data: TableDataType[], selectedRow?: number[]) => {
+              //       handleExport("csv");
+              //     },
+              //   },
+              //   {
+              //     icon: "gala:file-document",
+              //     label: "Export Excel",
+              //     onClick: (data: TableDataType[], selectedRow?: number[]) => {
+              //       handleExport("xlsx");
+              //     },
+              //   },
+              // ],
               searchBar: true,
               columnFilter: true,
               // actions: can("create") ? [
