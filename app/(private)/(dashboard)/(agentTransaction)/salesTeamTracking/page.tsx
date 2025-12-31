@@ -12,15 +12,13 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine";
 import "leaflet-polylinedecorator";
 import L from "leaflet";
-
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { salesTeamTracking } from "@/app/services/agentTransaction";
-import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import Loading from "@/app/components/Loading";
 /* ================= TYPES ================= */
 
 type RoutePoint = {
@@ -150,14 +148,20 @@ function RouteOnRoad({ route }: { route: RoutePoint[] }) {
 
 export default function SalesTrackingMap() {
   const { can, permissions } = usePagePermissions();
+  const [skeleton, setSkeleton] = useState({
+      salesman: false,
+    });
   const {
     warehouseOptions,
     salesmanOptions,
+    fetchSalesmanOptions,
     ensureWarehouseLoaded,
     ensureSalesmanLoaded,
   } = useAllDropdownListData();
 
-  const { setLoading } = useLoading();
+  // local skeleton loader state
+  const [loading, setLoading] = useState(false);
+  const [isLoadingSkeleton, setIsLoadingSkeleton] = useState(false);
   const { showSnackbar } = useSnackbar();
 
   const [form, setForm] = useState({
@@ -178,6 +182,7 @@ export default function SalesTrackingMap() {
 
       try {
         setLoading(true);
+        setIsLoadingSkeleton(true);
         const res = await salesTeamTracking({
           salesman_id: salesmanId,
         });
@@ -186,11 +191,14 @@ export default function SalesTrackingMap() {
         showSnackbar("Failed to load route", "error");
         setRoute([]);
       } finally {
+        setIsLoadingSkeleton(false);
         setLoading(false);
       }
     },
-    [setLoading, showSnackbar]
+    [showSnackbar]
   );
+
+
 
   useEffect(() => {
     if (form.salesman) fetchSalesmanRoute(form.salesman);
@@ -218,13 +226,27 @@ export default function SalesTrackingMap() {
             searchable={true}
             value={form.warehouse}
             options={warehouseOptions}
-            onChange={(e) => handleChange("warehouse", e)}
+            onChange={async (e) => {
+              handleChange("warehouse", e);
+              const val = e.target.value;
+              if (val) {
+                try {
+                  setSkeleton({ salesman: true });
+                  // await the async fetch so skeleton remains visible
+                  await fetchSalesmanOptions(val);
+                } finally {
+                  setSkeleton({ salesman: false });
+                }
+              }
+            }}
             type="select"
           />
 
           <InputFields
             label="Sales Team"
             searchable={true}
+            disabled={!form.warehouse || salesmanOptions.length === 0}
+            showSkeleton={skeleton.salesman}
             value={form.salesman}
             options={salesmanOptions}
             onChange={(e) => handleChange("salesman", e)}
@@ -232,51 +254,57 @@ export default function SalesTrackingMap() {
           />
         </div>
       </ContainerCard>
+ 
+       {loading ? (
+        <div className="flex flex-col items-center justify-center h-[500px]">
+          <Loading />
+          </div>
+        ) : (
+      <div className="w-full h-[500px]  rounded-xl overflow-hidden">
+          <MapContainer
+            center={
+              route.length
+                ? [route[0].lat, route[0].lng]
+                : [28.6139, 77.209]
+            }
+            zoom={14}
+            style={{ height: "100%", width: "100%", zIndex: 40 }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
 
-      <div className="w-full h-[460px] rounded-xl overflow-hidden">
-        <MapContainer
-          center={
-            route.length
-              ? [route[0].lat, route[0].lng]
-              : [28.6139, 77.209]
-          }
-          zoom={14}
-          style={{ height: "100%", width: "100%", zIndex: 40 }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
+            {route.length > 1 && <RouteOnRoad route={route} />}
 
-          {route.length > 1 && <RouteOnRoad route={route} />}
+            {route.map((point, index) => {
+              const icon =
+                point.type === "start"
+                  ? startPinIcon
+                  : point.type === "end"
+                    ? endPinIcon
+                    : visitPinIcon;
 
-          {route.map((point, index) => {
-            const icon =
-              point.type === "start"
-                ? startPinIcon
-                : point.type === "end"
-                  ? endPinIcon
-                  : visitPinIcon;
-
-            return (
-              <Marker
-                key={index}
-                position={[point.lat, point.lng]}
-                icon={icon}
-              >
-                <Popup>
-                  <div className="text-sm">
-                    <div className="font-semibold capitalize">
-                      {point.type}
+              return (
+                <Marker
+                  key={index}
+                  position={[point.lat, point.lng]}
+                  icon={icon}
+                >
+                  <Popup>
+                    <div className="text-sm">
+                      <div className="font-semibold capitalize">
+                        {point.type}
+                      </div>
+                      <div>{point.time}</div>
                     </div>
-                    <div>{point.time}</div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
       </div>
+        )}
     </div>
   );
 }
