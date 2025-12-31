@@ -7,7 +7,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { acfList, addAcf } from "@/app/services/assetsApi";
+import { acfList, addAcf, crfExport } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -343,29 +343,29 @@ export default function CustomerInvoicePage() {
     }, [setLoading]);
 
 
-    // const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
-    //     try {
-    //         // setLoading(true);
-    //         // Pass selected format to the export API
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-    //         const response = await exportExchangeData({ format });
-    //         // const url = response?.url || response?.data?.url;
-    //         const url = response?.download_url || response?.url || response?.data?.url;
-    //         if (url) {
-    //             await downloadFile(url);
-    //             showSnackbar("File downloaded successfully", "success");
-    //         } else {
-    //             showSnackbar("Failed to get download file", "error");
-    //         }
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    //     } catch (error) {
-    //         console.error("Export failed:", error);
-    //         showSnackbar("Failed to download invoices", "error");
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    //     } finally {
-    //         // setLoading(false);
-    //     }
-    // };
+    const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
+        try {
+            // setLoading(true);
+            // Pass selected format to the export API
+            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            const response = await crfExport({ format });
+            // const url = response?.url || response?.data?.url;
+            const url = response?.download_url || response?.url || response?.data?.url;
+            if (url) {
+                await downloadFile(url);
+                showSnackbar("File downloaded successfully", "success");
+            } else {
+                showSnackbar("Failed to get download file", "error");
+            }
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } catch (error) {
+            console.error("Export failed:", error);
+            showSnackbar("Failed to download invoices", "error");
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } finally {
+            // setLoading(false);
+        }
+    };
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
@@ -388,19 +388,19 @@ export default function CustomerInvoicePage() {
                         title: "Approve Chiller Request",
                         columnFilter: true,
                         searchBar: false,
-                        // threeDot: [
-                        //     {
-                        //         icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export CSV",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                        //     },
-                        //     {
-                        //         icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export Excel",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                        //     },],
+                        threeDot: [
+                            {
+                                icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+                                label: "Export CSV",
+                                labelTw: "text-[12px] hidden sm:block",
+                                onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                            },
+                            {
+                                icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                                label: "Export Excel",
+                                labelTw: "text-[12px] hidden sm:block",
+                                onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                            },],
                         filterByFields: [
                             {
                                 key: "warehouse_id",

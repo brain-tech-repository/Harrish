@@ -891,3 +891,72 @@ export const surveyExport = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const getServiceVisitById = async (uuid: string) => {
+  try {
+    const res = await API.get(`/api/assets/service-visit/${uuid}`);
+    console.log(res);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const addServiceVisit = async (formData: FormData) => {
+  try {
+    const response = await APIFormData.post("/api/assets/service-visit/add", formData);
+    return response.data;
+  } catch (error: unknown) {
+    handleError(error);
+  }
+};
+
+export const updateServiceVisit = async (
+  uuid: string,
+  formData: FormData
+) => {
+  try {
+    const response = await APIFormData.post(
+      `/api/assets/chiller-request/${uuid}`,
+      formData
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof (error as { response?: unknown })?.response === "object"
+    ) {
+      throw (error as { response?: { data?: unknown } }).response?.data || error;
+    }
+    throw error;
+  }
+};
+
+export const assetsRequestExport = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/chiller-request/export-chiller-request-pdf`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const serviceVisitExport = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/service-visit/export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const crfExport = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/chiller-request/crf-export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

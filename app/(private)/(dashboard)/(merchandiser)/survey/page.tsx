@@ -181,10 +181,10 @@ export default function Survey() {
 
       let downloadUrl = "";
 
-      if (res?.download_url && res.download_url.startsWith("blob:")) {
-        downloadUrl = res.download_url;
-      } else if (res?.download_url && res.download_url.startsWith("http")) {
-        downloadUrl = res.download_url;
+      if (res?.file_url && res.file_url.startsWith("blob:")) {
+        downloadUrl = res.file_url;
+      } else if (res?.file_url && res.file_url.startsWith("http")) {
+        downloadUrl = res.file_url;
       } else if (typeof res === "string" && res.includes(",")) {
         const blob = new Blob([res], {
           type:
@@ -201,7 +201,7 @@ export default function Survey() {
       // ⬇️ Trigger browser download
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `assets_export.${fileType}`;
+      link.download = `survey_export.${fileType}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -212,7 +212,7 @@ export default function Survey() {
       );
     } catch (error) {
       console.error("Export error:", error);
-      showSnackbar("Failed to export Assets Master data", "error");
+      showSnackbar("Failed to export Survey data", "error");
     } finally {
       setLoading(false);
       setShowExportDropdown(false);
