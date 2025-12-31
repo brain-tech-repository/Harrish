@@ -106,11 +106,11 @@ const columns = [
       return `${code}${code && name ? " - " : ""}${name}`;
     },
   },
-  {
-    key: "payment_method",
-    label: "Payment Method",
-    render: (row: TableDataType) => row.payment_method || "-",
-  },
+  // {
+  //   key: "payment_method",
+  //   label: "Payment Method",
+  //   render: (row: TableDataType) => row.payment_method || "-",
+  // },
   {
     key: "order_source",
     label: "Order Source",

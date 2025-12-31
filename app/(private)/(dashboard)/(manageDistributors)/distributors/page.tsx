@@ -324,19 +324,23 @@ export default function Warehouse() {
             },
 
             header: {
+               exportButton: {
+                show: true,
+                onClick: () => exportFile("xlsx"), 
+              },
               threeDot: [
-                {
-                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                },
-                {
-                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                },
+                // {
+                //   icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+                //   label: "Export CSV",
+                //   labelTw: "text-[12px] hidden sm:block",
+                //   onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                // },
+                // {
+                //   icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                //   label: "Export Excel",
+                //   labelTw: "text-[12px] hidden sm:block",
+                //   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                // },
                 {
                   icon: "lucide:radio",
                   label: "Inactive",

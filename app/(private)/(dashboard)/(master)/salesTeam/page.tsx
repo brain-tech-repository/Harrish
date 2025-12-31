@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState,useEffect } from "react";
-
+import { downloadFile } from "@/app/services/allApi";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Table, {
   listReturnType,
@@ -25,7 +25,7 @@ const SalesmanPage = () => {
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -89,50 +89,21 @@ const SalesmanPage = () => {
   };
 
 
-  const handleExport = async (fileType: "csv" | "xlsx") => {
+const exportFile = async (format: string) => {
     try {
-      setLoading(true);
-
-      const res = await exportSalesmanData({ format: fileType });
-      console.log("Export API Response:", res);
-
-      let downloadUrl = "";
-
-      if (res?.url && res.url.startsWith("blob:")) {
-        downloadUrl = res.url;
-      } else if (res?.url && res.url.startsWith("http")) {
-        downloadUrl = res.url;
-      } else if (typeof res === "string" && res.includes(",")) {
-        const blob = new Blob([res], {
-          type:
-            fileType === "csv"
-              ? "text/csv;charset=utf-8;"
-              : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        downloadUrl = URL.createObjectURL(blob);
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await exportSalesmanData({ format });
+      if (response && typeof response === 'object' && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
       } else {
-        showSnackbar("No valid file or URL returned from server", "error");
-        return;
+        showSnackbar("Failed to get download URL", "error");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
       }
-
-      // ⬇ Trigger browser download
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `salesman_export.${fileType}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      showSnackbar(
-        `File Downloaded Successfully`,
-        "success"
-      );
     } catch (error) {
-      console.error("Export error:", error);
-      showSnackbar("Failed to export sales team data", "error");
+      showSnackbar("Failed to download vehicle data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
-      // setLoading(false);
-      setShowExportDropdown(false);
     }
   };
 
@@ -283,17 +254,21 @@ const SalesmanPage = () => {
             
             header: {
               title: "Sales Team",
+              exportButton: {
+                show: true,
+                onClick: () => exportFile("xlsx"), // Only onClick, no api property
+              },
               threeDot: [
-                {
-                  icon: "gala:file-document",
-                  label: "Export CSV",
-                  onClick: () => handleExport("csv")
-                },
-                {
-                  icon: "gala:file-document",
-                  label: "Export Excel",
-                  onClick: () => handleExport("xlsx")
-                },
+                // {
+                //   icon: "gala:file-document",
+                //   label: "Export CSV",
+                //   onClick: () => handleExport("csv")
+                // },
+                // {
+                //   icon: "gala:file-document",
+                //   label: "Export Excel",
+                //   onClick: () => handleExport("xlsx")
+                // },
                 {
                   icon: "lucide:radio",
                   label: "Inactive",

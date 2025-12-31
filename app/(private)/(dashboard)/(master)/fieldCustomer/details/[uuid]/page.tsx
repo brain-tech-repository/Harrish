@@ -586,7 +586,7 @@ export default function CustomerDetails() {
                                         icon: "material-symbols:download",
                                         onClick: (data: TableDataType) => {
                                             // return(<IconComponentData2 row={data} />)
-                                            exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
+                                            exportFile(data.uuid, "pdf"); // or "excel", "csv" etc.
                                         },
                                     }
                                 ],

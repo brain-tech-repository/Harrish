@@ -1,3 +1,4 @@
+
 "use client";
 
 import BorderIconButton from "@/app/components/borderIconButton";
@@ -118,9 +119,13 @@ const columns = [
   // { key: "total_gross", label: "Gross", render: (value: TableDataType) => <>{toInternationalNumber(value.total_gross) || '0.00'}</> },
   { key: "Total", label: "Total", render: (value: TableDataType) => <>{toInternationalNumber(value.Total) || '0.00'}</> },
 ];
-export default function OrderDetailPage() {
-  const router = useRouter();
+export default function Page(){
   const params = useParams();
+  return <OrderDetailPage uuid={params.uuid as string} />;
+}
+
+export function OrderDetailPage({ uuid, onClose }: { uuid: string; onClose?: () => void; }) {
+  const router = useRouter();
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
   const [invoiceId, setId] = useState<string>('');
@@ -128,7 +133,7 @@ export default function OrderDetailPage() {
   const [deliveryData, setDeliveryData] = useState<InvoiceData | null>(null);
   const [tableData, setTableData] = useState<TableRow[]>([]);
   const [loading, setLoadingState] = useState<boolean>(false);
-  const uuid = params?.uuid as string;
+  // const uuid = params?.uuid as string;
   const CURRENCY = localStorage.getItem("country") || "";
   const PATH = "/distributorsInvoice/details/";
 
@@ -202,23 +207,26 @@ export default function OrderDetailPage() {
   return (
     <>
       {/* ---------- Header ---------- */}
-      <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
-          <Icon
-            icon="lucide:arrow-left"
-            width={24}
-            onClick={() => router.push("/distributorsInvoice")}
-            className="cursor-pointer"
-          />
+      <div className="flex justify-between items-center mb-[20px] ">
+        <div className="flex items-center gap-[16px] mt-2 ml-2">
+          
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Invoice Details
           </h1>
           <BorderIconButton disabled={!deliveryData?.previous_uuid} onClick={deliveryData?.previous_uuid ? () => router.push(`${PATH}${deliveryData.previous_uuid}`) : undefined} icon="lucide:chevron-left" label={"Prev"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pr-[10px]" />
           <BorderIconButton disabled={!deliveryData?.next_uuid} onClick={deliveryData?.next_uuid ? () => router.push(`${PATH}${deliveryData.next_uuid}`) : undefined} trailingIcon="lucide:chevron-right" label={"Next"} labelTw="font-medium text-[12px]" className="!h-[30px] !gap-[3px] !px-[5px] !pl-[10px]" />
+        
+        
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-[12px] relative">
+            <Icon
+            icon="famicons:close"
+            width={24}
+            onClick={onClose}
+            className="cursor-pointer mr-2 mt-3 hover:text-red-500"
+          />
           {/* <div className="gap-[12px] hidden sm:flex">
             <BorderIconButton 
               icon="lucide:edit-2" 
@@ -402,4 +410,3 @@ export default function OrderDetailPage() {
     </>
   );
 }  
-

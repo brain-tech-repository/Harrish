@@ -134,7 +134,7 @@ export default function SalesTeamReconciliationPage() {
         },
         {
             key: "warehouse_name",
-            label: "Warehouse",
+            label: "Distributor",
             render: (row: any) =>
                 row.warehouse_code && row.warehouse_name
                     ? `${row.warehouse_code} - ${row.warehouse_name}`

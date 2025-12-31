@@ -85,6 +85,10 @@ export type configType = {
         columnFilter?: boolean;
         filterByFields?: FilterField[];
         filterRenderer?: (props: FilterRendererProps) => React.ReactNode;
+        exportButton?: {
+            show: boolean;
+            onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
+        };
         threeDot?: {
             label: string;
             labelTw?: string;
@@ -431,46 +435,62 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                                             config.header?.wholeTableActions?.map(
                                                 (action) => action
                                             )}
-                                        {/* If you want to add threeDot dropdown, do it in the correct place in header */}
-                                         {config.header?.threeDot &&
-                            <div className="flex gap-[12px] relative">
-                                <DismissibleDropdown
-                                    isOpen={showDropdown}
-                                    setIsOpen={setShowDropdown}
-                                    button={
-                                        <BorderIconButton icon="ic:sharp-more-vert" />
-                                    }
-                                    dropdown={
-                                        <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                                            <CustomDropdown>
-                                                {config.header?.threeDot?.map((option, idx) => {
-                                                    const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
-                                                    if (!shouldShow) return null;
-                                                    return (
-                                                        <div
-                                                            key={idx}
-                                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
-                                                            onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
-                                                        >
-                                                            {option?.icon && (
-                                                                <Icon
-                                                                    icon={option.icon}
-                                                                    width={option.iconWidth || 20}
-                                                                    className="text-[#717680]"
-                                                                />
-                                                            )}
-                                                            <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
-                                                                {option.label}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </CustomDropdown>
+                                            {config.header?.exportButton &&
+                                        <div className="flex gap-[12px] relative">
+                                            <BorderIconButton
+                                                icon="gala:file-document"
+                                                label="Export Excel"
+                                                onClick={async () => {
+                                                    if (!config.header?.exportButton?.onClick) return;
+                                                    config.header.exportButton.onClick(config.api?.list as any, displayedData);
+                                                }}
+                                            />
                                         </div>
-                                    }
-                                />
-                            </div>
-                        }
+                                            }
+                                        {/* If you want to add threeDot dropdown, do it in the correct place in header */}
+                                      {config.header?.threeDot && (() => {
+                                            
+                                            const visibleOptions = config.header.threeDot.filter(option => {
+                                                const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
+                                                return shouldShow;
+                                            });
+                                            if (visibleOptions.length === 0) return null;
+                                            return (
+                                                <div className="flex gap-[12px] relative">
+                                                    <DismissibleDropdown
+                                                        isOpen={showDropdown}
+                                                        setIsOpen={setShowDropdown}
+                                                        button={
+                                                            <BorderIconButton icon="ic:sharp-more-vert" />
+                                                        }
+                                                        dropdown={
+                                                            <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                                                                <CustomDropdown>
+                                                                    {visibleOptions.map((option, idx) => (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
+                                                                            onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
+                                                                        >
+                                                                            {option?.icon && (
+                                                                                <Icon
+                                                                                    icon={option.icon}
+                                                                                    width={option.iconWidth || 20}
+                                                                                    className="text-[#717680]"
+                                                                                />
+                                                                            )}
+                                                                            <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
+                                                                                {option.label}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </CustomDropdown>
+                                                            </div>
+                                                        }
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             )}

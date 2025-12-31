@@ -339,19 +339,12 @@ export default function AgentCustomer() {
                         },
                         header: {
                             title: "Field Customers",
+                              exportButton: {
+                show: true,
+                onClick: () => exportfile("xlsx"), 
+              },
                             threeDot: [
-                                {
-                                    icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                    label: "Export CSV",
-                                    labelTw: "text-[12px] hidden sm:block",
-                                    onClick: () => !threeDotLoading.csv && exportfile("csv"),
-                                },
-                                {
-                                    icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                    label: "Export Excel",
-                                    labelTw: "text-[12px] hidden sm:block",
-                                    onClick: () => !threeDotLoading.xlsx && exportfile("xlsx"),
-                                },
+                               
                                 {
                                     icon: "lucide:radio",
                                     label: "Inactive",

@@ -142,7 +142,7 @@ export default function StockTransferPage() {
         },
         {
             key: "source_warehouse",
-            label: "Source Warehouse",
+            label: "Source Distributor",
             showByDefault: true,
             render: (row: TableDataType) =>
                 row.source_warehouse
@@ -151,7 +151,7 @@ export default function StockTransferPage() {
         },
         {
             key: "destiny_warehouse",
-            label: "Destination Warehouse",
+            label: "Destination Distributor",
             showByDefault: true,
             render: (row: TableDataType) =>
                 row.destiny_warehouse

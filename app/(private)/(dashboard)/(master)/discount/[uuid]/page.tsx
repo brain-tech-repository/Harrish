@@ -32,6 +32,7 @@ export default function AddDiscount() {
     keyCombo, setKeyCombo,
     keyValue, setKeyValue,
     discount, setDiscount,
+    extraCustomerOptions, setExtraCustomerOptions
   } = useDiscountForm();
 
   // 2. Data Fetching Hook
@@ -49,7 +50,7 @@ export default function AddDiscount() {
 
     const { loading: dataLoading } = useDiscountData({
 
-      isEditMode, id, setDiscount, setKeyCombo, setKeyValue, setItemLoading, fetchItemsCategoryWise, router, showSnackbar
+      isEditMode, id, setDiscount, setKeyCombo, setKeyValue, setItemLoading, fetchItemsCategoryWise, router, showSnackbar, setExtraCustomerOptions
 
     });
 
@@ -422,6 +423,8 @@ export default function AddDiscount() {
             setKeyValue={setKeyValue}
             locationDropdownMap={locationDropdownMap}
             customerDropdownMap={customerDropdownMap}
+            extraOptions={extraCustomerOptions}
+            setExtraOptions={setExtraCustomerOptions}
           />
         );
       case 3:

@@ -20,12 +20,30 @@ import { formatWithPattern } from "@/app/(private)/utils/date";
 import FilterComponent from "@/app/components/filterComponent";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import Drawer from "@mui/material/Drawer";
+import { OrderDetailPage } from "./OrderDetailComponent";
+import { Params } from "next/dist/server/request/params";
+// import StatusBtn from "@/app/components/statusBtn2";
 // import ApprovalStatus from "@/app/components/approvalStatus";
 
 
 
 // 🔹 Table Columns
-const columns = [
+
+
+export default function CustomerInvoicePage() {
+    const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+    const { can, permissions } = usePagePermissions();
+    const { showSnackbar } = useSnackbar();
+    const { setLoading } = useLoading();
+    const router = useRouter();
+    const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+    });
+    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const columns = [
     {
         key: "invoice_date",
         label: "Date",
@@ -40,7 +58,15 @@ const columns = [
         label: "Time",
         showByDefault: true,
     },
-    { key: "invoice_code", label: "Invoice Code", showByDefault: true },
+    { 
+            key: "invoice_code", 
+            label: "Invoice Code", 
+            showByDefault: true, 
+            render: (row: TableDataType) => <div className="cursor-pointer hover:text-red-500" onClick={() => {
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.invoice_code || "-"}</div> 
+        },
     { key: "order_code", label: "Order Code", showByDefault: false },
     { key: "delivery_code", label: "Delivery Code", showByDefault: true },
     {
@@ -91,18 +117,6 @@ const columns = [
         render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
     },
 ];
-
-export default function CustomerInvoicePage() {
-    const { can, permissions } = usePagePermissions();
-    const { showSnackbar } = useSnackbar();
-    const { setLoading } = useLoading();
-    const router = useRouter();
-    const [threeDotLoading, setThreeDotLoading] = useState({
-        csv: false,
-        xlsx: false,
-    });
-    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
     // Load dropdown data
     useEffect(() => {
         ensureAreaLoaded();
@@ -412,6 +426,10 @@ export default function CustomerInvoicePage() {
                     pageSize: 10,
                 }}
             />
+        <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                {selectedRow?.uuid && <OrderDetailPage uuid={selectedRow.uuid} onClose={() => setShowDrawer(false)} />}
+            </Drawer>
         </div>
+
     );
 }
