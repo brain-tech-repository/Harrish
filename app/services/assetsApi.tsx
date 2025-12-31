@@ -882,3 +882,12 @@ export const updateFridgeUpdateCustomer = async (
     throw error;
   }
 };
+
+export const surveyExport = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/merchendisher/survey/survey-export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
