@@ -24,6 +24,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import { formatDateFlexible } from "@/app/utils/formatDate";
 
 // 🔹 API response type
 interface Discount {
@@ -66,8 +67,20 @@ const columns = [
         key: "discount_name",
         label: "Discount Name",
     },
-    { key: "from_date", label: "Start Date" },
-    { key: "to_date", label: "End Date" },
+    { 
+        key: "from_date", 
+        label: "Start Date",
+        render: (row: TableDataType) => {
+            return <span>{formatDateFlexible(row.from_date as string, { preset: "DD MMM YYYY" })}</span>;
+        }
+    },
+    { 
+        key: "to_date", 
+        label: "End Date",
+        render: (row: TableDataType) => {
+            return <span>{formatDateFlexible(row.to_date as string, { preset: "DD MMM YYYY" })}</span>;
+        }
+    },
     {
         key: "status",
         label: "Status",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getDiscountById } from "@/app/services/allApi";
+import { getDiscountById, getPromotionCustomerDetails } from "@/app/services/allApi";
 import { DiscountState, KeyComboType } from "../types";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -13,10 +13,11 @@ type UseDiscountDataProps = {
   fetchItemsCategoryWise: (categories: string) => Promise<any>;
   router: AppRouterInstance;
   showSnackbar: (message: string, type: "success" | "error" | "info" | "warning") => void;
+  setExtraCustomerOptions: React.Dispatch<React.SetStateAction<any[]>>;
 };
 
 export function useDiscountData({
-  isEditMode, id, setDiscount, setKeyCombo, setKeyValue, setItemLoading, fetchItemsCategoryWise, router, showSnackbar
+  isEditMode, id, setDiscount, setKeyCombo, setKeyValue, setItemLoading, fetchItemsCategoryWise, router, showSnackbar, setExtraCustomerOptions
 }: UseDiscountDataProps) {
 
   const [loading, setLoading] = useState(false);
@@ -70,7 +71,21 @@ export function useDiscountData({
               newValues[newKeyCombo.Location] = d.location.map(String);
             }
             if (newKeyCombo.Customer && Array.isArray(d.customer)) {
-              newValues[newKeyCombo.Customer] = d.customer.map(String);
+              const customerIds = d.customer.map(String);
+              newValues[newKeyCombo.Customer] = customerIds;
+
+              if (newKeyCombo.Customer === "Customer" && customerIds.length > 0) {
+                 getPromotionCustomerDetails(customerIds.join(",")).then(res => {
+                    const customerData = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+                    if (customerData.length > 0) {
+                      const options = customerData.map((c: any) => ({
+                        value: String(c.id),
+                        label: `${c.osa_code || ""} - ${c.name || ""}`
+                      }));
+                      setExtraCustomerOptions(options);
+                    }
+                  }).catch(err => console.error("Failed to fetch customer details", err));
+              }
             }
             
             // Always try to populate Item Category if present

@@ -131,7 +131,6 @@ export type configType = {
     dragableColumn?: boolean;
     floatingInfoBar?: {
         showByDefault?: boolean;
-       
         showSelectedRow?: boolean;
         rowSelectionOnClick?: (data: TableDataType[], selectedRow?: number[], selectedColumns?: number[]) => void;
         buttons?: {

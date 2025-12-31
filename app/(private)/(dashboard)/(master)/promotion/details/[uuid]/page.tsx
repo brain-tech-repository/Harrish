@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { promotionHeaderById } from "@/app/services/allApi";
+import { promotionHeaderById, getPromotionCustomerDetails } from "@/app/services/allApi";
 import ContainerCard from "@/app/components/containerCard";
 import KeyValueData from "@/app/components/keyValueData";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -19,6 +19,7 @@ export default function PromotionDetailsPage() {
   const [promotion, setPromotion] = useState<any>(null);
   const { setLoading } = useLoading();
   const [internalLoading, setInternalLoading] = useState(true);
+  const [extraCustomerOptions, setExtraCustomerOptions] = useState<any[]>([]);
   const { showSnackbar } = useSnackbar();
 
   const {
@@ -66,7 +67,7 @@ export default function PromotionDetailsPage() {
       case "Channel": return channelOptions;
       case "Customer Category": return customerCategoryOptions;
       case "Customer SubCategory": return customerSubCategoryOptions;
-      case "Customer": return agentCustomerOptions;
+      case "Customer": return [...agentCustomerOptions, ...extraCustomerOptions];
       default: return [];
     }
   };
@@ -83,6 +84,28 @@ export default function PromotionDetailsPage() {
           return;
         }
         setPromotion(res.data);
+
+        // Fetch customer details if needed
+        const keys = res.data?.key || {};
+        const customerType = keys.Customer?.[0] || "";
+        const customerIds = res.data?.customer?.map(String) || [];
+
+        if (customerType === "Customer" && customerIds.length > 0) {
+          try {
+            const customerRes = await getPromotionCustomerDetails(customerIds.join(","));
+            const customerData = Array.isArray(customerRes?.data) ? customerRes.data : (Array.isArray(customerRes) ? customerRes : []);
+            if (customerData.length > 0) {
+              const options = customerData.map((c: any) => ({
+                value: String(c.id),
+                label: `${c.osa_code || ""} - ${c.name || ""}`
+              }));
+              setExtraCustomerOptions(options);
+            }
+          } catch (err) {
+            console.error("Failed to fetch customer details", err);
+          }
+        }
+
       } catch (error) {
         showSnackbar("Unable to fetch promotion details", "error");
         router.push("/promotion");
@@ -168,7 +191,7 @@ export default function PromotionDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <ContainerCard className="shadow-sm border-[#E9EAEB]">
             <div className="flex items-center justify-between mb-4 border-b border-[#F2F4F7] pb-3">
-              <div className="text-base font-bold text-[#344054]">Applied Locations</div>
+              <div className="text-base font-bold text-[#344054]">Applied Locations({locationType})</div>
               <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">{promotion?.location?.length || 0}</span>
             </div>
             <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
@@ -209,7 +232,7 @@ export default function PromotionDetailsPage() {
               ))}
               {promotion?.item_category?.map((id: any, i: number) => (
                 <span key={i} className="bg-[#FFF9F5] text-orange-800 px-2.5 py-1 rounded-md text-[11px] border border-orange-200 shadow-xs font-bold uppercase">
-                  {getLabel(id, itemCategoryOptions)} (Cat)
+                  {getLabel(id, itemCategoryOptions)}
                 </span>
               ))}
               {(!promotion?.items?.length && !promotion?.item_category?.length) && <span className="text-gray-400 text-sm italic">No items found</span>}

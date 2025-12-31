@@ -6,7 +6,7 @@ import Table, {
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { getRouteVisitList, downloadFile, exportRouteVisit, routeVisitGlobalSearch } from "@/app/services/allApi"; // Adjust import path
+import { getRouteVisitList, downloadFile, exportRouteVisit, routeVisitGlobalSearch, getRouteVisitListBasedOnHeader } from "@/app/services/allApi"; // Adjust import path
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,9 @@ const columns = [
     key: "customer_type",
     label: "Customer Type",
     render: (row: TableDataType) =>
-      String(row.customer_type) === "1" ? "Merchandiser" : "Agent Customer",
+      {
+        return row.customer_type
+      }
   },
 
   {
@@ -73,9 +75,11 @@ export default function RouteVisits() {
           to_date: filters.to_date,
           customer_type: filters.customer_type,
           status: filters.status,
+          page: page,
+          limit: pageSize,
         };
 
-        const listRes = await getRouteVisitList(params);
+        const listRes = await getRouteVisitListBasedOnHeader(params);
 
         // setLoading(false);
 
@@ -83,13 +87,13 @@ export default function RouteVisits() {
         const transformedData = (listRes.data || []).map((item: any) => ({
           ...item,
           customer_type:
-            item.customer_type == 1 ? "Agent Customer" : "Merchandiser",
+            item.route_visits[0].customer_type == 1 ? "Field Customer" : "Merchandiser",
           // Keep numeric status so StatusBtn (which checks String(row.status) === "1") works
-          status: item.status,
+          status: item.route_visits[0].status,
           // Add date formatting:
           // keep full timestamp here and let column renderer format it via formatDate
-          from_date: item.from_date ?? "",
-          to_date: item.to_date ?? "",
+          from_date: item.route_visits[0].from_date ?? "",
+          to_date: item.route_visits[0].to_date ?? "",
         }));
 
         // Adjust this based on your actual API response structure

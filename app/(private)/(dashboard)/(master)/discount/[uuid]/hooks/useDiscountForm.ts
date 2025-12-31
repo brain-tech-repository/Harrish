@@ -11,6 +11,7 @@ export function useDiscountForm() {
 
   const [keyValue, setKeyValue] = useState<Record<string, string[]>>({});
   const [discount, setDiscount] = useState<DiscountState>(initialDiscountState);
+  const [extraCustomerOptions, setExtraCustomerOptions] = useState<any[]>([]);
 
   return {
     keyCombo,
@@ -19,5 +20,7 @@ export function useDiscountForm() {
     setKeyValue,
     discount,
     setDiscount,
+    extraCustomerOptions,
+    setExtraCustomerOptions
   };
 }
