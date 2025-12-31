@@ -272,12 +272,15 @@ export default function AddEditRouteVisit() {
       !isEditMode && setLoading(true);
       // Fetch companies
       setSkeleton({ ...skeleton, company: true });
-      const companies: ApiResponse<Company[]> = await companyList({ ...(!isEditMode && { allData: "true" }), dropdown: 'true' });
+      const companiesRes = await companyList({ ...(!isEditMode && { allData: "true" }), dropdown: 'true' });
+      const companies = (companiesRes?.data || []) as Company[];
       setCompanyOptions(
-        companies?.data?.map((c: Company) => ({
-          value: String(c.id),
-          label: c.company_name || c.name || "",
-        })) || []
+        Array.isArray(companies)
+          ? companies.map((c: Company) => ({
+              value: String(c.id),
+              label: c.company_name || c.name || "",
+            }))
+          : []
       );
       setSkeleton({ ...skeleton, company: false });
       // Fetch merchandiser list for merchandiser dropdown
@@ -490,11 +493,20 @@ export default function AddEditRouteVisit() {
           dropdown: 'true',
           ...(!isEditMode && { allData: "true" }),
         });
+
+        // Defensive: handle both { data: Region[] } and Region[]
+        let regionListData: Region[] = [];
+        if (Array.isArray(regions)) {
+          regionListData = regions;
+        } else if (Array.isArray(regions?.data)) {
+          regionListData = regions.data as Region[];
+        }
+
         setRegionOptions(
-          regions?.data?.map((r: Region) => ({
+          regionListData.map((r: Region) => ({
             value: String(r.id),
             label: r.region_name || r.name || "",
-          })) || []
+          }))
         );
       } catch (err) {
         console.error("Failed to fetch region list:", err);
