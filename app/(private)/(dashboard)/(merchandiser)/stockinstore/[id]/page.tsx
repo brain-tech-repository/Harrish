@@ -120,7 +120,6 @@ export default function StockInStoreAddPage() {
             try {
                 const res = await stockInStoreById(id);
                 const data = res.data;
-                console.log(res.data, "res");
 
                 setCode(data.code ?? "");
 
@@ -162,7 +161,6 @@ export default function StockInStoreAddPage() {
             }
         })();
     }, [id, isEditMode]);
-    console.log(itemData, "itemData");
 
     /* -------------------------------------------------------------------------- */
     /*                               ITEM HANDLERS                                */
@@ -365,7 +363,6 @@ export default function StockInStoreAddPage() {
                                         handleChange({
                                             target: { name: "customer", value: e.target.value },
                                         });
-                                        console.log(e.target.value, "e.target.value");
                                     }}
                                 />
                             </div>

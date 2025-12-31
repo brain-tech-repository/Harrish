@@ -183,7 +183,6 @@ export default function AddEditVehicleWithStepper() {
           const options = res.data.map((w: Warehouse) => ({ value: w.id?.toString(), label: `${w.warehouse_code} - ${w.warehouse_name}` }));
           setWarehouses(options);
         }
-        console.log(res?.data, "Warehouse List");
       } catch (err) {
         showSnackbar("Failed to fetch warehouses", "error");
       }

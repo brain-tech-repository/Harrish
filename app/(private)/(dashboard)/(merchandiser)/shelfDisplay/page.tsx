@@ -64,7 +64,6 @@ export default function ShelfDisplay() {
       setLoading(true);
 
       const res = await exportShelveData({ format: fileType });
-      console.log("Export API Response:", res);
 
       let downloadUrl = "";
 
@@ -117,7 +116,6 @@ export default function ShelfDisplay() {
         per_page: pageSize.toString(),
       });
 
-      console.log(res);
       setLoading(false);
       if (res.error) {
         showSnackbar(
@@ -145,7 +143,6 @@ export default function ShelfDisplay() {
     async (searchQuery: string): Promise<searchReturnType> => {
       setLoading(true);
       try {
-        console.log(searchQuery);
         // always start from page 1 for a new search
         const res = await shelfDisplayGlobalSearch({
           search: searchQuery,

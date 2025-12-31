@@ -292,7 +292,6 @@ export default function CompanyCustomers() {
               ...(can("edit") ? [{
                 icon: "lucide:edit-2",
                 onClick: (row: TableDataType) => {
-                  console.log(row)
                   router.push(
                     `/keyCustomer/${row.uuid}`
                   )

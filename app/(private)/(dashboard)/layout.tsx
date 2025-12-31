@@ -91,7 +91,6 @@ function LayoutSelector({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { preload, allowedPaths } = usePermissionManager();
     // const [num, setnum] = useState(0);
-    // console.log("LayoutSelector render with theme:");
     // setInterval(() => {
     //     setnum((prev) => prev + 1);
     // }, 5000);

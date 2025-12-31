@@ -209,7 +209,6 @@ export default function Category() {
                                     icon: "lucide:edit-2",
                                     onClick: (data: TableDataType) => {
                                         setShowUpdatePopup(true);
-                                        console.log(data)
                                         setUpdatePromotionData({
                                             id: parseInt(data.id),
                                             code: data.code,

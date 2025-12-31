@@ -317,7 +317,6 @@ export default function AddEditWarehouse() {
                 router.push("/distributors");
             }
         } catch(error) {
-            console.log("Submission Error:", error);
             showSnackbar("Add/Update Distributor failed ❌", "error");
         }
     };

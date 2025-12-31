@@ -93,7 +93,6 @@ const Buom = ({ row, details, setDetails }: any) => {
 
   useEffect(() => {
     details.filter((ids: any, index: number) => {
-      // console.log(ids, "ids", row?.id)
       if (ids.item_id == row?.id) {
         setBuom(ids.buom_ctn_price)
       }
@@ -114,7 +113,6 @@ const Buom = ({ row, details, setDetails }: any) => {
       if (details.length > 0) {
 
         details.filter((ids: any, index: number) => {
-          console.log(ids, "ids", row?.id)
           if (ids.item_id == row?.id) {
             isAvailable = true
             indexVal = index
@@ -156,7 +154,6 @@ const Auom = ({ row, details, setDetails }: any) => {
 
   useEffect(() => {
     details.filter((ids: any, index: number) => {
-      // console.log(ids, "ids", row?.id)
       if (ids.item_id == row?.id) {
         setAuom(ids.auom_pc_price)
 
@@ -177,7 +174,6 @@ const Auom = ({ row, details, setDetails }: any) => {
       if (details.length > 0) {
 
         details.filter((ids: any, index: number) => {
-          // console.log(ids, "ids", row?.id)
           if (ids.item_id == row?.id) {
             isAvailable = true
             indexVal = index
@@ -591,7 +587,6 @@ export default function AddPricing() {
 
             // If API returned full item objects, use them; otherwise fetch details by ids
             const itemField = (res as Record<string, unknown>).item;
-            console.log("API response item field:", itemField);
             if (Array.isArray(itemField) && itemField.length > 0) {
               // Map the item data from API response to ItemDetail format
               const mappedItems = itemField.map((item: any) => ({
@@ -602,7 +597,6 @@ export default function AddPricing() {
                 itemName: item.name,
                 item_uoms: item.uoms || [] // Include UOMs if available
               }));
-              console.log("Setting selectedItemDetails:", mappedItems);
               setSelectedItemDetails(mappedItems);
             } else if (Array.isArray(nextKeyValue["Item"]) && nextKeyValue["Item"].length > 0) {
               // try to fetch full item objects when we only have ids
@@ -796,7 +790,6 @@ export default function AddPricing() {
       item_id: selectedItemIds.join(","),
       details: details,
     };
-    console.log(payload, "payload567");
 
     try {
       await pricingValidationSchema.validate(payload, { abortEarly: false });
@@ -827,7 +820,6 @@ export default function AddPricing() {
         (err as yup.ValidationError).inner.forEach((e) => {
           if (e.path) formErrors[e.path] = e.message;
         });
-        console.log(formErrors, "formerrors");
         setErrors(formErrors);
         showSnackbar("Please fix validation errors before proceeding", "error");
       } else {
@@ -875,7 +867,6 @@ export default function AddPricing() {
   // const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>(
   //   []
   // );
-  console.log(selectedItemDetails, "selectedItemDetails--->");
 
   const [page, setPage] = useState(1);
   const pageSize = 5;
@@ -901,7 +892,6 @@ export default function AddPricing() {
   //   } else {
   //     setSelectedItemDetails([]);
   //   }
-  // console.log(keyValue["Item"], "keyvalueitem520");
   // }, [keyValue["Item"]]);
   const renderStepContent = () => {
     switch (currentStep) {

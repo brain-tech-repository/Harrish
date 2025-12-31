@@ -91,7 +91,6 @@ export const OverviewTab = () => {
 
 
 
-  // console.log(imageObjects);
 
   if (loading) return <Loading />;
   if (!planogramData)

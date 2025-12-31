@@ -117,7 +117,6 @@ export default function Page() {
         setLoading(true);
         const res = await itemById(id.toString());
         setLoading(false);
-        console.log(res, "res")
 
         if (res.error) {
           showSnackbar(res.data?.message || "Unable to fetch item details", "error");

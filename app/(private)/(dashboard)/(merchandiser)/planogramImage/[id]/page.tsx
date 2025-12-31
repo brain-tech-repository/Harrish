@@ -81,8 +81,6 @@ export default function Page() {
         if (parsedId !== null) {
           setLoading(true);
           const res = await planogramImageById(parsedId.toString());
-          console.log(res.data);
-          console.log(res.data?.customer?.id ? res.data.customer.id : companyCustomersOptions.length > 0 ? companyCustomersOptions[0].value : "");
           setLoading(false);
           if(res.error){
             showSnackbar(res.data.message || "Failed to fetch planogram image data", "error");
@@ -184,7 +182,7 @@ export default function Page() {
                     label="Merchandiser"
                     name="merchandiser"
                     value={values.merchandiser.toString()}
-                    onChange={(e) => {console.log(values);setFieldValue("merchandiser", e.target.value)}}
+                    onChange={(e) => {setFieldValue("merchandiser", e.target.value)}}
                     options={salesmanOptions}
                   />    
                   <ErrorMessage

@@ -145,10 +145,7 @@ export default function WorkflowTable() {
     }),
 
     onSubmit: async (values) => {
-      console.log("✨ Final Submitted Values:", {
-        workflow_id: values.workflow_id,
-        process_type: values.process_type,
-      });
+    
       //   const workflowType = modulesList.filter(
       //     (ids: any) => ids.value == values.process_type
       //   )[0]?.label;
@@ -226,7 +223,6 @@ export default function WorkflowTable() {
       label: "Status",
       render: (row: TableDataType) => {
         async function handleClick() {
-          console.log("Clicked Row:", row);
           const res = await workFlowAssignmentStatusChange({
             process_type: row.process_type,
             workflow_id: row.workflow_id,
@@ -327,7 +323,6 @@ export default function WorkflowTable() {
             {
               icon: "lucide:edit-2",
               onClick: (row: TableDataType) => {
-                console.log(row);
                 formik.setFieldValue("workflow_id", String(row.workflow_id));
                 formik.setFieldValue("process_type", String(row.process_type));
                 formik.setFieldValue("id", String(row.id));

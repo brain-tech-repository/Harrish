@@ -969,7 +969,6 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       fetchingRef.current.delete('item');
     });
   }, [normalizeResponse]);
-  console.log("item", item)
 
   const ensureDiscountTypeLoaded = useCallback(() => {
     // if (fetchedRef.current.has('discountType') || fetchingRef.current.has('discountType')) return;
@@ -1433,7 +1432,6 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         }))
         : [],
     }));
-  console.log("itemOptions", itemOptions)
 
 
 

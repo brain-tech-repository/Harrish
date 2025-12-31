@@ -179,8 +179,6 @@ export default function AddEditSalesmanUnload() {
   // ✅ Handle Submit (fully fixed)
   const handleSubmit = async () => {
     try {
-      console.log("🟢 Submitting form with values:", form);
-      console.log("🟢 Item Data:", itemData);
 
       await validationSchema.validate(form, { abortEarly: false });
       setErrors({});
@@ -211,13 +209,11 @@ export default function AddEditSalesmanUnload() {
         details,
       };
 
-      console.log("🟣 Payload ready for submission:", payload);
 
       const res = isEditMode
         ? await salesmanUnloadHeaderUpdate(unloadUUID, payload)
         : await salesmanUnloadHeaderAdd(payload);
 
-      console.log("🟢 API Response:", res);
 
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");

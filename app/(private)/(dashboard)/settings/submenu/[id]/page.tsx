@@ -70,7 +70,6 @@ export default function AddShelfDisplay() {
     ensureMenuListLoaded();
     ensureSubmenuLoaded();
   }, [ensureMenuListLoaded, ensureSubmenuLoaded]);
-  console.log(useAllDropdownListData());
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [menu, setMenu] = useState<submenuIncomingType | null>(null);

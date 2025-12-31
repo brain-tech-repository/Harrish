@@ -98,7 +98,6 @@ export default function Sidebar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [setIsOpen]);
-  console.log(data, 'data in sidebar');
 
   const { mode } = useTheme();
   return (

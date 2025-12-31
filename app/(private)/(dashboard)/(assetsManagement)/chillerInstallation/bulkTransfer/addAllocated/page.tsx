@@ -65,7 +65,6 @@ export default function AddRoute() {
   // ✅ HANDLE CHANGE
   const handleChange = (field: string, value: string) => {
     const safeValue = value || "";
-    console.log(safeValue)
     setForm((prev) => ({ ...prev, [field]: safeValue }));
 
     if (errors[field]) {
@@ -89,29 +88,12 @@ export default function AddRoute() {
     if (!btrId) return;
 
     try {
-      // console.log("🔍 Fetching warehouse for BTR ID:", btrId);
       const res = await getWarehouseChillers(btrId);
-
-      // console.log("🔍 Full API Response:", res);
-      // console.log("🔍 Response Data:", res?.data);
-
-      // ✅ Access the nested data object
       const responseData = res?.data;
-      // console.log("🔍 Nested Data Object:", responseData);
-      // console.log("🔍 Nested Data Keys:", responseData ? Object.keys(responseData) : "No data");
-
-      // Check if warehouse exists in the nested data
       if (responseData && responseData.warehouse) {
         const warehouse = responseData.warehouse;
-        // console.log("🔍 Warehouse Object:", warehouse);
-        // console.log("🔍 Warehouse Keys:", Object.keys(warehouse));
-
         const wName = warehouse.name || "Unknown Warehouse";
         const wId = warehouse.id || "";
-
-        // console.log("🔍 Warehouse Name:", wName);
-        // console.log("🔍 Warehouse ID:", wId);
-
         setWarehouseName(wName);
         setForm((prev) => ({
           ...prev,
@@ -119,7 +101,6 @@ export default function AddRoute() {
         }));
 
       } else {
-        // console.log("❌ No warehouse in response - setting 'No Warehouse Found'");
         setWarehouseName("No Warehouse Found");
         setForm((prev) => ({ ...prev, warehouse_id: "" }));
       }
@@ -193,14 +174,12 @@ export default function AddRoute() {
   // ✅ FETCH CHILLERS (URL + HEADER FIXED)
   const fetchChillers = useCallback(async (): Promise<listReturnType> => {
     const btrId = form.btr?.trim();
-    console.log(btrId)
     if (!btrId) {
       return { data: [], currentPage: 0, pageSize: 0, total: 0 };
     }
 
     try {
       const res = await getWarehouseChillers(btrId);
-      console.log(res)
       const data = res?.data?.chillers || [];
       setChillerData(data);
       return {

@@ -56,9 +56,7 @@ export default function ServiceTerritoryDetailsDrawer({ uuid, onClose }: Service
     const { showSnackbar } = useSnackbar();
     // Debug: Log when component mounts
     useEffect(() => {
-        // console.log("🚀 ServiceTerritoryDetailsDrawer MOUNTED with UUID:", uuid);
         return () => {
-            // console.log("🔴 ServiceTerritoryDetailsDrawer UNMOUNTED");
         };
     }, []);
 
@@ -70,9 +68,6 @@ export default function ServiceTerritoryDetailsDrawer({ uuid, onClose }: Service
                 if (res.error) {
                     console.error("Failed to fetch service territory details:", res.data?.message);
                 } else {
-                    // console.log("✅ Service Territory Details Response:", res);
-                    // console.log("📦 res.data:", res.data);
-                    // console.log("🔍 res.data.regions:", res.data?.regions);
                     setData(res.data);
                 }
             } catch (error) {
@@ -132,18 +127,10 @@ export default function ServiceTerritoryDetailsDrawer({ uuid, onClose }: Service
         window.URL.revokeObjectURL(url);
     };
 
-    // Debug: Log data state when it changes
-    useEffect(() => {
-        // console.log("🎯 Data state updated:", data);
-        // console.log("🎯 Data.regions:", data?.regions);
-        // console.log("🎯 Data.regions length:", data?.regions?.length);
-    }, [data]);
-
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
             const response = await serviceTerritoryExport(uuid, { format });
-            console.log(response, "response")
             const url = response?.download_url || response?.data?.download_url;
 
             if (url) {

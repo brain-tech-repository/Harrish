@@ -255,7 +255,6 @@ export default function KeyValue({ pricing, section }: KeyValueProps) {
           {/* Collapsible array fields */}
           {keysToRender.map((key) => {
             const cols = (arrayColumns as any)[key];
-            console.log(cols, "columns for", key);
             if (!cols) return null;
             
             // Special handling for "item" to merge with details for pricing

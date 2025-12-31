@@ -71,7 +71,6 @@ export default function Item() {
       showByDefault: true,
       render: (row: LocalTableDataType) => {
         return <div className="cursor-pointer hover:text-[#EA0A2A]" onClick={() => {
-          // console.log("clicked", row.uuid)
           setSelectedId(row?.uuid || "")
           setOpen(true);
         }}>{row.erp_code + " - " + row.name || "-"}</div>
@@ -204,7 +203,6 @@ export default function Item() {
     // const selectedItem = data.filter((_, index) =>
     //   selectedRow.includes(index)
     // );
-    // console.log(data, selectedRow)
 
     const failedUpdates: string[] = [];
 

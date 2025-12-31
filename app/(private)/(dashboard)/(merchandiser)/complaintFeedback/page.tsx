@@ -143,7 +143,6 @@ export default function Complaint() {
     async (searchQuery: string): Promise<searchReturnType> => {
       setLoading(true);
       try {
-        console.log(searchQuery);
         // always start from page 1 for a new search
         const res = await complaintFeedbackList({
           search: searchQuery,

@@ -68,7 +68,6 @@ export default function AddBankPage() {
           status: values.status === "active" ? 1 : 0,
         };
 
-        console.log("Submitting payload:", payload);
 
         let res;
         if (isEditMode && params?.id && params?.id !== "add") {
@@ -79,7 +78,6 @@ export default function AddBankPage() {
           res = await createBank(payload);
         }
 
-        console.log("API Response:", res);
 
         // ✅ FIXED: Handle both response structures
         const isSuccess =
@@ -94,7 +92,6 @@ export default function AddBankPage() {
               ? "Bank Updated Successfully"
               : "Bank Created Successfully");
 
-          console.log("Showing success message:", successMessage);
           showSnackbar(successMessage, "success");
 
           // ✅ FIXED: Redirect after successful submission
@@ -103,7 +100,6 @@ export default function AddBankPage() {
           }, 1500); // 1.5 second delay to see the success message
         } else {
           const errorMessage = res?.message || "Failed to submit form";
-          console.log("Showing error message:", errorMessage);
           showSnackbar(errorMessage, "error");
         }
       } catch (error) {

@@ -356,7 +356,7 @@ export default function AutoSuggestion({
       // setQuery("");
       // setOptions([]);
       setHighlight(-1);
-      try { onSelect(opt); } catch (err) {console.log(err)}
+      try { onSelect(opt); } catch (err) {}
     } else {
       skipSearchRef.current = true;
       setQuery(opt.label);
@@ -367,7 +367,6 @@ export default function AutoSuggestion({
       try {
         onSelect(opt);
       } catch (err) {
-        console.log(err)
       }
     }
   };

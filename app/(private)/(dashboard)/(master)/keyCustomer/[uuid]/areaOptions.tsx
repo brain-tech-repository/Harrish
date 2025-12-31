@@ -15,13 +15,11 @@ export default function RegionWatcher({ fetchAreaOptions, setSkeleton, preserveE
   const prevRegionRef = useRef<string | undefined>(undefined);
   const initialAppliedRef = useRef(false);
 
-  // console.log("RegionWatcher render - current region:", values.region, "initialArea:", initialArea);
 
   useEffect(() => {
     const prev = prevRegionRef.current;
     // only react when region actually changes
     if (prev !== values.region_id) {
-      console.log("RegionWatcher render - current region:", values.region_id, "initialArea:", initialArea);
       // clear area when user actively changes region (but not on first mount)
       if (prev !== undefined) {
         setFieldValue("area", "");

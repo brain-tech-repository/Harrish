@@ -56,7 +56,6 @@ export default function Bank() {
           limit: pageSize,
         });
 
-        console.log("Bank API Response:", listRes);
 
         setLoading(false);
 

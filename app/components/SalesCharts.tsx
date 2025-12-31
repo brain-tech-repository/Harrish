@@ -1255,7 +1255,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({ chartData, dashboardData, isL
               {selectedMaxView === 'regionItems' && (
                   (() => {
                     const source = props.regionContributionData || (dashboardData?.charts?.region_contribution_top_item || []);
-                    console.log('Region Contribution Data for Maximized View:', (dashboardData?.charts?.region_contribution_top_item || []));
                     const chartData = (Array.isArray(source) ? source : []).map((it: any, i: number) => ({
                       name: `${it.region_name || it.region_label || it.name}`,
                       value: it.value || 0,

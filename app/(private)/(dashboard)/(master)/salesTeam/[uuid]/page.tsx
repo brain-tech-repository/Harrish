@@ -281,7 +281,6 @@ export default function AddEditSalesman() {
 
             const idsWareHouses: string[] = []
             d.warehouses?.map((dta: any) => {
-              console.log(dta.id, "warehouse id")
               idsWareHouses.push(dta.id.toString());
             })
 
@@ -328,7 +327,6 @@ export default function AddEditSalesman() {
         setLoading(false);
       }
     })();
-    console.log(salesmanTypeOptions, "salesmanTypeOptions")
 
   }, [isEditMode, salesmanId]);
 
@@ -377,7 +375,6 @@ export default function AddEditSalesman() {
     { setSubmitting }: FormikHelpers<SalesmanFormValues>
   ) => {
     try {
-      console.log("Submitting form data: 1");
 
       await SalesmanSchema.validate(values, { abortEarly: false });
 
@@ -386,22 +383,18 @@ export default function AddEditSalesman() {
         const val = values[key];
 
         if (Array.isArray(val)) {
-      console.log("Submitting form data: 2", Array.from(formData.entries()));
 
           // For arrays (like warehouse_id when multiple selected)
           val.forEach((v) => formData.append(`${key}[]`, v));
         } else if (val !== undefined && val !== null) {
-      console.log("Submitting form data: 3", Array.from(formData.entries()));
 
           // Normal string or single value
           formData.append(key, val.toString());
         } else {
-      console.log("Submitting form data: 4", Array.from(formData.entries()));
 
           formData.append(key, "");
         }
       });
-      // console.log("Submitting form data: 5", formData);
 
       const payload = {
         osa_code: values.osa_code,
@@ -816,7 +809,6 @@ export default function AddEditSalesman() {
               </div>
               {values.is_block === "1" && (
                 <>
-                  {console.log(values.block_date_from, "values.block_date_from")}
                   <div>
                     <InputFields
                       label="Block Date From"
@@ -891,7 +883,6 @@ export default function AddEditSalesman() {
           isSubmitting: isSubmitting,
         }) => (
           <Form>
-            {/* <>{console.log(values, "lk")}</> */}
             <StepperForm
               steps={steps.map((step) => ({
                 ...step,

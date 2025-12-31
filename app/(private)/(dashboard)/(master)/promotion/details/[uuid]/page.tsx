@@ -17,7 +17,6 @@ export default function PromotionDetailsPage() {
   const router = useRouter();
   const uuid = Array.isArray(params?.uuid) ? params?.uuid[0] : (params?.uuid as string);
   const [promotion, setPromotion] = useState<any>(null);
-  console.log(promotion?.location,"promotion?.location")
   const { setLoading } = useLoading();
   const [internalLoading, setInternalLoading] = useState(true);
   const [extraCustomerOptions, setExtraCustomerOptions] = useState<any[]>([]);
