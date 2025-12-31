@@ -154,6 +154,7 @@ export type configType = {
         showByDefault?: boolean;
          filter?: {
             isFilterable?: boolean;
+            filterkey?: string;
             width?: number | string;
             height?: number | string;
             maxHeight?: number | string;
@@ -891,7 +892,7 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                 {col.label}{" "}
                                                 {col.filter && (
                                                     <FilterTableHeader
-                                                        column={col.key}
+                                                        column={col?.filter?.filterkey || col.key}
                                                         dimensions={col.filter}
                                                         filterConfig={col.filter}
                                                     >
@@ -1071,6 +1072,9 @@ function FilterTableHeader({
     children?: React.ReactNode;
 }) {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+    const { config } = useContext(Config);
+    const { tableDetails, setTableDetails, setNestedLoading } = useContext(TableDetails);
+    const { api } = config;
     const [searchBarValue, setSearchBarValue] = useState("");
     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -1130,7 +1134,8 @@ function FilterTableHeader({
         // If no onSearch, local filtering is handled by useEffect above
     }
 
-    function handleSelect(value: string) {
+    async function handleSelect(value: string) {
+        console.log(column)
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
         if (isSingle) {
             // If already selected, deselect (clear filter)
@@ -1142,12 +1147,47 @@ function FilterTableHeader({
                     try {
                         setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: "" } }));
                     } catch (err) { }
+                    // Call default list API and clear search filter
+                    if(api?.list) {
+                        try {
+                            setNestedLoading(true);
+                            const res = api.list(1, defaultPageSize);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
                 } else {
                     filterConfig.onSelect(value);
                     // persist selection in global filter state so header survives refresh
                     try {
                         setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
                     } catch (err) { }
+                    // Call search API when an option is selected
+                    if(api?.search) {
+                        try {
+                            setNestedLoading(true);
+                            console.log(column)
+                            const res = api.search(value, defaultPageSize, column, 1);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
                 }
             }
             setShowFilterDropdown(false);
@@ -1164,6 +1204,25 @@ function FilterTableHeader({
                     setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
                 } catch (err) { }
                 if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+                // Call search API for multi-select
+                if(api?.search) {
+                    try {
+                        setNestedLoading(true);
+                        const res = api.search(updated.join(","), defaultPageSize, column, 1);
+                        Promise.resolve(res).then(async (result) => {
+                            const resolvedResult = result instanceof Promise ? await result : result;
+                            const { data, total, currentPage } = resolvedResult;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                            setNestedLoading(false);
+                        });
+                    } catch (err) { setNestedLoading(false); /* ignore */ }
+                }
                 return updated;
             });
         }
@@ -1195,32 +1254,12 @@ function FilterTableHeader({
                     {children ? (
                         <div>{children}</div>
                     ) : filteredOptions.length > 0 ? (
-                        (filterConfig && typeof filterConfig.selectedValue === 'string' && filterConfig.onSelect) ? (
-                            // prefer persisted selection (selectedRef) when available
+                        filterConfig?.isSingle !== false ? (
                             <FilterOptionList
                                 options={filteredOptions}
-                                selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig.selectedValue as string)}
-                                onSelect={(v: string) => {
-                                    // call parent's onSelect
-                                    try { filterConfig.onSelect && filterConfig.onSelect(v); } catch (err) { }
-                                    // persist into global filter state
-                                    try { setFilterState(prev => ({ applied: !!v, payload: { ...(prev?.payload || {}), [column]: v } })); } catch (err) { }
-                                }}
+                                selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? "")}
+                                onSelect={handleSelect}
                             />
-                        ) : filterConfig?.isSingle !== false ? (
-                            filteredOptions.map((option, idx) => {
-                                const currentSingle = typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? null);
-                                const isSelected = currentSingle === option.value || selectedValues.includes(option.value);
-                                return (
-                                    <div
-                                        key={option.value}
-                                        className={`font-normal text-[14px] ${isSelected ? 'text-[#EA0A2A] text-[15px] font-semibold' : 'text-[#181D27]'} flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer`}
-                                        onClick={() => handleSelect(option.value)}
-                                    >
-                                        <span className="text-[#535862]">{option.label}</span>
-                                    </div>
-                                );
-                            })
                         ) : (
                             filteredOptions.map((option, idx) => (
                                 <div
