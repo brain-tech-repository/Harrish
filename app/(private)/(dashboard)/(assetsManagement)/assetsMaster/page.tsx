@@ -112,10 +112,10 @@ export default function ShelfDisplay() {
 
       let downloadUrl = "";
 
-      if (res?.url && res.url.startsWith("blob:")) {
-        downloadUrl = res.url;
-      } else if (res?.url && res.url.startsWith("http")) {
-        downloadUrl = res.url;
+      if (res?.download_url && res.download_url.startsWith("blob:")) {
+        downloadUrl = res.download_url;
+      } else if (res?.download_url && res.download_url.startsWith("http")) {
+        downloadUrl = res.download_url;
       } else if (typeof res === "string" && res.includes(",")) {
         const blob = new Blob([res], {
           type:

@@ -83,6 +83,7 @@ export default function Route() {
             filter: {
                 isFilterable: true,
                 width: 320,
+                filterkey: "warehouse_id",
                 options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
                 onSelect: (selected: string | string[]) => {
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));

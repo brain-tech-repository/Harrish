@@ -276,9 +276,9 @@ export default function AddEditRouteVisit() {
       setCompanyOptions(
         Array.isArray(companies)
           ? companies.map((c: Company) => ({
-              value: String(c.id),
-              label: c.company_name || c.name || "",
-            }))
+            value: String(c.id),
+            label: c.company_name || c.name || "",
+          }))
           : []
       );
       setSkeleton({ ...skeleton, company: false });
@@ -325,7 +325,7 @@ export default function AddEditRouteVisit() {
         // Step 1: Populate form from the first item
         setForm({
           salesman_type: firstItem.customer_type || "1",
-          merchandiser: firstItem.merchandiser_id ? String(firstItem.merchandiser_id) : "",
+          merchandiser: firstItem?.merchandiser?.id ? String(firstItem.merchandiser?.id) : "",
           region: firstItem.region?.map((r: any) => String(r.id)) || [],
           area: firstItem.area?.map((a: any) => String(a.id)) || [],
           warehouse: firstItem.warehouse?.map((w: any) => String(w.id)) || [],
@@ -381,29 +381,6 @@ export default function AddEditRouteVisit() {
     try {
       let res: ApiResponse<Customer[]> | null = null;
 
-      // if (USE_total_DATA) {
-      //   // Simulate network delay
-      //   await new Promise(resolve => setTimeout(resolve, 800));
-
-      //   const last_page = 10; // Test with 10 current_pages
-      //   const itemsPerPage = 50;
-
-      //   const totalData = Array.from({ length: itemsPerPage }, (_, i) => ({
-      //     id: (current_page - 1) * itemsPerPage + i + 5000, // Offset IDs to avoid conflicts
-      //     name: `Test Customer ${(current_page - 1) * itemsPerPage + i + 1} (Page ${current_page})`,
-      //     owner_name: `Owner ${(current_page - 1) * itemsPerPage + i + 1}`,
-      //     osa_code: `CODE-${current_page}-${i + 1}`
-      //   }));
-
-      //   res = {
-      //     data: totalData as any,
-      //     pagination: {
-      //       current_page: current_page,
-      //       last_page: last_page,
-      //       limit: itemsPerPage
-      //     }
-      //   };
-      // } else {
       const salesmanType = form.salesman_type;
       const merchId = form.merchandiser;
       const route_id = Array.isArray(form.route) && form.route.length > 0 ? form.route.join(",") : undefined;
@@ -419,7 +396,6 @@ export default function AddEditRouteVisit() {
       } else if (salesmanType && route_id) {
         res = await getAgentCusByRoute(String(route_id), { page: String(current_page), limit: "50" });
       }
-      // }
 
       if (res) {
         const newData = (Array.isArray(res) ? res : (res.data || [])) as Customer[];
@@ -435,7 +411,7 @@ export default function AddEditRouteVisit() {
       }
     } catch (error: any) {
       console.error("Error fetching customers:", error);
-      
+
       // Handle 404 as "No Data Found"
       if (error?.response?.status === 404) {
         if (!isAppend) {
@@ -831,6 +807,7 @@ export default function AddEditRouteVisit() {
               <div>
                 <InputFields
                   required
+                  disabled={isEditMode}
                   label="Customer Type"
                   value={form.salesman_type}
                   onChange={(e) =>

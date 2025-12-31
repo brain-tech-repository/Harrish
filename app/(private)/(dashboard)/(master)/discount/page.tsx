@@ -16,7 +16,7 @@ import {
     discountList,
     deleteDiscount,
     updateDiscountStatus,
-    discountGlobalSearch
+    discountGlobalSearch,
 } from "@/app/services/allApi";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
