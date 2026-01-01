@@ -151,6 +151,8 @@ export default function OrderItemsTable({ orderTables, setOrderTables, updateOrd
                         <InputFields
                           label=""
                           type="number"
+                          integerOnly={true}
+                          min={0}
                           placeholder="From Qty"
                           value={String(row.quantity ?? "")}
                           onChange={e => updateOrderItem(tableIdx, String(row.idx), "quantity", clampPercentInput(e.target.value))}
@@ -171,6 +173,8 @@ export default function OrderItemsTable({ orderTables, setOrderTables, updateOrd
                         <InputFields
                           label=""
                           type="number"
+                          integerOnly={true}
+                          min={0}
                           placeholder="To Qty"
                           value={String(row.toQuantity ?? "")}
                           onChange={e => updateOrderItem(tableIdx, String(row.idx), "toQuantity", clampPercentInput(e.target.value))}
@@ -191,6 +195,8 @@ export default function OrderItemsTable({ orderTables, setOrderTables, updateOrd
                         <InputFields
                           label=""
                           type="number"
+                          integerOnly={true}
+                          min={0}
                           placeholder="Free Qty"
                           value={String(row.free_qty ?? "")}
                           onChange={e => updateOrderItem(tableIdx, String(row.idx), "free_qty", e.target.value)}

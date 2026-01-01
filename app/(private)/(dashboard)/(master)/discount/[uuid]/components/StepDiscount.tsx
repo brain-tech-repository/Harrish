@@ -352,6 +352,10 @@ export default function StepDiscount({
 
               type="number"
 
+              integerOnly={true}
+
+              min={0}
+
               value={discount.header.headerMinAmount}
 
               onChange={(e) => setDiscount(s => ({ ...s, header: { ...s.header, headerMinAmount: e.target.value } }))}
@@ -369,6 +373,10 @@ export default function StepDiscount({
                 label="Percentage"
 
                 type="number"
+
+                integerOnly={true}
+
+                min={0}
 
                 max={100}
 
@@ -396,6 +404,10 @@ export default function StepDiscount({
                 label="Discount Amount"
 
                 type="number"
+
+                integerOnly={true}
+
+                min={0}
 
                 value={discount.header.headerRate}
 
@@ -490,6 +502,8 @@ export default function StepDiscount({
                     render: (row: any) => (
                       <InputFields
                         type="number"
+                        integerOnly={true}
+                        min={0}
                         max={discount.discountMethod === "Percentage" ? 100 : undefined}
                         value={row.rate}
                         onChange={(e) => {
