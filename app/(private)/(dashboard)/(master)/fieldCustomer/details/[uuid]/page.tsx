@@ -170,11 +170,11 @@ export default function CustomerDetails() {
         },
         {
             key: "salesman_name",
-            label: "Salesman"
+            label: "Sales Team"
         },
         {
             key: "warehouse_name",
-            label: "Warehouse"
+            label: "Distributor"
         },
         {
             key: "route_name",
@@ -217,7 +217,7 @@ export default function CustomerDetails() {
             }
         },
         {
-            key: "salesman_code", label: "Salesman", showByDefault: true, render: (row: TableDataType) => {
+            key: "salesman_code", label: "Sales Team", showByDefault: true, render: (row: TableDataType) => {
                 const code = row.salesman_code || "";
                 const name = row.salesman_name || "";
                 return `${code}${code && name ? " - " : ""}${name}`;
