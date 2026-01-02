@@ -4,7 +4,6 @@ import { useRouter, useParams } from "next/navigation";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useEffect, useRef, useState } from "react";
-
 import { Icon } from "@iconify-icon/react";
 
 import InputFields from "@/app/components/inputFields";
@@ -27,22 +26,14 @@ import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 
 /* -------------------- VALIDATION -------------------- */
 const validationSchema = Yup.object({
-  spare_name: Yup.string()
-    .trim()
-    .required("Spare name is required")
-    .max(100),
-
+  spare_name: Yup.string().trim().required("Spare name is required"),
   spare_categoryid: Yup.string().required("Spare category is required"),
-
   spare_subcategoryid: Yup.string().required("Spare sub category is required"),
-
-  plant: Yup.string().trim().required("Plant is required").max(100),
-
+  plant: Yup.string().trim().required("Plant is required"),
   status: Yup.number().oneOf([0, 1]).required(),
 });
 
-/* -------------------- COMPONENT -------------------- */
-export default function AddEditSub() {
+export default function AddEditSpareName() {
   const router = useRouter();
   const params = useParams();
   const { showSnackbar } = useSnackbar();
@@ -52,16 +43,14 @@ export default function AddEditSub() {
   const isEditMode = uuid && uuid !== "add";
 
   const codeGeneratedRef = useRef(false);
-   const [prefix, setPrefix] = useState("");
-
   const [localLoading, setLocalLoading] = useState(false);
+
   const [spareCategories, setSpareCategories] = useState<
     { value: string; label: string }[]
   >([]);
   const [spareSubCategories, setSpareSubCategories] = useState<
     { value: string; label: string }[]
   >([]);
-   const [initialValues, setInitialValues] = useState<any>({});
 
   /* -------------------- FORM -------------------- */
   const formik = useFormik({
@@ -74,28 +63,27 @@ export default function AddEditSub() {
       status: 1,
     },
     validationSchema,
-    onSubmit: async (values, { resetForm }) => {
+    onSubmit: async (values) => {
       setLoading(true);
       try {
+        // ❌ remove osa_code from update payload
+        const { osa_code, ...rest } = values;
+
         const payload = {
-          ...values,
+          ...rest,
           status: Number(values.status),
         };
 
         const res = isEditMode
           ? await updateSpareName(uuid, payload as any)
-          : await addSpareName(payload as any);
+          : await addSpareName({ ...payload, osa_code } as any);
 
         if (res?.error) {
           showSnackbar(res?.message || "Failed to save", "error");
           return;
         }
 
-        showSnackbar(
-          isEditMode ? "Sub updated successfully" : "Sub added successfully",
-          "success"
-        );
-
+        // ✅ save code ONLY in ADD mode
         if (!isEditMode) {
           await saveFinalCode({
             reserved_code: values.osa_code,
@@ -103,9 +91,13 @@ export default function AddEditSub() {
           });
         }
 
-        resetForm();
+        showSnackbar(
+          isEditMode ? "Spare updated successfully" : "Spare added successfully",
+          "success"
+        );
+
         router.push("/settings/manageAssets/spareMenu");
-      } catch (err) {
+      } catch {
         showSnackbar("Something went wrong", "error");
       } finally {
         setLoading(false);
@@ -113,182 +105,78 @@ export default function AddEditSub() {
     },
   });
 
-  /* -------------------- LOAD CATEGORIES -------------------- */
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await spareCategoryList({});
-        const options =
-          res?.data?.map((c: any) => ({
-            value: String(c.id),
-            label: c.spare_category_name,
-          })) || [];
-        setSpareCategories(options);
-      } catch {
-        setSpareCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
-
   /* -------------------- LOAD SUB CATEGORIES -------------------- */
-  const fetchSubCategories = async (categoryId: string) => {
-    try {
-      const res = await spareSubCategoryList({ category_id: categoryId});
-      const options =
-        res?.data?.map((sc: any) => ({
-          value: String(sc.id),
-          label: sc.spare_subcategory_name,
-        })) || [];
-      setSpareSubCategories(options);
-    } catch {
-      setSpareSubCategories([]);
+  const loadSubCategories = async (
+    categoryId: string,
+    selectedSubId?: string
+  ) => {
+    const res = await spareSubCategoryList({ category_id: categoryId });
+
+    const options =
+      res?.data?.map((sc: any) => ({
+        value: String(sc.id),
+        label: sc.spare_subcategory_name,
+      })) || [];
+
+    setSpareSubCategories(options);
+
+    if (selectedSubId) {
+      formik.setFieldValue("spare_subcategoryid", String(selectedSubId));
     }
   };
 
-  /* -------------------- EDIT MODE / CODE GEN -------------------- */
+  /* -------------------- ADD / EDIT LOAD -------------------- */
   useEffect(() => {
     const loadData = async () => {
-      if (isEditMode) {
-        setLocalLoading(true);
-        try {
+      setLocalLoading(true);
+      try {
+        const catRes = await spareCategoryList({});
+        setSpareCategories(
+          catRes?.data?.map((c: any) => ({
+            value: String(c.id),
+            label: c.spare_category_name,
+          })) || []
+        );
+
+        // 🟡 EDIT MODE
+        if (isEditMode) {
           const res = await spareNameByID(uuid);
           const d = res?.data;
 
           if (d) {
             formik.setValues({
               osa_code: d.osa_code ?? "",
-              spare_name: d.spare_menu ?? "",
+              spare_name: d.spare_name ?? "",
               spare_categoryid: String(d.spare_category_id),
-              spare_subcategoryid: String(d.spare_subcategory_id),
+              spare_subcategoryid: "",
               plant: d.plant ?? "",
               status: d.status ?? 1,
             });
 
-            await fetchSubCategories(String(d.spare_category_id));
+            await loadSubCategories(
+              String(d.spare_category_id),
+              String(d.spare_subcategory_id)
+            );
           }
-        } catch {
-          showSnackbar("Failed to load details", "error");
-        } finally {
-          setLocalLoading(false);
         }
-       
-      
-      } else if (!codeGeneratedRef.current) {
-        codeGeneratedRef.current = true;
-        try {
-          
-          const res = await genearateCode({ model_name: "spa_cat" });
-          console.log("Generated code response:", res);
-          if (res?.code) {  
-            console.log("Setting initial values with code:", res.code);
-            formik.setFieldValue("osa_code", res.code);
+
+        // 🟢 ADD MODE
+        else if (!codeGeneratedRef.current) {
+          codeGeneratedRef.current = true;
+          const codeRes = await genearateCode({ model_name: "spa_cat" });
+          if (codeRes?.code) {
+            formik.setFieldValue("osa_code", codeRes.code);
           }
-            // formik.setFieldValue("spa_cat", res.code);
-          
-        } catch {
-          showSnackbar("Failed to generate code", "error");
         }
+      } catch {
+        showSnackbar("Failed to load data", "error");
+      } finally {
+        setLocalLoading(false);
       }
     };
 
     loadData();
   }, [uuid]);
-  //changes
-
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // run only once
-      if (!codeGeneratedRef.current) {
-        codeGeneratedRef.current = true;
-
-        const res = await genearateCode({ model_name: "spa_cat" });
-        console.log("Generated code response:", res);
-        if (res?.code) {
-          setInitialValues((prev:any) => ({
-            ...prev,
-            spare_category_code: res.code,
-          }));
-        }
-
-        if (res?.prefix) {
-          setPrefix(res.prefix);
-        }
-      }
-    } catch (err) {
-      console.error("Error generating code", err);
-      showSnackbar("Failed to generate code", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [showSnackbar]);
-
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++
-
-// useEffect(() => {
-//   const loadData = async () => {
-//     try {
-//       setLocalLoading(true);
-
-//       // 🟡 EDIT MODE
-//       if (isEditMode) {
-//         const res = await subByID(uuid);
-//         const d = res?.data;
-
-//         if (d) {
-//           formik.setValues({
-//             osa_code: d.osa_code ?? "",
-//             spare_name: d.spare_menu ?? "",
-//             spare_categoryid: String(d.spare_category_id),
-//             spare_subcategoryid: String(d.spare_subcategory_id),
-//             plant: d.plant ?? "",
-//             status: d.status ?? 1,
-//           });
-
-//           await fetchSubCategories(String(d.spare_category_id));
-
-//           // ✅ EDIT MODE me bhi code generate
-//           // but ONLY if backend ne code nahi diya
-//           if (!d.osa_code) {
-//             const codeRes = await genearateCode({ model_name: "spa_cat" });
-//             if (codeRes?.code) {
-//               formik.setFieldValue("osa_code", codeRes.code);
-//             }
-//           }
-//         }
-//       }
-
-//       // 🟢 ADD MODE
-//       else {
-//         const res = await genearateCode({ model_name: "spa_cat" });
-//         if (res?.code) {
-//           formik.setFieldValue("osa_code", res.code);
-//         }
-//         if (res?.prefix) {
-//           setPrefix(res.prefix);
-//         }
-//       }
-//     } catch (err) {
-//       showSnackbar("Failed to load data / generate code", "error");
-//     } finally {
-//       setLocalLoading(false);
-//     }
-//   };
-
-//   loadData();
-// }, [uuid]);
-
-
-
-
-
 
   /* -------------------- UI -------------------- */
   return (
@@ -298,7 +186,7 @@ useEffect(() => {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Update Sub" : "Add Sub"}
+          {isEditMode ? "Update Spare Name" : "Add Spare Name"}
         </h1>
       </div>
 
@@ -308,15 +196,13 @@ useEffect(() => {
         ) : (
           <form onSubmit={formik.handleSubmit}>
             <ContainerCard>
-              <h2 className="text-lg font-semibold mb-6">Spare Details</h2>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputFields
                   label="Code"
                   name="osa_code"
                   value={formik.values.osa_code}
-                  onChange={formik.handleChange}
-                   disabled={isEditMode?true:false}
+                  disabled
+                  onChange={() => {}}
                 />
 
                 <InputFields
@@ -324,10 +210,6 @@ useEffect(() => {
                   name="spare_name"
                   value={formik.values.spare_name}
                   onChange={formik.handleChange}
-                  error={
-                    formik.touched.spare_name &&
-                    formik.errors.spare_name
-                  }
                 />
 
                 <InputFields
@@ -337,10 +219,10 @@ useEffect(() => {
                   options={spareCategories}
                   value={formik.values.spare_categoryid}
                   onChange={(e) => {
-                    const categoryId = e.target.value;
-                    formik.setFieldValue("spare_categoryid", categoryId);
+                    const catId = e.target.value;
+                    formik.setFieldValue("spare_categoryid", catId);
                     formik.setFieldValue("spare_subcategoryid", "");
-                    fetchSubCategories(categoryId);
+                    loadSubCategories(catId);
                   }}
                 />
 
@@ -375,19 +257,10 @@ useEffect(() => {
             </ContainerCard>
 
             <div className="flex justify-end gap-4 mt-6">
-              <button
-                type="button"
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => router.back()}
-              >
-                Cancel
-              </button>
               <SidebarBtn
                 type="submit"
                 label={isEditMode ? "Update" : "Submit"}
                 isActive
-                leadingIcon="mdi:check"
-                disabled={formik.isSubmitting}
               />
             </div>
           </form>
@@ -395,4 +268,4 @@ useEffect(() => {
       </div>
     </div>
   );
-}    
+}

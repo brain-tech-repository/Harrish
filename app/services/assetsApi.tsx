@@ -1014,7 +1014,7 @@ export const spareMenu = async (body: object) => {
 export const spareNameByID = async (uuid: string, params?: Params) => {
 
   try {
-    const res = await API.get(`/api/settings/spare/show/${uuid}`, {
+    const res = await API.get(`/api/assets/spare/show/${uuid}`, {
       params: params,
     });
     return res.data;
