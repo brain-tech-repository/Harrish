@@ -800,10 +800,47 @@ export const serviceTerritoryExportAll = async (params?: Params) => {
     return handleError(error);
   }
 };
-
-export const inventoryPostByStock = async (uuid: string, params?: Params) => {
+//Spare Category
+export const spareCategory = async (body: object) => {
   try {
-    const res = await API.get(`/api/merchendisher/stockinstore/posts/${uuid}`, {
+    const res = await API.get(`/api/settings/sparecategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const spareByID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/sparecategory/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//ADD
+export const addSpare = async (body: spare) => {
+  try {
+    const res = await API.post(`/api/settings/sparecategory/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//UPDATE
+
+export const updateSpare = async (uuid: string, body: spare) => {
+  try {
+    const res = await API.put(`/api/settings/sparecategory/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const spareGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/spareCategory/generate-code`, {
       params: params,
     });
     return res.data;
@@ -812,10 +849,59 @@ export const inventoryPostByStock = async (uuid: string, params?: Params) => {
   }
 };
 
+type spare = {
+  name: string;
 
-export const shelfDisplayGlobalSearch = async (params: Params) => {
+  contact: string;
+
+  status: number;
+};
+export const deleteSpare = async (id: string) => {
   try {
-    const res = await API.get(`/api/merchendisher/shelves/global-search`, {
+    const res = await API.delete(`/api/assets/spareCategory/delete_spare/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//Sub Category
+export const subCategory = async (body: object) => {
+  try {
+    const res = await API.get(`/api/settings/sparesubcategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const subByID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/sparesubcategory/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const addSub = async (body: sub) => {
+  try {
+    const res = await API.post(`/api/settings/sparesubcategory/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSub = async (uuid: string, body: sub) => {
+  try {
+    const res = await API.put(`/api/settings/sparesubcategory/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const subGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/sparesubcategory/generate-code`, {
       params: params,
     });
     return res.data;
@@ -824,9 +910,50 @@ export const shelfDisplayGlobalSearch = async (params: Params) => {
   }
 };
 
-export const assetsMasterExport = async (params?: Params) => {
+type sub = {
+  name: string;
+  spareCategoryName: string;
+  status: number;
+};
+export const deletesub = async (id: string) => {
   try {
-    const res = await API.get(`/api/assets/chiller/export`, { params });
+    const res = await API.delete(`/api/settings/sparesubcategory/delete_sub/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//spare Menu
+// export const spareMenu = async (body: object) => {
+//   try {
+//     const res = await API.get(`/api/settings/sparecategory/list`, body);
+//      return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+export const spareNameByID = async (uuid: string, params?: Params) => {
+
+  try {
+    const res = await API.get(`/api/settings/spare/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const addSpareName = async (body: spare) => {
+  try {
+    const res = await API.post(`/api/assets/spare/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSpareName = async (uuid: string, body: spare) => {
+  try {
+    const res = await API.put(`/api/assets/spare/update/${uuid}`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -834,9 +961,32 @@ export const assetsMasterExport = async (params?: Params) => {
 };
 
 
-export const fridgeUpdateCustomerList = async (params: any) => {
+
+
+export const spareCategoryList = async (body: object) => {
   try {
-    const res = await API.get(`/api/assets/fridge-customer-update/list`, {
+    const res = await API.get(`api/settings/sparecategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const spareSubCategoryList = async (body: any) => {
+
+  try {
+    const res = await API.get(`api/settings/sparesubcategory/list?category=${body.category_id || ""}`, body);
+    //console.log(body)
+    return res.data;
+
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+
+};
+export const sparesubGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/spare/generate-code`, {
       params: params,
     });
     return res.data;
@@ -845,115 +995,8 @@ export const fridgeUpdateCustomerList = async (params: any) => {
   }
 };
 
-
-export const fridgeUpdateCustomerByUUID = async (uuid: string, params?: Params) => {
-  try {
-    const res = await API.get(`/api/assets/fridge-customer-update/${uuid}`, {
-      params: params,
-    });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const updateFridgeUpdateCustomer = async (
-  uuid: string,
-  formData: FormData
-) => {
-  try {
-    const response = await APIFormData.post(
-      `/api/assets/fridge-customer-update/update/${uuid}`,
-      formData
-    );
-    return response.data;
-  } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "response" in error &&
-      typeof (error as { response?: unknown })?.response === "object"
-    ) {
-      throw (error as { response?: { data?: unknown } }).response?.data || error;
-    }
-    throw error;
-  }
-};
-
-export const surveyExport = async (params?: Params) => {
-  try {
-    const res = await API.get(`/api/merchendisher/survey/survey-export`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const getServiceVisitById = async (uuid: string) => {
-  try {
-    const res = await API.get(`/api/assets/service-visit/${uuid}`);
-    console.log(res);
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const addServiceVisit = async (formData: FormData) => {
-  try {
-    const response = await APIFormData.post("/api/assets/service-visit/add", formData);
-    return response.data;
-  } catch (error: unknown) {
-    handleError(error);
-  }
-};
-
-export const updateServiceVisit = async (
-  uuid: string,
-  formData: FormData
-) => {
-  try {
-    const response = await APIFormData.post(
-      `/api/assets/chiller-request/${uuid}`,
-      formData
-    );
-    return response.data;
-  } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "response" in error &&
-      typeof (error as { response?: unknown })?.response === "object"
-    ) {
-      throw (error as { response?: { data?: unknown } }).response?.data || error;
-    }
-    throw error;
-  }
-};
-
-export const assetsRequestExport = async (params?: Params) => {
-  try {
-    const res = await API.get(`/api/assets/chiller-request/export-chiller-request-pdf`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const serviceVisitExport = async (params?: Params) => {
-  try {
-    const res = await API.get(`/api/assets/service-visit/export`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-export const crfExport = async (params?: Params) => {
-  try {
-    const res = await API.get(`/api/assets/chiller-request/crf-export`, { params });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
+type sparesub = {
+  sub: string;
+  spa: string;
+  status: number;
 };
