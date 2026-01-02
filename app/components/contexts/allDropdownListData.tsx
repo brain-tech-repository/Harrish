@@ -41,7 +41,7 @@ import {
   warehouseList,
   getUserList,
 } from '@/app/services/allApi';
-import { vendorList } from '@/app/services/assetsApi';
+import { vendorList, spareCategory, spareSubCategoryList, } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
@@ -80,6 +80,9 @@ interface DropdownDataContextType {
   BrandList: Brand[];
   brandingList: Branding[];
   userList: UserItem[];
+  spareCategory: SpareCategory[];
+  spareSubCategory: SpareSubCategory[];
+  
   // mapped dropdown options
   companyOptions: { value: string; label: string }[];
   countryOptions: { value: string; label: string }[];
@@ -120,6 +123,8 @@ interface DropdownDataContextType {
   brandOptions: { value: string; label: string }[];
   brandingOptions: { value: string; label: string }[];
   userOptions: { value: string; label: string }[];
+  spareCategoryOptions: { value: string; label: string }[];
+  spareSubCategoryOptions: { value: string; label: string }[];
   permissions: permissionsList[];
   refreshDropdowns: () => Promise<void>;
   refreshDropdown: (name: string, params?: any) => Promise<void>;
@@ -182,6 +187,8 @@ interface DropdownDataContextType {
   ensureBrandLoaded: () => void;
   ensureBrandingLoaded: () => void;
   ensureUserLoaded: () => void;
+  ensureSpareCategoryLoaded: () => void;
+  ensureSpareSubCategoryLoaded: () => void;
 }
 
 // Minimal interfaces reflecting the expected fields returned by API for dropdown lists
@@ -250,6 +257,17 @@ interface RouteTypeItem {
   route_type_code?: string;
   route_type_name?: string;
 }
+interface SpareCategory {
+  id?: number | string;
+  osa_code?: string;
+  spare_category_name?: string;
+}
+ interface SpareSubCategory {
+  id?: number | string;
+  osa_code?: string;
+  spare_category_name?: string;
+ }
+
 
 interface AreaItem {
   id?: number | string;
@@ -502,6 +520,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [brandList, setBrandList] = useState<Brand[]>([]);
   const [brandingListState, setBrandingList] = useState<Branding[]>([]);
   const [userListState, setUserList] = useState<UserItem[]>([]);
+  const [spareCategoryList, setSpareCategoryList] = useState<SpareCategory[]>([]);
+  const [spareSubCategoryList, setSpareSubCategoryList] = useState<SpareSubCategory[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Track which dropdowns have been fetched using useRef to avoid re-renders
@@ -779,6 +799,50 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     });
   }, [normalizeResponse]);
 
+  const ensureSpareCategoryLoaded = useCallback(() => {
+    // if (fetchedRef.current.has('spareCategory') || fetchingRef.current.has('spareCategory')) return;
+    // fetchingRef.current.add('spareCategory');
+    spareCategory({}).then(res => {
+      setSpareCategoryList(normalizeResponse(res) as SpareCategory[]);
+      fetchedRef.current.add('spareCategory');
+      fetchingRef.current.delete('spareCategory');
+    }).catch(() => {
+      setSpareCategoryList([]);
+      fetchingRef.current.delete('spareCategory');
+    });
+  }, [normalizeResponse]);
+
+   const ensureSpareSubCategoryLoaded = useCallback(() => {
+  // already fetched or in progress → do nothing
+  if (
+    fetchedRef.current.has("spareSubCategory") ||
+    fetchingRef.current.has("spareSubCategory")
+  ) {
+    return;
+  }
+
+  // mark as fetching
+  fetchingRef.current.add("spareSubCategory");
+
+  spareCategory({})
+    .then((res:any) => {
+      setSpareSubCategoryList(
+        normalizeResponse(res) as SpareSubCategory[]
+      );
+      fetchedRef.current.add("spareSubCategory");
+    })
+    .catch(() => {
+      setSpareSubCategoryList([]);
+    })
+    .finally(() => {
+      fetchingRef.current.delete("spareSubCategory");
+    });
+}, [normalizeResponse]);
+
+
+    // if (fetchedRef.current.has('spareSubCategory') || fetchingRef.current.has('spareSubCategory')) return;
+    // fetchingRef.current.add('spareSubCategory');
+    
   const ensureDiscountTypeLoaded = useCallback(() => {
     // if (fetchedRef.current.has('discountType') || fetchingRef.current.has('discountType')) return;
     // fetchingRef.current.add('discountType');
@@ -795,7 +859,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureMenuListLoaded = useCallback(() => {
     // if (fetchedRef.current.has('menuList') || fetchingRef.current.has('menuList')) return;
     // fetchingRef.current.add('menuList');
-    getMenuList({ dropdown: 'true' }).then(res => {
+    getMenuList().then(res => {
       setMenuList(normalizeResponse(res) as MenuList[]);
       fetchedRef.current.add('menuList');
       fetchingRef.current.delete('menuList');
@@ -1164,6 +1228,16 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.name ? `${c.name}` : (c.name ?? '')
   }))
+
+  const spareCategoryOptions = (Array.isArray(spareCategoryList) ? spareCategoryList : []).map((c: SpareCategory) => ({
+    value: String(c.id ?? ''),
+    label: c.spare_category_name ? `${c.spare_category_name}` : (c.spare_category_name ?? '')
+  }))
+  const spareSubCategoryOptions = (Array.isArray(spareSubCategoryList) ? spareSubCategoryList : []).map((c: SpareCategory) => ({
+    value: String(c.id ?? ''),
+    label: c.spare_category_name ? `${c.spare_category_name}` : (c.spare_category_name ?? '')
+  }))
+
 
   const assetsModelOptions = (Array.isArray(assetsModel) ? assetsModel : []).map((c: AssetsModel) => ({
     value: String(c.id ?? ''),
@@ -1646,6 +1720,10 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
       { run: () => assetsModelList(), setter: (v) => setAssetsModel(v as AssetsModel[]) },
       { run: () => BrandList(), setter: (v) => setBrandList(v as Brand[]) },
       { run: () => brandingList(), setter: (v) => setBrandingList(v as Branding[]) },
+      
+      { run: () => spareCategory({}), setter: (v) => setSpareCategoryList(v as SpareCategory[]) },
+      // { run: () => spareSubCategory(), setter: (v) => setSpareSubCategoryList(v as SpareSubCategory[]) },
+
     ];
 
     try {
@@ -1924,6 +2002,9 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         assetsModelList: assetsModel,
         BrandList: brandList,
         brandingList: brandingListState,
+        spareCategory: spareCategoryList,
+        
+        spareSubCategory: spareSubCategoryList,
         userList: userListState,
         fetchItemSubCategoryOptions,
         fetchAgentCustomerOptions,
@@ -1984,6 +2065,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         brandOptions,
         brandingOptions,
         userOptions,
+        spareCategoryOptions,
+        spareSubCategoryOptions,
         loading,
         ensureCompanyLoaded,
         ensureCountryLoaded,
@@ -2025,6 +2108,11 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         ensureBrandLoaded,
         ensureBrandingLoaded,
         ensureUserLoaded,
+        ensureSpareCategoryLoaded,
+        ensureSpareSubCategoryLoaded
+        
+          
+    
       }}
     >
       {children}

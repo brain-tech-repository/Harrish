@@ -43,7 +43,6 @@ export default function AddCustomerCategory() {
     ? (Array.isArray(params.id) ? params.id[0] : (params.id as string))
     : "";
   const isEditMode = Boolean(id && id !== "add");
-
   useEffect(() => {
     const fetchOutletChannels = async () => {
       try {
@@ -61,6 +60,8 @@ export default function AddCustomerCategory() {
     };
     fetchOutletChannels();
   }, []);
+
+  
 
   // Fetch existing category when in edit mode
   useEffect(() => {

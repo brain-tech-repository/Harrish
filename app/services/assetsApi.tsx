@@ -803,3 +803,203 @@ export const serviceTerritoryExportAll = async (params?: Params) => {
     return handleError(error);
   }
 };
+//Spare Category
+export const spareCategory = async (body: object) => {
+  try {
+    const res = await API.get(`/api/settings/sparecategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const spareByID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/sparecategory/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//ADD
+export const addSpare = async (body: spare) =>{
+  try {
+    const res = await API.post(`/api/settings/sparecategory/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//UPDATE
+
+export const updateSpare = async (uuid: string, body: spare) => {
+  try {
+    const res = await API.put(`/api/settings/sparecategory/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const spareGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/spareCategory/generate-code`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+type spare = {
+  name: string;
+  
+  contact: string;
+  
+  status: number;
+};
+export const deleteSpare = async (id: string) => {
+  try {
+    const res = await API.delete(`/api/assets/spareCategory/delete_spare/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//Sub Category
+export const subCategory = async (body: object) => {
+  try {
+    const res = await API.get(`/api/settings/sparesubcategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const subByID = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/sparesubcategory/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const addSub = async (body: sub) =>{
+  try {
+    const res = await API.post(`/api/settings/sparesubcategory/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSub = async (uuid: string, body: sub) => {
+  try {
+    const res = await API.put(`/api/settings/sparesubcategory/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const subGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/sparesubcategory/generate-code`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+type sub = {
+  name: string;
+  spareCategoryName: string;
+  status: number;
+};
+export const deletesub = async (id: string) => {
+  try {
+    const res = await API.delete(`/api/settings/sparesubcategory/delete_sub/${id}`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+//spare Menu
+// export const spareMenu = async (body: object) => {
+//   try {
+//     const res = await API.get(`/api/settings/sparecategory/list`, body);
+//      return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+export const spareNameByID = async (uuid: string, params?: Params) => {
+ 
+ try {
+    const res = await API.get(`/api/settings/spare/show/${uuid}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const addSpareName = async (body: spare) =>{
+  try {
+    const res = await API.post(`/api/assets/spare/create`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const updateSpareName = async (uuid: string, body: spare) => {
+  try {
+    const res = await API.put(`/api/assets/spare/update/${uuid}`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+  
+export const spareCategoryList = async ( body: object) => {
+  try {
+    const res = await API.get(`api/settings/sparecategory/list`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const spareSubCategoryList = async ( body: any) => {
+  
+  try {
+    const res = await API.get(`api/settings/sparesubcategory/list?category=${body.category_id || ""}`, body);
+    //console.log(body)
+    return res.data;
+
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  
+};
+export const sparesubGenerateCode = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/spare/generate-code`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+type sparesub = {
+  sub: string;
+  spa: string;
+  status: number;
+};
