@@ -26,21 +26,21 @@ import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 
 /* -------------------- VALIDATION -------------------- */
 const validationSchema = Yup.object({
-  spare_name: Yup.string().trim().required("Spare name is required"),
+  spare_name: Yup.string().required("Spare name is required"),
   spare_categoryid: Yup.string().required("Spare category is required"),
   spare_subcategoryid: Yup.string().required("Spare sub category is required"),
-  plant: Yup.string().trim().required("Plant is required"),
+  plant: Yup.string().required("Plant is required"),
   status: Yup.number().oneOf([0, 1]).required(),
 });
 
 export default function AddEditSpareName() {
   const router = useRouter();
   const params = useParams();
-  const { showSnackbar } = useSnackbar();
-  const { setLoading } = useLoading();
-
   const uuid = typeof params.uuid === "string" ? params.uuid : "";
   const isEditMode = uuid && uuid !== "add";
+
+  const { showSnackbar } = useSnackbar();
+  const { setLoading } = useLoading();
 
   const codeGeneratedRef = useRef(false);
   const [localLoading, setLocalLoading] = useState(false);
@@ -66,24 +66,23 @@ export default function AddEditSpareName() {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        // ❌ remove osa_code from update payload
-        const { osa_code, ...rest } = values;
-
         const payload = {
-          ...rest,
+          spare_name: values.spare_name,
+          spare_categoryid: values.spare_categoryid,
+          spare_subcategoryid: values.spare_subcategoryid,
+          plant: values.plant,
           status: Number(values.status),
         };
 
         const res = isEditMode
           ? await updateSpareName(uuid, payload as any)
-          : await addSpareName({ ...payload, osa_code } as any);
+          : await addSpareName({ ...payload, osa_code: values.osa_code } as any);
 
         if (res?.error) {
-          showSnackbar(res?.message || "Failed to save", "error");
+          showSnackbar(res.message || "Failed to save", "error");
           return;
         }
 
-        // ✅ save code ONLY in ADD mode
         if (!isEditMode) {
           await saveFinalCode({
             reserved_code: values.osa_code,
@@ -105,7 +104,7 @@ export default function AddEditSpareName() {
     },
   });
 
-  /* -------------------- LOAD SUB CATEGORIES -------------------- */
+  /* -------------------- LOAD SUB CATEGORY -------------------- */
   const loadSubCategories = async (
     categoryId: string,
     selectedSubId?: string
@@ -121,47 +120,50 @@ export default function AddEditSpareName() {
     setSpareSubCategories(options);
 
     if (selectedSubId) {
-      formik.setFieldValue("spare_subcategoryid", String(selectedSubId));
+      formik.setFieldValue("spare_subcategoryid", selectedSubId);
     }
   };
 
-  /* -------------------- ADD / EDIT LOAD -------------------- */
+  /* -------------------- LOAD DATA -------------------- */
   useEffect(() => {
     const loadData = async () => {
       setLocalLoading(true);
       try {
+        /* ---- LOAD CATEGORIES ---- */
         const catRes = await spareCategoryList({});
-        setSpareCategories(
+        const categoryOptions =
           catRes?.data?.map((c: any) => ({
             value: String(c.id),
             label: c.spare_category_name,
-          })) || []
-        );
+          })) || [];
 
-        // 🟡 EDIT MODE
+        setSpareCategories(categoryOptions);
+
+        /* ---- EDIT MODE ---- */
         if (isEditMode) {
           const res = await spareNameByID(uuid);
           const d = res?.data;
+          console.log("Spare Data:", d);
 
           if (d) {
             formik.setValues({
               osa_code: d.osa_code ?? "",
               spare_name: d.spare_name ?? "",
-              spare_categoryid: String(d.spare_category_id),
-              spare_subcategoryid: "",
+              spare_categoryid: String(d.spare_categoryid),
+              spare_subcategoryid: String(d.spare_subcategoryid),
               plant: d.plant ?? "",
               status: d.status ?? 1,
             });
 
             await loadSubCategories(
-              String(d.spare_category_id),
-              String(d.spare_subcategory_id)
+              String(d.spare_categoryid),
+              // String(d.spare_subcategory_id)
             );
           }
         }
 
-        // 🟢 ADD MODE
-        else if (!codeGeneratedRef.current) {
+        /* ---- ADD MODE CODE ---- */
+        if (!isEditMode && !codeGeneratedRef.current) {
           codeGeneratedRef.current = true;
           const codeRes = await genearateCode({ model_name: "spa_cat" });
           if (codeRes?.code) {
@@ -197,13 +199,7 @@ export default function AddEditSpareName() {
           <form onSubmit={formik.handleSubmit}>
             <ContainerCard>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputFields
-                  label="Code"
-                  name="osa_code"
-                  value={formik.values.osa_code}
-                  disabled
-                  onChange={() => {}}
-                />
+                <InputFields label="Code" value={formik.values.osa_code} disabled onChange={(e: any) => {}} />
 
                 <InputFields
                   label="Spare Name"
@@ -256,7 +252,7 @@ export default function AddEditSpareName() {
               </div>
             </ContainerCard>
 
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="flex justify-end mt-6">
               <SidebarBtn
                 type="submit"
                 label={isEditMode ? "Update" : "Submit"}
