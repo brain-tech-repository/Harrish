@@ -19,6 +19,7 @@ import Location from "./location";
 import Overview from "./overview";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import Skeleton from "@mui/material/Skeleton";
+import FilterComponent from "@/app/components/filterComponent";
 export interface AgentCustomerDetails {
     id: string;
     uuid: string;
@@ -562,19 +563,12 @@ export default function CustomerDetails() {
                                     uuid={uuid}
                                 />
                             ],
-                                    filterByFields: [
-                                        {
-                                            key: "start_date",
-                                            label: "Start Date",
-                                            type: "date"
-                                        },
-                                        {
-                                            key: "end_date",
-                                            label: "End Date",
-                                            type: "date"
-                                        },
-
-                                    ],
+                                     filterRenderer: (props) => (
+                                         <FilterComponent
+                                           {...props}
+                                           onlyFilters={['from_date', 'to_date']}
+                                         />
+                                       ),
 
                                 },
                                 showNestedLoading: true,
@@ -615,20 +609,12 @@ export default function CustomerDetails() {
 
                             },
                             header: {
-                                filterByFields: [
-                                    {
-                                        key: "start_date",
-                                        label: "Start Date",
-                                        type: "date"
-                                    },
-                                    {
-                                        key: "end_date",
-                                        label: "End Date",
-                                        type: "date"
-                                    },
-
-
-                                ],
+                                  filterRenderer: (props) => (
+                                      <FilterComponent
+                                        {...props}
+                                        onlyFilters={['from_date', 'to_date']}
+                                      />
+                                    ),
                               
                             actions: [
                                 <ExportDropdownButton

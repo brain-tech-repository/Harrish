@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { downloadFile } from "@/app/services/allApi";
 import Skeleton from "@mui/material/Skeleton";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
-
+import FilterComponent from "@/app/components/filterComponent";
 interface CustomerItem {
   id: number;
   sap_code: string;
@@ -327,19 +327,12 @@ export default function ViewPage() {
                 <Table
                   config={{
                     header: {
-                      filterByFields: [
-                        {
-                          key: "start_date",
-                          label: "Start Date",
-                          type: "dateChange"
-                        },
-                        {
-                          key: "end_date",
-                          label: "End Date",
-                          type: "dateChange"
-                        },
-
-                      ],
+                        filterRenderer: (props) => (
+                            <FilterComponent
+                              {...props}
+                              onlyFilters={['from_date', 'to_date']}
+                            />
+                          ),
                       searchBar: false,
                     },
                     showNestedLoading: true,
@@ -371,19 +364,12 @@ export default function ViewPage() {
                 <Table
                   config={{
                     header: {
-                      filterByFields: [
-                        {
-                          key: "start_date",
-                          label: "Start Date",
-                          type: "dateChange"
-                        },
-                        {
-                          key: "end_date",
-                          label: "End Date",
-                          type: "dateChange"
-                        },
-
-                      ],
+                       filterRenderer: (props) => (
+                           <FilterComponent
+                             {...props}
+                             onlyFilters={['from_date', 'to_date']}
+                           />
+                         ),
                       searchBar: false,
                     },
                     showNestedLoading: true,

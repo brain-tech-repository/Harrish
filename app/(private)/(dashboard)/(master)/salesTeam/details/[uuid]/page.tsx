@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-
+import FilterComponent from "@/app/components/filterComponent";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import Image from "next/image";
-
+import { downloadPDF } from "@/app/services/allApi";
 import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
@@ -809,18 +809,24 @@ export default function Page() {
                 },
                 header: {
                   searchBar: false,
-                  filterByFields: [
-                    {
-                      key: "start_date",
-                      label: "Start Date",
-                      type: "date"
-                    },
-                    {
-                      key: "end_date",
-                      label: "End Date",
-                      type: "date"
-                    }
-                  ]
+    filterRenderer: (props) => (
+      <FilterComponent
+        {...props}
+        onlyFilters={['from_date', 'to_date']}
+      />
+    ),
+                  // filterByFields: [
+                  //   {
+                  //     key: "start_date",
+                  //     label: "Start Date",
+                  //     type: "date"
+                  //   },
+                  //   {
+                  //     key: "end_date",
+                  //     label: "End Date",
+                  //     type: "date"
+                  //   }
+                  // ]
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },
@@ -852,18 +858,12 @@ export default function Page() {
                 // },
                 header: {
                   searchBar: false,
-                  filterByFields: [
-                    {
-                      key: "start_date",
-                      label: "Start Date",
-                      type: "date"
-                    },
-                    {
-                      key: "end_date",
-                      label: "End Date",
-                      type: "date"
-                    }
-                  ]
+                    filterRenderer: (props) => (
+      <FilterComponent
+        {...props}
+        onlyFilters={['from_date', 'to_date']}
+      />
+    ),
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },

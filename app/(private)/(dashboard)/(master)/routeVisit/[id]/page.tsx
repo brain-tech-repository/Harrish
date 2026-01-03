@@ -782,10 +782,11 @@ export default function AddEditRouteVisit() {
                   label="From Date"
                   type="date"
                   value={form.from_date ? form.from_date.split("T")[0] : ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, from_date: e.target.value }))
-                  }
-                  error={errors.from_date}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, from_date: e.target.value }));
+                    if (errors.from_date) setErrors((prev) => ({ ...prev, from_date: "" }));
+                  }}
+                  error={errors.from_date} 
                 />
               </div>
 
@@ -796,9 +797,10 @@ export default function AddEditRouteVisit() {
                   label="To Date"
                   type="date"
                   value={form.to_date ? form.to_date.split("T")[0] : ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, to_date: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, to_date: e.target.value }));
+                    if (errors.to_date) setErrors((prev) => ({ ...prev, to_date: "" }));
+                  }}
                   error={errors.to_date}
                 />
               </div>

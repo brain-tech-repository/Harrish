@@ -256,7 +256,6 @@ export default function AddEditRoute() {
             {/* Route Code */}
             <div>
               <InputFields
-                required
                 label="Route Code"
                 value={form.routeCode}
                 onChange={(e) => handleChange("routeCode", e.target.value)}
@@ -295,10 +294,9 @@ export default function AddEditRoute() {
                 label="Route Name"
                 value={form.routeName}
                 onChange={(e) => handleChange("routeName", e.target.value)}
+                error={errors.routeName}
               />
-              {errors.routeName && (
-                <p className="text-red-500 text-sm mt-1">{errors.routeName}</p>
-              )}
+             
             </div>
 
             {/* Route Type */}
@@ -310,10 +308,9 @@ export default function AddEditRoute() {
                 value={form.routeType}
                 onChange={(e) => handleChange("routeType", e.target.value)}
                 options={isEditMode ? routeTypeAllOptions : routeTypeOptions}
+                error={errors.routeType}
               />
-              {errors.routeType && (
-                <p className="text-red-500 text-sm mt-1">{errors.routeType}</p>
-              )}
+             
             </div>
 
             {/* Warehouse */}
@@ -331,10 +328,9 @@ export default function AddEditRoute() {
                   handleChange("vehicleType", ""); // clear vehicle when warehouse changes
                   fetchRoutes(newWarehouse);
                 }}
+                error={errors.warehouse}
               />
-              {errors.warehouse && (
-                <p className="text-red-500 text-sm mt-1">{errors.warehouse}</p>
-              )}
+            
             </div>
           </div>
         </div>
@@ -357,7 +353,7 @@ export default function AddEditRoute() {
                 options={filteredOptions}
                 showSkeleton={skeleton}
                 disabled={filteredOptions.length === 0}
-                placeholder={form.warehouse ? "Select Vehicle" : "Select warehouse first"}
+                placeholder={form.warehouse ? "Select Vehicle" : "Select distributor first"}
               />
             </div>
 
@@ -373,10 +369,9 @@ export default function AddEditRoute() {
                   { value: "1", label: "Active" },
                   { value: "0", label: "Inactive" },
                 ]}
+                error={errors.status}
               />
-              {errors.status && (
-                <p className="text-red-500 text-sm mt-1">{errors.status}</p>
-              )}
+             
             </div>
           </div>
         </div>

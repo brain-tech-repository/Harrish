@@ -113,22 +113,22 @@ const validationSchema = Yup.object({
   bank_guarantee_amount: Yup.string().required("Guarantee Amount is required."),
 
   bank_guarantee_from: Yup.date()
-    // .required("Guarantee From is required")
+    .required("Guarantee From is required")
     .typeError("Please enter a valid date"),
   bank_guarantee_to: Yup.date()
-    // .required("Guarantee To is required")
+    .required("Guarantee To is required")
     .typeError("Please enter a valid date")
     .min(
       Yup.ref("bank_guarantee_from"),
       "Guarantee To date cannot be before Guarantee From date"
     ),
 
-  totalcreditlimit: Yup.string(),
-  // .required("Total Credit Limit is required."),
-  credit_limit_validity: Yup.string(),
-  dChannelId: Yup.string(),
-  // .required("Channel is required."),
-  merchendiser_ids: Yup.string(),
+  // totalcreditlimit: Yup.string(),
+  // // .required("Total Credit Limit is required."),
+  // credit_limit_validity: Yup.string(),
+  // dChannelId: Yup.string(),
+  // // .required("Channel is required."),
+  // merchendiser_ids: Yup.string(),
 });
 
 const stepSchemas = [
@@ -154,7 +154,7 @@ const stepSchemas = [
     payment_type: validationSchema.fields.payment_type,
     creditday: validationSchema.fields.creditday,
     creditlimit: validationSchema.fields.creditlimit,
-    totalcreditlimit: validationSchema.fields.totalcreditlimit,
+    // totalcreditlimit: validationSchema.fields.totalcreditlimit,
     bank_guarantee_name: validationSchema.fields.bank_guarantee_name,
     bank_guarantee_amount: validationSchema.fields.bank_guarantee_amount,
     bank_guarantee_from: validationSchema.fields.bank_guarantee_from,
@@ -730,6 +730,7 @@ export default function AddCompanyCustomer() {
                     { value: "1", label: "Cash" },
                     { value: "2", label: "Credit" },
                   ]}
+                  error={touched.payment_type && errors.payment_type} 
                 />
               </div>
               <div>
@@ -754,14 +755,12 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
-                  required
                   label="Total Credit Limit"
                   name="totalcreditlimit"
                   value={values.totalcreditlimit}
                   onChange={(e) =>
                     setFieldValue("totalcreditlimit", e.target.value)
                   }
-                  error={touched.totalcreditlimit && errors.totalcreditlimit}
                 />
               </div>
               <div>
@@ -804,7 +803,7 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
-                  required
+                required
                   label="Guarantee From"
                   name="bank_guarantee_from"
                   value={values.bank_guarantee_from}
@@ -817,7 +816,7 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
-                  required
+                required
                   label="Guarantee To"
                   name="bank_guarantee_to"
                   value={values.bank_guarantee_to}
@@ -842,9 +841,7 @@ export default function AddCompanyCustomer() {
                         { value: "2", label: "Merchendiser 2" },
                         { value: "3", label: "Merchendiser 3" },
                       ]}
-                      error={
-                        touched.merchendiser_ids && errors.merchendiser_ids
-                      }
+                      
                     />
                   </>
                 )}

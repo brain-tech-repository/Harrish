@@ -86,6 +86,7 @@ export type configType = {
         filterByFields?: FilterField[];
         filterRenderer?: (props: FilterRendererProps) => React.ReactNode;
         exportButton?: {
+            threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean };
             show: boolean;
             onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
         };
@@ -387,6 +388,8 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                     }, [config]);
 
                     useEffect(() => {
+                        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
+                        lastApiCallRef.current = null;
                         checkForData();
 
                         // Only initialize "select all" when there is no saved selection in localStorage.
@@ -439,9 +442,10 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                                             {config.header?.exportButton &&
                                         <div className="flex gap-[12px] relative">
                                             <BorderIconButton
-                                                icon="gala:file-document"
+                                                icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
                                                 label="Export Excel"
                                                 onClick={async () => {
+                                                    if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) return;
                                                     if (!config.header?.exportButton?.onClick) return;
                                                     config.header.exportButton.onClick(config.api?.list as any, displayedData);
                                                 }}

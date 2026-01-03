@@ -63,10 +63,7 @@ const VehicleSchema = Yup.object().shape({
       originalValue === "" ? undefined : value
     )
     .required("Capacity is required"),
-  fuel_reading: Yup.number()
-    .transform((value, originalValue) =>
-      originalValue === "" ? undefined : value
-    )
+  fuel_reading: Yup.string()
     .required("Fuel Reading is required")
     .max(999, "Fuel Reading must be at most 3 digits"),
   status: Yup.string().required("Status is required"),
@@ -274,6 +271,7 @@ export default function AddEditVehicleWithStepper() {
       fields = [
         "odoMeter",
         "capacity",
+        "fuel_reading",
         "status",
         "validFrom",
         "validTo",

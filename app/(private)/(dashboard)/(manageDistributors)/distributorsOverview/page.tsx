@@ -50,19 +50,21 @@ const itemColumns = [
     label: "Stock Qty",
     showByDefault: true,
     render: (row: any) => row.stock_qty ?? "-",
+    isSortable: true,
   },
   {
     key: "total_sold_qty",
     label: "Sold Qty",
     showByDefault: true,
     render: (row: any) => row.total_sold_qty ?? "-",
+     isSortable: true,
   },
   {
     key: "purchase",
     label: "Purchase Qty",
     showByDefault: true,
-
     render: (row: any) => row.purchase ?? "-",
+     isSortable: true,
   },
 ];
 
@@ -173,7 +175,7 @@ const OverallPerformance: React.FC = () => {
           </div>
         ))}
       </ContainerCard> */}
-      <ContainerCard className="w-full">
+      <ContainerCard className="flex flex-col h-full w-full">
 
         <div className="flex justify-between md:items-center">
           <div>
@@ -258,10 +260,10 @@ const OverallPerformance: React.FC = () => {
 
                 },
                 //   rowSelection: true,
-                footer: { nextPrevBtn: true, pagination: true },
+                // footer: { nextPrevBtn: true, pagination: true },
                 columns: itemColumns,
 
-                pageSize: 10,
+                pageSize: 1000000,
               }}
             />}
         </div>

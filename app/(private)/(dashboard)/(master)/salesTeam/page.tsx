@@ -25,7 +25,10 @@ const SalesmanPage = () => {
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
-  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
+  const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+    });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -46,47 +49,33 @@ const SalesmanPage = () => {
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
 
-  const handleStatusChange = async (
-    data: TableDataType[],
-    selectedRow: number[] | undefined,
-    status: "0" | "1"
-  ) => {
-    if (!selectedRow || selectedRow.length === 0) {
-      showSnackbar("Please select at least one sales Team", "error");
-      return;
-    }
 
-    const selectedSalesmen = data.filter((_, index) =>
-      selectedRow.includes(index)
-    );
 
-    const failedUpdates: string[] = [];
-
-    const selectedRowsData: string[] = data.filter((value, index) => selectedRow?.includes(index)).map((item) => item.id);
-    try {
-      setLoading(true);
-
-      const res = await updateSalesmanStatus({ salesman_ids: selectedRowsData, status });
-
-      if (failedUpdates.length > 0) {
-        showSnackbar(
-          `Failed to update status for: ${failedUpdates.join(", ")}`,
-          "error"
-        );
-      } else {
-        setRefreshKey((k) => k + 1);
-        showSnackbar("Status updated successfully", "success");
-        fetchSalesman();
+    const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
+      try {
+        // setLoading(true);
+        if (!ids || ids.length === 0) {
+          showSnackbar("No vehicle selected", "error");
+          return;
+        }
+        const selectedRowsData: number[] = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+        if (selectedRowsData.length === 0) {
+          showSnackbar("No vehicle selected", "error");
+          return;
+        }
+        await updateSalesmanStatus({ salesman_ids: selectedRowsData, status });
+        // Refresh vehicle list after 3 seconds
+        // (async () => {
+          // fetchVehicles();
+          setRefreshKey((k) => k + 1);
+        // });
+        showSnackbar("Vehicle status updated successfully", "success");
+        // setLoading(false);
+      } catch (error) {
+        showSnackbar("Failed to update vehicle status", "error");
+        // setLoading(false);
       }
-
-    } catch (error) {
-      console.error("Status update error:", error);
-      showSnackbar("An error occurred while updating status", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    };
 
 const exportFile = async (format: string) => {
     try {
@@ -103,6 +92,7 @@ const exportFile = async (format: string) => {
       showSnackbar("Failed to download vehicle data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     }
   };
 
@@ -254,6 +244,7 @@ const exportFile = async (format: string) => {
             header: {
               title: "Sales Team",
               exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), // Only onClick, no api property
               },
@@ -268,14 +259,64 @@ const exportFile = async (format: string) => {
                 //   label: "Export Excel",
                 //   onClick: () => handleExport("xlsx")
                 // },
-                {
+                 {
                   icon: "lucide:radio",
                   label: "Inactive",
-                  showOnSelect: true,
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                    if (!selectedRow || selectedRow.length === 0) return false;
+                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    return status?.includes("1") || false;
+                  },
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                    handleStatusChange(data, selectedRow, "0");
-                  }
-                }
+                    const status: string[] = [];
+                    const ids = selectedRow?.map((id) => {
+                      const currentStatus = data[id].status;
+                      if (!status.includes(currentStatus)) {
+                        status.push(currentStatus);
+                      }
+                      return data[id].id;
+                    })
+                    statusUpdate(ids, Number(0));
+                  },
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Active",
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                    if (!selectedRow || selectedRow.length === 0) return false;
+                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    return status?.includes("0") || false;
+                  },
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const status: string[] = [];
+                    const ids = selectedRow?.map((id) => {
+                      const currentStatus = data[id].status;
+                      if (!status.includes(currentStatus)) {
+                        status.push(currentStatus);
+                      }
+                      return data[id].id;
+                    })
+                    statusUpdate(ids, Number(1));
+                  },
+                },
+                // {
+                //   icon: "lucide:radio",
+                //   label: "Active",
+                //   showOnSelect: true,
+                //   onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                //     handleStatusChange(data, selectedRow, "1");
+                //   }
+                // },
+                // {
+                //   icon: "lucide:radio",
+                //   label: "Inactive",
+                //   showOnSelect: true,
+                //   onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                //     handleStatusChange(data, selectedRow, "0");
+                //   }
+                // }
               ],
               searchBar: true,
               columnFilter: true,

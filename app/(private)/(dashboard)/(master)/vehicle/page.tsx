@@ -124,7 +124,7 @@ export default function VehiclePage() {
     }
   }, [permissions]);
 
-  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
@@ -197,11 +197,13 @@ export default function VehiclePage() {
       showSnackbar("Failed to download vehicle data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     }
   };
 
   const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
     try {
+      // setLoading(true);
       if (!ids || ids.length === 0) {
         showSnackbar("No vehicle selected", "error");
         return;
@@ -212,10 +214,16 @@ export default function VehiclePage() {
         return;
       }
       await vehicleStatusUpdate({ vehicle_ids: selectedRowsData, status });
-      setRefreshKey((k) => k + 1);
+      // Refresh vehicle list after 3 seconds
+      // (async () => {
+        fetchVehicles();
+        setRefreshKey((k) => k + 1);
+      // });
       showSnackbar("Vehicle status updated successfully", "success");
+      // setLoading(false);
     } catch (error) {
       showSnackbar("Failed to update vehicle status", "error");
+      // setLoading(false);
     }
   };
   return (
@@ -231,6 +239,7 @@ export default function VehiclePage() {
             },
             header: {
                exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

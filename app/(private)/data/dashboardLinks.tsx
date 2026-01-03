@@ -140,13 +140,13 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "carbon:delivery-parcel",
             iconColor: "text-cyan-500"
           },
-          {
-            isActive: false,
-            href: "/distributorsStock",
-            label: "Distributors Stock",
-            leadingIcon: "carbon:heat-map-stocks",
-            iconColor: "text-cyan-500"
-          },
+          // {
+          //   isActive: false,
+          //   href: "/distributorsStock",
+          //   label: "Distributors Stock",
+          //   leadingIcon: "carbon:heat-map-stocks",
+          //   iconColor: "text-cyan-500"
+          // },
 
         ]
       },

@@ -324,6 +324,7 @@ export default function Warehouse() {
 
             header: {
                exportButton: {
+                threeDotLoading:  threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

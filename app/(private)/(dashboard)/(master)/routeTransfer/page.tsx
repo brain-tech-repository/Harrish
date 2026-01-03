@@ -177,7 +177,7 @@ export default function StockTransfer() {
                 const res = await warehouseList({ area_id: source.area, dropdown: "true" });
                 setSourceOptions(prev => ({
                     ...prev,
-                    warehouses: (res?.data || []).map((w: any) => ({ value: String(w.id), label: w.warehouse_name || w.name })),
+                    warehouses: (res?.data || []).map((w: any) => ({ value: String(w.id), label: `${w.warehouse_code} - ${w.warehouse_name || w.name}` })),
                     routes: []
                 }));
                 setSource(prev => ({ ...prev, warehouse: "", route: "" }));

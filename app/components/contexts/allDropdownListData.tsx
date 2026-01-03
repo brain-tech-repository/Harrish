@@ -44,7 +44,7 @@ import {
   getUserList,
 
 } from '@/app/services/allApi';
-import { vendorList, chillerList } from '@/app/services/assetsApi';
+import { vendorList, chillerList, spareCategoryList, spareSubCategoryList, spareCategory } from '@/app/services/assetsApi';
 import { shelvesList } from '@/app/services/merchandiserApi';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
@@ -84,6 +84,8 @@ interface DropdownDataContextType {
   BrandList: Brand[];
   brandingList: Branding[];
   userList: UserItem[];
+  spareCategoryList: SpareCategory[];
+  spareSubCategoryList: SpareSubCategory[];
   chillerList: ChillerItem[];
   // mapped dropdown options
   companyOptions: { value: string; label: string }[];
@@ -133,6 +135,8 @@ interface DropdownDataContextType {
   allCompanyTypeOptions: { value: string; label: string }[];
   brandingOptions: { value: string; label: string }[];
   userOptions: { value: string; label: string }[];
+  spareCategoryOptions: { value: string; label: string }[];
+  spareSubCategoryOptions: { value: string; label: string }[];
   chillerOptions: { value: string; label: string }[];
   permissions: permissionsList[];
   refreshDropdowns: () => Promise<void>;
@@ -200,6 +204,8 @@ interface DropdownDataContextType {
   ensureBrandLoaded: () => void;
   ensureBrandingLoaded: () => void;
   ensureUserLoaded: () => void;
+  ensureSpareCategoryLoaded: () => void;
+  ensureSpareSubCategoryLoaded: () => void;
   ensureAllCompanyCustomersLoaded: () => void;
   ensureAllCustomerTypesLoaded: () => void;
   ensureAllCompanyTypesLoaded: () => void;
@@ -277,6 +283,17 @@ interface RouteTypeItem {
   route_type_code?: string;
   route_type_name?: string;
 }
+interface SpareCategory {
+  id?: number | string;
+  osa_code?: string;
+  spare_category_name?: string;
+}
+interface SpareSubCategory {
+  id?: number | string;
+  osa_code?: string;
+  spare_category_name?: string;
+}
+
 
 interface AreaItem {
   id?: number | string;
@@ -401,6 +418,8 @@ interface SalesmanList {
   status: number
 }
 
+
+
 interface AssetsModel {
   id: number;
   name: string;
@@ -482,6 +501,7 @@ interface UserItem {
 }
 
 const AllDropdownListDataContext = createContext<DropdownDataContextType | undefined>(undefined);
+
 
 export const useAllDropdownListData = () => {
   const context = useContext(AllDropdownListDataContext);
@@ -669,6 +689,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const [brandList, setBrandList] = useState<Brand[]>([]);
   const [brandingListState, setBrandingList] = useState<Branding[]>([]);
   const [userListState, setUserList] = useState<UserItem[]>([]);
+  const [spareCategoryList, setSpareCategoryList] = useState<SpareCategory[]>([]);
+  const [spareSubCategoryList, setSpareSubCategoryList] = useState<SpareSubCategory[]>([]);
   const [chillerListState, setChillerList] = useState<ChillerItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -767,7 +789,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureWarehouseAllLoaded = useCallback(() => {
     // if (fetchedRef.current.has('warehouseAll') || fetchingRef.current.has('warehouseAll')) return;
     // fetchingRef.current.add('warehouseAll');
-    warehouseList({allData:"true"}).then(res => {
+    warehouseList({ allData: "true" }).then(res => {
       setWarehouseAllList(normalizeResponse(res) as WarehouseAll[]);
       fetchedRef.current.add('warehouseAll');
       fetchingRef.current.delete('warehouseAll');
@@ -779,7 +801,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureAllRouteTypeLoaded = useCallback(() => {
     // if (fetchedRef.current.has('warehouseAll') || fetchingRef.current.has('warehouseAll')) return;
     // fetchingRef.current.add('warehouseAll');
-    routeType({allData:"true"}).then(res => {
+    routeType({ allData: "true" }).then(res => {
       setRouteTypeAllList(normalizeResponse(res) as RouteTypeAll[]);
       fetchedRef.current.add('routeTypeAll');
       fetchingRef.current.delete('routeTypeAll');
@@ -970,6 +992,50 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     });
   }, [normalizeResponse]);
 
+  const ensureSpareCategoryLoaded = useCallback(() => {
+    // if (fetchedRef.current.has('spareCategory') || fetchingRef.current.has('spareCategory')) return;
+    // fetchingRef.current.add('spareCategory');
+    spareCategory({}).then(res => {
+      setSpareCategoryList(normalizeResponse(res) as SpareCategory[]);
+      fetchedRef.current.add('spareCategory');
+      fetchingRef.current.delete('spareCategory');
+    }).catch(() => {
+      setSpareCategoryList([]);
+      fetchingRef.current.delete('spareCategory');
+    });
+  }, [normalizeResponse]);
+
+  const ensureSpareSubCategoryLoaded = useCallback(() => {
+    // already fetched or in progress → do nothing
+    if (
+      fetchedRef.current.has("spareSubCategory") ||
+      fetchingRef.current.has("spareSubCategory")
+    ) {
+      return;
+    }
+
+    // mark as fetching
+    fetchingRef.current.add("spareSubCategory");
+
+    spareCategory({})
+      .then((res: any) => {
+        setSpareSubCategoryList(
+          normalizeResponse(res) as SpareSubCategory[]
+        );
+        fetchedRef.current.add("spareSubCategory");
+      })
+      .catch(() => {
+        setSpareSubCategoryList([]);
+      })
+      .finally(() => {
+        fetchingRef.current.delete("spareSubCategory");
+      });
+  }, [normalizeResponse]);
+
+
+  // if (fetchedRef.current.has('spareSubCategory') || fetchingRef.current.has('spareSubCategory')) return;
+  // fetchingRef.current.add('spareSubCategory');
+
   const ensureDiscountTypeLoaded = useCallback(() => {
     // if (fetchedRef.current.has('discountType') || fetchingRef.current.has('discountType')) return;
     // fetchingRef.current.add('discountType');
@@ -986,7 +1052,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureMenuListLoaded = useCallback(() => {
     // if (fetchedRef.current.has('menuList') || fetchingRef.current.has('menuList')) return;
     // fetchingRef.current.add('menuList');
-    getMenuList({ dropdown: 'true' }).then(res => {
+    getMenuList().then(res => {
       setMenuList(normalizeResponse(res) as MenuList[]);
       fetchedRef.current.add('menuList');
       fetchingRef.current.delete('menuList');
@@ -1387,6 +1453,16 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     value: String(c.id ?? ''),
     label: c.name ? `${c.name}` : (c.name ?? '')
   }))
+
+  const spareCategoryOptions = (Array.isArray(spareCategoryList) ? spareCategoryList : []).map((c: SpareCategory) => ({
+    value: String(c.id ?? ''),
+    label: c.spare_category_name ? `${c.spare_category_name}` : (c.spare_category_name ?? '')
+  }))
+  const spareSubCategoryOptions = (Array.isArray(spareSubCategoryList) ? spareSubCategoryList : []).map((c: SpareCategory) => ({
+    value: String(c.id ?? ''),
+    label: c.spare_category_name ? `${c.spare_category_name}` : (c.spare_category_name ?? '')
+  }))
+
 
   const assetsModelOptions = (Array.isArray(assetsModel) ? assetsModel : []).map((c: AssetsModel) => ({
     value: String(c.id ?? ''),
@@ -2163,6 +2239,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         assetsModelList: assetsModel,
         BrandList: brandList,
         brandingList: brandingListState,
+        spareCategoryList: spareCategoryList,
+        spareSubCategoryList: spareSubCategoryList,
         userList: userListState,
         chillerList: chillerListState,
         fetchItemSubCategoryOptions,
@@ -2231,6 +2309,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         allCompanyTypeOptions,
         brandingOptions,
         userOptions,
+        spareCategoryOptions,
+        spareSubCategoryOptions,
         chillerOptions,
         loading,
         ensureCompanyLoaded,
@@ -2280,6 +2360,8 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
         ensureUserLoaded,
         ensureAllAgentCustomersLoaded,
         ensureAllCompanyOptionsLoaded,
+        ensureSpareCategoryLoaded,
+        ensureSpareSubCategoryLoaded,
         ensureChillerLoaded,
       }}
     >

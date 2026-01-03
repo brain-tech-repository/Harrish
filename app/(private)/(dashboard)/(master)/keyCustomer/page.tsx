@@ -163,6 +163,7 @@ export default function CompanyCustomers() {
         setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
 
       }
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
     } catch (error) {
       showSnackbar("Failed to download distributor data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
@@ -200,6 +201,7 @@ export default function CompanyCustomers() {
             header: {
               title: "Key Customer",
                exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

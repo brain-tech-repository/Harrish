@@ -19,6 +19,7 @@ import { formatWithPattern } from "@/app/utils/formatDate";
 import Drawer from "@mui/material/Drawer";
 import { exportInvoice, getAgentCustomerBySalesId } from "@/app/services/agentTransaction";
 import Skeleton from "@mui/material/Skeleton";
+import FilterComponent from "@/app/components/filterComponent";
 interface Item {
     id: string;
     sap_id: string;
@@ -1525,22 +1526,12 @@ export default function ViewPage() {
                                 filterBy: filterBy
                             },
                             header: {
-                                filterByFields: [
-                                    {
-                                        key: "start_date",
-                                        label: "Start Date",
-                                        type: "date",
-                                        applyWhen: (filters) => !!filters.end_date && !!filters.start_date,
-                                        inputProps: {
-                                            // min: filters?.end_date ? undefined : "",
-                                        }
-                                    },
-                                    {
-                                        key: "end_date",
-                                        label: "End Date",
-                                        type: "date"
-                                    },
-                                ],
+                                filterRenderer: (props) => (
+                                                                        <FilterComponent
+                                                                          {...props}
+                                                                          onlyFilters={['from_date', 'to_date']}
+                                                                        />
+                                                                      ),
                             },
                             footer: { nextPrevBtn: true, pagination: true },
                             columns: salesColumns,

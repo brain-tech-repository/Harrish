@@ -142,7 +142,7 @@ export default function AddEditSalesman() {
   ];
   const SalesmanSchema = Yup.object().shape({
     name: Yup.string().required("Name is required"),
-    type: Yup.string().required("Type is required"),
+    type: Yup.string().required("Sales Team Type is required"),
     designation: Yup.string().required("Designation is required"),
     contact_no: Yup.string()
       .required("Owner Contact number is required")
@@ -466,7 +466,6 @@ export default function AddEditSalesman() {
           <ContainerCard>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputFields
-                required
                 label="OSA Code"
                 disabled
                 name="osa_code"
@@ -487,6 +486,7 @@ export default function AddEditSalesman() {
               </div>
               <div className="flex flex-col w-full">
                 <InputFields
+                required
                   label="Sales Team Type"
                   name="type"
                   value={values.type}
@@ -674,17 +674,13 @@ export default function AddEditSalesman() {
                   selectedCountry={country.contact_no}
                   value={`${values.contact_no ?? ""}`}
                   onChange={(e) => setFieldValue("contact_no", e.target.value)}
-                // error={
-                //   errors?.contact_no && touched?.contact_no
-                //     ? errors.contact_no
-                //     : false
-                // }
+                error={
+                  errors?.contact_no && touched?.contact_no
+                    ? errors.contact_no
+                    : false
+                }
                 />
-                {errors?.contact_no && touched?.contact_no && (
-                  <span className="text-xs text-red-500 mt-1">
-                    {/* {errors.contact_no} */}
-                  </span>
-                )}
+               
               </div>
 
               <div>
@@ -861,7 +857,7 @@ export default function AddEditSalesman() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Update Sales Team" : "Add New Sales Team"}
+            {isEditMode ? "Update Sales Team" : "Add Sales Team"}
           </h1>
         </div>
       </div>

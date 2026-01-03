@@ -57,6 +57,35 @@ export const downloadFile = (fileurl: string, type?: string): void => {
   link.remove();
 };
 
+export async function downloadPDF(
+  fileUrl: string,
+  fileName: string
+): Promise<void> {
+  try {
+    const response = await fetch(fileUrl);
+
+    if (!response.ok) {
+      throw new Error("Failed to download file");
+    }
+
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download error:", error);
+  }
+}
+
+
+
 export const login = async (credentials: {
   email?: string;
   username?: string;

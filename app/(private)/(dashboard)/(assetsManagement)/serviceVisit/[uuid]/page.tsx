@@ -63,36 +63,6 @@ const fileValidation = Yup.mixed()
     });
 
 const validationSchema = Yup.object({
-    owner_name: Yup.string()
-        .trim()
-        .required("Owner Name is required")
-        .max(100, "Owner Name cannot exceed 100 characters"),
-    outlet_name: Yup.string()
-        .trim()
-        .required("Outlet Name is required")
-        .max(100, "Outlet Name cannot exceed 100 characters"),
-    landmark: Yup.string()
-        .trim()
-        .max(255, "Landmark cannot exceed 255 characters"),
-    district: Yup.string()
-        .trim()
-        .max(100, "District cannot exceed 100 characters"),
-    location: Yup.string()
-        .trim()
-        .max(100, "Location cannot exceed 100 characters"),
-    town_village: Yup.string()
-        .trim()
-        .max(100, "Town/Village cannot exceed 100 characters"),
-    contact_no: Yup.string()
-        .matches(/^\d{9,10}$/, "Contact Number must be 9 or 10 digits")
-        .required("Contact Number is required"),
-
-    contact_no2: Yup.string()
-        .matches(/^\d{9,10}$/, "Contact Number must be 9 or 10 digits"),
-
-    contact_person: Yup.string()
-        .trim()
-        .max(100, "Contact Person cannot exceed 100 characters"),
     ticket_type: Yup.string()
         .trim()
         .max(100, "Ticket Type cannot exceed 100 characters"),
@@ -102,6 +72,20 @@ const validationSchema = Yup.object({
     time_out: Yup.string()
         .trim()
         .max(100, "Time Out cannot exceed 100 characters"),
+    outlet_name: Yup.string()
+        .trim()
+        .required("Outlet Name is required")
+        .max(100, "Outlet Name cannot exceed 100 characters"),
+    contact_person: Yup.string()
+        .trim()
+        .max(100, "Contact Person cannot exceed 100 characters"),
+    technician_id: Yup.string()
+        .trim()
+        .max(100, "Technician ID cannot exceed 100 characters"),
+    ct_status: Yup.boolean(),
+    cts_comment: Yup.string()
+        .trim()
+        .max(255, "CTS Comment cannot exceed 255 characters"),
     model_no: Yup.string()
         .trim()
         .max(100, "Model No cannot exceed 100 characters"),
@@ -114,45 +98,8 @@ const validationSchema = Yup.object({
     branding: Yup.string()
         .trim()
         .max(100, "Branding cannot exceed 100 characters"),
-    ct_status: Yup.boolean(),
-    longitude: Yup.string()
-        .trim()
-        .max(100, "Longitude cannot exceed 100 characters"),
-    latitude: Yup.string()
-        .trim()
-        .max(100, "Latitude cannot exceed 100 characters"),
-    technician_id: Yup.string()
-        .trim()
-        .max(100, "Technician ID cannot exceed 100 characters"),
-    is_machine_in_working: Yup.boolean(),
-    cleanliness: Yup.string()
-        .trim()
-        .max(100, "Cleanliness cannot exceed 100 characters"),
-    condensor_coil_cleand: Yup.boolean(),
-    gaskets: Yup.boolean(),
-    light_working: Yup.boolean(),
-    branding_no: Yup.boolean(),
-    propper_ventilation_available: Yup.boolean(),
-    leveling_positioning: Yup.boolean(),
-    stock_availability_in: Yup.string()
-        .trim()
-        .max(100, "Stock Availability In cannot exceed 100 characters"),
-    complaint_type: Yup.string()
-        .trim()
-        .max(100, "Complaint Type cannot exceed 100 characters"),
-    comment: Yup.string()
-        .trim()
-        .max(255, "Comment cannot exceed 255 characters"),
-    cts_comment: Yup.string()
-        .trim()
-        .max(255, "CTS Comment cannot exceed 255 characters"),
-    spare_part_used: Yup.string()
-        .trim()
-        .max(255, "Spare Part Used cannot exceed 255 characters"),
-    pending_other_comments: Yup.string()
-        .trim()
-        .max(255, "Pending Other Comments cannot exceed 255 characters"),
-    any_dispute: Yup.boolean(),
+    nature_of_call_id: Yup.number()
+        .max(255, "Nature of Call cannot exceed 255 characters"),
     current_voltage: Yup.string()
         .trim()
         .max(100, "Current Voltage cannot exceed 100 characters"),
@@ -165,70 +112,74 @@ const validationSchema = Yup.object({
     work_status: Yup.string()
         .trim()
         .max(100, "Work Status cannot exceed 100 characters"),
-    wrok_status_pending_reson: Yup.string()
-        .trim()
-        .max(255, "Work Status Pending Reason cannot exceed 255 characters"),
-    spare_request: Yup.string()
-        .trim()
-        .max(255, "Spare Request cannot exceed 255 characters"),
-    work_done_type: Yup.string()
-        .trim()
-        .max(255, "Work Done Type cannot exceed 255 characters"),
-    spare_details: Yup.string()
-        .trim()
-        .max(255, "Spare Details cannot exceed 255 characters"),
+    type_details_photo1: fileValidation,
+    type_details_photo2: fileValidation,
     technical_behaviour: Yup.string()
         .trim()
         .max(255, "Technical Behaviour cannot exceed 255 characters"),
     service_quality: Yup.string()
         .trim()
         .max(255, "Service Quality cannot exceed 255 characters"),
-    nature_of_call_id: Yup.string()
-        .trim()
-        .max(255, "Nature of Call cannot exceed 255 characters"),
-    type_details_photo1: fileValidation,
-    type_details_photo2: fileValidation,
+    customer_signature: fileValidation,
+    is_machine_in_working: Yup.boolean(),
+    cleanliness: Yup.boolean(),
+    condensor_coil_cleand: Yup.boolean(),
+    gaskets: Yup.boolean(),
+    light_working: Yup.boolean(),
+    branding_no: Yup.boolean(),
+    propper_ventilation_available: Yup.boolean(),
+    leveling_positioning: Yup.boolean(),
+    stock_availability_in: Yup.boolean(),
     is_machine_in_working_img: fileValidation,
     cleanliness_img: fileValidation,
     condensor_coil_cleand_img: fileValidation,
-    gaskets_img: fileValidation,
-    light_working_img: fileValidation,
-    branding_no_img: fileValidation,
-    propper_ventilation_available_img: fileValidation,
-    leveling_positioning_img: fileValidation,
     stock_availability_in_img: fileValidation,
     cooler_image: fileValidation,
     cooler_image2: fileValidation,
-    customer_signature: fileValidation,
+
 });
 
 const stepSchemas = [
     // Step 1: Basic Outlet Information
     Yup.object().shape({
-        owner_name: validationSchema.fields.owner_name,
-        outlet_name: validationSchema.fields.outlet_name,
-        landmark: validationSchema.fields.landmark,
-        district: validationSchema.fields.district,
-        location: validationSchema.fields.location,
-        town_village: validationSchema.fields.town_village,
-        longitude: validationSchema.fields.longitude,
-        latitude: validationSchema.fields.latitude,
-        contact_no: validationSchema.fields.contact_no,
-        contact_no2: validationSchema.fields.contact_no2,
-        contact_person: validationSchema.fields.contact_person,
-        technician_id: validationSchema.fields.technician_id,
         ticket_type: validationSchema.fields.ticket_type,
         time_in: validationSchema.fields.time_in,
         time_out: validationSchema.fields.time_out,
+    }),
+    Yup.object().shape({
+        outlet_name: validationSchema.fields.outlet_name,
+        contact_person: validationSchema.fields.contact_person,
+        technician_id: validationSchema.fields.technician_id,
+        ct_status: validationSchema.fields.ct_status,
+        cts_comment: validationSchema.fields.cts_comment,
+
+    }),
+
+    // Step 2: Location and Personnel
+    Yup.object().shape({
         model_no: validationSchema.fields.model_no,
         serial_no: validationSchema.fields.serial_no,
         asset_no: validationSchema.fields.asset_no,
         branding: validationSchema.fields.branding,
     }),
 
-    // Step 2: Location and Personnel
     Yup.object().shape({
-        ct_status: validationSchema.fields.ct_status,
+        nature_of_call_id: validationSchema.fields.nature_of_call_id,
+        current_voltage: validationSchema.fields.current_voltage,
+        amps: validationSchema.fields.amps,
+        cabin_temperature: validationSchema.fields.cabin_temperature,
+    }),
+
+    Yup.object().shape({
+        work_status: validationSchema.fields.work_status,
+        type_details_photo1: validationSchema.fields.type_details_photo1,
+        type_details_photo2: validationSchema.fields.type_details_photo2,
+        technical_behaviour: validationSchema.fields.technical_behaviour,
+        service_quality: validationSchema.fields.service_quality,
+        customer_signature: validationSchema.fields.customer_signature,
+    }),
+
+    Yup.object().shape({
         is_machine_in_working: validationSchema.fields.is_machine_in_working,
         cleanliness: validationSchema.fields.cleanliness,
         condensor_coil_cleand: validationSchema.fields.condensor_coil_cleand,
@@ -238,56 +189,18 @@ const stepSchemas = [
         propper_ventilation_available: validationSchema.fields.propper_ventilation_available,
         leveling_positioning: validationSchema.fields.leveling_positioning,
         stock_availability_in: validationSchema.fields.stock_availability_in,
-        complaint_type: validationSchema.fields.complaint_type,
-        comment: validationSchema.fields.comment,
-        cts_comment: validationSchema.fields.cts_comment,
-        spare_part_used: validationSchema.fields.spare_part_used,
-        pending_other_comments: validationSchema.fields.pending_other_comments,
-        any_dispute: validationSchema.fields.any_dispute,
-        current_voltage: validationSchema.fields.current_voltage,
-        amps: validationSchema.fields.amps,
-        cabin_temperature: validationSchema.fields.cabin_temperature,
-        work_status: validationSchema.fields.work_status,
-        wrok_status_pending_reson: validationSchema.fields.wrok_status_pending_reson,
-        spare_request: validationSchema.fields.spare_request,
-        work_done_type: validationSchema.fields.work_done_type,
-        spare_details: validationSchema.fields.spare_details,
-        technical_behaviour: validationSchema.fields.technical_behaviour,
-        service_quality: validationSchema.fields.service_quality,
-        nature_of_call_id: validationSchema.fields.nature_of_call_id,
-    }),
-
-    // Step 3: ServiceVisit Details
-    Yup.object().shape({
-        type_details_photo1: validationSchema.fields.type_details_photo1,
-        type_details_photo2: validationSchema.fields.type_details_photo2,
         is_machine_in_working_img: validationSchema.fields.is_machine_in_working_img,
         cleanliness_img: validationSchema.fields.cleanliness_img,
         condensor_coil_cleand_img: validationSchema.fields.condensor_coil_cleand_img,
-        gaskets_img: validationSchema.fields.gaskets_img,
-        light_working_img: validationSchema.fields.light_working_img,
-        branding_no_img: validationSchema.fields.branding_no_img,
-        propper_ventilation_available_img: validationSchema.fields.propper_ventilation_available_img,
-        leveling_positioning_img: validationSchema.fields.leveling_positioning_img,
         stock_availability_in_img: validationSchema.fields.stock_availability_in,
         cooler_image: validationSchema.fields.cooler_image,
         cooler_image2: validationSchema.fields.cooler_image2,
-        customer_signature: validationSchema.fields.customer_signature,
     }),
 ];
 
 type ServiceVisit = {
     osa_code: string;
     outlet_name: string;
-    owner_name: string;
-    landmark: string;
-    district: string;
-    location: string;
-    town_village: string;
-    longitude: string;
-    latitude: string;
-    contact_no: string;
-    contact_no2: string;
     contact_person: string;
     ticket_type: string;
     time_in: string;
@@ -307,20 +220,11 @@ type ServiceVisit = {
     propper_ventilation_available: string;
     leveling_positioning: string;
     stock_availability_in: string;
-    complaint_type: string;
-    comment: string;
     cts_comment: string;
-    spare_part_used: string;
-    pending_other_comments: string;
-    any_dispute: string;
     current_voltage: string;
     amps: string;
     cabin_temperature: string;
     work_status: string;
-    wrok_status_pending_reson: string;
-    spare_request: string;
-    work_done_type: string;
-    spare_details: string;
     technical_behaviour: string;
     service_quality: string;
     nature_of_call_id: string;
@@ -329,11 +233,6 @@ type ServiceVisit = {
     is_machine_in_working_img: string | File;
     cleanliness_img: string | File;
     condensor_coil_cleand_img: string | File;
-    gaskets_img: string | File;
-    light_working_img: string | File;
-    branding_no_img: string | File;
-    propper_ventilation_available_img: string | File;
-    leveling_positioning_img: string | File;
     stock_availability_in_img: string | File;
     cooler_image: string | File;
     cooler_image2: string | File;
@@ -357,11 +256,6 @@ const fileFields: FileField[] = [
     { fieldName: "is_machine_in_working_img", label: "Is Machine In Working Img", accept: "image/*,.pdf" },
     { fieldName: "cleanliness_img", label: "Cleanliness Img", accept: "image/*,.pdf" },
     { fieldName: "condensor_coil_cleand_img", label: "Condensor Coil Cleaned Img", accept: "image/*,.pdf" },
-    { fieldName: "gaskets_img", label: "Gaskets Img", accept: "image/*,.pdf" },
-    { fieldName: "light_working_img", label: "Light Working Img", accept: "image/*,.pdf" },
-    { fieldName: "branding_no_img", label: "Branding No Img", accept: "image/*,.pdf" },
-    { fieldName: "propper_ventilation_available_img", label: "Propper Ventilation Available Img", accept: "image/*,.pdf" },
-    { fieldName: "leveling_positioning_img", label: "Leveling Positioning Img", accept: "image/*,.pdf" },
     { fieldName: "stock_availability_in_img", label: "Stock Availability In Img", accept: "image/*,.pdf" },
     { fieldName: "cooler_image", label: "Cooler Image", accept: "image/*,.pdf" },
     { fieldName: "cooler_image2", label: "Cooler Image 2", accept: "image/*,.pdf" },
@@ -404,9 +298,12 @@ export default function AddServiceVisitStepper() {
     const uuid = params?.id;
 
     const steps: StepperStep[] = [
-        { id: 1, label: "Basic Outlet Information" },
-        { id: 2, label: "Location and Personnel" },
-        { id: 3, label: "Service Visit Images" },
+        { id: 1, label: "Basic Information" },
+        { id: 2, label: "Current Customer Details" },
+        { id: 3, label: "Fridge Details" },
+        { id: 4, label: "Work Details" },
+        { id: 5, label: "Work Done Details" },
+        { id: 6, label: "Equipment Condition" },
     ];
 
     const {
@@ -458,16 +355,7 @@ export default function AddServiceVisitStepper() {
                 // Transform the API response to match our ServiceVisit type
                 const transformedData: ServiceVisit = {
                     osa_code: data.osa_code || "",
-                    owner_name: data.owner_name || "",
                     outlet_name: data.outlet_name || "",
-                    landmark: data.landmark || "",
-                    district: data.district || "",
-                    location: data.location || "",
-                    town_village: data.town_village || "",
-                    longitude: data.longitude || "",
-                    latitude: data.latitude || "",
-                    contact_no: data.contact_no || "",
-                    contact_no2: data.contact_no2 || "",
                     contact_person: data.contact_person || "",
                     ticket_type: data.ticket_type || "",
                     time_in: data.time_in || "",
@@ -486,20 +374,11 @@ export default function AddServiceVisitStepper() {
                     propper_ventilation_available: data.propper_ventilation_available || "",
                     leveling_positioning: data.leveling_positioning || "",
                     stock_availability_in: data.stock_availability_in || "",
-                    complaint_type: data.complaint_type || "",
-                    comment: data.comment || "",
                     cts_comment: data.cts_comment || "",
-                    spare_part_used: data.spare_part_used || "",
-                    pending_other_comments: data.pending_other_comments || "",
-                    any_dispute: data.any_dispute || "",
                     current_voltage: data.current_voltage || "",
                     amps: data.amps || "",
                     cabin_temperature: data.cabin_temperature || "",
                     work_status: data.work_status || "",
-                    wrok_status_pending_reson: data.wrok_status_pending_reson || "",
-                    spare_request: data.spare_request || "",
-                    work_done_type: data.work_done_type || "",
-                    spare_details: data.spare_details || "",
                     technical_behaviour: data.technical_behaviour || "",
                     service_quality: data.service_quality || "",
                     nature_of_call_id: data.nature_of_call_id || "",
@@ -509,11 +388,6 @@ export default function AddServiceVisitStepper() {
                     is_machine_in_working_img: data.is_machine_in_working_img || "",
                     cleanliness_img: data.cleanliness_img || "",
                     condensor_coil_cleand_img: data.condensor_coil_cleand_img || "",
-                    gaskets_img: data.gaskets_img || "",
-                    light_working_img: data.light_working_img || "",
-                    branding_no_img: data.branding_no_img || "",
-                    propper_ventilation_available_img: data.propper_ventilation_available_img || "",
-                    leveling_positioning_img: data.leveling_positioning_img || "",
                     stock_availability_in_img: data.stock_availability_in_img || "",
                     cooler_image: data.cooler_image || "",
                     cooler_image2: data.cooler_image2 || "",
@@ -728,16 +602,7 @@ export default function AddServiceVisitStepper() {
 
     const initialValues: ServiceVisit = {
         osa_code: "",
-        owner_name: "",
         outlet_name: "",
-        landmark: "",
-        district: "",
-        location: "",
-        town_village: "",
-        longitude: "",
-        latitude: "",
-        contact_no: "",
-        contact_no2: "",
         contact_person: "",
         ticket_type: "",
         time_in: "",
@@ -756,20 +621,11 @@ export default function AddServiceVisitStepper() {
         propper_ventilation_available: "",
         leveling_positioning: "",
         stock_availability_in: "",
-        complaint_type: "",
-        comment: "",
         cts_comment: "",
-        spare_part_used: "",
-        pending_other_comments: "",
-        any_dispute: "",
         current_voltage: "",
         amps: "",
         cabin_temperature: "",
         work_status: "",
-        wrok_status_pending_reson: "",
-        spare_request: "",
-        work_done_type: "",
-        spare_details: "",
         technical_behaviour: "",
         service_quality: "",
         nature_of_call_id: "",
@@ -779,11 +635,6 @@ export default function AddServiceVisitStepper() {
         is_machine_in_working_img: "",
         cleanliness_img: "",
         condensor_coil_cleand_img: "",
-        gaskets_img: "",
-        light_working_img: "",
-        branding_no_img: "",
-        propper_ventilation_available_img: "",
-        leveling_positioning_img: "",
         stock_availability_in_img: "",
         cooler_image: "",
         cooler_image2: "",
@@ -937,17 +788,43 @@ export default function AddServiceVisitStepper() {
                                     className="text-sm text-red-600 mb-1"
                                 />
                             </div>
-
                             <div>
                                 <InputFields
-                                    label="Owner Name"
-                                    name="owner_name"
-                                    value={values.owner_name}
-                                    onChange={(e) => setFieldValue("owner_name", e.target.value)}
-                                    error={touched.owner_name && errors.owner_name}
+                                    label="Time In"
+                                    name="time_in"
+                                    type="date"
+                                    value={values.time_in}
+                                    onChange={(e) => setFieldValue("time_in", e.target.value)}
+                                    error={touched.time_in && errors.time_in}
+                                />
+                                <ErrorMessage
+                                    name="time_in"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
                                 />
                             </div>
-
+                            <div>
+                                <InputFields
+                                    label="Time Out"
+                                    name="time_out"
+                                    type="date"
+                                    value={values.time_out}
+                                    onChange={(e) => setFieldValue("time_out", e.target.value)}
+                                    error={touched.time_out && errors.time_out}
+                                />
+                                <ErrorMessage
+                                    name="time_out"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+                        </div>
+                    </ContainerCard>
+                );
+            case 2:
+                return (
+                    <ContainerCard>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
                                     label="Outlet Name"
@@ -956,100 +833,6 @@ export default function AddServiceVisitStepper() {
                                     options={channelOptions}
                                     onChange={(e) => setFieldValue("outlet_name", e.target.value)}
                                     error={touched.outlet_name && errors.outlet_name}
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="Town"
-                                    name="town_village"
-                                    value={values.town_village}
-                                    onChange={(e) => setFieldValue("town_village", e.target.value)}
-                                    error={touched.owner_name && errors.owner_name}
-                                />
-                                <ErrorMessage
-                                    name="town_village"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="Landmark"
-                                    name="landmark"
-                                    value={values.landmark}
-                                    onChange={(e) => setFieldValue("landmark", e.target.value)}
-                                    error={touched.landmark && errors.landmark}
-                                />
-                                <ErrorMessage
-                                    name="landmark"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="Location"
-                                    name="location"
-                                    value={values.location}
-                                    options={locationOptions}
-                                    onChange={(e) => setFieldValue("location", e.target.value)}
-                                    error={touched.location && errors.location}
-                                />
-                                <ErrorMessage
-                                    name="location"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="longitude"
-                                    name="longitude"
-                                    value={values.longitude}
-                                    onChange={(e) => setFieldValue("longitude", e.target.value)}
-                                    error={touched.longitude && errors.longitude}
-                                />
-                                <ErrorMessage
-                                    name="longitude"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="latitude"
-                                    name="latitude"
-                                    value={values.latitude}
-                                    onChange={(e) => setFieldValue("latitude", e.target.value)}
-                                    error={touched.latitude && errors.latitude}
-                                />
-                                <ErrorMessage
-                                    name="latitude"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="Contact No."
-                                    name="contact_no"
-                                    value={values.contact_no}
-                                    onChange={(e) => setFieldValue("contact_no", e.target.value)}
-                                    error={touched.contact_no && errors.contact_no}
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    label="Contact No 2"
-                                    name="contact_no2"
-                                    value={values.contact_no2}
-                                    onChange={(e) => setFieldValue("contact_no2", e.target.value)}
-                                    error={touched.contact_no2 && errors.contact_no2}
-                                />
-                                <ErrorMessage
-                                    name="contact_no2"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
                                 />
                             </div>
                             <div>
@@ -1082,34 +865,41 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
-                                    label="Time In"
-                                    name="time_in"
-                                    type="date"
-                                    value={values.time_in}
-                                    onChange={(e) => setFieldValue("time_in", e.target.value)}
-                                    error={touched.time_in && errors.time_in}
+                                    label="CT Status"
+                                    name="ct_status"
+                                    value={values.ct_status}
+                                    onChange={(e) => setFieldValue("ct_status", e.target.value)}
                                 />
                                 <ErrorMessage
-                                    name="time_in"
+                                    name="ct_status"
                                     component="div"
                                     className="text-sm text-red-600 mb-1"
                                 />
                             </div>
                             <div>
                                 <InputFields
-                                    label="Time Out"
-                                    name="time_out"
-                                    type="date"
-                                    value={values.time_out}
-                                    onChange={(e) => setFieldValue("time_out", e.target.value)}
-                                    error={touched.time_out && errors.time_out}
+                                    label="CTS Comment"
+                                    name="cts_comment"
+                                    value={values.cts_comment}
+                                    onChange={(e) => setFieldValue("cts_comment", e.target.value)}
                                 />
                                 <ErrorMessage
-                                    name="time_out"
+                                    name="cts_comment"
                                     component="div"
                                     className="text-sm text-red-600 mb-1"
                                 />
                             </div>
+
+
+                        </div>
+                    </ContainerCard>
+                );
+
+            case 3:
+                return (
+                    <ContainerCard>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                             <div>
                                 <InputFields
                                     label="Model No."
@@ -1171,26 +961,156 @@ export default function AddServiceVisitStepper() {
 
                         </div>
                     </ContainerCard>
-                );
 
-            case 2:
+                );
+            case 4:
                 return (
                     <ContainerCard>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
-                                    label="CT Status"
-                                    name="ct_status"
-                                    value={values.ct_status}
-                                    onChange={(e) => setFieldValue("ct_status", e.target.value)}
+                                    label="Nature of Call ID"
+                                    name="nature_of_call_id"
+                                    value={values.nature_of_call_id}
+                                    onChange={(e) => setFieldValue("nature_of_call_id", e.target.value)}
                                 />
                                 <ErrorMessage
-                                    name="ct_status"
+                                    name="nature_of_call_id"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+                            <div>
+                                <InputFields
+                                    label="Current Voltage"
+                                    name="current_voltage"
+                                    value={values.current_voltage}
+                                    onChange={(e) => setFieldValue("current_voltage", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="current_voltage"
                                     component="div"
                                     className="text-sm text-red-600 mb-1"
                                 />
                             </div>
 
+                            <div>
+                                <InputFields
+                                    label="Amps"
+                                    name="amps"
+                                    value={values.amps}
+                                    onChange={(e) => setFieldValue("amps", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="amps"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            <div>
+                                <InputFields
+                                    label="Cabin Temperature"
+                                    name="cabin_temperature"
+                                    value={values.cabin_temperature}
+                                    onChange={(e) => setFieldValue("cabin_temperature", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="cabin_temperature"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+                        </div>
+                    </ContainerCard>
+
+                );
+
+            case 5:
+                return (
+                    <ContainerCard>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <InputFields
+                                    label="Work Status"
+                                    name="work_status"
+                                    value={values.work_status}
+                                    onChange={(e) => setFieldValue("work_status", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="work_status"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            {renderFileInput(
+                                "type_details_photo1",
+                                "Type Details Photo 1",
+                                values,
+                                setFieldValue,
+                                errors,
+                                touched,
+                                "image/*,.pdf"
+                            )}
+
+                            {renderFileInput(
+                                "type_details_photo2",
+                                "Type Details Photo 2",
+                                values,
+                                setFieldValue,
+                                errors,
+                                touched,
+                                "image/*,.pdf"
+                            )}
+
+                            <div>
+                                <InputFields
+                                    label="Technical Behaviour"
+                                    name="technical_behaviour"
+                                    value={values.technical_behaviour}
+                                    onChange={(e) => setFieldValue("technical_behaviour", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="technical_behaviour"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            <div>
+                                <InputFields
+                                    label="Service Quality"
+                                    name="service_quality"
+                                    value={values.service_quality}
+                                    onChange={(e) => setFieldValue("service_quality", e.target.value)}
+                                />
+                                <ErrorMessage
+                                    name="service_quality"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            {renderFileInput(
+                                "customer_signature",
+                                "Customer Signature",
+                                values,
+                                setFieldValue,
+                                errors,
+                                touched,
+                                "image/*,.pdf"
+                            )}
+
+                        </div>
+                    </ContainerCard>
+                );
+
+            case 6:
+                return (
+                    <ContainerCard>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
                                     label="Is Machine In Working"
@@ -1274,7 +1194,6 @@ export default function AddServiceVisitStepper() {
                                     className="text-sm text-red-600 mb-1"
                                 />
                             </div>
-
                             <div>
                                 <InputFields
                                     label="Proper Ventilation Available"
@@ -1317,271 +1236,6 @@ export default function AddServiceVisitStepper() {
                                 />
                             </div>
 
-                            <div>
-                                <InputFields
-                                    label="Complaint Type"
-                                    name="complaint_type"
-                                    value={values.complaint_type}
-                                    onChange={(e) => setFieldValue("complaint_type", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="complaint_type"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Comment"
-                                    name="comment"
-                                    value={values.comment}
-                                    onChange={(e) => setFieldValue("comment", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="comment"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="CTS Comment"
-                                    name="cts_comment"
-                                    value={values.cts_comment}
-                                    onChange={(e) => setFieldValue("cts_comment", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="cts_comment"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Spare Part Used"
-                                    name="spare_part_used"
-                                    value={values.spare_part_used}
-                                    onChange={(e) => setFieldValue("spare_part_used", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="spare_part_used"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Pending Other Comments"
-                                    name="pending_other_comments"
-                                    value={values.pending_other_comments}
-                                    onChange={(e) => setFieldValue("pending_other_comments", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="pending_other_comments"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Any Dispute"
-                                    name="any_dispute"
-                                    value={values.any_dispute}
-                                    onChange={(e) => setFieldValue("any_dispute", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="any_dispute"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Current Voltage"
-                                    name="current_voltage"
-                                    value={values.current_voltage}
-                                    onChange={(e) => setFieldValue("current_voltage", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="current_voltage"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Amps"
-                                    name="amps"
-                                    value={values.amps}
-                                    onChange={(e) => setFieldValue("amps", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="amps"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Cabin Temperature"
-                                    name="cabin_temperature"
-                                    value={values.cabin_temperature}
-                                    onChange={(e) => setFieldValue("cabin_temperature", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="cabin_temperature"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Work Status"
-                                    name="work_status"
-                                    value={values.work_status}
-                                    onChange={(e) => setFieldValue("work_status", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="work_status"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Work Status Pending Reason"
-                                    name="wrok_status_pending_reson"
-                                    value={values.wrok_status_pending_reson}
-                                    onChange={(e) => setFieldValue("wrok_status_pending_reson", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="wrok_status_pending_reson"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Spare Request"
-                                    name="spare_request"
-                                    value={values.spare_request}
-                                    onChange={(e) => setFieldValue("spare_request", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="spare_request"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Work Done Type"
-                                    name="work_done_type"
-                                    value={values.work_done_type}
-                                    onChange={(e) => setFieldValue("work_done_type", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="work_done_type"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Spare Details"
-                                    name="spare_details"
-                                    value={values.spare_details}
-                                    onChange={(e) => setFieldValue("spare_details", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="spare_details"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Technical Behaviour"
-                                    name="technical_behaviour"
-                                    value={values.technical_behaviour}
-                                    onChange={(e) => setFieldValue("technical_behaviour", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="technical_behaviour"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Service Quality"
-                                    name="service_quality"
-                                    value={values.service_quality}
-                                    onChange={(e) => setFieldValue("service_quality", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="service_quality"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-
-                            <div>
-                                <InputFields
-                                    label="Nature of Call ID"
-                                    name="nature_of_call_id"
-                                    value={values.nature_of_call_id}
-                                    onChange={(e) => setFieldValue("nature_of_call_id", e.target.value)}
-                                />
-                                <ErrorMessage
-                                    name="nature_of_call_id"
-                                    component="div"
-                                    className="text-sm text-red-600 mb-1"
-                                />
-                            </div>
-                        </div>
-                    </ContainerCard>
-                );
-
-            case 3:
-                return (
-                    <ContainerCard>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {renderFileInput(
-                                "type_details_photo1",
-                                "Type Details Photo 1",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "type_details_photo2",
-                                "Type Details Photo 2",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
                             {renderFileInput(
                                 "is_machine_in_working_img",
                                 "Is Machine In Working",
@@ -1605,66 +1259,6 @@ export default function AddServiceVisitStepper() {
                             {renderFileInput(
                                 "condensor_coil_cleand_img",
                                 "Condensor Coil Cleaned",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "gaskets_img",
-                                "Gaskets",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "light_working_img",
-                                "Light Working",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "light_working_img",
-                                "Light Working",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "branding_no_img",
-                                "Branding No.",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "propper_ventilation_available_img",
-                                "Propper Ventilation",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
-
-                            {renderFileInput(
-                                "leveling_positioning_img",
-                                "Leveling Positioning",
                                 values,
                                 setFieldValue,
                                 errors,
@@ -1702,15 +1296,7 @@ export default function AddServiceVisitStepper() {
                                 "image/*,.pdf"
                             )}
 
-                            {renderFileInput(
-                                "customer_signature",
-                                "Customer Signature",
-                                values,
-                                setFieldValue,
-                                errors,
-                                touched,
-                                "image/*,.pdf"
-                            )}
+
                         </div>
                     </ContainerCard>
                 );

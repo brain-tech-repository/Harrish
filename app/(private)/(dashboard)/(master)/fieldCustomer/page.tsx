@@ -250,7 +250,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId, setLoading]
+        [agentCustomerList,selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId, setLoading]
     );
 
     const exportfile = async (format: string) => {
@@ -340,6 +340,7 @@ export default function AgentCustomer() {
                         header: {
                             title: "Field Customers",
                               exportButton: {
+                                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportfile("xlsx"), 
               },

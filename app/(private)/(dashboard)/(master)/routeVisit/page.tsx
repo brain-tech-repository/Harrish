@@ -38,6 +38,11 @@ const columns = [
 ];
 
 export default function RouteVisits() {
+  const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+        xls: false,
+    });
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -144,16 +149,20 @@ export default function RouteVisits() {
   );
   const exportFile = async (format: string) => {
     try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
       const response = await exportRouteVisit({ format });
       if (response && typeof response === 'object' && response.file_url) {
         await downloadFile(response.file_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         showSnackbar("Failed to get download URL", "error");
       }
     } catch (error) {
       showSnackbar("Failed to download route visit data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     }
   };
   // Refresh table when filters change
@@ -177,8 +186,9 @@ export default function RouteVisits() {
             header: {
               title: "Route Visit Plan",
                 exportButton: {
+                  threeDotLoading: threeDotLoading,
                 show: true,
-                onClick: () => exportFile("xlsx"), 
+                onClick: () => exportFile("xls"), 
               },
               // threeDot: [
               //   {
