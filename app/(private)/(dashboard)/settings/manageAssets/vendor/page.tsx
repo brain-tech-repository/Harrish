@@ -33,7 +33,7 @@ export default function ShelfDisplay() {
 
   const fetchvendor = useCallback(
     async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
-      setLoading(true); 
+      setLoading(true);
       const res = await vendorList({
         page: pageNo.toString(),
         per_page: pageSize.toString(),
@@ -75,7 +75,7 @@ export default function ShelfDisplay() {
               actions: [
                 <SidebarBtn
                   key="name"
-                  href="/settings/manageAssets/spareCategory/add"
+                  href="/settings/manageAssets/vendor/add"
                   leadingIcon="lucide:plus"
                   label="Add"
                   labelTw="hidden lg:block"
@@ -115,7 +115,7 @@ export default function ShelfDisplay() {
               {
                 icon: "lucide:edit-2",
                 onClick: (data: TableDataType) => {
-                router.push(`/settings/manageAssets/vendor/${data.uuid}`);
+                  router.push(`/settings/manageAssets/vendor/${data.uuid}`);
                 },
               },
             ],

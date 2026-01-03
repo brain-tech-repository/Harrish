@@ -26,6 +26,7 @@ import Loading from "@/app/components/Loading";
 import { saveFinalCode } from "@/app/services/allApi";
 import {
     addServiceVisit,
+    chillerList,
     getServiceVisitById,
     getTechicianList,
     serviceVisitGenearateCode,
@@ -76,10 +77,10 @@ const validationSchema = Yup.object({
         .trim()
         .required("Outlet Name is required")
         .max(100, "Outlet Name cannot exceed 100 characters"),
-    owner_name: Yup.string()
-        .trim()
-        .required("Owner Name is required")
-        .max(100, "Owner Name cannot exceed 100 characters"),
+    // owner_name: Yup.string()
+    //     .trim()
+    //     .required("Owner Name is required")
+    //     .max(100, "Owner Name cannot exceed 100 characters"),
     contact_person: Yup.string()
         .trim()
         .max(100, "Contact Person cannot exceed 100 characters"),
@@ -90,6 +91,9 @@ const validationSchema = Yup.object({
     cts_comment: Yup.string()
         .trim()
         .max(255, "CTS Comment cannot exceed 255 characters"),
+    chiller_id: Yup.string()
+        .trim()
+        .max(100, "Chiller ID cannot exceed 100 characters"),
     model_no: Yup.string()
         .trim()
         .max(100, "Model No cannot exceed 100 characters"),
@@ -149,19 +153,20 @@ const stepSchemas = [
         ticket_type: validationSchema.fields.ticket_type,
         time_in: validationSchema.fields.time_in,
         time_out: validationSchema.fields.time_out,
+        ticket_status: validationSchema.fields.ticket_status,
     }),
     Yup.object().shape({
         outlet_name: validationSchema.fields.outlet_name,
-        owner_name: validationSchema.fields.owner_name,
+        // owner_name: validationSchema.fields.owner_name,
         contact_person: validationSchema.fields.contact_person,
         technician_id: validationSchema.fields.technician_id,
-        ticket_status: validationSchema.fields.ticket_status,
         cts_comment: validationSchema.fields.cts_comment,
 
     }),
 
     // Step 2: Location and Personnel
     Yup.object().shape({
+        chiller_id: validationSchema.fields.chiller_id,
         model_no: validationSchema.fields.model_no,
         serial_no: validationSchema.fields.serial_no,
         asset_no: validationSchema.fields.asset_no,
@@ -207,7 +212,7 @@ type ServiceVisit = {
     model_name: string;
     osa_code: string;
     outlet_name: string;
-    owner_name: string;
+    // owner_name: string;
     contact_person: string;
     ticket_type: string;
     time_in: string;
@@ -232,6 +237,7 @@ type ServiceVisit = {
     cts_comment: string;
     current_voltage: string;
     amps: string;
+    chiller_id: string;
     cabin_temperature: string;
     work_status: string;
     technical_behaviour: string;
@@ -310,10 +316,13 @@ export default function AddServiceVisitStepper() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { channelOptions, assetsModelOptions, agentCustomerOptions, brandingOptions, ensureAgentCustomerLoaded, ensureBrandingLoaded, ensureChannelLoaded, ensureAssetsModelLoaded, ensureLocationLoaded } = useAllDropdownListData();
     const [technicianOptions, setTechnicianOptions] = useState<{ value: string; label: string }[]>([]);
+    const [chillerOptions, setChillerOptions] = useState<{ value: string; label: string }[]>([]);
     const codeGeneratedRef = useRef(false);
     const params = useParams();
     const uuid = params?.id;
     const isAddMode = uuid === "add" || !uuid;
+    const [chillers, setChillers] = useState<any[]>([]);
+
 
     const steps: StepperStep[] = [
         { id: 1, label: "Basic Information" },
@@ -365,6 +374,33 @@ export default function AddServiceVisitStepper() {
     }, []);
 
     useEffect(() => {
+        (async () => {
+            try {
+                const response = await chillerList();
+
+                const chillerData = Array.isArray(response?.data)
+                    ? response.data
+                    : response?.data?.data ?? [];
+
+                setChillers(chillerData);
+
+                const options = chillerData.map((item: any) => ({
+                    value: String(item.id),
+                    label: item.osa_code,
+                }));
+
+                setChillerOptions(options);
+            } catch (error) {
+                showSnackbar("Failed to fetch chiller data", "error");
+            }
+        })();
+    }, []);
+
+    // This effect will be handled inside the Formik component through onChange handler
+
+
+
+    useEffect(() => {
         const checkEditMode = async () => {
             if (uuid && uuid !== "add") {
                 setIsEditMode(true);
@@ -396,7 +432,7 @@ export default function AddServiceVisitStepper() {
                     model_name: data.model_name || "",
                     osa_code: data.osa_code || "",
                     outlet_name: data.outlet_name || "",
-                    owner_name: data.owner_name || "",
+                    // owner_name: data.owner_name || "",
                     contact_person: data.contact_person || "",
                     ticket_type: data.ticket_type || "",
                     time_in: data.time_in || "",
@@ -408,6 +444,7 @@ export default function AddServiceVisitStepper() {
                     branding: data.branding || "",
                     ticket_status: data.ticket_status || "",
                     ct_status: data.ct_status || "",
+                    chiller_id: data.chiller_id || "",
                     is_machine_in_working: data.is_machine_in_working || "",
                     cleanliness: data.cleanliness || "",
                     condensor_coil_cleand: data.condensor_coil_cleand || "",
@@ -672,7 +709,7 @@ export default function AddServiceVisitStepper() {
         model_name: "",
         osa_code: "",
         outlet_name: "",
-        owner_name: "",
+        // owner_name: "",
         contact_person: "",
         ticket_type: "",
         time_in: "",
@@ -684,6 +721,7 @@ export default function AddServiceVisitStepper() {
         branding: "",
         ticket_status: "",
         ct_status: "",
+        chiller_id: "",
         is_machine_in_working: "",
         cleanliness: "",
         condensor_coil_cleand: "",
@@ -905,8 +943,8 @@ export default function AddServiceVisitStepper() {
                                     name="ticket_status"
                                     value={values.ticket_status}
                                     options={[
-                                        { value: "1", label: "Pending" },
-                                        { value: "2", label: "Closed By Technician" },
+                                        { value: "0", label: "Pending" },
+                                        { value: "1", label: "Closed By Technician" },
                                     ]}
                                     onChange={(e) => setFieldValue("ticket_status", e.target.value)}
                                     error={touched.ticket_status && errors.ticket_status}
@@ -957,20 +995,9 @@ export default function AddServiceVisitStepper() {
                                     label="Outlet Name"
                                     name="outlet_name"
                                     value={values.outlet_name}
-                                    options={channelOptions}
+                                    options={agentCustomerOptions}
                                     onChange={(e) => setFieldValue("outlet_name", e.target.value)}
                                     error={touched.outlet_name && errors.outlet_name}
-                                />
-                            </div>
-                            <div>
-                                <InputFields
-                                    required
-                                    label="Owner Name"
-                                    name="owner_name"
-                                    value={values.owner_name}
-                                    options={agentCustomerOptions}
-                                    onChange={(e) => setFieldValue("owner_name", e.target.value)}
-                                    error={touched.owner_name && errors.owner_name}
                                 />
                             </div>
                             <div>
@@ -1049,9 +1076,39 @@ export default function AddServiceVisitStepper() {
 
                             <div>
                                 <InputFields
+                                    label="Chiller"
+                                    name="chiller_id"
+                                    options={chillerOptions}
+                                    value={values.chiller_id}
+                                    onChange={(e) => {
+                                        setFieldValue("chiller_id", e.target.value);
+
+                                        // Auto-fill chiller details
+                                        const selectedChiller = chillers.find(
+                                            (c) => String(c.id) === e.target.value
+                                        );
+
+                                        if (selectedChiller) {
+                                            setFieldValue("asset_no", selectedChiller.assets_type || "");
+                                            setFieldValue("serial_no", selectedChiller.serial_number || "");
+                                            setFieldValue("model_no", selectedChiller.model_number?.name || "");
+                                            setFieldValue("branding", selectedChiller.branding?.name || "");
+                                        }
+                                    }}
+                                />
+
+                                <ErrorMessage
+                                    name="chiller_id"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            <div>
+                                <InputFields
                                     label="Model No."
                                     name="model_no"
-                                    options={assetsModelOptions}
+                                    disabled
                                     value={values.model_no}
                                     onChange={(e) => setFieldValue("model_no", e.target.value)}
                                     error={touched.model_no && errors.model_no}
@@ -1066,6 +1123,7 @@ export default function AddServiceVisitStepper() {
                                 <InputFields
                                     label="Serial No."
                                     name="serial_no"
+                                    disabled
                                     value={values.serial_no}
                                     onChange={(e) => setFieldValue("serial_no", e.target.value)}
                                     error={touched.serial_no && errors.serial_no}
@@ -1078,8 +1136,9 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
-                                    label="Asset No."
+                                    label="Asset Type"
                                     name="asset_no"
+                                    disabled
                                     value={values.asset_no}
                                     onChange={(e) => setFieldValue("asset_no", e.target.value)}
                                     error={touched.asset_no && errors.asset_no}
@@ -1094,7 +1153,7 @@ export default function AddServiceVisitStepper() {
                                 <InputFields
                                     label="Branding"
                                     name="branding"
-                                    options={brandingOptions}
+                                    disabled
                                     value={values.branding}
                                     onChange={(e) => setFieldValue("branding", e.target.value)}
                                     error={touched.branding && errors.branding}

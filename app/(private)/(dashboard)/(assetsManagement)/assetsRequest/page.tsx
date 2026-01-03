@@ -18,10 +18,12 @@ import {
   assetsRequestExport,
   chillerRequestGlobalSearch,
   chillerRequestList,
+  crfExport,
   deleteChillerRequest,
 } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import { downloadFile } from "@/app/services/allApi";
 
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
@@ -53,6 +55,10 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
+  const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -181,49 +187,27 @@ export default function Page() {
     []
   );
 
-  const handleExport = async (fileType: "pdf") => {
+  const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
     try {
-      setLoading(true);
-
-      const res = await assetsRequestExport({ format: fileType });
-
-      let downloadUrl = "";
-
-      if (res?.download_url && res.download_url.startsWith("blob:")) {
-        downloadUrl = res.download_url;
-      } else if (res?.download_url && res.download_url.startsWith("http")) {
-        downloadUrl = res.download_url;
-      } else if (typeof res === "string" && res.includes(",")) {
-        const blob = new Blob([res], {
-          type:
-            fileType === "pdf"
-              ? "application/pdf"
-              : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        downloadUrl = URL.createObjectURL(blob);
+      // setLoading(true);
+      // Pass selected format to the export API
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await crfExport({ format });
+      // const url = response?.url || response?.data?.url;
+      const url = response?.download_url || response?.url || response?.data?.url;
+      if (url) {
+        await downloadFile(url);
+        showSnackbar("File downloaded successfully", "success");
       } else {
-        showSnackbar("No valid file or URL returned from server", "error");
-        return;
+        showSnackbar("Failed to get download file", "error");
       }
-
-      // ⬇️ Trigger browser download
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `assets_export.${fileType}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      showSnackbar(
-        `Download started for ${fileType.toUpperCase()} file`,
-        "success"
-      );
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } catch (error) {
-      console.error("Export error:", error);
-      showSnackbar("Failed to export Assets Master data", "error");
+      console.error("Export failed:", error);
+      showSnackbar("Failed to download invoices", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
-      setLoading(false);
-      setShowExportDropdown(false);
+      // setLoading(false);
     }
   };
 
@@ -242,13 +226,17 @@ export default function Page() {
               title: "Assets Requests",
               threeDot: [
                 {
-                  icon: "gala:file-document",
-                  label: "Export PDF",
-                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                    handleExport("pdf");
-                  },
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  label: "Export CSV",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
                 },
-              ],
+                {
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                },],
               searchBar: true,
               columnFilter: true,
               // actions: can("create") ? [

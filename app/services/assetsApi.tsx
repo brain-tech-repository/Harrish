@@ -470,10 +470,12 @@ export const iroList = async (params: Params) => {
   }
 };
 
-export const iroViewList = async (id: string) => {
+export const iroViewList = async (id: string, params: Params) => {
   try {
-    const res = await API.get(`/api/assets/iro/${id}`);
-    return res.data?.count?.headers;
+    const res = await API.get(`/api/assets/iro/${id}`, {
+      params: params,
+    });
+    return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
