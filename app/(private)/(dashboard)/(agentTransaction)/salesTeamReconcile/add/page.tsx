@@ -246,6 +246,7 @@ export default function AddSalesmanLoadUI() {
                 {/* -------- FORM -------- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
                     <InputFields
+                    searchable={true}
                         label="Distributor"
                         value={form.warehouse}
                         options={warehouseOptions}
@@ -255,6 +256,7 @@ export default function AddSalesmanLoadUI() {
                     />
 
                     <InputFields
+                    searchable={true}
                         label="Sales Team"
                         value={form.salesman}
                         options={salesmanOptions}

@@ -396,13 +396,13 @@ export default function StockTransfer() {
                         showSkeleton={skeletons.sourceArea}
                     />
                     <InputFields
-                        label="Warehouse"
+                        label="Distributor"
                         value={source.warehouse}
                         options={sourceOptions.warehouses}
                         onChange={(e) => setSource({ ...source, warehouse: e.target.value })}
                         disabled={!source.area}
                         searchable
-                        placeholder="Select Warehouse"
+                        placeholder="Select Distributor"
                         showSkeleton={skeletons.sourceWarehouse}
                     />
                     <InputFields
@@ -452,13 +452,13 @@ export default function StockTransfer() {
                         showSkeleton={skeletons.destArea}
                     />
                     <InputFields
-                        label="Warehouse"
+                        label="Distributor"
                         value={dest.warehouse}
                         options={destOptions.warehouses}
                         onChange={(e) => setDest({ ...dest, warehouse: e.target.value })}
                         disabled={!dest.area}
                         searchable
-                        placeholder="Select Warehouse"
+                        placeholder="Select Distributor"
                         showSkeleton={skeletons.destWarehouse}
                     />
                     <InputFields

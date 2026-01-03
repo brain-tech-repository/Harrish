@@ -210,7 +210,7 @@ export default function AddWarehouseStockPage() {
               <InputFields
                 type="select"
                 name="warehouse_id"
-                label="Warehouse"
+                label="Distributor"
                 value={formik.values.warehouse_id}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}

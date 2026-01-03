@@ -143,7 +143,7 @@ export default function CompanyCustomers() {
     {
       key: "status",
       label: "Status",
-      isSortable: true,
+      // isSortable: true,
       render: (row: TableDataType) => {
         return <StatusBtn isActive={String(row.status) > "0"} />;
       },
