@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ItemPage from "./itemPopup";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 interface DropdownItem {
   icon: string;
   label: string;
@@ -40,17 +40,21 @@ interface LocalTableDataType {
 
 
 export default function Item() {
+  const { itemCategoryAllOptions, ensureAllItemCategoryLoaded } = useAllDropdownListData();
   const { setLoading } = useLoading();
   const { can, permissions } = usePagePermissions();
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    ensureAllItemCategoryLoaded();
+  }, [ensureAllItemCategoryLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+const [categoryId, setcategoryId] = useState<string>("");
   // const [showDropdown, setShowDropdown] = useState(false);
   // const [showDeletePopup, setShowDeletePopup] = useState(false);
   // const [selectedRow, setSelectedRow] = useState<LocalTableDataType | null>(null);
@@ -81,6 +85,17 @@ export default function Item() {
       label: "Category",
       showByDefault: true,
       render: (row: LocalTableDataType) => row.item_category?.category_name || "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: Array.isArray(itemCategoryAllOptions) ? itemCategoryAllOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setcategoryId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: categoryId,
+            },
     },
     {
       key: "base_uom",
@@ -132,7 +147,9 @@ export default function Item() {
       },
     },
   ];
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [categoryId]);
   const fetchItems = useCallback(
     async (
       page: number = 1,
@@ -140,7 +157,14 @@ export default function Item() {
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-        const res = await itemList({ page: page.toString(), per_page: pageSize.toString() });
+         const params: any = {
+                page: page.toString(),
+                per_page: pageSize.toString(),
+            };
+            if (categoryId) {
+                params.category_id = categoryId;
+            }
+        const res = await itemList(params);
         // setLoading(false);
         const data = res.data.map((item: LocalTableDataType) => ({
           ...item,
@@ -157,7 +181,7 @@ export default function Item() {
         throw error;
       }
     },
-    []
+    [categoryId]
   );
 
   const searchItems = useCallback(

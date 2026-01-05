@@ -8,6 +8,7 @@ export interface ExportDropdownButtonProps {
     uuid: string;
     className?: string;
     keyType?: 'excel' | 'default';
+    disabled?: boolean;
 }
 
 export default function ExportDropdownButton({
@@ -16,6 +17,8 @@ export default function ExportDropdownButton({
     uuid,
     className = "",
     keyType = 'default',
+    disabled = true,
+
 }: ExportDropdownButtonProps) {
     const [showDropdown, setShowDropdown] = React.useState(false);
     if (keyType === 'excel') {
@@ -27,6 +30,7 @@ export default function ExportDropdownButton({
                     onClick={() => {
                         if (!threeDotLoading.xlsx) exportReturnFile(uuid, "xlsx");
                     }}
+                    disabled={disabled}
                 />
             </div>
         );

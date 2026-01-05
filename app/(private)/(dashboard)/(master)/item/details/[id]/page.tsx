@@ -15,6 +15,9 @@ import Table, { TableDataType } from "@/app/components/customTable";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import Image from "next/image";
 import { tabList } from "./tablelist";
+import FilterComponent from "@/app/components/filterComponent";
+import ExportDropdownButton from "@/app/components/ExportDropdownButton";
+
 interface Item {
   id?: number;
   erp_code?: string;
@@ -308,6 +311,23 @@ export default function Page() {
                     };
                   }
                 },
+                header: {
+                  filterRenderer: (props) => (
+                        <FilterComponent
+                          {...props}
+                          onlyFilters={['from_date', 'to_date']}
+                        />
+                      ),
+                       actions: [
+                                                      // <ExportDropdownButton
+                                                      // // disabled={returnData?.length === 0}
+                                                      //    keyType="excel"
+                                                      //     threeDotLoading={threeDotLoading}
+                                                      //     exportReturnFile={exportReturnFile}
+                                                      //     uuid={res.data.uuid}
+                                                      // />
+                                                  ],
+                },
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
                   height: "400px"
@@ -326,21 +346,38 @@ export default function Page() {
           {activeTab === "return" && (
             <Table
               config={{
-                // api: {
-                //   list: async (page: number = 1, pageSize: number = 50) => {
-                //     const res = await itemReturn(String(item?.id), { page: page.toString(), per_page: pageSize.toString() });
-                //     if (res.error) {
-                //       // showSnackbar(res.data?.message || "Unable to fetch Return data", "error");
-                //       throw new Error(res.data?.message || "Unable to fetch Return data");
-                //     }
-                //     return {
-                //       data: res.data || [],
-                //       total: res.pagination?.totalPages || 1,
-                //       currentPage: res.pagination?.page || 1,
-                //       pageSize: res.pagination?.pageSize || pageSize,
-                //     };
-                //   }
-                // },
+                api: {
+                  list: async (page: number = 1, pageSize: number = 50) => {
+                    const res = await itemReturn(String(item?.id), { page: page.toString(), per_page: pageSize.toString() });
+                    if (res.error) {
+                      // showSnackbar(res.data?.message || "Unable to fetch Return data", "error");
+                      throw new Error(res.data?.message || "Unable to fetch Return data");
+                    }
+                    return {
+                      data: res.data || [],
+                      total: res.pagination?.totalPages || 1,
+                      currentPage: res.pagination?.page || 1,
+                      pageSize: res.pagination?.pageSize || pageSize,
+                    };
+                  }
+                },
+                header: {
+                  filterRenderer: (props) => (
+                        <FilterComponent
+                          {...props}
+                          onlyFilters={['from_date', 'to_date']}
+                        />
+                      ),
+                       actions: [
+                                                      // <ExportDropdownButton
+                                                      // // disabled={returnData?.length === 0}
+                                                      //    keyType="excel"
+                                                      //     threeDotLoading={threeDotLoading}
+                                                      //     exportReturnFile={exportReturnFile}
+                                                      //     uuid={res.data.uuid}
+                                                      // />
+                                                  ],
+                },
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
                   height: "400px"

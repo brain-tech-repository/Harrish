@@ -63,11 +63,16 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
   const { onlyFilters } = filterProps;
 
+  // Set default date for from_date and to_date to today if not already set
   useEffect(() => {
-    ensureCompanyLoaded();
-    ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded,
-    ensureSalesmanLoaded]);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!filterProps.payload.from_date) {
+      filterProps.setPayload((prev) => ({ ...prev, from_date: today }));
+    }
+    if (!filterProps.payload.to_date) {
+      filterProps.setPayload((prev) => ({ ...prev, to_date: today }));
+    }
+  }, []);
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,
@@ -255,7 +260,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           value={
             typeof payload.from_date === "number"
               ? String(payload.from_date)
-              : (payload.from_date as string | undefined) ?? ""
+              : (payload.from_date as string | undefined) ?? new Date().toISOString().slice(0, 10)
           }
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
@@ -269,11 +274,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           label="End Date"
           name="to_date"
           type="date"
-          min={typeof payload.from_date === "number" ? String(payload.from_date) : (payload.from_date as string | undefined) ?? ""}
+          min={typeof payload.from_date === "number" ? String(payload.from_date) : (payload.from_date as string | undefined) ?? new Date().toISOString().slice(0, 10)}
           value={
             typeof payload.to_date === "number"
               ? String(payload.to_date)
-              : (payload.to_date as string | undefined) ?? ""
+              : (payload.to_date as string | undefined) ?? new Date().toISOString().slice(0, 10)
           }
           disabled={!payload.from_date}
           onChange={(e) => {

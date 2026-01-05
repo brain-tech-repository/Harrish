@@ -7,8 +7,10 @@ import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import Image from "next/image";
-import { downloadPDF } from "@/app/services/allApi";
-import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId } from "@/app/services/allApi";
+import { downloadFileGlobal, downloadPDFGlobal } from '@/app/services/allApi';
+import { forceDownload } from "@/app/services/allApi";
+import { iframeDownload } from "@/app/utils/iframeDownload";
+import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId,salesmanAttendence } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 // import Role from "./role/page";
@@ -22,7 +24,7 @@ import Popup from "@/app/components/popUp";
 import Loading from "@/app/components/Loading";
 import Skeleton from "@mui/material/Skeleton";
 import Drawer from "@mui/material/Drawer";
-
+import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 // import Attendance from "./attendance/page";
 
 
@@ -76,7 +78,6 @@ interface Salesman {
 const IconComponentData = ({row}:{row:TableDataType})=>{
   const [smallLoading, setSmallLoading] = useState(false)
   const { showSnackbar } = useSnackbar();
-
     const exportFile = async (uuid: string, format: string) => {
     try {
       setSmallLoading(true)
@@ -84,7 +85,11 @@ const IconComponentData = ({row}:{row:TableDataType})=>{
       const response = await exportInvoice({ uuid, format }); // send proper body object
 
       if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
+        await downloadPDFGlobal(response.download_url, `invoice-${uuid}.pdf`);
+         iframeDownload(
+         response.download_url
+        )
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
       setSmallLoading(false)
 
@@ -153,9 +158,11 @@ export function formatDate(dateString:string) {
 }
 
 export default function Page() {
+
   const { id, tabName }:any = useParams();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
   const { setLoading: setGlobalLoading } = useLoading();
   const [openPopup, setOpenPopup] = useState(false);
   const [smallLoading, setSmallLoading] = useState(false)
@@ -169,6 +176,7 @@ export default function Page() {
     ? params?.uuid[0] || ""
     : (params?.uuid as string) || "";
   const [salesman, setSalesman] = useState<Salesman | null>(null);
+  const [salesmanId, setSalesmanId] = useState<string>();
 
 
   const title = "Sales Team Details";
@@ -373,6 +381,7 @@ export default function Page() {
     },
     []
   );
+
   const orderBySalesman = useCallback(
     async (
       pageNo: number = 1,
@@ -413,7 +422,7 @@ export default function Page() {
           return;
         }
         setSalesman(res.data);
-
+        setSalesmanId(res.data.id);
         setGlobalLoading(false);
       } catch (error) {
         showSnackbar("Unable to fetch Sales Team Details", "error");
@@ -510,6 +519,27 @@ export default function Page() {
     },
     [setLoading]
   );
+
+    const salesmanAttendenceById = useCallback(
+    async (
+      pageNo: number = 1,
+      pageSize: number = 50
+    ): Promise<searchReturnType> => {
+      console.log("salesman id is here 529",salesmanId)
+      const result = await salesmanAttendence( {salesman_id:salesmanId ,from_date: "", to_date: "",page:pageNo.toString() });
+      if (result.error) {
+        throw new Error(result.data?.message || "Search failed");
+      }
+
+      return {
+        data: result.data || [],
+        currentPage: result?.pagination?.page || 1,
+        pageSize: result?.pagination?.limit || pageSize,
+        total: result?.pagination?.totalPages || 1,
+      };
+    },
+    []
+  );
   // useEffect(() => {
   //   if (!tabName) {
   //     setActiveTab(0); // default tab
@@ -521,6 +551,24 @@ export default function Page() {
   const viewPopuop = () => {
     setOpenPopup(true);
   }
+
+      const exportReturnFile = async (uuid: string, format: string) => {
+          // try {
+          //     setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+          //     const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+          //     if (response && typeof response === "object" && response.download_url) {
+          //         await downloadFile(response.download_url);
+          //         showSnackbar("File downloaded successfully", "success");
+          //     } else {
+          //         showSnackbar("Failed to get download URL", "error");
+          //     }
+          // } catch (error) {
+          //     console.error(error);
+          //     showSnackbar("Failed to download data", "error");
+          // } finally {
+          //     setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+          // }
+      };
 
   return (
     <>
@@ -791,8 +839,60 @@ export default function Page() {
       )}
 
       {activeTab === "attendence" && (
-        <ContainerCard className="w-full h-fit">
-          <div className="text-center">Data not found</div>
+         <ContainerCard >
+
+          <div className="flex flex-col h-full">
+            <Table
+              config={{
+                api: {
+                  // search: searchCustomerById,
+                  list: salesmanAttendenceById,
+                  filterBy: filterBySalesmen
+                },
+                header: {
+                  searchBar: false,
+    filterRenderer: (props) => (
+      <FilterComponent
+        {...props}
+        onlyFilters={['from_date', 'to_date']}
+      />
+    ),
+     actions: [
+                                    <ExportDropdownButton
+                                    // disabled={returnData?.length === 0}
+                                       keyType="excel"
+                                        threeDotLoading={threeDotLoading}
+                                        exportReturnFile={exportReturnFile}
+                                        uuid={uuid}
+                                    />
+                                ],
+                  // filterByFields: [
+                  //   {
+                  //     key: "start_date",
+                  //     label: "Start Date",
+                  //     type: "date"
+                  //   },
+                  //   {
+                  //     key: "end_date",
+                  //     label: "End Date",
+                  //     type: "date"
+                  //   }
+                  // ]
+                },
+                showNestedLoading: true,
+                footer: { nextPrevBtn: true, pagination: true },
+                columns: columns,
+                table: {
+                  height: 500,
+                },
+                rowSelection: false,
+             
+                pageSize: 50,
+              }}
+              
+            />
+          </div>
+
         </ContainerCard>
       )}
 
@@ -815,6 +915,15 @@ export default function Page() {
         onlyFilters={['from_date', 'to_date']}
       />
     ),
+     actions: [
+                                    <ExportDropdownButton
+                                    // disabled={returnData?.length === 0}
+                                       keyType="excel"
+                                        threeDotLoading={threeDotLoading}
+                                        exportReturnFile={exportReturnFile}
+                                        uuid={uuid}
+                                    />
+                                ],
                   // filterByFields: [
                   //   {
                   //     key: "start_date",
@@ -864,6 +973,15 @@ export default function Page() {
         onlyFilters={['from_date', 'to_date']}
       />
     ),
+     actions: [
+                                    <ExportDropdownButton
+                                    // disabled={returnData?.length === 0}
+                                       keyType="excel"
+                                        threeDotLoading={threeDotLoading}
+                                        exportReturnFile={exportReturnFile}
+                                        uuid={uuid}
+                                    />
+                                ],
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },

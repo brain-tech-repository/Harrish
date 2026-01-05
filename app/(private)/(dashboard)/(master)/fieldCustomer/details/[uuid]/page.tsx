@@ -67,7 +67,8 @@ export default function CustomerDetails() {
     const router = useRouter();
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [activeTab, setActiveTab] = useState("Overview");
-
+    const [salesData, setSalesData] = useState<TableDataType[]>([]);
+    const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const onTabClick = (name: string) => {
         setActiveTab(name);
     };
@@ -239,7 +240,7 @@ export default function CustomerDetails() {
             if (result.error) {
                 throw new Error(result.data?.message || "Search failed");
             }
-
+            setReturnData(result.data || []);
             return {
                 data: result.data || [],
                 currentPage: result?.pagination?.page || 1,
@@ -308,7 +309,7 @@ export default function CustomerDetails() {
             if (result.error) {
                 throw new Error(result.data?.message || "Search failed");
             }
-
+            setSalesData(result.data || []);
             return {
                 data: result.data || [],
                 currentPage: result?.pagination?.page || 1,
@@ -557,6 +558,7 @@ export default function CustomerDetails() {
                                     
                                      actions: [
                                 <ExportDropdownButton
+                                disabled={salesData?.length === 0}
                                     keyType="excel"
                                     threeDotLoading={threeDotLoading}
                                     exportReturnFile={allInvoices}
@@ -618,6 +620,7 @@ export default function CustomerDetails() {
                               
                             actions: [
                                 <ExportDropdownButton
+                                disabled={returnData?.length === 0}
                                    keyType="excel"
                                     threeDotLoading={threeDotLoading}
                                     exportReturnFile={exportReturnFile}
@@ -634,7 +637,7 @@ export default function CustomerDetails() {
                             rowSelection: false,
                             rowActions: [
                                 {
-                                    icon: "material-symbols:download",
+                                    icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "material-symbols:download",
                                     onClick: (data: TableDataType) => {
                                         exportReturn(data.uuid, "csv"); // or "excel", "csv" etc.
                                     },

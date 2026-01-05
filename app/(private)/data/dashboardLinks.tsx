@@ -66,7 +66,7 @@ export const initialLinkData: SidebarDataType[] = [
           {
             isActive: false,
             href: "/keyCustomer",
-            label: "Key Customers",
+            label: "Company Customers",
             leadingIcon: "lucide:user",
             iconColor: "text-green-500",
           },

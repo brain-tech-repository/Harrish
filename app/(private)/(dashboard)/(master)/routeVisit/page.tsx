@@ -185,11 +185,11 @@ export default function RouteVisits() {
             },
             header: {
               title: "Route Visit Plan",
-                exportButton: {
-                  threeDotLoading: threeDotLoading,
-                show: true,
-                onClick: () => exportFile("xls"), 
-              },
+              //   exportButton: {
+              //     threeDotLoading: threeDotLoading,
+              //   show: true,
+              //   onClick: () => exportFile("xls"), 
+              // },
               // threeDot: [
               //   {
               //     icon: "gala:file-document",

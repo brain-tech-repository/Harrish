@@ -88,6 +88,7 @@ export default function Route() {
                 onSelect: (selected: string | string[]) => {
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
                 },
+                isSingle: false,
                 selectedValue: warehouseId,
             },
         },

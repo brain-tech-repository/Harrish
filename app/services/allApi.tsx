@@ -57,32 +57,148 @@ export const downloadFile = (fileurl: string, type?: string): void => {
   link.remove();
 };
 
-export async function downloadPDF(
-  fileUrl: string,
-  fileName: string
-): Promise<void> {
-  try {
-    const response = await fetch(fileUrl);
+export function forceDownload(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_self"; // important
+  link.rel = "noopener noreferrer";
+  link.download = ""; // hint browser to download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
-    if (!response.ok) {
-      throw new Error("Failed to download file");
+/**
+ * Global Download Function - Forces file download using multiple fallback methods
+ * Handles PDFs, Excel, CSV, and other file types
+ * Automatically avoids CORS issues
+ * 
+ * @param url - Direct URL to the file or download URL from API
+ * @param fileName - Optional custom filename (if not provided, extracts from URL)
+ * @param useProxy - Use API proxy for CORS-restricted files (default: true)
+ * @returns Promise<boolean> - Returns true if download initiated successfully
+ * 
+ * @example
+ * // Simple download
+ * await downloadFileGlobal('https://example.com/file.pdf');
+ * 
+ * // With custom filename
+ * await downloadFileGlobal('https://example.com/report.pdf', 'my-report.pdf');
+ * 
+ * // Direct download without proxy
+ * await downloadFileGlobal(response.download_url, 'invoice.pdf', false);
+ */
+export async function downloadFileGlobal(
+  url: string,
+  fileName?: string,
+  useProxy: boolean = true
+): Promise<boolean> {
+  try {
+    if (!url) {
+      console.error('Download URL is required');
+      return false;
     }
 
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
+    // Extract filename from URL if not provided
+    const finalFileName = fileName || url.substring(url.lastIndexOf('/') + 1) || 'download';
 
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = fileName;
+    // Method 1: Try using proxy API (works for CORS-restricted files)
+    if (useProxy) {
+      try {
+        window.location.href = `/api/force-download?url=${encodeURIComponent(url)}`;
+        return true;
+      } catch (proxyError) {
+        console.warn('Proxy download failed, trying direct method:', proxyError);
+      }
+    }
+
+    // Method 2: Try direct fetch and blob download
+    try {
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = finalFileName;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        }, 100);
+        
+        return true;
+      }
+    } catch (fetchError) {
+      console.warn('Fetch download failed, trying iframe method:', fetchError);
+    }
+
+    // Method 3: Iframe download (works for many cases)
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 3000);
+      
+      return true;
+    } catch (iframeError) {
+      console.warn('Iframe download failed, trying direct link:', iframeError);
+    }
+
+    // Method 4: Direct link download (last resort)
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = finalFileName;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    
     document.body.appendChild(link);
     link.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
 
-    link.remove();
-    window.URL.revokeObjectURL(blobUrl);
+    return true;
   } catch (error) {
-    console.error("Download error:", error);
+    console.error('All download methods failed:', error);
+    return false;
   }
 }
+
+/**
+ * Download PDF specifically - Optimized for PDF files
+ * Uses the global download function with PDF-specific defaults
+ * 
+ * @param url - URL to the PDF file
+ * @param fileName - Optional custom filename (default: 'document.pdf')
+ * @returns Promise<boolean>
+ * 
+ * @example
+ * await downloadPDFGlobal(response.download_url, 'invoice-12345.pdf');
+ */
+export async function downloadPDFGlobal(
+  url: string,
+  fileName: string = 'document.pdf'
+): Promise<boolean> {
+  const finalFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+  return downloadFileGlobal(url, finalFileName, true);
+}
+
 
 
 
@@ -4025,6 +4141,17 @@ export const promotionHeaderGlobalSearch = async (params?: Params) => {
 export const discountGlobalSearch = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/discount/global-search`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const salesmanAttendence = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/salesmen/getattendance`, {
       params: params,
     });
     return res.data;
