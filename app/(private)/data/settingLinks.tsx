@@ -344,17 +344,18 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
-           {
+           
+          {
             isActive: false,
-            href: "/settings/manageAssets/spareMenu",
-            label: "Spare",
+            href: "/settings/manageAssets/spareSubCategory",
+            label: "Spare Sub Category",
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
           {
             isActive: false,
-            href: "/settings/manageAssets/spareSubCategory",
-            label: "SubCategory",
+            href: "/settings/manageAssets/spareMenu",
+            label: "Spare",
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },

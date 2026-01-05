@@ -67,7 +67,7 @@ export  default function SpareCategory(){
                         list: fetchsapre
                       },
                       header: {
-                                    title: "Spare Category",
+                                    title: "Spare Category List",
                                     searchBar: false,
                                     columnFilter: true,
                                     actions: [

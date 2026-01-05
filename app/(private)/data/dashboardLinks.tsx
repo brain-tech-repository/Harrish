@@ -486,6 +486,13 @@ export const initialLinkData: SidebarDataType[] = [
           },
           {
             isActive: false,
+            href: "/assetsTransfer",
+            label: "Assets Transfer",
+            leadingIcon: "si:pull-request-duotone",
+            iconColor: "text-cyan-500",
+          },
+          {
+            isActive: false,
             href: "#",
             label: "Chiller Installation",
             leadingIcon: "streamline-freehand:money-bag",

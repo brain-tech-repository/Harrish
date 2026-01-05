@@ -188,7 +188,7 @@ export default function AddEditSpareName() {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Update Spare Name" : "Add Spare Name"}
+          {isEditMode ? "Update Spare " : "Add Spare "}
         </h1>
       </div>
 

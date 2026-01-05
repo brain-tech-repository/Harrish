@@ -64,7 +64,7 @@ export  default function SubCategory(){
                         list: fetchsub
                       },
                       header: {
-                                    title: "Sub Category",
+                                    title: "Spare Sub Category List",
                                     searchBar: false,
                                     columnFilter: true,
                                     actions: [
