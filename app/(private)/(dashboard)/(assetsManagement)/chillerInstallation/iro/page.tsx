@@ -12,7 +12,6 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-// Type definitions for the ACF API response
 interface ChillerRequest {
     id: number;
     uuid: string;
@@ -36,7 +35,7 @@ interface ChillerRequest {
     fridge_status: number;
     iro_id: number;
     model_number: number;
-    [key: string]: any; // For other fields we don't explicitly need
+    [key: string]: any;
 }
 
 interface WorkflowStep {
@@ -96,7 +95,6 @@ const renderCombinedField = (data: TableDataType, field: string) => {
     return "-";
 };
 
-// 🔹 Table Columns
 const columns = [
     {
         key: "osa_code",
@@ -148,16 +146,15 @@ export default function CustomerInvoicePage() {
         regionOptions,
         areaOptions,
         assetsModelOptions
-    , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
+        , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureAssetsModelLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
+    useEffect(() => {
+        ensureAreaLoaded();
+        ensureAssetsModelLoaded();
+        ensureRegionLoaded();
+        ensureRouteLoaded();
+        ensureWarehouseAllLoaded();
+    }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -166,7 +163,6 @@ export default function CustomerInvoicePage() {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
 
-    // 🔹 Fetch Invoices
     const fetchIRO = useCallback(
         async (
             page: number = 1,
@@ -177,7 +173,7 @@ export default function CustomerInvoicePage() {
                 setLoading(true);
 
                 const result = await iroList({
-                    ...appliedFilters,   // no pagination params needed
+                    ...appliedFilters,
                 });
 
                 const mapped =
@@ -185,6 +181,8 @@ export default function CustomerInvoicePage() {
                         const crfCount = Array.isArray(h.details) ? h.details.length : 0;
 
                         return {
+                            id: h.id,
+                            uuid: h.uuid,
                             osa_code: `${h.osa_code} (${crfCount} CRF)`,
                             warehouse: h.warehouse_id,
                             created_at: h.created_at,
@@ -193,12 +191,11 @@ export default function CustomerInvoicePage() {
                         };
                     }) || [];
 
-                // ✅ Return mapped data without pagination
                 return {
                     data: mapped,
                     total: mapped.length,
                     currentPage: 1,
-                    pageSize: mapped.length, // show all rows
+                    pageSize: mapped.length,
                 };
 
             } catch (error) {
@@ -219,88 +216,6 @@ export default function CustomerInvoicePage() {
         [setLoading, showSnackbar]
     );
 
-
-
-    // const filterBy = useCallback(
-    //     async (
-    //         payload: Record<string, string | number | null>,
-    //         pageSize: number,
-    //     ): Promise<listReturnType> => {
-    //         let result;
-    //         // setLoading(true);
-    //         try {
-    //             const params: Record<string, string> = {
-    //                 per_page: pageSize.toString(),
-    //             };
-    //             Object.keys(payload || {}).forEach((k) => {
-    //                 const v = payload[k as keyof typeof payload];
-    //                 if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-    //                     params[k] = String(v);
-    //                 }
-    //             });
-    //             result = await iroList(params);
-    //         } finally {
-    //             // setLoading(false);
-    //         }
-
-    //         if (result?.error)
-    //             throw new Error(result.data?.message || "Filter failed");
-    //         else {
-    //             const pagination =
-    //                 result.pagination?.pagination || result.pagination || {};
-    //             return {
-    //                 data: result.data || [],
-    //                 total: pagination.last_page || result.pagination?.last_page || 1,
-    //                 totalRecords:
-    //                     pagination.total || result.pagination?.total || 0,
-    //                 currentPage: pagination.current_page || result.pagination?.current_page || 1,
-    //                 pageSize: pagination.per_page || pageSize,
-    //             };
-    //         }
-    //     },
-    //     [],
-    // );
-
-    // 🔹 Search Invoices (Mock)
-    // const searchInvoices = useCallback(async (): Promise<searchReturnType> => {
-    //     try {
-    //         setLoading(true);
-    //         return {
-    //             data: [],
-    //             currentPage: 1,
-    //             pageSize: 50,
-    //             total: 0,
-    //         };
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }, [setLoading]);
-
-
-    // const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
-    //     try {
-    //         // setLoading(true);
-    //         // Pass selected format to the export API
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-    //         const response = await exportExchangeData({ format });
-    //         // const url = response?.url || response?.data?.url;
-    //         const url = response?.download_url || response?.url || response?.data?.url;
-    //         if (url) {
-    //             await downloadFile(url);
-    //             showSnackbar("File downloaded successfully", "success");
-    //         } else {
-    //             showSnackbar("Failed to get download file", "error");
-    //         }
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    //     } catch (error) {
-    //         console.error("Export failed:", error);
-    //         showSnackbar("Failed to download invoices", "error");
-    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    //     } finally {
-    //         // setLoading(false);
-    //     }
-    // };
-
     useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [
@@ -313,7 +228,6 @@ export default function CustomerInvoicePage() {
 
     return (
         <div className="flex flex-col h-full">
-            {/* 🔹 Table Section */}
             <Table
                 refreshKey={refreshKey}
                 config={{
@@ -322,113 +236,6 @@ export default function CustomerInvoicePage() {
                         title: "Installation Request Order",
                         columnFilter: true,
                         searchBar: false,
-                        // threeDot: [
-                        //     {
-                        //         icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export CSV",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                        //     },
-                        //     {
-                        //         icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export Excel",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                        //     },],
-                        // filterByFields: [
-                        //     {
-                        //         key: "warehouse_id",
-                        //         label: "Warehouse",
-                        //         isSingle: false,
-                        //         multiSelectChips: true,
-                        //         options: Array.isArray(warehouseAllOptions)
-                        //             ? warehouseAllOptions
-                        //             : [],
-                        //     },
-                        //     {
-                        //         key: "region_id",
-                        //         label: "Region",
-                        //         isSingle: false,
-                        //         multiSelectChips: true,
-                        //         options: Array.isArray(regionOptions) ? regionOptions : [],
-                        //     },
-                        //     {
-                        //         key: "sub_region_id",
-                        //         label: "Sub Region",
-                        //         isSingle: false,
-                        //         multiSelectChips: true,
-                        //         options: Array.isArray(areaOptions) ? areaOptions : [],
-                        //     },
-                        //     {
-                        //         key: "route_id",
-                        //         label: "Route",
-                        //         isSingle: false,
-                        //         multiSelectChips: true,
-                        //         options: Array.isArray(routeOptions) ? routeOptions : [],
-                        //     },
-                        //     {
-                        //         key: "model_number",
-                        //         label: "Model Number",
-                        //         isSingle: false,
-                        //         multiSelectChips: true,
-                        //         options: Array.isArray(assetsModelOptions)
-                        //             ? assetsModelOptions
-                        //             : [],
-                        //     },
-                        // ],
-                        // actionsWithData: (data: TableDataType[], selectedRow?: number[]) => {
-                        //     // gets the ids of the selected rows with type narrowing
-                        //     const ids = selectedRow
-                        //         ?.map((index) => {
-                        //             const row = data[index];
-                        //             if (hasChillerRequest(row)) {
-                        //                 return row.chiller_request.id;
-                        //             }
-                        //             return null;
-                        //         })
-                        //         .filter((id): id is number => id !== null);
-
-                        //     return [
-                        //         <SidebarBtn
-                        //             key="key-companu-customer-with-data"
-                        //             onClick={async () => {
-                        //                 if (!ids || ids.length === 0) {
-                        //                     showSnackbar("No valid rows selected", "error");
-                        //                     return;
-                        //                 }
-                        //                 try {
-                        //                     const res = await addAcf({ crf_id: ids.join(",") });
-                        //                     if (res.error) {
-                        //                         showSnackbar(res.message || "Failed to add ACF", "error");
-                        //                     } else {
-                        //                         showSnackbar(res.message || "ACF added successfully", "success");
-                        //                         setRefreshKey(k => k + 1);
-                        //                     }
-                        //                 } catch (error) {
-                        //                     showSnackbar("Failed to add ACF", "error");
-                        //                 }
-                        //             }}
-                        //             leadingIcon="lucide:plus"
-                        //             label="Convert IRO"
-                        //             labelTw="hidden sm:block"
-                        //             isActive
-                        //         />
-                        //     ];
-                        // },
-                        // selectedCount: {
-                        //     label: "Selected Rows: ",
-                        //     onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                        //         const ids = selectedRow
-                        //             ?.map((id) => {
-                        //                 const row = data[id];
-                        //                 if (hasChillerRequest(row)) {
-                        //                     return row.chiller_request.id;
-                        //                 }
-                        //                 return null;
-                        //             })
-                        //             .filter((id): id is number => id !== null);
-                        //     }
-                        // },
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
@@ -443,7 +250,7 @@ export default function CustomerInvoicePage() {
                             },
                         },
                     ],
-                    pageSize: 10,
+                    pageSize: 50,
                 }}
             />
         </div>

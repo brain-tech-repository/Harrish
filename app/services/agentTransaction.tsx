@@ -64,6 +64,15 @@ export const salesmanLoadByUuid = async (uuid: string) => {
   }
 };
 
+export const getSalesmanByWarehouseId = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/load/get-salesmanRoute`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 // Salesman Load Details
 
 export const salesmanLoadDetailsList = async (params: Params) => {
@@ -865,7 +874,7 @@ export const exportSpecificCustomerReturn = async (params?: Params) => {
   }
 };
 
-export const exportAllInvoices = async (uuid:string,params?: Params) => {
+export const exportAllInvoices = async (uuid: string, params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/invoices/exportinvoiceagentcustomer/${uuid}`, { params });
     return res.data;

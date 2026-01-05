@@ -21,12 +21,12 @@ import * as yup from "yup";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 
 export default function AddInstallationReportPage() {
-    const { regionOptions , ensureRegionLoaded} = useAllDropdownListData();
+    const { regionOptions, ensureRegionLoaded } = useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureRegionLoaded();
-  }, [ensureRegionLoaded]);
+    // Load dropdown data
+    useEffect(() => {
+        ensureRegionLoaded();
+    }, [ensureRegionLoaded]);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
 
@@ -110,7 +110,7 @@ export default function AddInstallationReportPage() {
                     }
                 });
 
-             
+
                 // If we found checked checkboxes, extract the data
                 if (checkedCheckboxes.length > 0) {
                     const selected: any[] = [];
@@ -403,7 +403,7 @@ export default function AddInstallationReportPage() {
 
     // 🔧 HANDLE ROW SELECTION CALLBACK
     const handleRowSelection = useCallback((data: TableDataType[], selectedRowIndices?: number[]) => {
-      
+
 
         if (selectedRowIndices && selectedRowIndices.length > 0 && data) {
             const selected = selectedRowIndices
@@ -518,7 +518,7 @@ export default function AddInstallationReportPage() {
                             api: { list: fetchChillers, search: searchChiller },
                             footer: { pagination: false },
                             rowSelection: true,
-                            pageSize: 9999,
+                            pageSize: 50,
                             floatingInfoBar: {
                                 showByDefault: false,
                                 showSelectedRow: false,
