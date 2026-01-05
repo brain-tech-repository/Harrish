@@ -45,8 +45,8 @@ interface CustomerItem {
   status: string;
 }
 
-const title = "Key Customer Details";
-const backBtnUrl = "/keyCustomer";
+const title = "Company Customer Details";
+const backBtnUrl = "/companyCustomer";
 export function getPaymentType(value: string): string {
   switch (value) {
     case "1":
@@ -77,39 +77,6 @@ export default function ViewPage() {
     setActiveTab(tabList[idx].key);
   };
 
-  // const IconComponentData2 = ({row}:{row:TableDataType})=>{
-  //   const [smallLoading, setSmallLoading] = useState(false)
-  //   const { showSnackbar } = useSnackbar();
-
-  //   const exportOrderFile = async (uuid: string, format: string) => {
-  //     try {
-  //       setSmallLoading(true)
-  //       const response = await exportOrderInvoice({ uuid, format }); // send proper body object
-
-  //       if (response && typeof response === "object" && response.download_url) {
-  //         await downloadFile(response.download_url);
-  //         showSnackbar("File downloaded successfully", "success");
-  //       setSmallLoading(false)
-
-
-  //       } else {
-  //         showSnackbar("Failed to get download URL", "error");
-  //       setSmallLoading(false)
-
-  //       }
-  //     } catch (error) {
-  //       console.error(error);
-  //       showSnackbar("Failed to download data", "error");
-  //       setSmallLoading(false)
-
-  //     }
-  //   };
-
-  //   return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
-  //                       exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
-
-  //       }}><Icon  icon="material-symbols:download"/></div>)
-  // }
   useEffect(() => {
     if (!uuid) return;
 
@@ -119,14 +86,14 @@ export default function ViewPage() {
         const res = await getCompanyCustomerById(uuid);
         if (res.error) {
           showSnackbar(
-            res.data?.message || "Unable to fetch key customer details",
+            res.data?.message || "Unable to fetch company customer details",
             "error"
           );
           return;
         }
         setCustomer(res.data);
       } catch {
-        showSnackbar("Unable to fetch key customer details", "error");
+        showSnackbar("Unable to fetch company customer details", "error");
       } finally {
         setLoading(false);
       }

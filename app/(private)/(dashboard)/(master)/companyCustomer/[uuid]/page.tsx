@@ -180,7 +180,7 @@ export default function AddCompanyCustomer() {
     allCompanyTypeOptions,
     channelOptions,
     fetchAreaOptions,
-   ensureAreaLoaded, ensureChannelLoaded, ensureCompanyTypeLoaded, ensureRegionLoaded,ensureAllCompanyTypesLoaded} = useAllDropdownListData();
+    ensureAreaLoaded, ensureChannelLoaded, ensureCompanyTypeLoaded, ensureRegionLoaded, ensureAllCompanyTypesLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -188,7 +188,7 @@ export default function AddCompanyCustomer() {
     ensureChannelLoaded();
     ensureCompanyTypeLoaded();
     ensureRegionLoaded();
-    if(!isEditMode){
+    if (!isEditMode) {
       ensureAllCompanyTypesLoaded();
     }
   }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyTypeLoaded, ensureRegionLoaded]);
@@ -366,16 +366,16 @@ export default function AddCompanyCustomer() {
 
   const handleSubmit = async (
     values: CompanyCustomerFormValues,
-    
+
     {
       setSubmitting,
       setErrors,
       setTouched,
     }: FormikHelpers<CompanyCustomerFormValues>,
     actions?: Pick<
-                FormikHelpers<CompanyCustomerFormValues>,
-                "setErrors" | "setTouched" | "setSubmitting"
-            >
+      FormikHelpers<CompanyCustomerFormValues>,
+      "setErrors" | "setTouched" | "setSubmitting"
+    >
   ) => {
     try {
       await validationSchema.validate(values, { abortEarly: false });
@@ -421,9 +421,9 @@ export default function AddCompanyCustomer() {
       } else {
         showSnackbar(
           res.message ||
-            (isEditMode
-              ? "Key Customer Updated Successfully"
-              : "Key Customer Created Successfully"),
+          (isEditMode
+            ? "Company Customer Updated Successfully"
+            : "Company Customer Created Successfully"),
           "success"
         );
 
@@ -438,12 +438,12 @@ export default function AddCompanyCustomer() {
           }
         }
 
-        router.push("/keyCustomer");
+        router.push("/companyCustomer");
       }
     } catch (error: unknown) {
       if (error instanceof Yup.ValidationError) {
         const fields = error.inner.map((e) => e.path);
-       
+
         actions?.setErrors(
           error.inner.reduce(
             (
@@ -458,7 +458,7 @@ export default function AddCompanyCustomer() {
         );
       } else {
         showSnackbar(
-          `Failed to ${isEditMode ? "update" : "add"} Key Customer `,
+          `Failed to ${isEditMode ? "update" : "add"} Company Customer `,
           "error"
         );
       }
@@ -504,7 +504,7 @@ export default function AddCompanyCustomer() {
                     <SettingPopUp
                       isOpen={isOpen}
                       onClose={() => setIsOpen(false)}
-                      title="Key Customer Code"
+                      title="Company Customer Code"
                       prefix={prefix}
                       setPrefix={setPrefix}
                       onSave={(mode, code) => {
@@ -556,7 +556,7 @@ export default function AddCompanyCustomer() {
                   required
                   label="Company Type"
                   name="company_type"
-                  value={(  values.company_type).toString()}
+                  value={(values.company_type).toString()}
                   onChange={(e) =>
                     setFieldValue("company_type", e.target.value)
                   }
@@ -625,15 +625,15 @@ export default function AddCompanyCustomer() {
                   label="Business Type"
                   name="business_type"
                   type="radio"
-                  value={( values.business_type).toString()}
+                  value={(values.business_type).toString()}
                   onChange={(e) => setFieldValue("business_type", e.target.value)}
                   options={[
                     { value: "0", label: "Buyer" },
                     { value: "1", label: "Seller" },
                   ]}
                 />
+              </div>
             </div>
-          </div>
           </ContainerCard>
         );
       case 3:
@@ -696,14 +696,14 @@ export default function AddCompanyCustomer() {
                     areaOptions && areaOptions.length > 0
                       ? areaOptions
                       : values.area_id
-                      ? // show the existing area_id value as an option when areaOptions haven't loaded yet
+                        ? // show the existing area_id value as an option when areaOptions haven't loaded yet
                         [
                           {
                             value: values.area_id,
                             label: `Selected Area (${values.area_id})`,
                           },
                         ]
-                      : [{ value: "", label: "No options" }]
+                        : [{ value: "", label: "No options" }]
                   }
                   error={touched.area_id && errors.area_id}
                 />
@@ -864,7 +864,7 @@ export default function AddCompanyCustomer() {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold text-gray-900">
-          {isEditMode ? "Update" : "Add"} Key Customer
+          {isEditMode ? "Update" : "Add"} Company Customer
         </h1>
       </div>
 
@@ -899,7 +899,7 @@ export default function AddCompanyCustomer() {
                 isCompleted: isStepCompleted(step.id),
               }))}
               currentStep={currentStep}
-              onStepClick={() => {}}
+              onStepClick={() => { }}
               onBack={prevStep}
               onNext={() =>
                 handleNext(values, {
@@ -913,12 +913,12 @@ export default function AddCompanyCustomer() {
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
               submitButtonText={
-                                isSubmitting
-                                    ? (isEditMode ? "Updating..." : "Submitting...")
-                                    : isEditMode
-                                    ? "Update"
-                                    : "Submit"
-                            }
+                isSubmitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"
+              }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

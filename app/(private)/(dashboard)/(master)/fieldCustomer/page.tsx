@@ -13,12 +13,12 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { getPaymentType } from "../keyCustomer/details/[uuid]/page";
+import { getPaymentType } from "../companyCustomer/details/[uuid]/page";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 export default function AgentCustomer() {
     const { can, permissions } = usePagePermissions();
-    const { customerSubCategoryOptions, itemCategoryOptions,customerCategoryOptions,ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const { customerSubCategoryOptions, itemCategoryOptions, customerCategoryOptions, ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
 
     // Load dropdown data
     useEffect(() => {
@@ -68,7 +68,7 @@ export default function AgentCustomer() {
                 return row.customer_type || "-";
             },
         },
-          {
+        {
             key: "category",
             label: "Customer Category",
             render: (row: TableDataType) =>
@@ -78,7 +78,7 @@ export default function AgentCustomer() {
                     ? (row.category as { customer_category_name?: string })
                         .customer_category_name || "-"
                     : "-",
-                     filter: {
+            filter: {
                 isFilterable: true,
                 width: 320,
                 options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
@@ -89,7 +89,7 @@ export default function AgentCustomer() {
             },
             // showByDefault: true
         },
-          {
+        {
             key: "outlet_channel",
             label: "Outlet Channel",
             render: (row: TableDataType) =>
@@ -180,9 +180,9 @@ export default function AgentCustomer() {
         { key: "district", label: "District" },
         { key: "buyertype", label: "Buyer Type", render: (row: TableDataType) => (row.buyertype === "0" ? "B2B" : "B2C") },
         { key: "payment_type", label: "Payment Type", render: (row: TableDataType) => getPaymentType(String(row.payment_type)) },
-      
-      
-        
+
+
+
         {
             key: "status",
             label: "Status",
@@ -250,7 +250,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId, setLoading]
+        [selectedSubCategoryId, warehouseId, channelId, customerCategoryId, routeId, setLoading]
     );
 
     const exportfile = async (format: string) => {
@@ -325,7 +325,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, customerCategoryId, routeId]);
 
     return (
         <>
@@ -339,12 +339,12 @@ export default function AgentCustomer() {
                         },
                         header: {
                             title: "Field Customers",
-                              exportButton: {
-                show: true,
-                onClick: () => exportfile("xlsx"), 
-              },
+                            exportButton: {
+                                show: true,
+                                onClick: () => exportfile("xlsx"),
+                            },
                             threeDot: [
-                               
+
                                 {
                                     icon: "lucide:radio",
                                     label: "Inactive",
