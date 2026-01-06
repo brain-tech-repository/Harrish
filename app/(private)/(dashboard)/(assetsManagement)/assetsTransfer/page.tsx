@@ -4,6 +4,8 @@ import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useState, useEffect, useMemo } from "react";
 import {
+    assetsTransfer,
+    
     addRouteTransfer,
     companyList,
     regionList,
@@ -29,7 +31,10 @@ export default function StockTransfer() {
         region: "",
         area: "",
         warehouse: "",
-        route: ""
+        route: "",
+         from_warehouse_id: "",
+          
+
     });
 
     const [sourceOptions, setSourceOptions] = useState({
@@ -46,7 +51,9 @@ export default function StockTransfer() {
         region: "",
         area: "",
         warehouse: "",
-        route: ""
+        route: "",
+         to_warehouse_id: "",
+
     });
 
     const [destOptions, setDestOptions] = useState({
@@ -119,6 +126,8 @@ export default function StockTransfer() {
     // --- Source Cascading Logic ---
 
     // Fetch Source Regions when Source Company changes
+    console.log("source",source);
+    console.log("dest",dest);
     useEffect(() => {
         if (!source.company) {
             setSourceOptions(prev => ({ ...prev, regions: [], areas: [], warehouses: [], routes: [] }));
@@ -312,19 +321,27 @@ export default function StockTransfer() {
 
 
     const handleSubmit = async () => {
-        if (!source.route || !dest.route) {
-            showSnackbar("Please select both origin and destination routes", "warning");
+        if (!source.warehouse || !dest.warehouse) {
+            showSnackbar("Please select both origin and destination warehouses", "warning");
             return;
         }
 
-        const payload = {
-            old_route_id: Number(source.route),
-            new_route_id: Number(dest.route),
-        };
+    // const payload = {
+    //         old_route_id: Number(source.route),
+    //         new_route_id: Number(dest.route),
+    //     };
+    const payload = {
+    from_warehouse_id:source.warehouse,
+    to_warehouse_id:dest.warehouse,
+  };
+
+
+
+       
 
         try {
             setLoading(true);
-            const res = await addRouteTransfer(payload);
+            const res = await assetsTransfer(payload);
             if (res?.error) {
                 if (res?.errors) {
                     const errorMsg = Object.values(res.errors).flat().join(", ");
@@ -335,8 +352,9 @@ export default function StockTransfer() {
             } else {
                 showSnackbar("Route Transfer Successful ✅", "success");
                 // Reset Forms
-                setSource({ company: "", region: "", area: "", warehouse: "", route: "" });
-                setDest({ company: "", region: "", area: "", warehouse: "", route: "" });
+                setSource({ company: "", region: "", area: "", warehouse: "", route: "", from_warehouse_id: "",
+                 });
+                setDest({ company: "", region: "", area: "", warehouse: "", route: "", to_warehouse_id: "",});
                 if (isHistoryOpen) fetchHistory(); // Refresh history if open
             }
         } catch (error) {
@@ -351,7 +369,7 @@ export default function StockTransfer() {
         <ContainerCard>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-[20px] font-semibold text-[#181D27] uppercase">
-                    Route Transfer
+                    Assets Transfer
                 </h1>
                 <button
                     onClick={() => setIsHistoryOpen(true)}
@@ -405,7 +423,7 @@ export default function StockTransfer() {
                         placeholder="Select Warehouse"
                         showSkeleton={skeletons.sourceWarehouse}
                     />
-                    <InputFields
+                    {/* <InputFields
                         label="Route (Origin)"
                         value={source.route}
                         options={sourceOptions.routes}
@@ -414,7 +432,7 @@ export default function StockTransfer() {
                         searchable
                         placeholder="Select Origin Route"
                         showSkeleton={skeletons.sourceRoute}
-                    />
+                    /> */}
                 </div>
             </div>
 
@@ -461,7 +479,7 @@ export default function StockTransfer() {
                         placeholder="Select Warehouse"
                         showSkeleton={skeletons.destWarehouse}
                     />
-                    <InputFields
+                    {/* <InputFields
                         label="Route (Destination)"
                         value={dest.route}
                         options={filteredDestRoutes}
@@ -470,13 +488,13 @@ export default function StockTransfer() {
                         searchable
                         placeholder="Select Destination Route"
                         showSkeleton={skeletons.destRoute}
-                    />
+                    /> */}
                 </div>
             </div>
 
 
             {/* ACTION */}
-            {can("create") && (
+            {/* {can("create") && ( */}
                 <div className="flex justify-end mt-6 gap-4">
                     <button
                         onClick={handleSubmit}
@@ -486,7 +504,7 @@ export default function StockTransfer() {
                     </button>
                 </div>
 
-            )}
+            {/* )} */}
 
             {/* HISTORY POPUP */}
             <Popup isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)}>

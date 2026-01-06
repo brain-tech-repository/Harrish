@@ -4003,3 +4003,15 @@ export const discountGlobalSearch = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const assetsTransfer = async (payload: object) => {
+  try {
+    const res = await API.post("/api/assets/chiller/transfer-chillers", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  console.log("assetsTransfer payload", payload);
+};
+
