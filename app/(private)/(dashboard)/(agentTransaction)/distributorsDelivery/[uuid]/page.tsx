@@ -116,6 +116,7 @@ interface OrderData {
     gross_total: number;
     net_total: number;
     total: number;
+    is_promotional?: boolean;
     item_uoms: {
       id: number;
       item_id: number;
@@ -163,8 +164,10 @@ interface ItemData {
   Total: string;
   available_stock?: string;
   preVat?: string;
+  is_promotional?: boolean;
   [key: string]:
     | string
+    | boolean
     | { label: string; value: string; price?: string; uom_type?: string }[]
     | undefined;
 }
@@ -235,6 +238,7 @@ export default function DeliveryAddEditPage() {
       Net: "",
       Vat: "",
       Total: "",
+      is_promotional: false,
     },
   ]);
 
@@ -488,6 +492,7 @@ export default function DeliveryAddEditPage() {
         item.Quantity = "1";
         item.item_label = "";
         item.available_stock = "";
+        item.is_promotional = false;
       } else {
         const selectedOrder =
           orderData?.find((order: any) => String(order.id) === value) ??
@@ -620,6 +625,7 @@ export default function DeliveryAddEditPage() {
         Vat: "0.00",
         Total: "0.00",
         available_stock: "",
+        is_promotional: false,
       },
     ]);
   };
@@ -641,6 +647,7 @@ export default function DeliveryAddEditPage() {
           Vat: "",
           Total: "",
           available_stock: "",
+          is_promotional: false,
         },
       ]);
       return;
@@ -694,6 +701,7 @@ export default function DeliveryAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
+        is_promotional: item.is_promotional ?? false,
       })),
     };
   };
@@ -991,6 +999,7 @@ export default function DeliveryAddEditPage() {
                             Net: "",
                             Vat: "",
                             Total: "",
+                            is_promotional: false,
                           }]);
                           setSkeleton((prev) => ({ ...prev, order_code: true }));
                           (async () => {
@@ -1036,6 +1045,7 @@ export default function DeliveryAddEditPage() {
                           Net: "",
                           Vat: "",
                           Total: "",
+                          is_promotional: false,
                         }]);
                         (async () => {
                           await fetchAgentDeliveries(
@@ -1133,6 +1143,7 @@ export default function DeliveryAddEditPage() {
                                   ? preVat.toFixed(2)
                                   : String(preVat)
                               ),
+                              is_promotional: d.is_promotional ?? false,
                             } as ItemData;
                           });
                           setItemData(
@@ -1151,6 +1162,7 @@ export default function DeliveryAddEditPage() {
                                     Net: "",
                                     Vat: "",
                                     Total: "",
+                                    is_promotional: false,
                                   },
                                 ]
                           );
