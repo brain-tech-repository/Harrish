@@ -108,7 +108,7 @@ interface ItemData {
   Vat: string;
   Total: string;
   available_stock?: string; // Store available warehouse stock for validation
-  [key: string]: string | { label: string; value: string; price?: string }[] | undefined;
+  [key: string]: string | { label: string; value: string; price?: string; isPrmotion?: boolean; }[] | undefined | any;
 }
 
 type OrderInput = {
@@ -936,6 +936,7 @@ export default function OrderAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
+        isPrmotion: item.isPrmotion  == true ? true : false,
       })),
     };
   };
