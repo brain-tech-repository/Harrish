@@ -4015,3 +4015,14 @@ export const assetsTransfer = async (payload: object) => {
   console.log("assetsTransfer payload", payload);
 };
 
+export const assestsTansferget = async (params?: Params) => {
+  try {
+    const res = await API.get(`api/assets/chiller/getupdatewarehouse_chiller`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
