@@ -265,6 +265,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
              },
            ],
             filterRenderer: FilterComponent,
+
             actions: can("create") ? [
               <SidebarBtn
                 key={0}

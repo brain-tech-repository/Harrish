@@ -6,7 +6,7 @@ import ContainerCard from "@/app/components/containerCard";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
-import { exportAllInvoices,agentCustomerReturnExport, exportSpecificCustomerReturn,exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
+import { exportAllInvoices, agentCustomerReturnExport, exportSpecificCustomerReturn, exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
 import { agentCustomerById, downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -65,7 +65,7 @@ const tabs = ["Overview", "Sales", "Market Return"];
 
 export default function CustomerDetails() {
     const router = useRouter();
-    const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+    const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
     const [activeTab, setActiveTab] = useState("Overview");
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
@@ -323,7 +323,7 @@ export default function CustomerDetails() {
     const exportReturnFile = async (uuid: string, format: string) => {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+            const response = await agentCustomerReturnExport({ uuid, format, from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
             if (response && typeof response === "object" && response.download_url) {
                 await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully", "success");
@@ -459,7 +459,7 @@ export default function CustomerDetails() {
             setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
-    
+
     return (
         <>
             {/* header */}
@@ -555,23 +555,23 @@ export default function CustomerDetails() {
                                     filterBy: filterBySales
                                 },
                                 header: {
-                                    
-                                     actions: [
-                                <ExportDropdownButton
-                                disabled={salesData?.length === 0}
-                                    keyType="excel"
-                                    threeDotLoading={threeDotLoading}
-                                    exportReturnFile={allInvoices}
-                                    uuid={uuid}
-                                />
-                            ],
-                                     filterRenderer: (props) => (
-                                         <FilterComponent
-                                         currentDate={true}
-                                           {...props}
-                                           onlyFilters={['from_date', 'to_date']}
-                                         />
-                                       ),
+
+                                    actions: [
+                                        <ExportDropdownButton
+                                            disabled={salesData?.length === 0}
+                                            keyType="excel"
+                                            threeDotLoading={threeDotLoading}
+                                            exportReturnFile={allInvoices}
+                                            uuid={uuid}
+                                        />
+                                    ],
+                                    filterRenderer: (props) => (
+                                        <FilterComponent
+                                            currentDate={true}
+                                            {...props}
+                                            onlyFilters={['from_date', 'to_date']}
+                                        />
+                                    ),
 
                                 },
                                 showNestedLoading: true,
@@ -583,10 +583,9 @@ export default function CustomerDetails() {
                                 rowSelection: false,
                                 rowActions: [
                                     {
-                                        icon: "material-symbols:download",
+                                        icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
                                         onClick: (data: TableDataType) => {
-                                            // return(<IconComponentData2 row={data} />)
-                                            exportFile(data.uuid, "pdf"); // or "excel", "csv" etc.
+                                            exportFile(data.uuid, "pdf");
                                         },
                                     }
                                 ],
@@ -612,23 +611,23 @@ export default function CustomerDetails() {
 
                             },
                             header: {
-                                  filterRenderer: (props) => (
-                                      <FilterComponent
-                                      currentDate={true}
+                                filterRenderer: (props) => (
+                                    <FilterComponent
+                                        currentDate={true}
                                         {...props}
                                         onlyFilters={['from_date', 'to_date']}
-                                      />
-                                    ),
-                              
-                            actions: [
-                                <ExportDropdownButton
-                                disabled={returnData?.length === 0}
-                                   keyType="excel"
-                                    threeDotLoading={threeDotLoading}
-                                    exportReturnFile={exportReturnFile}
-                                    uuid={uuid}
-                                />
-                            ],
+                                    />
+                                ),
+
+                                actions: [
+                                    <ExportDropdownButton
+                                        disabled={returnData?.length === 0}
+                                        keyType="excel"
+                                        threeDotLoading={threeDotLoading}
+                                        exportReturnFile={exportReturnFile}
+                                        uuid={uuid}
+                                    />
+                                ],
                             },
                             showNestedLoading: true,
                             footer: { nextPrevBtn: true, pagination: true },
@@ -641,7 +640,7 @@ export default function CustomerDetails() {
                                 {
                                     icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "material-symbols:download",
                                     onClick: (data: TableDataType) => {
-                                        exportReturn(data.uuid, "csv"); // or "excel", "csv" etc.
+                                        exportReturn(data.uuid, "csv");
                                     },
                                 }
                             ],

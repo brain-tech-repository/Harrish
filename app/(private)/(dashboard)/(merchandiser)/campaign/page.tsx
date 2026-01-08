@@ -20,6 +20,7 @@ interface CampaignInformationItem {
   merchandiser: string;
   customer: string;
   feedback: string;
+  images: string[];
 }
 
 export default function CampaignPage() {
@@ -146,6 +147,7 @@ export default function CampaignPage() {
           merchandiser: item.merchandiser,
           customer: item.customer,
           feedback: item.feedback,
+          images: item.images,
         }));
         return {
           data,
