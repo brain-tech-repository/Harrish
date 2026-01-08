@@ -6,6 +6,7 @@ import { Icon } from "@iconify-icon/react";
 
 import Table, {
   listReturnType,
+  searchReturnType,
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -22,6 +23,18 @@ const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 ];
+
+interface CompetitorItem {
+  uuid: string;
+  code: string;
+  company_name: string;
+  brand: string;
+  merchendiser_info: string;
+  item_name: string;
+  price: string;
+  promotion: string;
+  notes: string;
+}
 
 export default function Competitor() {
   const { can, permissions } = usePagePermissions();
@@ -113,6 +126,44 @@ export default function Competitor() {
     }
   };
 
+  const searchCampaign = useCallback(
+    async (searchQuery: string): Promise<searchReturnType> => {
+      setLoading(true);
+      try {
+        // always start from page 1 for a new search
+        const res = await competitorList({
+          search: searchQuery,
+        });
+
+        setLoading(false);
+        if (res.error) throw new Error(res.message || "Search failed");
+
+        const data: TableDataType[] = res.data.map((item: CompetitorItem) => ({
+          id: item.uuid,
+          code: item.code,
+          company_name: item.company_name,
+          brand: item.brand,
+          merchendiser_info: item.merchendiser_info,
+          item_name: item.item_name,
+          price: item.price,
+          promotion: item.promotion,
+          notes: item.notes,
+        }));
+        return {
+          data,
+          total: res.pagination?.last_page || data.length,
+          currentPage: res.pagination?.current_page || 1,
+          pageSize: res.pagination?.per_page,
+        };
+      } catch (err) {
+        setLoading(false);
+        showSnackbar((err as Error).message, "error");
+        return { data: [], total: 0, currentPage: 1, pageSize: 50 };
+      }
+    },
+    [setLoading, showSnackbar]
+  );
+
 
   return (
     <>
@@ -120,7 +171,7 @@ export default function Competitor() {
         <Table
           refreshKey={refreshKey}
           config={{
-            api: { list: fetchCompetitorList },
+            api: { list: fetchCompetitorList, search: searchCampaign },
             header: {
               title: "Competitor Information",
               threeDot: [
@@ -147,7 +198,7 @@ export default function Competitor() {
                 // }
               ],
 
-              searchBar: false,
+              searchBar: true,
               columnFilter: true,
               // actions: [
               //   <SidebarBtn
