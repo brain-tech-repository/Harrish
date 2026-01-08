@@ -7,7 +7,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { acfList, addAcf, crfExport } from "@/app/services/assetsApi";
+import { acfList, addAcf } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -18,8 +18,6 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import InputFields from "@/app/components/inputFields";
 // import { Icon } from "lucide-react";
 import { Icon } from "@iconify-icon/react";
-import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { button } from "framer-motion/client";
 
 // Type definitions for the ACF API response
 interface ChillerRequest {
@@ -189,7 +187,6 @@ const columns = [
 ]
 
 export default function CustomerInvoicePage() {
-    const { can, permissions } = usePagePermissions();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const router = useRouter();
@@ -201,6 +198,7 @@ export default function CustomerInvoicePage() {
             confirmPassword: "",
         },
         onSubmit: (values) => {
+            console.log(values);
         },
     });
     const [showSidebar, setShowSidebar] = useState(false);
@@ -221,26 +219,18 @@ export default function CustomerInvoicePage() {
         regionOptions,
         areaOptions,
         assetsModelOptions
-        , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
 
-    // Load dropdown data
-    useEffect(() => {
-        ensureAreaLoaded();
-        ensureAssetsModelLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
-        ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
+  // Load dropdown data
+  useEffect(() => {
+    ensureAreaLoaded();
+    ensureAssetsModelLoaded();
+    ensureRegionLoaded();
+    ensureRouteLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
-
-    // Refresh table when permissions load
-    useEffect(() => {
-        if (permissions.length > 0) {
-            setRefreshKey((prev) => prev + 1);
-        }
-    }, [permissions]);
-
     const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -323,7 +313,7 @@ export default function CustomerInvoicePage() {
                 };
             }
         },
-        [refreshKey],
+        [],
     );
 
     // 🔹 Search Invoices (Mock)
@@ -342,29 +332,29 @@ export default function CustomerInvoicePage() {
     }, [setLoading]);
 
 
-    const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
-        try {
-            // setLoading(true);
-            // Pass selected format to the export API
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await crfExport({ format });
-            // const url = response?.url || response?.data?.url;
-            const url = response?.download_url || response?.url || response?.data?.url;
-            if (url) {
-                await downloadFile(url);
-                showSnackbar("File downloaded successfully", "success");
-            } else {
-                showSnackbar("Failed to get download file", "error");
-            }
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } catch (error) {
-            console.error("Export failed:", error);
-            showSnackbar("Failed to download invoices", "error");
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } finally {
-            // setLoading(false);
-        }
-    };
+    // const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
+    //     try {
+    //         // setLoading(true);
+    //         // Pass selected format to the export API
+    //         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+    //         const response = await exportExchangeData({ format });
+    //         // const url = response?.url || response?.data?.url;
+    //         const url = response?.download_url || response?.url || response?.data?.url;
+    //         if (url) {
+    //             await downloadFile(url);
+    //             showSnackbar("File downloaded successfully", "success");
+    //         } else {
+    //             showSnackbar("Failed to get download file", "error");
+    //         }
+    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    //     } catch (error) {
+    //         console.error("Export failed:", error);
+    //         showSnackbar("Failed to download invoices", "error");
+    //         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    //     } finally {
+    //         // setLoading(false);
+    //     }
+    // };
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
@@ -442,22 +432,19 @@ export default function CustomerInvoicePage() {
                             },
                         ],
                         actionsWithData: (data: TableDataType[], selectedRow?: number[]) => {
-                            // if (!can("create")) return [];
                             // gets the ids of the selected rows with type narrowing
                             const ids = selectedRow
                                 ?.map((index) => {
                                     const row = data[index];
-                                    // if (hasChillerRequest(row)) {
-                                    return row.id;
-                                    // }
-                                    // return null;
+                                    if (hasChillerRequest(row)) {
+                                        return row.chiller_request.id;
+                                    }
+                                    return null;
                                 })
                                 .filter((id): id is number => id !== null);
 
-
                             return [
                                 <SidebarBtn
-                                    disabled={!ids || ids.length === 0}
                                     key="key-companu-customer-with-data"
                                     onClick={async () => {
                                         if (!ids || ids.length === 0) {
@@ -466,6 +453,7 @@ export default function CustomerInvoicePage() {
                                         }
                                         try {
                                             const res = await addAcf({ crf_id: ids.join(",") });
+                                            console.log(res);
                                             if (res.error) {
                                                 showSnackbar(res.message || "Failed to add ACF", "error");
                                             } else {
@@ -495,6 +483,7 @@ export default function CustomerInvoicePage() {
                                 label: "Selected Rows",
                                 onClick: (data, selectedRow) => {
                                     const rows = selectedRow?.map(i => data[i]) || [];
+                                    console.log('Selected rows:', rows);
                                     setSelectedRowsData(rows);
                                     setSidebarRefreshKey(k => k + 1);
                                     setShowSidebar(true);

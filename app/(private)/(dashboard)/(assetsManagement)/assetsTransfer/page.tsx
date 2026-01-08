@@ -1,29 +1,20 @@
 "use client";
 
-import Table, {
-  listReturnType,
-  searchReturnType,
-  TableDataType,
-} from "@/app/components/customTable";
+import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import {
-  getRouteVisitListBasedOnHeader,
+  assestsTansferget,
   downloadFile,
   exportRouteVisit,
-  routeVisitGlobalSearch,
-  assestsTansferget 
 } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { filter } from "framer-motion/client";
-//import { assestsTansferget } from "@/app/services/allApi";
+import { Icon } from "@iconify/react";
 
-/* =======================
-   TABLE COLUMNS
-======================= */
+/* ======================= COLUMNS ======================= */
 const columns = [
   {
     key: "from_warehouse",
@@ -45,193 +36,129 @@ const columns = [
             "DD MMM YYYY",
             "en-GB"
           )
-        : "",
+        : "-",
   },
 ];
 
+type TableRow = TableDataType & { uuid?: string };
+
 export default function AssetsTransfer() {
-  const { can, permissions } = usePagePermissions();
+  const { permissions } = usePagePermissions();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  /* =======================
-      PAYLOAD
-  ======================= */
-  const filters = {
-    warehouse_id: 72,
+  const [filters, setFilters] = useState({
+    warehouse_id: "72",
     from_date: "2026-01-06",
     to_date: "2026-01-06",
-  };
-  console.log("Filters:", filters);
+  });
 
-  type TableRow = TableDataType & { uuid?: string };
-
-  /* =======================
-     FETCH LIST API
-  ======================= */
-  
-  // const assestsTansferget = useCallback(
-   
-    
-  //   async (page: number = 1, pageSize: number = 50): Promise<listReturnType> => {
-  //     try {
-  //       const listRes = await getRouteVisitListBasedOnHeader({
-          
-  //          ...filters,
-  //         page,
-  //         limit: pageSize,
-  //       });
-  //       console.log("API Response:", listRes);
-        
-
-  //       const transformedData = (listRes.data || []).map((item: any) => ({
-  //         uuid: item.uuid,
-  //         from_warehouse: item.from_warehouse?.name || "",
-  //         to_warehouse: item.to_warehouse?.name || "",
-  //         transfer_date: item.transfer_date,
-  //       }));
-  //       console.log("Transformed Data:", transformedData);
-
-  //       return {
-  //         data: transformedData,
-  //         total: listRes.pagination?.totalPages || 1,
-  //         currentPage: listRes.pagination?.page || 1,
-  //         pageSize: listRes.pagination?.limit || pageSize,
-  //       };
-  //     } catch (error) {
-  //       showSnackbar("Failed to fetch assets transfer list", "error");
-  //       throw error;
-  //     }
-  //   },
-  //   [showSnackbar]
-  // );
-
+  /* ======================= FETCH ======================= */
   const fetchAssetsTransferList = useCallback(
-  async (page: number = 1, pageSize: number = 50): Promise<listReturnType> => {
-    try {
+    async (page = 1, pageSize = 50): Promise<listReturnType> => {
       const response = await assestsTansferget({
-        warehouse_id: "72",
-        from_date: "2026-01-06",
-        to_date: "2026-01-06",
+        warehouse_id: filters.warehouse_id,
+        from_date: filters.from_date,
+        to_date: filters.to_date,
         // page,
         // limit: pageSize,
       });
 
-      console.log("ASSETS TRANSFER API RESPONSE 👉", response);
-
-      // ✅ REAL DATA LOCATION
       const rows = response?.data || [];
 
-      const transformedData = rows.map((item: any) => ({
-        uuid: item.uuid,
-        from_warehouse: item.from_warehouse?.warehouse_name || "-",
-        to_warehouse: item.to_warehouse?.warehouse_name || "-",
-        transfer_date: item.transfer_date,
-      }));
-
       return {
-        data: transformedData,
-        total: response?.data?.pagination?.total || 0,
-        currentPage: response?.data?.pagination?.page || 1,
-        pageSize: response?.data?.pagination?.limit || pageSize,
-      };
-    } catch (error) {
-      console.error(error);
-      showSnackbar("Failed to fetch assets transfer list", "error");
-      throw error;
-    }
-  },
-  [showSnackbar]
-);
-
-
-
-
-
-
-
-
-  /* =======================
-     GLOBAL SEARCH
-  ======================= */
-  const searchTransfers = useCallback(
-    async (
-      query: string,
-      pageSize: number = 50,
-      column?: string,
-      page: number = 1
-    ): Promise<listReturnType> => {
-      const res = await routeVisitGlobalSearch({
-        query,
-        per_page: pageSize.toString(),
-        page: page.toString(),
-      });
-
-      return {
-        data: res.data || [],
-        total: res.pagination.totalPages,
-        currentPage: res.pagination.page,
-        pageSize: res.pagination.limit,
+        data: rows.map((item: any) => ({
+          uuid: item.uuid,
+          from_warehouse: item.from_warehouse?.warehouse_name || "-",
+          to_warehouse: item.to_warehouse?.warehouse_name || "-",
+          transfer_date: item.transfer_date,
+        })),
+        total: response?.pagination?.total || 0,
+        currentPage: response?.pagination?.page || page,
+        pageSize: response?.pagination?.limit || pageSize,
       };
     },
-    []
+    [filters]
   );
 
-  /* =======================
-     EXPORT
-  ======================= */
+  /* ======================= EXPORT ======================= */
   const exportFile = async () => {
-    try {
-      const res = await exportRouteVisit({
-        format: "xlsx",
-        ...filters,
-      });
-
-      if (res?.file_url) {
-        await downloadFile(res.file_url);
-        showSnackbar("File downloaded successfully", "success");
-      }
-    } catch {
-      showSnackbar("Failed to export data", "error");
+    const res = await exportRouteVisit({ format: "xlsx", ...filters });
+    if (res?.file_url) {
+      await downloadFile(res.file_url);
+      showSnackbar("File downloaded successfully", "success");
     }
   };
 
-  /* =======================
-     PERMISSION REFRESH
-  ======================= */
   useEffect(() => {
-    if (permissions.length) {
-      setRefreshKey((prev) => prev + 1);
-    }
+    if (permissions.length) setRefreshKey((p) => p + 1);
   }, [permissions]);
 
   return (
     <div className="h-[calc(100%-60px)] flex flex-col gap-3">
 
-      {/* ===== ASSET TRANSFER BUTTON ABOVE TABLE ===== */}
-      {/* {can("create") && ( */}
-        <div className="flex justify-end">
-          <SidebarBtn
-            href="/assetsTransfer/transfer"
-            isActive
-            leadingIcon="lucide:plus"
-            label="Asset Transfer"
+      {/* ===== TOP RIGHT ASSET TRANSFER BUTTON ===== */}
+      <div className="flex justify-end">
+        <SidebarBtn
+          href="/assetsTransfer/transfer"
+          isActive
+          leadingIcon="lucide:plus"
+          label="Asset Transfer"
+        />
+      </div>
+
+      {/* ===== TITLE ===== */}
+      <h2 className="text-lg font-semibold text-gray-800">
+        Assets Transfer
+      </h2>
+
+      {/* ===== FILTER ICON BELOW TITLE ===== */}
+      <button
+        onClick={() => setIsFilterOpen(!isFilterOpen)}
+        className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm w-max ${
+          isFilterOpen
+            ? "border-primary text-primary"
+            : "border-gray-300 text-gray-700"
+        }`}
+      >
+        <Icon icon="lucide:filter" className="h-4 w-4" />
+        Filter
+      </button>
+
+      {isFilterOpen && (
+        <div className="grid grid-cols-2 gap-3 mt-2 w-96">
+          <input
+            type="date"
+            value={filters.from_date}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, from_date: e.target.value }))
+            }
+            className="border rounded px-3 py-2 text-sm"
+          />
+          <input
+            type="date"
+            value={filters.to_date}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, to_date: e.target.value }))
+            }
+            className="border rounded px-3 py-2 text-sm"
           />
         </div>
-    
+      )}
 
+      {/* ===== TABLE ===== */}
       <Table
         refreshKey={refreshKey}
         config={{
           api: {
             list: fetchAssetsTransferList,
-            search: searchTransfers,
           },
           header: {
-            title: "Assets Transfer",
-            searchBar: true,
+            title: "",
+            searchBar: false,
             exportButton: {
               show: true,
               onClick: exportFile,
@@ -239,13 +166,8 @@ export default function AssetsTransfer() {
           },
           columns,
           pageSize: 50,
-          table: {
-            height: 500,
-          },
-          footer: {
-            pagination: true,
-            nextPrevBtn: true,
-          },
+          table: { height: 500 },
+          footer: { pagination: true, nextPrevBtn: true },
           rowSelection: false,
           rowActions: [
             {
@@ -261,4 +183,4 @@ export default function AssetsTransfer() {
       />
     </div>
   );
-}   
+}
