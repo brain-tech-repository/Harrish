@@ -6,7 +6,7 @@ import Table, {
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { getRouteVisitList, downloadFile, exportRouteVisit, routeVisitGlobalSearch, getRouteVisitListBasedOnHeader } from "@/app/services/allApi"; // Adjust import path
+import { getRouteVisitList, downloadFile, exportRouteVisit, routeVisitGlobalSearch, getRouteVisitListBasedOnHeader, statusFilter } from "@/app/services/allApi"; // Adjust import path
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -15,27 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { formatDate, formatWithPattern } from "@/app/(private)/utils/date";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
-const columns = [
-  { key: "osa_code", label: "Code" },
-  { key: "from_date", label: "From Date", render: (row: TableDataType) => row.from_date ? formatWithPattern(new Date(row.from_date), "DD MMM YYYY", "en-GB") : "" },
-  { key: "to_date", label: "To Date", render: (row: TableDataType) => row.to_date ? formatWithPattern(new Date(row.to_date), "DD MMM YYYY", "en-GB") : "" },
-  {
-    key: "customer_type",
-    label: "Customer Type",
-    render: (row: TableDataType) =>
-      {
-        return row.customer_type
-      }
-  },
 
-  {
-    key: "status",
-    label: "Status",
-    render: (row: TableDataType) => (
-      <StatusBtn isActive={String(row.status) === "1"} />
-    ),
-  },
-];
 
 export default function RouteVisits() {
   const [threeDotLoading, setThreeDotLoading] = useState({
@@ -46,6 +26,7 @@ export default function RouteVisits() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -53,6 +34,20 @@ export default function RouteVisits() {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
+
+  const handleStatusFilter = async (status: boolean) => {
+    try {
+      // If clicking the same filter, clear it
+      const newFilter = currentStatusFilter === status ? null : status;
+      setCurrentStatusFilter(newFilter);
+      
+      // Refresh the table with the new filter
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Error filtering by status:", error);
+      showSnackbar("Failed to filter by status", "error");
+    }
+  };
 
   const [filters, setFilters] = useState({
     from_date: null as string | null,
@@ -75,7 +70,7 @@ export default function RouteVisits() {
         // setLoading(true);
 
         // Prepare params for the API call
-        const params = {
+        const params: any = {
           from_date: filters.from_date,
           to_date: filters.to_date,
           customer_type: filters.customer_type,
@@ -83,6 +78,12 @@ export default function RouteVisits() {
           page: page,
           limit: pageSize,
         };
+        
+        // Add status filter if active (true=1, false=0)
+        if (currentStatusFilter !== null) {
+          console.log("Applying status filter in API call:", currentStatusFilter);
+          params.status = currentStatusFilter ? "1" : "0";
+        }
 
         const listRes = await getRouteVisitListBasedOnHeader(params);
 
@@ -115,7 +116,7 @@ export default function RouteVisits() {
         throw error;
       }
     },
-    [filters, setLoading, showSnackbar]
+    [filters, setLoading, showSnackbar, currentStatusFilter]
   );
 
   const searchRouteVisits = useCallback(
@@ -168,7 +169,34 @@ export default function RouteVisits() {
   // Refresh table when filters change
   useEffect(() => {
     setRefreshKey((prev) => prev + 1);
-  }, [filters]);
+  }, [filters, currentStatusFilter]);
+
+  const columns = [
+  { key: "osa_code", label: "Code" },
+  { key: "from_date", label: "From Date", render: (row: TableDataType) => row.from_date ? formatWithPattern(new Date(row.from_date), "DD MMM YYYY", "en-GB") : "" },
+  { key: "to_date", label: "To Date", render: (row: TableDataType) => row.to_date ? formatWithPattern(new Date(row.to_date), "DD MMM YYYY", "en-GB") : "" },
+  {
+    key: "customer_type",
+    label: "Customer Type",
+    render: (row: TableDataType) =>
+      {
+        return row.customer_type
+      }
+  },
+
+  {
+    key: "status",
+    label: "Status",
+    render: (row: TableDataType) => (
+      <StatusBtn isActive={String(row.status) === "1"} />
+    ),
+    filterStatus: {
+      enabled: true,
+      onFilter: handleStatusFilter,
+      currentFilter: currentStatusFilter,
+    },
+  },
+];
 
   return (
     <>

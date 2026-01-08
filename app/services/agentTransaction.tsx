@@ -882,3 +882,76 @@ export const exportAllInvoices = async (uuid: string, params?: Params) => {
     return handleError(error);
   }
 };
+
+export const capsExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/capscollection/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const loadExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/load/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const orderExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/orders/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const invoiceExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/invoices/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const returnExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/returns/exportcollapse
+`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const unloadExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/unload/exportcollapse`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const exchangeExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/exchanges/exportallcollapse`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deliveryExportCollapse = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/agent-delivery/exportcollapse`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

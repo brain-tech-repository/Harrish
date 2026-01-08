@@ -7,7 +7,7 @@ import Table, { listReturnType, TableDataType } from "@/app/components/customTab
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import StatusBtn from "@/app/components/statusBtn2";
-import { updateItemStatus, itemList, itemGlobalSearch, downloadFile, itemExport } from "@/app/services/allApi";
+import { updateItemStatus, itemList, itemGlobalSearch, downloadFile, itemExport, statusFilter } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -44,6 +44,7 @@ export default function Item() {
   const { setLoading } = useLoading();
   const { can, permissions } = usePagePermissions();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
   useEffect(() => {
     ensureAllItemCategoryLoaded();
@@ -66,6 +67,20 @@ const [categoryId, setcategoryId] = useState<string>("");
     csv: false,
     xlsx: false,
   });
+
+  const handleStatusFilter = async (status: boolean) => {
+    try {
+      // If clicking the same filter, clear it
+      const newFilter = currentStatusFilter === status ? null : status;
+      setCurrentStatusFilter(newFilter);
+      
+      // Refresh the table with the new filter
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Error filtering by status:", error);
+      showSnackbar("Failed to filter by status", "error");
+    }
+  };
 
   const columns = [
     // { key: "erp_code", label: "ERP Code", render: (row: LocalTableDataType) => row.erp_code || "-" },
@@ -145,11 +160,16 @@ const [categoryId, setcategoryId] = useState<string>("");
             row.status.toLowerCase() === "active");
         return <StatusBtn isActive={isActive} />;
       },
+      filterStatus: {
+        enabled: true,
+        onFilter: handleStatusFilter,
+        currentFilter: currentStatusFilter,
+      },
     },
   ];
 useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [categoryId]);
+    }, [categoryId, currentStatusFilter]);
   const fetchItems = useCallback(
     async (
       page: number = 1,
@@ -157,13 +177,23 @@ useEffect(() => {
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-         const params: any = {
-                page: page.toString(),
-                per_page: pageSize.toString(),
-            };
-            if (categoryId) {
-                params.category_id = categoryId;
-            }
+        
+        // Build params with all filters
+        const params: any = {
+          page: page.toString(),
+          per_page: pageSize.toString(),
+        };
+        
+        // Add category filter if selected
+        if (categoryId) {
+          params.category_id = categoryId;
+        }
+        
+        // Add status filter if active (true=1, false=0)
+        if (currentStatusFilter !== null) {
+          console.log("Applying status filter in API call:", currentStatusFilter);
+          params.status = currentStatusFilter ? "1" : "0";
+        }
         const res = await itemList(params);
         // setLoading(false);
         const data = res.data.map((item: LocalTableDataType) => ({
@@ -181,7 +211,7 @@ useEffect(() => {
         throw error;
       }
     },
-    [categoryId]
+    [categoryId, currentStatusFilter]
   );
 
   const searchItems = useCallback(

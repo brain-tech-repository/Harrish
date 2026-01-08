@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { getWarehouse, deleteWarehouse, warehouseListGlobalSearch, exportWarehouseData, warehouseStatusUpdate, downloadFile } from "@/app/services/allApi";
+import { getWarehouse, deleteWarehouse, warehouseListGlobalSearch, exportWarehouseData, warehouseStatusUpdate, downloadFile, statusFilter } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -66,12 +66,34 @@ export default function Warehouse() {
 
   const [areaId, setAreaId] = useState<string>("");
   const [regionId, setRegionId] = useState<string>("");
+  const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
+
+  const router = useRouter();
+  const { showSnackbar } = useSnackbar();
+  const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+
+  const handleStatusFilter = async (status: boolean) => {
+    try {
+      // If clicking the same filter, clear it
+      const newFilter = currentStatusFilter === status ? null : status;
+      setCurrentStatusFilter(newFilter);
+      
+      // Refresh the table with the new filter
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Error filtering by status:", error);
+      showSnackbar("Failed to filter by status", "error");
+    }
+  };
 
   const columns = [
   // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
@@ -172,12 +194,17 @@ export default function Warehouse() {
     // showByDefault: true,
     // isSortable: true,
     render: (row: WarehouseRow) => <StatusBtn isActive={String(row.status) > "0"} />,
+    filterStatus: {
+      enabled: true,
+      onFilter: handleStatusFilter,
+      currentFilter: currentStatusFilter,
+    },
   },
 ];
 
   useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [regionId, areaId]);
+    }, [regionId, areaId, currentStatusFilter]);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   type TableRow = TableDataType & { id?: string };
@@ -222,12 +249,7 @@ export default function Warehouse() {
   };
 
   const [selectedRow, setSelectedRow] = useState<WarehouseRow | null>(null);
-  const router = useRouter();
-  const { showSnackbar } = useSnackbar();
-  const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
+  
   const fetchWarehouse = useCallback(
     async (
       page: number = 1,
@@ -235,16 +257,25 @@ export default function Warehouse() {
     ): Promise<listReturnType> => {
       try {
         //  setLoading(true);
+        
+        // Build params with all filters
         const params: any = {
-                page: page.toString(),
-                per_page: pageSize.toString(),
-            };
-            if (regionId) {
-                params.region_id = regionId;
-            }
-            if (areaId) {
-                params.area_id = areaId;
-            }
+          page: page.toString(),
+          per_page: pageSize.toString(),
+        };
+        
+        if (regionId) {
+          params.region_id = regionId;
+        }
+        if (areaId) {
+          params.area_id = areaId;
+        }
+        
+        // Add status filter if active (true=1, false=0)
+        if (currentStatusFilter !== null) {
+          console.log("Applying status filter in API call:", currentStatusFilter);
+          params.status = currentStatusFilter ? "1" : "0";
+        }
         const listRes = await getWarehouse(params);
         //  setLoading(false);
         return {
@@ -259,7 +290,7 @@ export default function Warehouse() {
         throw new Error(String(error));
       }
     },
-    [areaId, regionId]
+    [areaId, regionId, currentStatusFilter]
   );
 
   const searchWarehouse = useCallback(

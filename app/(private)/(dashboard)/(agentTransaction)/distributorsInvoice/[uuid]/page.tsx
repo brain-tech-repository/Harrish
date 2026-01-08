@@ -92,6 +92,7 @@ interface DeliveryDetail {
     total?: number | string;
     quantity?: number | string;
     discount?: number | string;
+    is_promotional?: boolean;
 }
 
 interface Delivery {
@@ -120,6 +121,7 @@ interface InvoiceItemRow {
     Net: string;
     Vat: string;
     Total: string;
+    is_promotional?: boolean;
 }
 
 // Helper to safely extract UOMs from unknown API shapes (item_uoms or uom)
@@ -213,6 +215,7 @@ export default function InvoiceddEditPage() {
         Net: "",
         Vat: "",
         Total: "",
+        is_promotional: false,
     }]);
 
     // Store UOM options for each row
@@ -366,6 +369,7 @@ export default function InvoiceddEditPage() {
                                     Net: String(detail.net ?? ""),
                                     Vat: String(detail.vat ?? ""),
                                     Total: String(detail.total ?? ""),
+                                    is_promotional: detail.is_promotional ?? false,
                                 };
                             });
 
@@ -433,7 +437,8 @@ export default function InvoiceddEditPage() {
                         ...uom,
                         price,
                         id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
-                        item_id: stockItem.item_id
+                        item_id: stockItem.item_id,
+                        uom_id: uom.uom_id // Ensure uom_id is preserved
                     };
                 }) : [];
 
@@ -737,7 +742,11 @@ export default function InvoiceddEditPage() {
     const recalculateItem = (index: number, field: string, value: string) => {
         const newData = [...itemData];
         const item = newData[index];
-        item[field as keyof typeof item] = value;
+        
+        // Only update string fields (not boolean fields like is_promotional)
+        if (field !== 'is_promotional') {
+            item[field as keyof typeof item] = value as never;
+        }
 
         const qty = Number(item.Quantity) || 0;
         const price = Number(item.Price) || 0;
@@ -773,6 +782,7 @@ export default function InvoiceddEditPage() {
                 Net: "",
                 Vat: "",
                 Total: "",
+                is_promotional: false,
             },
         ]);
     };
@@ -793,6 +803,7 @@ export default function InvoiceddEditPage() {
                     Net: "",
                     Vat: "",
                     Total: "",
+                    is_promotional: false,
                 },
             ]);
             return;
@@ -880,7 +891,8 @@ export default function InvoiceddEditPage() {
                     excise: Number(item.Excise) || 0,
                     gross_total: Number(item.Total) || 0,
                     net_total: Number(item.Net) || 0,
-                    total: Number(item.Total) || 0,
+                    item_total: Number(item.Total) || 0,
+                    is_promotional: item.is_promotional ?? false,
                 })),
         };
     };
@@ -1217,6 +1229,7 @@ export default function InvoiceddEditPage() {
                                                 Net: net.toFixed(2),
                                                 Vat: vat.toFixed(2),
                                                 Total: total.toFixed(2),
+                                                is_promotional: detail.is_promotional ?? false,
                                             };
                                         });
 
@@ -1245,6 +1258,7 @@ export default function InvoiceddEditPage() {
                                                 Net: "",
                                                 Vat: "",
                                                 Total: "",
+                                                is_promotional: false,
                                             },
                                         ]);
                                     }
@@ -1422,7 +1436,7 @@ export default function InvoiceddEditPage() {
                                                     if (itemUOMData?.uoms) {
                                                         const uomOpts = itemUOMData.uoms.map(uom => ({
                                                             label: uom.name,
-                                                            value: String(uom.id || ''),
+                                                            value: String(uom.uom_id || ''), // Use uom_id instead of id
                                                             price: uom.price
                                                         }));
 
@@ -1445,7 +1459,7 @@ export default function InvoiceddEditPage() {
                                                             }
                                                             return {
                                                                 label: uom.name,
-                                                                value: String(uom.id || ''),
+                                                                value: String(uom.uom_id || ''), // Use uom_id instead of id
                                                                 price: price
                                                             };
                                                         });
@@ -1457,8 +1471,8 @@ export default function InvoiceddEditPage() {
 
                                                         const firstUom = (selectedOrder as any).item_uoms[0];
                                                         if (firstUom) {
-                                                            newData[index].uom_id = String(firstUom.id || "");
-                                                            newData[index].UOM = String(firstUom.id || "");
+                                                            newData[index].uom_id = String(firstUom.uom_id || ""); // Use uom_id instead of id
+                                                            newData[index].UOM = String(firstUom.uom_id || "");
                                                             if (firstUom.uom_type === "primary") {
                                                                 newData[index].Price = (selectedOrder as any).pricing?.auom_pc_price || firstUom.price || "";
                                                             } else if (firstUom.uom_type === "secondary") {
@@ -1507,7 +1521,7 @@ export default function InvoiceddEditPage() {
                                                     });
                                                     setItemData(newData);
                                                 }}
-                                                disabled={!isFormReadyForItems && !row.item_id}
+                                                disabled={form.invoice_type === "0" || !isFormReadyForItems}
                                                 error={err}
                                             />
                                         </div>
@@ -1529,7 +1543,7 @@ export default function InvoiceddEditPage() {
                                                 name="UOM"
                                                 options={uomOptions}
                                                 value={row.uom_id}
-                                                disabled={uomOptions.length === 0}
+                                                disabled={form.invoice_type === "0" || !row.item_id || uomOptions.length === 0}
                                                 onChange={(e) => {
                                                     const selectedUomId = e.target.value;
                                                     const selectedUom = uomOptions.find(uom => uom.value === selectedUomId);
@@ -1575,6 +1589,8 @@ export default function InvoiceddEditPage() {
                                                         recalculateItem(Number(row.idx), "Quantity", value);
                                                     }
                                                 }}
+                                                disabled={form.invoice_type === "0" || row.is_promotional === true}
+                                
                                                 error={err}
                                             />
                                         </div>
@@ -1609,20 +1625,25 @@ export default function InvoiceddEditPage() {
                             {
                                 key: "action",
                                 label: "Action",
-                                render: (row) => (
-                                    <button
-                                        type="button"
-                                        className={`${itemData.length <= 1
-                                            ? "opacity-50 cursor-not-allowed"
-                                            : ""
-                                            } text-red-500 flex items-center`}
-                                        onClick={() =>
-                                            itemData.length > 1 && handleRemoveItem(Number(row.idx))
-                                        }
-                                    >
-                                        <Icon icon="hugeicons:delete-02" width={20} />
-                                    </button>
-                                ),
+                                render: (row) => {
+                                    const isAgainstDelivery = form.invoice_type === "0";
+                                    const isDisabled = itemData.length <= 1 || isAgainstDelivery;
+                                    return (
+                                        <button
+                                            type="button"
+                                            className={`${isDisabled
+                                                ? "opacity-50 cursor-not-allowed"
+                                                : ""
+                                                } text-red-500 flex items-center`}
+                                            onClick={() =>
+                                                !isDisabled && handleRemoveItem(Number(row.idx))
+                                            }
+                                            disabled={isDisabled}
+                                        >
+                                            <Icon icon="hugeicons:delete-02" width={20} />
+                                        </button>
+                                    );
+                                }
                             },
                         ],
                     }}
@@ -1633,12 +1654,13 @@ export default function InvoiceddEditPage() {
                     {(() => {
                         // disable add when there's already an empty/new item row
                         const hasEmptyRow = itemData.some(it => (String(it.item_id ?? '').trim() === '' && String(it.uom_id ?? '').trim() === ''));
+                        const isAgainstDelivery = form.invoice_type === "0";
                         return (
                             <button
                                 type="button"
-                                disabled={hasEmptyRow}
-                                className={`text-[#E53935] font-medium text-[16px] flex items-center gap-2 ${hasEmptyRow ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                onClick={() => { if (!hasEmptyRow) handleAddNewItem(); }}
+                                disabled={hasEmptyRow || isAgainstDelivery}
+                                className={`text-[#E53935] font-medium text-[16px] flex items-center gap-2 ${hasEmptyRow || isAgainstDelivery ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={() => { if (!hasEmptyRow && !isAgainstDelivery) handleAddNewItem(); }}
                             >
                                 <Icon icon="material-symbols:add-circle-outline" width={20} />
                                 Add New Item

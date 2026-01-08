@@ -14,11 +14,12 @@ import {
   // agentOrderExport,
   agentOrderList,
   changeStatusAgentOrder,
-  // agentOrderExport 
+  // agentOrderExport ,
+  orderExportCollapse
 } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { downloadFile, workFlowRequest, regionList, subRegionList, warehouseList, routeList } from "@/app/services/allApi";
+import { downloadFile, downloadPDFGlobal, workFlowRequest, regionList, subRegionList, warehouseList, routeList } from "@/app/services/allApi";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import InputFields from "@/app/components/inputFields";
@@ -221,7 +222,7 @@ export default function CustomerInvoicePage() {
         throw error;
       }
     },
-    [agentOrderList]
+    []
   );
 
   // In-memory cache for filterBy API calls
@@ -288,13 +289,31 @@ export default function CustomerInvoicePage() {
     } finally {
     }
   };
+  const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await orderExportCollapse({ format });
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } catch (error) {
+      showSnackbar("Failed to download warehouse data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+    }
+  };
 
   const downloadPdf = async (uuid: string) => {
     try {
       setLoading(true);
       const response = await agentOrderExport({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        const fileName = `order-${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -313,19 +332,6 @@ export default function CustomerInvoicePage() {
     };
     res();
   }, []);
-
-  useEffect(() => {
-    setRefreshKey((k) => k + 1);
-  }, [
-    companyOptions,
-    customerSubCategoryOptions,
-    routeOptions,
-    warehouseAllOptions,
-    channelOptions,
-    salesmanOptions,
-    areaOptions,
-    regionOptions,
-  ]);
 
   return (
     <>
@@ -353,7 +359,7 @@ export default function CustomerInvoicePage() {
                     : "gala:file-document",
                   label: "Export Excel",
                   labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                  onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
                 },
               ],
               filterRenderer: FilterComponent,
