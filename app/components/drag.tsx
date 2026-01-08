@@ -29,7 +29,20 @@ interface SearchTerms {
   [key: string]: string;
 }
 
-const SalesReportDashboard = () => {
+interface SalesReportDashboardProps {
+  title: string;
+  titleNearExport: string;
+  apiEndpoints: {
+    filters: string;
+    dashboard: string;
+    table: string;
+    export: string;
+  };
+  reportType?: 'sales' | 'customer'; // default to 'sales'
+}
+
+const SalesReportDashboard = (props: SalesReportDashboardProps) => {
+  const { title, apiEndpoints, reportType, titleNearExport } = props;
   const { setLoading: setGlobalLoading } = useLoading();
   const { can, permissions } = usePagePermissions();
   const { showSnackbar } = useSnackbar();
@@ -37,7 +50,7 @@ const SalesReportDashboard = () => {
   const [dateRange, setDateRange] = useState('dd-mm-yyyy - dd-mm-yyyy');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState('');
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [searchbyopen, setSearchbyclose] = useState(false);
 
@@ -159,9 +172,19 @@ const SalesReportDashboard = () => {
         customer_ids: selectedChildItems['customer']?.map(id => parseInt(id)) || []
       };
 
+      // Check URL size to prevent exceeding limits
+      const payloadString = JSON.stringify(payload);
+      const estimatedUrlSize = apiEndpoints.dashboard.length + payloadString.length;
+      const MAX_URL_SIZE = 8000; // Safe limit for most servers (typical limit is 8192)
+      
+      if (estimatedUrlSize > MAX_URL_SIZE) {
+        showSnackbar('Too many filters selected! URL size exceeds safe limit. Please reduce your selection.', 'error');
+        setIsLoadingDashboard(false);
+        return;
+      }
 
       const response = await axios.post(
-        'http://172.16.6.205:8001/api/dashboard',
+        apiEndpoints.dashboard,
         payload,
         {
           headers: {
@@ -259,7 +282,7 @@ const SalesReportDashboard = () => {
       }
 
       const queryString = params?.toString();
-      const url = `http://172.16.6.205:8001/api/filters${queryString ? `?${queryString}` : ''}`;
+      const url = `${apiEndpoints.filters}${queryString ? `?${queryString}` : ''}`;
       const response = await fetch(url, {
         method: 'GET',
       });
@@ -403,7 +426,7 @@ const SalesReportDashboard = () => {
         ...lowestLevelFilters // Spread only the lowest-level filter IDs
       };
 
-      const response = await fetch(`http://172.16.6.205:8001/api/table?page=${page || 1}`, {
+      const response = await fetch(`${apiEndpoints.table}?page=${page || 1}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -466,7 +489,7 @@ const SalesReportDashboard = () => {
       }
 
 
-      const response = await fetch('http://172.16.6.205:8001/api/export', {
+      const response = await fetch(`${apiEndpoints.export}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -523,6 +546,22 @@ const SalesReportDashboard = () => {
         lowestFilter = filterId;
         break;
       }
+    }
+
+    // Special handling for customer report type with route selection
+    if (reportType === 'customer' && lowestFilter === 'route') {
+      return {
+        type: 'customer-route',
+        columns: [
+          { label: 'Customer Name', field: 'customer_name' },
+          { label: 'Mobile Number', field: 'mobile_number' },
+          { label: 'Warehouse', field: 'warehouse' },
+          { label: 'Route', field: 'route' },
+          { label: 'Customer Channel', field: 'customer_channel' },
+          { label: 'Customer Category', field: 'customer_category' },
+          { label: 'Value', field: 'value' }
+        ]
+      };
     }
 
     // Special handling for customer-related filters - show only selected columns
@@ -905,7 +944,7 @@ const SalesReportDashboard = () => {
           <div className="mb-6">
             <h1 className="text-xl lg:text-2xl flex gap-2 lg:gap-4 font-semibold items-center text-gray-900">
               {/* <Icon icon="lucide:arrow-left" width="20" height="20" className="lg:w-6 lg:h-6" /> */}
-              Sales Report Dashboard
+              {title}
             </h1>
           </div>
 
@@ -997,7 +1036,7 @@ const SalesReportDashboard = () => {
           {/* Main Content */}
           <div className="bg-white w-full rounded-lg shadow-sm">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 border-b border-[#E9EAEB] gap-3">
-              <h2 className="font-semibold text-lg text-[#181D27]">Sales Reports</h2>
+              <h2 className="font-semibold text-lg text-[#181D27]">{titleNearExport}</h2>
               {can("export") && (
                 <ExportButtons 
                   onExportXLSX={handleExportXLSX}
@@ -1225,6 +1264,7 @@ const SalesReportDashboard = () => {
                   isLoading={isLoadingDashboard}
                   error={dashboardError}
                   searchType={searchType}
+                  reportType={reportType}
                 />
               ) : (
                 <div className="mt-4">
@@ -1257,27 +1297,47 @@ const SalesReportDashboard = () => {
                             <table className="w-full border-collapse">
                               <thead>
                                 <tr className="bg-gray-100 border-b border-gray-200">
-                                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Code</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Category</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice Date</th>
-                                  {dynamicColumn.columns.map((col: any, idx: number) => (
-                                    <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
-                                  ))}
-                                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Quantity</th>
+                                  {dynamicColumn.type === 'customer-route' ? (
+                                    // Customer report with route - show only customer columns
+                                    dynamicColumn.columns.map((col: any, idx: number) => (
+                                      <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
+                                    ))
+                                  ) : (
+                                    // Sales report - show item columns + dynamic columns
+                                    <>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Code</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Category</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice Date</th>
+                                      {dynamicColumn.columns.map((col: any, idx: number) => (
+                                        <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
+                                      ))}
+                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Quantity</th>
+                                    </>
+                                  )}
                                 </tr>
                               </thead>
                               <tbody>
                                 {rows.map((row: any, rowIdx: number) => (
                                   <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
-                                    <td className="px-4 py-3 text-sm text-gray-700">{row.item_code || '-'}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{row.item_category || '-'}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_date || '-'}</td>
-                                    {dynamicColumn.columns.map((col: any, idx: number) => (
-                                      <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
-                                    ))}
-                                    <td className="px-4 py-3 text-sm text-gray-700">{getTotalValue(row)}</td>
+                                    {dynamicColumn.type === 'customer-route' ? (
+                                      // Customer report with route - show only customer data
+                                      dynamicColumn.columns.map((col: any, idx: number) => (
+                                        <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
+                                      ))
+                                    ) : (
+                                      // Sales report - show item data + dynamic columns
+                                      <>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_code || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_category || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_date || '-'}</td>
+                                        {dynamicColumn.columns.map((col: any, idx: number) => (
+                                          <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
+                                        ))}
+                                        <td className="px-4 py-3 text-sm text-gray-700">{getTotalValue(row)}</td>
+                                      </>
+                                    )}
                                   </tr>
                                 ))}
                               </tbody>

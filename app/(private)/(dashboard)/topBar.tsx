@@ -118,12 +118,12 @@ export default function TopBar({
                             />
                         )}
                         <div className="w-full hidden sm:w-[320px] sm:block">
-                            <SearchBar
+                            {/* <SearchBar
                                 value={searchBarValue}
                                 onChange={(e) =>
                                     setSearchBarValue(e.target.value)
                                 }
-                            />
+                            /> */}
                         </div>
                     </div>
 
@@ -157,7 +157,8 @@ export default function TopBar({
                                     width={32}
                                     height={32}
                                     alt="Profile Picture"
-                                    src="/dummyuser.jpg"
+                                    src="/noprofile.svg"
+                                    className="scale-120"
                                 />
                             }
                             dropdown={
