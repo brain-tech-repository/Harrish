@@ -88,6 +88,7 @@ export default function Route() {
                 onSelect: (selected: string | string[]) => {
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
                 },
+                isSingle: false,
                 selectedValue: warehouseId,
             },
         },
@@ -183,12 +184,12 @@ export default function Route() {
 
     const handleStatusChange = async (ids: (string | number)[] | undefined, status: number) => {
         if (!ids || ids.length === 0) return;
-        setLoading(true);
+        // setLoading(true);
         const res = await routeStatusUpdate({
             ids: ids,
             status: Number(status)
         });
-        setLoading(true);
+        // setLoading(false);
 
         if (res.error) {
             showSnackbar(res.data.message || "Failed to update status", "error");
@@ -234,6 +235,7 @@ export default function Route() {
                         header: {
                             title: "Routes",
                             exportButton: {
+                                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

@@ -229,7 +229,7 @@ export default function SalesmanUnloadPage() {
             searchBar: false,
             columnFilter: true,
             filterRenderer: FilterComponent,
-            
+
             actions: can("create") ? [
               <SidebarBtn
                 key={0}

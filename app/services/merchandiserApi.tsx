@@ -460,7 +460,7 @@ export const exportCmplaintFeedback = async (params: { format: string }) => {
 
 export const exportPlanogram = async (params?: Params) => {
   try {
-    const res = await API.get("/api/merchendisher/planogram/export-file", {
+    const res = await API.get("/api/merchendisher/planogram/export", {
       params,
     });
     return res.data;

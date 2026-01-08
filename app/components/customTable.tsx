@@ -65,7 +65,7 @@ export type configType = {
         ) => Promise<listReturnType> | listReturnType;
         list?: (
             pageNo: number,
-            pageSize: number
+            pageSize: number,
         ) => Promise<listReturnType> | listReturnType;
         filterBy?: (
             payload: Record<string, string | number | null>,
@@ -86,6 +86,7 @@ export type configType = {
         filterByFields?: FilterField[];
         filterRenderer?: (props: FilterRendererProps) => React.ReactNode;
         exportButton?: {
+            threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean };
             show: boolean;
             onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
         };
@@ -234,11 +235,12 @@ interface TableProps {
     // Accept either array or object with pagination
     data?: TableDataType[] | TableDataWithPagination;
     config: configType;
+    directFilterRenderer?: React.ReactNode;
 }
 
 const defaultPageSize = 50;
 
-export default function Table({ refreshKey = 0, data, config }: TableProps) {
+export default function Table({ refreshKey = 0, data, config, directFilterRenderer }: TableProps) {
     return (
         <ContextProvider>
             <TableContainer
@@ -249,6 +251,7 @@ export default function Table({ refreshKey = 0, data, config }: TableProps) {
                     dragableColumn: true,
                     ...config
                 }}
+                directFilterRenderer={directFilterRenderer}
             />
         </ContextProvider>
     );
@@ -277,7 +280,7 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-function TableContainer({ refreshKey, data, config }: TableProps) {
+function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
@@ -387,6 +390,8 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                     }, [config]);
 
                     useEffect(() => {
+                        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
+                        lastApiCallRef.current = null;
                         checkForData();
 
                         // Only initialize "select all" when there is no saved selection in localStorage.
@@ -439,9 +444,10 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                                             {config.header?.exportButton &&
                                         <div className="flex gap-[12px] relative">
                                             <BorderIconButton
-                                                icon="gala:file-document"
+                                                icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
                                                 label="Export Excel"
                                                 onClick={async () => {
+                                                    if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) return;
                                                     if (!config.header?.exportButton?.onClick) return;
                                                     config.header.exportButton.onClick(config.api?.list as any, displayedData);
                                                 }}
@@ -496,7 +502,7 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                                 </div>
                             )}
                             <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
-                                <TableHeader />
+                                <TableHeader directFilterRenderer={directFilterRenderer} />
                                 <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
                                 <TableFooter />
                             </div>
@@ -504,7 +510,7 @@ function TableContainer({ refreshKey, data, config }: TableProps) {
                     );
                 }
 
-function TableHeader() {
+function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.ReactNode }) {
     const { config } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setSearchState, searchState, initialTableData } = useContext(TableDetails);
     const [searchBarValue, setSearchBarValue] = useState("");
@@ -566,7 +572,11 @@ function TableHeader() {
                             )}
 
                             {/* header filter panel button (shows configurable fields or custom renderer) */}
-                            {(config.header?.filterByFields?.length || config.header?.filterRenderer) && (
+                            {directFilterRenderer ? (
+                                <div className="ml-2">
+                                    {directFilterRenderer}
+                                </div>
+                            ) : (config.header?.filterByFields?.length || config.header?.filterRenderer) && (
                                 <div className="ml-2">
                                     <FilterBy />
                                 </div>
@@ -1163,13 +1173,12 @@ function FilterTableHeader({
                         } catch (err) { /* ignore */ }
                         finally { setNestedLoading(false); }
                     }
-                } else {
+                } 
+                else {
                     filterConfig.onSelect(value);
-                    // persist selection in global filter state so header survives refresh
                     try {
                         setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
                     } catch (err) { }
-                    // Call search API when an option is selected
                     if(api?.search) {
                         try {
                             setNestedLoading(true);
@@ -1201,12 +1210,12 @@ function FilterTableHeader({
                 try {
                     setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
                 } catch (err) { }
-                if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+                if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
                 // Call search API for multi-select
-                if(api?.search) {
+                if(api?.list) {
                     try {
                         setNestedLoading(true);
-                        const res = api.search(updated.join(","), defaultPageSize, column, 1);
+                        const res = api.list(1,defaultPageSize); // assuming API accepts comma-separated values for multi-select
                         Promise.resolve(res).then(async (result) => {
                             const resolvedResult = result instanceof Promise ? await result : result;
                             const { data, total, currentPage } = resolvedResult;
@@ -1225,6 +1234,35 @@ function FilterTableHeader({
             });
         }
     }
+// function handleSelect(value: string) {
+//         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
+//         if (isSingle) {
+//             // If already selected, deselect (clear filter)
+//             const selectedValue = filterConfig?.selectedValue;
+//             if (filterConfig?.onSelect) {
+//                 if (selectedValue === value) {
+//                     filterConfig.onSelect(""); // Deselect
+//                 } else {
+//                     filterConfig.onSelect(value);
+//                 }
+//             }
+//             setShowFilterDropdown(false);
+//         } else {
+//             setSelectedValues((prev) => {
+//                 if (prev.includes(value)) {
+//                     // remove
+//                     const updated = prev.filter((v) => v !== value);
+//                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+//                     return updated;
+//                 } else {
+//                     // add
+//                     const updated = [...prev, value];
+//                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+//                     return updated;
+//                 }
+//             });
+//         }
+//     }
 
     return (
         <DismissibleDropdown

@@ -21,12 +21,12 @@ import * as yup from "yup";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 
 export default function AddInstallationReportPage() {
-    const { regionOptions , ensureRegionLoaded} = useAllDropdownListData();
+    const { regionOptions, ensureRegionLoaded } = useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureRegionLoaded();
-  }, [ensureRegionLoaded]);
+    // Load dropdown data
+    useEffect(() => {
+        ensureRegionLoaded();
+    }, [ensureRegionLoaded]);
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
 
@@ -38,7 +38,13 @@ export default function AddInstallationReportPage() {
     const selectionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const [iroOptions, setIroOptions] = useState<
-        { value: string; label: string }[]
+        {
+            value: string;
+            label: string;
+            warehouse_id: string;
+            warehouse_name: string;
+            warehouse_code: string;
+        }[]
     >([]);
 
     const [technicianOptions, setTechnicianOptions] = useState<
@@ -66,7 +72,10 @@ export default function AddInstallationReportPage() {
 
                 const options = data.map((item: any) => ({
                     value: String(item.id),
-                    label: `${item.code} (${item.count} customer${item.count !== 1 ? 's' : ''})`,
+                    label: `${item.code} (${item.count} customer${item.count !== 1 ? "s" : ""})`,
+                    warehouse_id: String(item.warehouse?.id || ""),
+                    warehouse_name: item.warehouse?.name || "",
+                    warehouse_code: item.warehouse?.code || "",
                 }));
 
                 setIroOptions(options);
@@ -110,7 +119,7 @@ export default function AddInstallationReportPage() {
                     }
                 });
 
-             
+
                 // If we found checked checkboxes, extract the data
                 if (checkedCheckboxes.length > 0) {
                     const selected: any[] = [];
@@ -219,48 +228,30 @@ export default function AddInstallationReportPage() {
         }
 
         if (field === "iro_id") {
-            setForm((prev) => ({ ...prev, salesman_id: "", warehouse_id: "" }));
-            setWarehouseName("");
+            const selectedIRO = iroOptions.find(opt => opt.value === safeValue);
+
+            setForm((prev) => ({
+                ...prev,
+                salesman_id: "",
+                warehouse_id: selectedIRO?.warehouse_id || "",
+            }));
+
+            setWarehouseName(
+                selectedIRO
+                    ? `${selectedIRO.warehouse_code} - ${selectedIRO.warehouse_name}`
+                    : ""
+            );
             setTechnicianOptions([]);
             setSelectedRows([]);
             setAllChillers([]);
 
-            // Fetch distributor when IRO is selected
             if (safeValue) {
-                fetchDistributorByIRO(safeValue);
                 fetchTechnicianList(safeValue);
             }
         }
 
         if (field === "salesman_id" && safeValue) {
             setRefreshKey((prev) => prev + 1);
-        }
-    };
-
-    // ✅ FETCH DISTRIBUTOR BY IRO
-    const fetchDistributorByIRO = async (iroId: string) => {
-        if (!iroId) return;
-
-        try {
-            const res = await getIROList({ iro_id: iroId });
-
-            const rawData = Array.isArray(res) ? res[0] : res?.data?.[0] || res?.data || res;
-            const warehouse = rawData?.warehouse || rawData;
-
-            if (warehouse && warehouse.id) {
-                const warehouseDisplay = `${warehouse.code || ''} - ${warehouse.name || ''}`;
-                setWarehouseName(warehouseDisplay);
-                setForm((prev) => ({
-                    ...prev,
-                    warehouse_id: String(warehouse.id),
-                }));
-            } else {
-                setWarehouseName("No Distributor Found");
-                setForm((prev) => ({ ...prev, warehouse_id: "" }));
-            }
-        } catch (e) {
-            // console.error("❌ Error fetching distributor:", e);
-            setWarehouseName("Error fetching distributor");
         }
     };
 
@@ -403,7 +394,7 @@ export default function AddInstallationReportPage() {
 
     // 🔧 HANDLE ROW SELECTION CALLBACK
     const handleRowSelection = useCallback((data: TableDataType[], selectedRowIndices?: number[]) => {
-      
+
 
         if (selectedRowIndices && selectedRowIndices.length > 0 && data) {
             const selected = selectedRowIndices
@@ -518,7 +509,7 @@ export default function AddInstallationReportPage() {
                             api: { list: fetchChillers, search: searchChiller },
                             footer: { pagination: false },
                             rowSelection: true,
-                            pageSize: 9999,
+                            pageSize: 50,
                             floatingInfoBar: {
                                 showByDefault: false,
                                 showSelectedRow: false,

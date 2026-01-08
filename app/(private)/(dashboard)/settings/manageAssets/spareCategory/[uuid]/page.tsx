@@ -165,7 +165,7 @@ export default function AddEditSpare() {
         ) : (
           <form onSubmit={formik.handleSubmit}>
             <ContainerCard>
-              <h2 className="text-lg font-semibold mb-6">Spare Details</h2>
+              <h2 className="text-lg font-semibold mb-6">Spare Category Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputFields

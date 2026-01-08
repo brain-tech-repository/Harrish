@@ -10,7 +10,7 @@ import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 type WarehouseRow = TableDataType & {
   id?: string;
@@ -51,7 +51,29 @@ type WarehouseRow = TableDataType & {
   area?: { code?: string; area_code?: string; area_name?: string; name: string };
 };
 
-const columns = [
+
+
+export default function Warehouse() {
+  const { regionOptions,ensureRegionLoaded,areaOptions,ensureAreaLoaded  } = useAllDropdownListData();
+  const { can, permissions } = usePagePermissions("/distributors");
+  const { setLoading } = useLoading();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    ensureRegionLoaded();
+    ensureAreaLoaded();
+  }, [ensureRegionLoaded, ensureAreaLoaded]);
+
+  const [areaId, setAreaId] = useState<string>("");
+  const [regionId, setRegionId] = useState<string>("");
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
+  const columns = [
   // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
   // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
   { key: "warehouse_name", label: "Distributors Name", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-" },
@@ -89,7 +111,18 @@ const columns = [
     key: 'region',
     render: (row: WarehouseRow) => {
       return row.region?.name || row.region?.region_name || '-';
-    }
+    },
+    filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: Array.isArray(regionOptions) ? regionOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setRegionId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: regionId,
+            },
   },
   {
     label: 'Area',
@@ -98,7 +131,18 @@ const columns = [
     render: (row: WarehouseRow) => {
       return row.area?.name || row.area?.area_name || '-';
 
-    }
+    },
+    filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: Array.isArray(areaOptions) ? areaOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setAreaId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: areaId,
+            },
   },
   // { key: "sub_region_id", label: "Sub Region"},
   { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-", },
@@ -131,17 +175,9 @@ const columns = [
   },
 ];
 
-export default function Warehouse() {
-  const { can, permissions } = usePagePermissions("/distributors");
-  const { setLoading } = useLoading();
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Refresh table when permissions load
   useEffect(() => {
-    if (permissions.length > 0) {
-      setRefreshKey((prev) => prev + 1);
-    }
-  }, [permissions]);
+        setRefreshKey((k) => k + 1);
+    }, [regionId, areaId]);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   type TableRow = TableDataType & { id?: string };
@@ -163,10 +199,10 @@ export default function Warehouse() {
     street?: string;
     branch_id?: string;
     town_village?: string;
-    region?: { code?: string; region_name?: string; }
+    region?: { code?: string; name:string; region_name?: string; }
     get_company_customer?: { owner_name?: string };
     city?: string;
-    location?: string;
+    location?: { code?: string; name?: string; location_code?: string; location_name?: string; }
     landmark?: string;
     latitude?: string;
     longitude?: string;
@@ -199,11 +235,17 @@ export default function Warehouse() {
     ): Promise<listReturnType> => {
       try {
         //  setLoading(true);
-        const listRes = await getWarehouse({
-          //  limit: pageSize.toString(),
-          page: page.toString(),
-          per_page: pageSize.toString(),
-        });
+        const params: any = {
+                page: page.toString(),
+                per_page: pageSize.toString(),
+            };
+            if (regionId) {
+                params.region_id = regionId;
+            }
+            if (areaId) {
+                params.area_id = areaId;
+            }
+        const listRes = await getWarehouse(params);
         //  setLoading(false);
         return {
           data: listRes.data || [],
@@ -217,7 +259,7 @@ export default function Warehouse() {
         throw new Error(String(error));
       }
     },
-    []
+    [areaId, regionId]
   );
 
   const searchWarehouse = useCallback(
@@ -324,6 +366,7 @@ export default function Warehouse() {
 
             header: {
                exportButton: {
+                threeDotLoading:  threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

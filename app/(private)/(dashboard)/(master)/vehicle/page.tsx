@@ -11,7 +11,7 @@ import StatusBtn from "@/app/components/statusBtn2";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 // 🔹 API response type
 interface Vehicle {
   id?: string | number;
@@ -46,6 +46,28 @@ interface DropdownItem {
 // ];
 
 // 🔹 Table columns
+
+
+export default function VehiclePage() {
+  const { warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>("");
+  const { can, permissions } = usePagePermissions();
+  const { setLoading } = useLoading();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    ensureWarehouseAllLoaded()
+  }, [ensureWarehouseAllLoaded]);
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter();
 const columns = [
   { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
   { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
@@ -95,7 +117,19 @@ const columns = [
         
         return <>{code && name? code +" - "+name : "-"}</>;
       },
-      
+      filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: warehouseAllOptions,
+                onSelect: (selected: string | string[]) => {
+                  console.log("Selected warehouse filter:", selected);
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                    console.log("warehouseId filter applied:", warehouseId);
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+              },
   },
   // { key: "ownerReference", label: "Owner Reference" },
   // { key: "vehicleRoute", label: "Vehicle Route" },
@@ -112,34 +146,26 @@ const columns = [
   },
 ];
 
-export default function VehiclePage() {
-  const { can, permissions } = usePagePermissions();
-  const { setLoading } = useLoading();
-  const [refreshKey, setRefreshKey] = useState(0);
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [warehouseId]);
 
-  // Refresh table when permissions load
-  useEffect(() => {
-    if (permissions.length > 0) {
-      setRefreshKey((prev) => prev + 1);
-    }
-  }, [permissions]);
-
-  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
-  const { showSnackbar } = useSnackbar();
-  const router = useRouter();
-
-
-  const fetchVehicles = useCallback(
-    async (
+  const fetchVehicles =  async (
+    
       page: number = 1,
       pageSize: number = 50
-    ): Promise<listReturnType> => {
+  ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-        const listRes = await vehicleListData({
-          limit: pageSize.toString(),
-          page: page.toString(),
-        });
+         const params: any = {
+                page: page.toString(),
+                per_page: pageSize.toString(),
+            };
+            if (warehouseId) {
+              console.log("Applying warehouseId filter in API call:", warehouseId);
+                params.warehouse_id = warehouseId;
+            }
+        const listRes = await vehicleListData(params);
         // setLoading(false);
         return {
           data: listRes.data || [],
@@ -152,9 +178,9 @@ export default function VehiclePage() {
         setLoading(false);
         throw error;
       }
-    },
-    []
-  );
+    };
+    
+  
 
   const searchVehicle = useCallback(
     async (
@@ -197,11 +223,13 @@ export default function VehiclePage() {
       showSnackbar("Failed to download vehicle data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     }
   };
 
   const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
     try {
+      // setLoading(true);
       if (!ids || ids.length === 0) {
         showSnackbar("No vehicle selected", "error");
         return;
@@ -212,10 +240,16 @@ export default function VehiclePage() {
         return;
       }
       await vehicleStatusUpdate({ vehicle_ids: selectedRowsData, status });
-      setRefreshKey((k) => k + 1);
+      // Refresh vehicle list after 3 seconds
+      // (async () => {
+        fetchVehicles();
+        setRefreshKey((k) => k + 1);
+      // });
       showSnackbar("Vehicle status updated successfully", "success");
+      // setLoading(false);
     } catch (error) {
       showSnackbar("Failed to update vehicle status", "error");
+      // setLoading(false);
     }
   };
   return (
@@ -231,6 +265,7 @@ export default function VehiclePage() {
             },
             header: {
                exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },

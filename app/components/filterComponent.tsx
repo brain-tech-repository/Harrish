@@ -5,6 +5,7 @@ import { FilterRendererProps } from "./customTable";
 // Extend props to allow specifying which filters to show
 type FilterComponentProps = FilterRendererProps & {
   onlyFilters?: string[]; // e.g. ['warehouse_id', 'company_id']
+  currentDate?: boolean;
 };
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
@@ -61,13 +62,25 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     ensureCompanyLoaded();
     ensureSalesmanLoaded();
   }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
-  const { onlyFilters } = filterProps;
+  const { onlyFilters, currentDate } = filterProps;
 
+  // Set default date for from_date and to_date to today if currentDate is true
   useEffect(() => {
-    ensureCompanyLoaded();
-    ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded,
-    ensureSalesmanLoaded]);
+    if (currentDate) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (!filterProps.payload.from_date) {
+        filterProps.setPayload((prev) => ({ ...prev, from_date: today }));
+      }
+      if (!filterProps.payload.to_date) {
+        filterProps.setPayload((prev) => ({ ...prev, to_date: today }));
+      }
+    } else {
+      // If currentDate is false, clear the dates
+      filterProps.setPayload((prev) => ({ ...prev, from_date: "", to_date: "" }));
+    }
+    // Only run on mount or when currentDate changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate]);
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,

@@ -14,6 +14,7 @@ import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import PrintButton from "@/app/components/printButton";
+import DownloadPdfButton from "@/app/components/downloadPdfButton";
 import { downloadFile } from "@/app/services/allApi";
 import { formatWithPattern, isValidDate } from "@/app/utils/formatDate";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
@@ -210,23 +211,6 @@ export default function OrderDetailPage() {
     // },
   ].filter(Boolean) as Array<{ key: string; value: string }>;
 
-  const exportFile = async () => {
-    try {
-      setLoadingState(true);
-      const response = await agentDeliveryExport({ uuid: uuid, format: "pdf" });
-      if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully ", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
-    } finally {
-      setLoadingState(false);
-    }
-  };
-
   const printRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -262,7 +246,7 @@ export default function OrderDetailPage() {
 
       {/* ---------- Order Info Card ---------- */}
       <div ref={printRef}>
-        <ContainerCard className="rounded-[10px] space-y-[40px]">
+        <ContainerCard className="rounded-[10px] space-y-[15px]">
           <div className="flex justify-between flex-wrap gap-[20px]">
             <div className="flex flex-col gap-[10px]">
               <Logo type="full" />
@@ -439,11 +423,12 @@ export default function OrderDetailPage() {
 
           {/* ---------- Footer Buttons ---------- */}
           <div className="flex flex-wrap justify-end gap-[20px] print:hidden">
-            <SidebarBtn
-              leadingIcon={loading ? "eos-icons:three-dots-loading" : "lucide:download"}
-              leadingIconSize={20}
-              label="Download"
-              onClick={exportFile}
+            <DownloadPdfButton 
+              targetRef={printRef as React.RefObject<HTMLDivElement>}
+              filename={`Delivery-${deliveryData?.delivery_code || "document"}`}
+              orientation="landscape"
+              onSuccess={() => showSnackbar("PDF downloaded successfully", "success")}
+              onError={() => showSnackbar("Failed to generate PDF", "error")}
             />
             <PrintButton targetRef={printRef as React.RefObject<HTMLDivElement>} />
           </div>

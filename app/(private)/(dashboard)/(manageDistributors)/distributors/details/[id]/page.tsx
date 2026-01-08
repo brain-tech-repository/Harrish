@@ -3,7 +3,7 @@
 import KeyValueData from "@/app/components/keyValueData";
 import ContainerCard from "@/app/components/containerCard";
 import { useLoading } from "@/app/services/loadingContext";
-import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehicleInWarehouse, getSalesmanInWarehouse, getStockOfWarehouse, warehouseReturn, warehouseSales, downloadFile } from "@/app/services/allApi";
+import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehicleInWarehouse, getSalesmanInWarehouse, getStockOfWarehouse, warehouseSales, downloadFile,returnByWarehouse ,exportReturnByWarehouse,allInvoiceExportInWarehouse} from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
@@ -17,8 +17,11 @@ import Table, { configType, listReturnType, searchReturnType, TableDataType } fr
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import Drawer from "@mui/material/Drawer";
-import { exportInvoice, getAgentCustomerBySalesId } from "@/app/services/agentTransaction";
+import { exportInvoice, getAgentCustomerBySalesId,exportOrderInvoice } from "@/app/services/agentTransaction";
 import Skeleton from "@mui/material/Skeleton";
+import FilterComponent from "@/app/components/filterComponent";
+import {  exportReturneWithDetails } from "@/app/services/agentTransaction";
+import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 interface Item {
     id: string;
     sap_id: string;
@@ -73,6 +76,9 @@ export default function ViewPage() {
     const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const [routeId, setRouteId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
+    const [salesData, setSalesData] = useState<TableDataType[]>([]);
+    const [returnData, setReturnData] = useState<TableDataType[]>([]);
+    const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [open, setOpen] = useState(false);
     const [UUIDAgentCustomer, setUUIDAgentCustomer] = useState<string>("");
 
@@ -325,34 +331,42 @@ export default function ViewPage() {
             ),
             showByDefault: true,
         },
+        // {
+        //     key: "return_date",
+        //     label: "Return Date",
+        //     // isSortable: true,
+        //     render: (data: TableDataType) => (data.return_date ? data.return_date : "-"),
+        //     showByDefault: true,
+        // },
         {
-            key: "return_date",
-            label: "Return Date",
-            // isSortable: true,
-            render: (data: TableDataType) => (data.return_date ? data.return_date : "-"),
+            key: "order_code",
+            label: "Order Code",
+            render: (data: TableDataType) => (
+                <span className="font-semibold text-[#181D27] text-[14px]">
+                    {data.order_code ? data.order_code : "-"}
+                </span>
+            ),
             showByDefault: true,
         },
-        // {
-        //     key: "order_code",
-        //     label: "Order Code",
-        //     render: (data: TableDataType) => (
-        //         <span className="font-semibold text-[#181D27] text-[14px]">
-        //             {data.order_code ? data.order_code : "-"}
-        //         </span>
-        //     ),
-        //     showByDefault: true,
-        // },
-        // {
-        //     key: "delivery_code",
-        //     label: "Delivery Code",
-        //     render: (data: TableDataType) => (
-        //         <span className="font-semibold text-[#181D27] text-[14px]">
-        //             {data.delivery_code ? data.delivery_code : "-"}
-        //         </span>
-        //     ),
-        //     showByDefault: true,
-        // },
+        {
+            key: "delivery_code",
+            label: "Delivery Code",
+            render: (data: TableDataType) => (
+                <span className="font-semibold text-[#181D27] text-[14px]">
+                    {data.delivery_code ? data.delivery_code : "-"}
+                </span>
+            ),
+            showByDefault: true,
+        },
 
+        {
+            key: "warehouse_code,warehouse_name",
+            label: "Distributor",
+            render: (row: TableDataType) => {
+                return row.warehouse_code && row.warehouse_name ? `${row.warehouse_code} - ${row.warehouse_name}` : "-";
+            },
+            showByDefault: true,
+        },
         {
             key: "route_code",
             label: "Route",
@@ -377,8 +391,8 @@ export default function ViewPage() {
             key: "salesman_code",
             label: "Sales Team",
             render: (row: TableDataType) => {
-                const code = row.salesman_code || "-";
-                const name = row.salesman_name || "-";
+                const code = row.salesman_code || "";
+                const name = row.salesman_name || "";
                 return `${code}${code && name ? " - " : "-"}${name}`;
             },
             showByDefault: true,
@@ -397,14 +411,7 @@ export default function ViewPage() {
             showByDefault: true,
         },
 
-        {
-            key: "status",
-            label: "Status",
-            render: (row: TableDataType) => (
-                <StatusBtn isActive={row.status && row.status.toString() === "0" ? false : true} />
-            ),
-            showByDefault: true,
-        },
+        
     ];
     const vehicleColumns: configType["columns"] = [
         { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
@@ -886,28 +893,31 @@ export default function ViewPage() {
         },
         [warehouseId]
     );
-    // const listReturnByWarehouse = useCallback(
-    //     async (
-    //         pageNo: number = 1,
-    //         pageSize: number = 50,
-    //     ): Promise<searchReturnType> => {
-    //         const result = await warehouseReturn(warehouseId, {
-    //             per_page: pageSize.toString()
-    //         });
 
-    //         if (result.error) {
-    //             throw new Error(result.data?.message || "Search failed");
-    //         }
+    const listReturnByWarehouse = useCallback(
+        async (
+            pageNo: number = 1,
+            pageSize: number = 50,
+        ): Promise<searchReturnType> => {
+            const result = await returnByWarehouse( {
+                warehouse_id:warehouseId,
+               
+            });
+            setReturnData(result.data);
 
-    //         return {
-    //             data: result.data || [],
-    //             currentPage: result?.pagination?.current_page || 1,
-    //             pageSize: result?.pagination?.per_page || pageSize,
-    //             total: result?.pagination?.last_page || 1,
-    //         };
-    //     },
-    //     [warehouseId]
-    // );
+            if (result.error) {
+                throw new Error(result.data?.message || "Search failed");
+            }
+
+            return {
+                data: result.data || [],
+                currentPage: result?.pagination?.current_page || 1,
+                pageSize: result?.pagination?.per_page || pageSize,
+                total: result?.pagination?.last_page || 1,
+            };
+        },
+        [warehouseId]
+    );
     const listSalesByWarehouse = useCallback(
         async (
             pageNo: number = 1,
@@ -917,7 +927,7 @@ export default function ViewPage() {
                 page: pageNo.toString(),
                 per_page: pageSize.toString()
             });
-
+            setSalesData(result.data);
             if (result.error) {
                 throw new Error(result.data?.message || "Search failed");
             }
@@ -1197,6 +1207,74 @@ export default function ViewPage() {
 
         }}><Icon icon="material-symbols:download" /></div>)
     }
+
+        const exportReturnFile = async (uuid: string, format: string) => {
+            try {
+                setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                const response = await exportReturnByWarehouse({ warehouse_id:uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+                if (response && typeof response === "object" && response.download_url) {
+                    await downloadFile(response.download_url);
+                    showSnackbar("File downloaded successfully", "success");
+                } else {
+                    showSnackbar("Failed to get download URL", "error");
+                }
+            } catch (error) {
+                console.error(error);
+                showSnackbar("Failed to download data", "error");
+            } finally {
+                setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            }
+        };
+        const exportSalesFile = async (uuid: string, format: string) => {
+            try {
+                setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                const response = await allInvoiceExportInWarehouse({ warehouse_id:uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+                if (response && typeof response === "object" && response.download_url) {
+                    await downloadFile(response.download_url);
+                    showSnackbar("File downloaded successfully", "success");
+                } else {
+                    showSnackbar("Failed to get download URL", "error");
+                }
+            } catch (error) {
+                console.error(error);
+                showSnackbar("Failed to download data", "error");
+            } finally {
+                setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            }
+        };
+
+            const downloadPdf = async (uuid: string) => {
+                try {
+                    setLoading(true);
+                    const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
+                    if (response && typeof response === 'object' && response.download_url) {
+                        await downloadFile(response.download_url);
+                        showSnackbar("File downloaded successfully ", "success");
+                    } else {
+                        showSnackbar("Failed to get download URL", "error");
+                    }
+                } catch (error) {
+                    showSnackbar("Failed to download file", "error");
+                } finally {
+                    setLoading(false);
+                }
+            };
+            const downloadPdfofInvoice = async (uuid: string) => {
+                try {
+                    setLoading(true);
+                    const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
+                    if (response && typeof response === 'object' && response.download_url) {
+                        await downloadFile(response.download_url);
+                        showSnackbar("File downloaded successfully ", "success");
+                    } else {
+                        showSnackbar("Failed to get download URL", "error");
+                    }
+                } catch (error) {
+                    showSnackbar("Failed to download file", "error");
+                } finally {
+                    setLoading(false);
+                }
+            };
 
     return (
         <>
@@ -1525,23 +1603,31 @@ export default function ViewPage() {
                                 filterBy: filterBy
                             },
                             header: {
-                                filterByFields: [
-                                    {
-                                        key: "start_date",
-                                        label: "Start Date",
-                                        type: "date",
-                                        applyWhen: (filters) => !!filters.end_date && !!filters.start_date,
-                                        inputProps: {
-                                            // min: filters?.end_date ? undefined : "",
-                                        }
-                                    },
-                                    {
-                                        key: "end_date",
-                                        label: "End Date",
-                                        type: "date"
-                                    },
-                                ],
+                                 actions: [
+                                                                <ExportDropdownButton
+                                                                disabled={salesData?.length === 0}
+                                                                   keyType="excel"
+                                                                    threeDotLoading={threeDotLoading}
+                                                                    exportReturnFile={exportSalesFile}
+                                                                    uuid={warehouseId}
+                                                                />
+                                                            ],
+                                filterRenderer: (props) => (
+                                                                        <FilterComponent
+                                                                        currentDate={true}
+                                                                          {...props}
+                                                                          onlyFilters={['from_date', 'to_date']}
+                                                                        />
+                                                                      ),
+                                                                      
                             },
+                             rowActions: [
+                       
+                       {
+                            icon: "lucide:download",
+                            onClick: (row: TableDataType) => downloadPdfofInvoice(row.uuid),
+                        },
+                    ],
                             footer: { nextPrevBtn: true, pagination: true },
                             columns: salesColumns,
                             showNestedLoading: true,
@@ -1559,32 +1645,42 @@ export default function ViewPage() {
                 <div className="flex flex-col h-full">
                     <Table
                         config={{
-                            // api: {
-                            //     // search: searchReturnByWarehouse,
-                            //     // list: listReturnByWarehouse,
-                            //     // filterBy: filterByListReturn
-                            // },
-                            header: {
-                                filterByFields: [
-                                    {
-                                        key: "start_date",
-                                        label: "Start Date",
-                                        type: "date"
-                                    },
-                                    {
-                                        key: "end_date",
-                                        label: "End Date",
-                                        type: "date"
-                                    },
-                                ]
+                            api: {
+                                // search: searchReturnByWarehouse,
+                                list: listReturnByWarehouse,
+                                // filterBy: filterByListReturn
                             },
+                            header: {
+                                 actions: [
+                                                                <ExportDropdownButton
+                                                                disabled={returnData?.length === 0}
+                                                                   keyType="excel"
+                                                                    threeDotLoading={threeDotLoading}
+                                                                    exportReturnFile={exportReturnFile}
+                                                                    uuid={warehouseId}
+                                                                />
+                                                            ],
+                                filterRenderer: (props) => (
+                                                                        <FilterComponent
+                                                                        currentDate={true}
+                                                                          {...props}
+                                                                          onlyFilters={['from_date', 'to_date']}
+                                                                        />
+                                                                      ),
+                            },
+                             rowActions: [
+                       
+                        {
+                            icon: "lucide:download",
+                            onClick: (row: TableDataType) => downloadPdf(row.uuid),
+                        },
+                    ],
                             footer: { nextPrevBtn: true, pagination: true },
                             columns: returnColumns,
                             showNestedLoading: true,
                             rowSelection: false,
                             pageSize: 50,
                         }}
-                        data={[]}
                     />
                 </div>
 

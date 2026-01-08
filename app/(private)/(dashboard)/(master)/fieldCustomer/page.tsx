@@ -13,12 +13,12 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { getPaymentType } from "../keyCustomer/details/[uuid]/page";
+import { getPaymentType } from "../companyCustomer/details/[uuid]/page";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 export default function AgentCustomer() {
     const { can, permissions } = usePagePermissions();
-    const { customerSubCategoryOptions, itemCategoryOptions,customerCategoryOptions,ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const { allCustomerTypeOptions,ensureAllCustomerTypesLoaded,customerSubCategoryOptions, itemCategoryOptions,customerCategoryOptions,ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
 
     // Load dropdown data
     useEffect(() => {
@@ -28,12 +28,14 @@ export default function AgentCustomer() {
         ensureRouteLoaded();
         ensureWarehouseAllLoaded();
         ensureCustomerCategoryLoaded();
-    }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
+        ensureAllCustomerTypesLoaded();
+    }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded,ensureAllCustomerTypesLoaded]);
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [channelId, setChannelId] = useState<string>("");
     const [customerCategoryId, setCustomerCategoryId] = useState<string>("");
     const [routeId, setRouteId] = useState<string>("");
+    const [customerTypeId, setCustomerTypeId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -67,8 +69,18 @@ export default function AgentCustomer() {
                 }
                 return row.customer_type || "-";
             },
+            filter: {
+                isFilterable: true,
+                width: 320,
+                options: allCustomerTypeOptions,
+                onSelect: (selected) => {
+                    setCustomerTypeId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: customerTypeId,
+            },
         },
-          {
+        {
             key: "category",
             label: "Customer Category",
             render: (row: TableDataType) =>
@@ -78,18 +90,19 @@ export default function AgentCustomer() {
                     ? (row.category as { customer_category_name?: string })
                         .customer_category_name || "-"
                     : "-",
-                     filter: {
+            filter: {
                 isFilterable: true,
                 width: 320,
                 options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
                 onSelect: (selected) => {
                     setCustomerCategoryId((prev) => prev === selected ? "" : (selected as string));
                 },
+                isSingle: false,
                 selectedValue: customerCategoryId,
             },
             // showByDefault: true
         },
-          {
+        {
             key: "outlet_channel",
             label: "Outlet Channel",
             render: (row: TableDataType) =>
@@ -106,6 +119,7 @@ export default function AgentCustomer() {
                 onSelect: (selected) => {
                     setChannelId((prev) => prev === selected ? "" : (selected as string));
                 },
+                isSingle: false,
                 selectedValue: channelId,
             },
 
@@ -143,6 +157,7 @@ export default function AgentCustomer() {
                 onSelect: (selected) => {
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
                 },
+                isSingle: false,
                 selectedValue: warehouseId,
             },
             // showByDefault: true,
@@ -167,6 +182,7 @@ export default function AgentCustomer() {
                 onSelect: (selected) => {
                     setRouteId((prev) => prev === selected ? "" : (selected as string));
                 },
+                isSingle: false,
                 selectedValue: routeId,
             },
 
@@ -180,9 +196,9 @@ export default function AgentCustomer() {
         { key: "district", label: "District" },
         { key: "buyertype", label: "Buyer Type", render: (row: TableDataType) => (row.buyertype === "0" ? "B2B" : "B2C") },
         { key: "payment_type", label: "Payment Type", render: (row: TableDataType) => getPaymentType(String(row.payment_type)) },
-      
-      
-        
+
+
+
         {
             key: "status",
             label: "Status",
@@ -229,6 +245,9 @@ export default function AgentCustomer() {
                 if (customerCategoryId) {
                     params.category_id = String(customerCategoryId);
                 }
+                if (customerTypeId) {
+                    params.customer_type = String(customerTypeId);
+                }
                 if (routeId) {
                     params.route_id = String(routeId);
                 }
@@ -250,7 +269,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId, setLoading]
+        [agentCustomerList,selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, setLoading]
     );
 
     const exportfile = async (format: string) => {
@@ -325,7 +344,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerCategoryId,routeId]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId]);
 
     return (
         <>
@@ -340,11 +359,12 @@ export default function AgentCustomer() {
                         header: {
                             title: "Field Customers",
                               exportButton: {
+                                threeDotLoading: threeDotLoading,
                 show: true,
                 onClick: () => exportfile("xlsx"), 
               },
                             threeDot: [
-                               
+
                                 {
                                     icon: "lucide:radio",
                                     label: "Inactive",

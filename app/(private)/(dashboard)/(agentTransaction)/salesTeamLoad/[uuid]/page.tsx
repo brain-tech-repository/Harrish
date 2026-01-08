@@ -12,7 +12,8 @@ import {
   salesmanLoadHeaderAdd,
   salesmanLoadHeaderById,
   salesmanLoadHeaderUpdate,
-  getSalesmanByWarehouse
+  getSalesmanByWarehouse,
+  getSalesmanByWarehouseId
 } from "@/app/services/agentTransaction";
 import { genearateCode, itemList, getWarehouseStockDetails, warehouseStockTopOrders } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
@@ -40,7 +41,9 @@ export default function AddEditSalesmanLoad() {
     ensureSalesmanLoaded();
     ensureSalesmanTypeLoaded();
     ensureWarehouseLoaded();
+    console.log("dropdown data loaded", salesmanOptions);
   }, [ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded]);
+
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
@@ -107,8 +110,10 @@ export default function AddEditSalesmanLoad() {
   const [isItemsLoaded, setIsItemsLoaded] = useState(false);
   const [itemOptions, setItemsOptions] = useState();
   const [projectSalesmanOptions, setProjectSalesmanOptions] = useState<any[]>([]);
+  const [salesmanWarehouseRouteOptions, setSalesmanWarehouseRouteOptions] = useState<any[]>([]);
   // Store last API data for mapping salesman_id to route_id
   const [lastProjectSalesmanData, setLastProjectSalesmanData] = useState<any[]>([]);
+  const [salesmanWarehouseOptions, setSalesmanWarehouseOptions] = useState<any[]>([]);
   // Fetch salesmen for project type (salesman_type === '6')
   useEffect(() => {
     const fetchProjectSalesmen = async () => {
@@ -143,6 +148,35 @@ export default function AddEditSalesmanLoad() {
     item: false
   });
   const codeGeneratedRef = useRef(false);
+
+
+  useEffect(() => {
+    const fetchSalesmanByWarehouseId = async () => {
+      if (form.salesman_type === "2" && form.warehouse) {
+        setSkeleton((prev) => ({ ...prev, salesman: true }));
+        try {
+          const res = await getSalesmanByWarehouseId({ warehouse_id: form.warehouse, type: form.salesman_type });
+          const data = res?.data.salesmen || [];
+          setSalesmanWarehouseOptions(data);
+          const options = data.map((item: any) => ({
+            value: String(item.id),
+            label: `${item.osa_code ? item.osa_code + ' - ' : ''}${item.name}`
+          }));
+          console.log(options, "123");
+          setSalesmanWarehouseRouteOptions(options);
+        } catch (e) {
+          setSalesmanWarehouseRouteOptions([]);
+          setSalesmanWarehouseOptions([]);
+        } finally {
+          setSkeleton((prev) => ({ ...prev, salesman: false }));
+        }
+      } else {
+        setSalesmanWarehouseRouteOptions([]);
+        setSalesmanWarehouseOptions([]);
+      }
+    };
+    fetchSalesmanByWarehouseId();
+  }, [form.salesman_type, form.warehouse]);
 
   // ✅ Load items based on selected warehouse
   useEffect(() => {
@@ -572,9 +606,7 @@ export default function AddEditSalesmanLoad() {
             onChange={async (e) => {
               const val = e.target.value;
               handleChange("warehouse", val);
-              // Clear customer when warehouse changes
               handleChange("route", "");
-              // Fetch customers for selected warehouse
               if (val) {
                 setSkeleton({ ...skeleton, route: true });
                 await fetchRouteOptions(val);
@@ -613,9 +645,15 @@ export default function AddEditSalesmanLoad() {
             label="Sales Team"
             name="salesman"
             value={form.salesman}
-            disabled={form.salesman_type === "6" ? !form.warehouse : !form.route}
+            disabled={form.salesman_type === "6" ? !form.warehouse : !form.route || form.salesman_type === "2" ? !form.warehouse : false}
             searchable={true}
-            options={form.salesman_type === "6" ? projectSalesmanOptions : salesmanOptions}
+            options={
+              form.salesman_type === "6"
+                ? projectSalesmanOptions
+                : form.salesman_type === "2"
+                ? salesmanWarehouseRouteOptions
+                : salesmanOptions
+            }
             error={errors.salesman}
             showSkeleton={skeleton.salesman}
             onChange={(e) => handleChange("salesman", e.target.value)}
@@ -679,7 +717,7 @@ export default function AddEditSalesmanLoad() {
                       max={maxCseQty}
                       disabled={!row.uom || row.uom.length === 0}
                       trailingElement={
-                        <span className="text-sm text-gray-500">{maxCseQty}  {row.uom?.find((u: {uom_type: string; name:string}) => u.uom_type === 'secondary')?.name}</span>
+                        <span className="text-sm text-gray-500">{maxCseQty}  {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'secondary')?.name}</span>
                       }
                       onChange={(e) => handleQtyInput(Number(row.idx), 'cse_qty', e.target.value)}
                       onBlur={() => handleQtyBlur(Number(row.idx), 'cse_qty')}
@@ -707,7 +745,7 @@ export default function AddEditSalesmanLoad() {
                       max={maxPcsQty}
                       disabled={!row.uom || row.uom.length === 0}
                       trailingElement={
-                        <span className="text-sm text-gray-500">{maxPcsQty} {row.uom?.find((u: {uom_type: string; name:string}) => u.uom_type === 'primary')?.name}</span>
+                        <span className="text-sm text-gray-500">{maxPcsQty} {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'primary')?.name}</span>
                       }
                       onChange={(e) => handleQtyInput(Number(row.idx), 'pcs_qty', e.target.value)}
                       onBlur={() => handleQtyBlur(Number(row.idx), 'pcs_qty')}

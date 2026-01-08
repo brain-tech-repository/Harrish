@@ -291,7 +291,7 @@ export default function AddEditServiceTerritory() {
 
                             {/* WAREHOUSE MULTI SELECT */}
                             <InputFields
-                                label="Warehouse"
+                                label="Distributor"
                                 name="warehouses"
                                 isSingle={false}
                                 multiSelectChips={true}

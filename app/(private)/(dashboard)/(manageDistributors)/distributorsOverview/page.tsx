@@ -10,12 +10,12 @@ import Table from "@/app/components/customTable";
 import { TableDataType } from "@/app/components/customTable";
 import OrderStatus from "@/app/components/orderStatus";
 import { Icon } from "@iconify-icon/react";
-import { warehouseLowStocksKpi, warehouseStocksKpi, warehouseStockTopOrders } from "@/app/services/allApi";
+import { warehouseLowStocksKpi, warehouseStocksKpi, warehouseStockTopOrders,warhouseStocksByFilter } from "@/app/services/allApi";
 import { CustomTableSkelton } from "@/app/components/customSkeleton";
 import Skeleton from "@mui/material/Skeleton";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 
 type CardItem = {
   title: string;
@@ -50,19 +50,21 @@ const itemColumns = [
     label: "Stock Qty",
     showByDefault: true,
     render: (row: any) => row.stock_qty ?? "-",
+    isSortable: true,
   },
   {
     key: "total_sold_qty",
     label: "Sold Qty",
     showByDefault: true,
     render: (row: any) => row.total_sold_qty ?? "-",
+     isSortable: true,
   },
   {
     key: "purchase",
     label: "Purchase Qty",
     showByDefault: true,
-
     render: (row: any) => row.purchase ?? "-",
+     isSortable: true,
   },
 ];
 
@@ -88,6 +90,7 @@ const OverallPerformance: React.FC = () => {
   })
 
   const [selectedWarehouse, setSelectedWarehouse] = useState("")
+  const [selectedFilter, setSelectedFilter] = useState("")
   const { warehouseOptions,ensureWarehouseLoaded } = useAllDropdownListData();
 
   const options = ["Last 12h", "Last 24h", "Last 20h"];
@@ -173,7 +176,7 @@ const OverallPerformance: React.FC = () => {
           </div>
         ))}
       </ContainerCard> */}
-      <ContainerCard className="w-full">
+      <ContainerCard className="flex flex-col h-full w-full">
 
         <div className="flex justify-between md:items-center">
           <div>
@@ -245,24 +248,62 @@ const OverallPerformance: React.FC = () => {
         </div>
         <br />
         <div className="flex flex-col h-full">
+         
           {loading ? <CustomTableSkelton /> :
             <Table
-              // refreshKey={1}
               data={topOrders?.stocks ? topOrders?.stocks : []}
               config={{
-                //   api: { list: fetchOrders, filterBy: filterBy },
                 header: {
-                  //   title: "Customer Orders",
                   searchBar: false,
                   columnFilter: false,
-
                 },
-                //   rowSelection: true,
-                footer: { nextPrevBtn: true, pagination: true },
                 columns: itemColumns,
-
-                pageSize: 10,
+                pageSize: 1000000,
               }}
+              directFilterRenderer={
+                selectedWarehouse ? (
+                  <InputFields
+                    name="filter"
+                    placeholder="Select Filter"
+                    value={selectedFilter}
+                    options={[
+                      { value: "yesterday", label: "Yesterday" },
+                      { value: "today", label: "Today" },
+                      { value: "last_3_days", label: "Last 3 Days" },
+                      { value: "last_7_days", label: "Last 7 Days" },
+                      { value: "last_month", label: "Last Month" },
+                    ]}
+                    onChange={async (e) => {
+                      const filterValue = e.target.value;
+                      setSelectedFilter(filterValue);
+                      if (filterValue && selectedWarehouse) {
+                        try {
+                          setLoading(true);
+                          const res = await warhouseStocksByFilter({
+                            warehouse_id: selectedWarehouse,
+                            filter: filterValue,
+                          });
+                          if (res?.data) {
+                            // Transform API response to match table columns
+                            const transformedData = res.data.map((item: any) => ({
+                              item_code: item.item?.erp_code ?? "",
+                              item_name: item.item?.name ?? "",
+                              stock_qty: item.stock_qty ?? "-",
+                              total_sold_qty: item?.total_sold_qty,
+                              purchase: item?.purchase,
+                            }));
+                            setTopOrders({ stocks: transformedData });
+                          }
+                        } catch (err) {
+                          console.error("Filter API error", err);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }}
+                  />
+                ) : undefined
+              }
             />}
         </div>
 

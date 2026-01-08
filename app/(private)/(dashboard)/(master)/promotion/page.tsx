@@ -123,25 +123,40 @@ export default function Pricing() {
     const searchCountries = useCallback(
         async (
             searchQuery: string,
-            pageSize: number
+            pageSize: number,
+            columnName?: string,
+            page: number = 1
         ): Promise<searchReturnType> => {
             setLoading(true);
-            const result = await promotionHeaderGlobalSearch({
-                query: searchQuery,
-                per_page: pageSize.toString(),
-            });
+            let result;
+            if (columnName && columnName !== "") {
+                // Use list API for column search
+                result = await promotionHeaderList({
+                    [columnName]: searchQuery,
+                    limit: pageSize.toString(),
+                    page: page.toString(),
+                });
+            } else {
+                // Use global search API
+                result = await promotionHeaderGlobalSearch({
+                    query: searchQuery,
+                    per_page: pageSize.toString(),
+                    page: page.toString(),
+                });
+            }
             setLoading(false);
             if (result.error) throw new Error(result.data.message);
-            else {
-                // Defensive: handle missing pagination or nested pagination
-                const pagination = result.pagination?.pagination || result.pagination || {};
-                return {
-                    data: result.data || [],
-                    total: pagination.totalPages || 0,
-                    currentPage: pagination.current_page || 0,
-                    pageSize: pagination.limit || pageSize,
-                };
-            }
+            const pagination = result.pagination?.pagination || result.pagination || {};
+            // Defensive: always set totalPages to at least 1
+            const totalPages = pagination.totalPages || 1;
+            const currentPage = pagination.current_page || pagination.page || 1;
+            const limit = pagination.limit || pageSize;
+            return {
+                data: result.data || [],
+                total: totalPages,
+                currentPage: currentPage,
+                pageSize: limit,
+            };
         },
         []
     );

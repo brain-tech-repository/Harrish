@@ -78,11 +78,23 @@ const ProcessFlow = () => {
         additionalInfo: step.message,
       }))
     : [];
-  const orderProcessingCards: ProcessCard[] = processData?.order && processData.order.order_code
+
+  const orderWorkflowStatusRaw = processData?.order?.workflow?.status ?? null;
+  const orderWorkflowStatusCode =
+    typeof orderWorkflowStatusRaw === "string"
+      ? orderWorkflowStatusRaw
+      : (orderWorkflowStatusRaw as any)?.status;
+
+  const orderProcessingCards: ProcessCard[] = processData?.order?.order_code
     ? [{
         type: `Order`,
         number: processData.order.order_code,
-        status: processData.order.workflow.status === "APPROVED" ? "Completed" : processData.order.workflow.status.status === "PENDING" ? "Not Cleared" : processData.order.workflow.status,
+        status:
+          orderWorkflowStatusCode === "APPROVED"
+            ? "Completed"
+            : orderWorkflowStatusCode === "PENDING"
+              ? "Not Cleared"
+              : (orderWorkflowStatusCode ?? "Not Cleared"),
         rowType: "right",
         verticalHeight: "100px",
         horizontalHeight: "100px",

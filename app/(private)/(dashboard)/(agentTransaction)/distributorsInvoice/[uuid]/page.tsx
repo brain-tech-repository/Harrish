@@ -28,9 +28,9 @@ interface ItemUom {
     price?: string | number;
 }
 interface WarehouseStock {
-  item_id: number;
-  warehouse_id: number;
-  qty: string;
+    item_id: number;
+    warehouse_id: number;
+    qty: string;
 }
 
 interface FullItem {
@@ -65,15 +65,15 @@ interface CustomerLike {
 }
 
 interface ItemUOM {
-  id: number;
-  item_id: number;
-  uom_type: string;
-  name: string;
-  price: string;
-  is_stock_keeping: boolean;
-  upc: string;
-  enable_for: string;
-  uom_id: number;
+    id: number;
+    item_id: number;
+    uom_type: string;
+    name: string;
+    price: string;
+    is_stock_keeping: boolean;
+    upc: string;
+    enable_for: string;
+    uom_id: number;
 }
 
 interface DeliveryDetail {
@@ -152,15 +152,15 @@ export default function InvoiceddEditPage() {
             .required("Quantity is required"),
     });
 
-    const { warehouseOptions, agentCustomerOptions, routeOptions, itemOptions, fetchAgentCustomerOptions , ensureAgentCustomerLoaded, ensureItemLoaded, ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+    const { warehouseOptions, agentCustomerOptions, routeOptions, itemOptions, fetchAgentCustomerOptions, ensureAgentCustomerLoaded, ensureItemLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAgentCustomerLoaded();
-    ensureItemLoaded();
-    ensureRouteLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAgentCustomerLoaded, ensureItemLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+    // Load dropdown data
+    useEffect(() => {
+        ensureAgentCustomerLoaded();
+        ensureItemLoaded();
+        ensureRouteLoaded();
+        ensureWarehouseLoaded();
+    }, [ensureAgentCustomerLoaded, ensureItemLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
     const [itemsWithUOM, setItemsWithUOM] = useState<Record<string, { uoms: ItemUOM[], stock_qty: string }>>({});
     const [invoiceData, setInvoiceData] = useState<FormData[]>([]);
     const [warehouseStocks, setWarehouseStocks] = useState<Record<string, WarehouseStock[]>>({});
@@ -179,7 +179,7 @@ export default function InvoiceddEditPage() {
         customer: false,
         item: false,
     });
-    
+
     // per-row validation errors for item rows (keyed by row index)
     const [itemErrors, setItemErrors] = useState<Record<number, Record<string, string>>>({});
     const [form, setForm] = useState({
@@ -231,12 +231,12 @@ export default function InvoiceddEditPage() {
     const [suppressItemSearch, setSuppressItemSearch] = useState(false);
     const codeGeneratedRef = useRef(false);
     const [code, setCode] = useState("");
-    
+
     // Validation function for item rows
     const validateRow = async (index: number, row?: InvoiceItemRow, options?: { skipUom?: boolean }) => {
         const rowData = row ?? itemData[index];
         if (!rowData) return;
-        
+
         // prepare data for Yup: convert numeric strings to numbers
         const toValidate = {
             item_id: String(rowData.item_id ?? ""),
@@ -246,7 +246,7 @@ export default function InvoiceddEditPage() {
 
         try {
             const validationErrors: Record<string, string> = {};
-            
+
             if (options?.skipUom) {
                 // validate only item_id and Quantity to avoid showing UOM required immediately after selecting item
                 try {
@@ -286,7 +286,7 @@ export default function InvoiceddEditPage() {
             setItemErrors((prev) => ({ ...prev, [index]: validationErrors }));
         }
     };
-    
+
     useEffect(() => {
         setLoading(true);
 
@@ -387,95 +387,95 @@ export default function InvoiceddEditPage() {
     }, [isEditMode, uuid, setLoading, showSnackbar]);
     // Auto-generate invoice code in add mode only (prevent on edit)
 
-      const fetchWarehouseItems = useCallback(async (warehouseId: string, searchTerm: string = "") => {
+    const fetchWarehouseItems = useCallback(async (warehouseId: string, searchTerm: string = "") => {
         if (!warehouseId) {
-          setItemsOptions([]);
-          setItemsWithUOM({});
-          setWarehouseStocks({});
-          return;
+            setItemsOptions([]);
+            setItemsWithUOM({});
+            setWarehouseStocks({});
+            return;
         }
-    
+
         try {
-          setSkeleton(prev => ({ ...prev, item: true }));
-          
-          // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
-          const stockRes = await warehouseStockTopOrders(warehouseId);
-          const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
-    
-          // Store warehouse stocks for validation
-          setWarehouseStocks(prev => ({
-            ...prev,
-            [warehouseId]: stocksArray
-          }));
-    
-          // Filter items based on search term and stock availability
-          const filteredStocks = stocksArray.filter((stock: any) => {
-            if (Number(stock.stock_qty) <= 0) return false;
-            if (!searchTerm) return true;
-            const searchLower = searchTerm.toLowerCase();
-            return stock.item_name?.toLowerCase().includes(searchLower) ||
-                   stock.item_code?.toLowerCase().includes(searchLower);
-          });
-    
-          // Create items with UOM data map for easy access
-          const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
-          
-          const processedItems = filteredStocks.map((stockItem: any) => {
-            const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
-              let price = uom.price;
-              // Override with specific pricing from the API response
-              if (uom?.uom_type === "primary") {
-                price = stockItem.buom_ctn_price || uom.price;
-              } else if (uom?.uom_type === "secondary") {
-                price = stockItem.auom_pc_price || uom.price;
-              }
-              return { 
-                ...uom, 
-                price,
-                id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
-                item_id: stockItem.item_id
-              };
-            }) : [];
-    
-            // Store UOM data for this item
-            itemsUOMMap[stockItem.item_id] = {
-              uoms: item_uoms,
-              stock_qty: stockItem.stock_qty
-            };
-    
-            return { 
-              id: stockItem.item_id,
-              name: stockItem.item_name,
-              item_code: stockItem.item_code,
-              erp_code: stockItem.erp_code,
-              item_uoms,
-              warehouse_stock: stockItem.stock_qty,
-              pricing: {
-                buom_ctn_price: stockItem.buom_ctn_price,
-                auom_pc_price: stockItem.auom_pc_price
-              }
-            };
-          });
-    
-          setItemsWithUOM(itemsUOMMap);
-          setInvoiceData(processedItems);
-    
-          // Create dropdown options
-          const options = processedItems.map((item: any) => ({
-            value: String(item.id),
-            label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
-          }));
-    
-          setItemsOptions(options);
-          setSkeleton(prev => ({ ...prev, item: false }));
-          
-          return options;
+            setSkeleton(prev => ({ ...prev, item: true }));
+
+            // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
+            const stockRes = await warehouseStockTopOrders(warehouseId);
+            const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
+
+            // Store warehouse stocks for validation
+            setWarehouseStocks(prev => ({
+                ...prev,
+                [warehouseId]: stocksArray
+            }));
+
+            // Filter items based on search term and stock availability
+            const filteredStocks = stocksArray.filter((stock: any) => {
+                if (Number(stock.stock_qty) <= 0) return false;
+                if (!searchTerm) return true;
+                const searchLower = searchTerm.toLowerCase();
+                return stock.item_name?.toLowerCase().includes(searchLower) ||
+                    stock.item_code?.toLowerCase().includes(searchLower);
+            });
+
+            // Create items with UOM data map for easy access
+            const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
+
+            const processedItems = filteredStocks.map((stockItem: any) => {
+                const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
+                    let price = uom.price;
+                    // Override with specific pricing from the API response
+                    if (uom?.uom_type === "primary") {
+                        price = stockItem.buom_ctn_price || uom.price;
+                    } else if (uom?.uom_type === "secondary") {
+                        price = stockItem.auom_pc_price || uom.price;
+                    }
+                    return {
+                        ...uom,
+                        price,
+                        id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+                        item_id: stockItem.item_id
+                    };
+                }) : [];
+
+                // Store UOM data for this item
+                itemsUOMMap[stockItem.item_id] = {
+                    uoms: item_uoms,
+                    stock_qty: stockItem.stock_qty
+                };
+
+                return {
+                    id: stockItem.item_id,
+                    name: stockItem.item_name,
+                    item_code: stockItem.item_code,
+                    erp_code: stockItem.erp_code,
+                    item_uoms,
+                    warehouse_stock: stockItem.stock_qty,
+                    pricing: {
+                        buom_ctn_price: stockItem.buom_ctn_price,
+                        auom_pc_price: stockItem.auom_pc_price
+                    }
+                };
+            });
+
+            setItemsWithUOM(itemsUOMMap);
+            setInvoiceData(processedItems);
+
+            // Create dropdown options
+            const options = processedItems.map((item: any) => ({
+                value: String(item.id),
+                label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
+            }));
+
+            setItemsOptions(options);
+            setSkeleton(prev => ({ ...prev, item: false }));
+
+            return options;
         } catch (error) {
-          console.error("Error fetching warehouse items:", error);
-          setSkeleton(prev => ({ ...prev, item: false }));
-          return [];
+            console.error("Error fetching warehouse items:", error);
+            setSkeleton(prev => ({ ...prev, item: false }));
+            return [];
         }
-      }, []);
+    }, []);
 
     useEffect(() => {
         if (!isEditMode && !codeGeneratedRef.current) {
@@ -603,7 +603,7 @@ export default function InvoiceddEditPage() {
         // For warehouse items, filter from already loaded itemsOptions
         if (itemsOptions.length > 0) {
             const searchLower = searchText.toLowerCase();
-            return itemsOptions.filter(opt => 
+            return itemsOptions.filter(opt =>
                 opt.label.toLowerCase().includes(searchLower)
             );
         }
@@ -753,7 +753,7 @@ export default function InvoiceddEditPage() {
         if (field !== "itemName" && field !== "item_id") {
             validateRow(index, newData[index]);
         }
-        
+
         setItemData(newData);
     };
 
@@ -891,7 +891,7 @@ export default function InvoiceddEditPage() {
             const schema = createValidationSchema(form);
             await schema.validate(form, { abortEarly: false });
             setErrors({});
-            
+
             // Validate item rows separately (they live in local state)
             const itemsSchema = yup.array().of(itemRowSchema);
             try {
@@ -902,7 +902,7 @@ export default function InvoiceddEditPage() {
                 showSnackbar(itemErr.inner.map((err: any) => err.message).join(", "), "error");
                 return;
             }
-            
+
             const validItems = itemData.filter(item => item.item_id && item.uom_id);
             if (validItems.length === 0) {
                 showSnackbar("Please add at least one item with UOM selected", "error");
@@ -1099,7 +1099,7 @@ export default function InvoiceddEditPage() {
                                 }}
                                 error={errors.warehouse}
                             />
-                         
+
                             <InputFields
                                 required
                                 label="Delivery"
@@ -1266,7 +1266,7 @@ export default function InvoiceddEditPage() {
                                 searchable={true}
                                 options={[
                                     { label: "Field Customer", value: "1" },
-                                    { label: "Key Customer", value: "2" },
+                                    { label: "Company Customer", value: "2" },
                                 ]}
                                 onChange={handleChange}
                                 error={errors.customerType}
@@ -1391,7 +1391,7 @@ export default function InvoiceddEditPage() {
                                     const currentItem = itemData[idx];
                                     const selectedItemId = currentItem?.item_id;
                                     const err = itemErrors[idx]?.item_id;
-                                    
+
                                     // Build selected option from current item data
                                     const selectedOpt = selectedItemId ? {
                                         value: selectedItemId,
@@ -1410,27 +1410,27 @@ export default function InvoiceddEditPage() {
                                                     const selectedItemId = option.value;
                                                     const newData = [...itemData];
                                                     const index = Number(row.idx);
-                                                    
+
                                                     // Get item data from warehouse stocks
                                                     const itemUOMData = itemsWithUOM[selectedItemId];
                                                     const selectedOrder = invoiceData.find((order: any) => String(order.id) === selectedItemId);
-                                                    
+
                                                     newData[index].item_id = selectedItemId;
                                                     newData[index].itemName = (selectedOrder as any)?.name || option.label;
                                                     newData[index].itemLabel = option.label;
-                                                    
+
                                                     if (itemUOMData?.uoms) {
-                                                        const uomOpts = itemUOMData.uoms.map(uom => ({ 
-                                                            label: uom.name, 
-                                                            value: String(uom.id || ''), 
-                                                            price: uom.price 
+                                                        const uomOpts = itemUOMData.uoms.map(uom => ({
+                                                            label: uom.name,
+                                                            value: String(uom.id || ''),
+                                                            price: uom.price
                                                         }));
-                                                        
+
                                                         setRowUomOptions(prev => ({
                                                             ...prev,
                                                             [row.idx]: uomOpts
                                                         }));
-                                                        
+
                                                         newData[index].uom_id = uomOpts[0]?.value || "";
                                                         newData[index].UOM = uomOpts[0]?.value || "";
                                                         newData[index].Price = uomOpts[0]?.price || "";
@@ -1443,18 +1443,18 @@ export default function InvoiceddEditPage() {
                                                             } else if (uom.uom_type === "secondary") {
                                                                 price = (selectedOrder as any).pricing?.buom_ctn_price || "-";
                                                             }
-                                                            return { 
-                                                                label: uom.name, 
-                                                                value: String(uom.id || ''), 
-                                                                price: price 
+                                                            return {
+                                                                label: uom.name,
+                                                                value: String(uom.id || ''),
+                                                                price: price
                                                             };
                                                         });
-                                                        
+
                                                         setRowUomOptions(prev => ({
                                                             ...prev,
                                                             [row.idx]: uomOpts
                                                         }));
-                                                        
+
                                                         const firstUom = (selectedOrder as any).item_uoms[0];
                                                         if (firstUom) {
                                                             newData[index].uom_id = String(firstUom.id || "");
@@ -1477,9 +1477,9 @@ export default function InvoiceddEditPage() {
                                                         newData[index].UOM = "";
                                                         newData[index].Price = "";
                                                     }
-                                                    
+
                                                     newData[index].Quantity = "1";
-                                                    
+
                                                     // Ensure the selected item persists in itemsOptions
                                                     if (option.label) {
                                                         setItemsOptions((prev: Option[] = []) => {
@@ -1487,7 +1487,7 @@ export default function InvoiceddEditPage() {
                                                             return [...prev, { value: selectedItemId, label: option.label }];
                                                         });
                                                     }
-                                                    
+
                                                     setItemData(newData);
                                                     recalculateItem(index, "itemName", selectedItemId);
                                                 }}
@@ -1556,7 +1556,7 @@ export default function InvoiceddEditPage() {
                                 render: (row) => {
                                     const idx = Number(row.idx);
                                     const err = itemErrors[idx]?.Quantity;
-                                    
+
                                     return (
                                         <div style={{ minWidth: '100px', maxWidth: '100px' }}>
                                             <InputFields

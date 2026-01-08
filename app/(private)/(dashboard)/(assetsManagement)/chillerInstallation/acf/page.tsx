@@ -387,19 +387,19 @@ export default function CustomerInvoicePage() {
                         title: "Approve Chiller Request",
                         columnFilter: true,
                         searchBar: false,
-                        threeDot: [
-                            {
-                                icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                label: "Export CSV",
-                                labelTw: "text-[12px] hidden sm:block",
-                                onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                            },
-                            {
-                                icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                label: "Export Excel",
-                                labelTw: "text-[12px] hidden sm:block",
-                                onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                            },],
+                        // threeDot: [
+                        //     {
+                        //         icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+                        //         label: "Export CSV",
+                        //         labelTw: "text-[12px] hidden sm:block",
+                        //         onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                        //     },
+                        //     {
+                        //         icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                        //         label: "Export Excel",
+                        //         labelTw: "text-[12px] hidden sm:block",
+                        //         onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                        //     },],
                         filterByFields: [
                             {
                                 key: "warehouse_id",

@@ -57,14 +57,13 @@ interface ItemFormValues {
 }
 
 const ItemSchema = Yup.object().shape({
-  itemCode: Yup.string().required("Item Code is required"),
   itemName: Yup.string().required("Item Name is required"),
   itemCategory: Yup.string().required("Category is required"),
   itemDesc: Yup.string().required("Category is required"),
   ErpCode: Yup.string().required("ERP Code is required"),
   brand: Yup.string().required("Brand is required"),
   itemSubCategory: Yup.string().required("Sub Category is required"),
-  itemWeight: Yup.number().typeError("Item Weight must be a number"),
+  itemWeight: Yup.number().typeError("Item Weight must be a number").required("Item Weight is required"),
   shelfLife: Yup.number().required("Shelf Life is required"),
   volume: Yup.number().required("Volume is required"),
   is_Promotional: Yup.string().required("Select if Promotional"),
@@ -95,7 +94,6 @@ const ItemSchema = Yup.object().shape({
 
 const StepSchemas = [
   ItemSchema.pick([
-    "itemCode",
     "ErpCode",
     "itemName",
     "itemCategory",
@@ -238,6 +236,7 @@ export default function AddEditItem() {
     isStockKeepingUnit: string;
     quantity?: string;
     enableFor: string;
+    [key: string]: string | undefined; // Add index signature for dynamic access
   }
 
   const [uomList, setUomList] = useState<UomRow[]>([]);
@@ -250,38 +249,79 @@ export default function AddEditItem() {
     quantity: "",
     enableFor: "",
   });
+  // Dummy state to force re-render for validation errors
+  const [uomValidationTick, setUomValidationTick] = useState(0);
 
   const handleUomChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setUomData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddUom = () => {
-    if (editingIndex !== null) {
-      // Update existing UOM
-      setUomList((prev) => {
-        const updated = [...prev];
-        updated[editingIndex] = uomData;
-        return updated;
-      });
-      setEditingIndex(null); // Reset editing
-      showSnackbar("UOM updated successfully", "success");
-    } else {
-      // Add new UOM
-      setUomList((prev) => [...prev, uomData]);
-      showSnackbar("UOM added successfully", "success");
-    }
-
-    // Reset input fields
-    setUomData({
-      uom: "",
-      uomType: "",
-      upc: "",
-      price: "",
-      isStockKeepingUnit: "no",
-      quantity: "",
-      enableFor: "",
+  const handleAddUom = async () => {
+    // Use Yup validation for UOM fields
+    const UomSchema = Yup.object().shape({
+      uom: Yup.string().required("UOM is required"),
+      uomType: Yup.string().required("UOM Type is required"),
+      upc: Yup.string().required("UPC is required"),
+      price: Yup.number().typeError("Price must be a number").required("Price is required"),
+      isStockKeepingUnit: Yup.string().oneOf(["yes", "no"], "Select Yes or No").required("Is Stock Keeping Unit is required"),
+      enableFor: Yup.string().required("Enable For is required"),
+      quantity: Yup.string().when("isStockKeepingUnit", (isStockKeepingUnit, schema) => {
+        return String(isStockKeepingUnit) === "yes"
+          ? schema.required("Quantity is required when Stock Keeping Unit is Yes")
+          : schema.notRequired();
+      }),
     });
+
+    try {
+      await UomSchema.validate(uomData, { abortEarly: false });
+      // If valid, clear errors for UOM fields
+      setErrors((prev) => ({ ...prev, uom: undefined, uomType: undefined, upc: undefined, price: undefined, isStockKeepingUnit: undefined, enableFor: undefined, quantity: undefined }));
+      setTouched((prev) => ({ ...prev, uom: false, uomType: false, upc: false, price: false, isStockKeepingUnit: false, enableFor: false, quantity: false }));
+
+      if (editingIndex !== null) {
+        // Update existing UOM
+        setUomList((prev) => {
+          const updated = [...prev];
+          updated[editingIndex] = uomData;
+          return updated;
+        });
+        setEditingIndex(null); // Reset editing
+        showSnackbar("UOM updated successfully", "success");
+      } else {
+        // Add new UOM
+        setUomList((prev) => [...prev, uomData]);
+        showSnackbar("UOM added successfully", "success");
+      }
+
+      // Reset input fields
+      setUomData({
+        uom: "",
+        uomType: "",
+        upc: "",
+        price: "",
+        isStockKeepingUnit: "no",
+        quantity: "",
+        enableFor: "",
+      });
+    } catch (err) {
+      if (err instanceof Yup.ValidationError) {
+        // Set errors and touched for UOM fields
+        const uomErrors: Partial<Record<string, string>> = {};
+        const uomTouched: Partial<Record<string, boolean>> = {};
+        // Mark all fields as touched so errors show immediately
+        const allFields = ["uom", "uomType", "upc", "price", "isStockKeepingUnit", "enableFor", "quantity"];
+        allFields.forEach((field) => { uomTouched[field] = true; });
+        err.inner.forEach((e) => {
+          if (e.path) {
+            uomErrors[e.path] = e.message;
+          }
+        });
+        setErrors((prev) => ({ ...prev, ...uomErrors }));
+        setTouched((prev) => ({ ...prev, ...uomTouched }));
+        setUomValidationTick((tick) => tick + 1); // force re-render
+      }
+    }
   };
 
   const handleEditUom = (index: number) => {
@@ -531,13 +571,11 @@ export default function AddEditItem() {
             <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <InputFields
-                  required
                   label="Item Code"
                   name="itemCode"
                   value={values.itemCode}
                   onChange={(e) => setFieldValue("itemCode", e.target.value)}
                   disabled={true}
-                  error={touched.itemCode && errors.itemCode}
                 />
                 {/* {!isEditMode && (
                   <>
@@ -858,53 +896,73 @@ export default function AddEditItem() {
               <div >
                 <h2 className="text-xl font-bold mb-4">Add UOM</h2>
                 {/* Use 2 columns in grid here */}
-                <div className="grid grid-cols-2 gap-4">
-                  <InputFields
-                    required
-                    label="UOM"
-                    name="uom"
-                    value={uomData.uom}
-                    options={uomOptions}
-                    onChange={handleUomChange}
-                    error={touched.uom && errors.uom}
-                  />
-                  <InputFields
-                    required
-                    label="Type"
-                    name="uomType"
-                    value={uomData.uomType}
-                    options={[
-                      { label: "Primary", value: "primary" },
-                      { label: "Secondary", value: "secondary" }
-                    ]}
-                    onChange={handleUomChange}
-                    error={touched.uomType && errors.uomType}
-                  />
+                <div className="grid grid-cols-2 gap-4" key={uomValidationTick}>
+                  <div>
+                    <InputFields
+                      required
+                      label="UOM"
+                      name="uom"
+                      value={uomData.uom}
+                      options={uomOptions}
+                      onChange={handleUomChange}
+                      error={errors.uom}
+                    />
+                    {errors.uom && (
+                      <div className="text-xs text-red-500 mt-1">{errors.uom}</div>
+                    )}
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Type"
+                      name="uomType"
+                      value={uomData.uomType}
+                      options={[
+                        { label: "Primary", value: "primary" },
+                        { label: "Secondary", value: "secondary" }
+                      ]}
+                      onChange={handleUomChange}
+                      error={errors.uomType}
+                    />
+                    {errors.uomType && (
+                      <div className="text-xs text-red-500 mt-1">{errors.uomType}</div>
+                    )}
+                  </div>
                   {/* Add all other inputs also with className="w-full" */}
-                  <InputFields
-                    required
-                    label="UPC"
-                    type="number"
-                    name="upc"
-                    min={1}
-                    integerOnly={true}
-                    value={uomData.upc}
-                    onChange={handleUomChange}
-                    error={touched.upc && errors.upc}
-                    placeholder="Enter UPC"
-                  />
-                  <InputFields
-                    required
-                    label="Price"
-                    type="number"
-                    name="price"
-                    min={0}
-                    step={0.01}
-                    value={uomData.price}
-                    onChange={handleUomChange}
-                    error={touched.price && errors.price}
-                    placeholder="e.g. 500.00"
-                  />
+                  <div>
+                    <InputFields
+                      required
+                      label="UPC"
+                      type="number"
+                      name="upc"
+                      min={1}
+                      integerOnly={true}
+                      value={uomData.upc}
+                      onChange={handleUomChange}
+                      error={errors.upc}
+                      placeholder="Enter UPC"
+                    />
+                    {errors.upc && (
+                      <div className="text-xs text-red-500 mt-1">{errors.upc}</div>
+                    )}
+                  </div>
+                  <div>
+                    <InputFields
+                      required
+                      label="Price"
+                      type="number"
+                      name="price"
+                      min={0}
+                      step={0.01}
+                      value={uomData.price}
+                      onChange={handleUomChange}
+                      error={errors.price}
+                      placeholder="e.g. 500.00"
+                    />
+                    {errors.price && (
+                      <div className="text-xs text-red-500 mt-1">{errors.price}</div>
+                    )}
+                  </div>
 
                   <div>
                     <InputFields
@@ -922,6 +980,7 @@ export default function AddEditItem() {
                   {uomData.isStockKeepingUnit === "yes" ? (
                     <div>
                       <InputFields
+                        required
                         type="number"
                         label="Quantity"
                         name="quantity"
@@ -929,8 +988,11 @@ export default function AddEditItem() {
                         integerOnly={true}
                         value={uomData.quantity || ""}
                         onChange={handleUomChange}
-                        error={touched.quantity && errors.quantity}
+                        error={errors.quantity}
                       />
+                      {errors.quantity && (
+                        <div className="text-xs text-red-500 mt-1">{errors.quantity}</div>
+                      )}
                     </div>
                   ) : <div></div>}
 

@@ -116,6 +116,7 @@ interface OrderData {
     gross_total: number;
     net_total: number;
     total: number;
+    is_promotional?: boolean;
     item_uoms: {
       id: number;
       item_id: number;
@@ -163,8 +164,10 @@ interface ItemData {
   Total: string;
   available_stock?: string;
   preVat?: string;
+  is_promotional?: boolean;
   [key: string]:
     | string
+    | boolean
     | { label: string; value: string; price?: string; uom_type?: string }[]
     | undefined;
 }
@@ -175,7 +178,6 @@ export default function DeliveryAddEditPage() {
     uom_id: Yup.string().required("Please select a UOM"),
     Quantity: Yup.number()
       .typeError("Quantity must be a number")
-      .min(1, "Quantity must be at least 1")
       .required("Quantity is required"),
   });
 
@@ -236,6 +238,7 @@ export default function DeliveryAddEditPage() {
       Net: "",
       Vat: "",
       Total: "",
+      is_promotional: false,
     },
   ]);
 
@@ -489,6 +492,7 @@ export default function DeliveryAddEditPage() {
         item.Quantity = "1";
         item.item_label = "";
         item.available_stock = "";
+        item.is_promotional = false;
       } else {
         const selectedOrder =
           orderData?.find((order: any) => String(order.id) === value) ??
@@ -621,6 +625,7 @@ export default function DeliveryAddEditPage() {
         Vat: "0.00",
         Total: "0.00",
         available_stock: "",
+        is_promotional: false,
       },
     ]);
   };
@@ -642,6 +647,7 @@ export default function DeliveryAddEditPage() {
           Vat: "",
           Total: "",
           available_stock: "",
+          is_promotional: false,
         },
       ]);
       return;
@@ -695,6 +701,7 @@ export default function DeliveryAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
+        is_promotional: item.is_promotional ?? false,
       })),
     };
   };
@@ -992,6 +999,7 @@ export default function DeliveryAddEditPage() {
                             Net: "",
                             Vat: "",
                             Total: "",
+                            is_promotional: false,
                           }]);
                           setSkeleton((prev) => ({ ...prev, order_code: true }));
                           (async () => {
@@ -1037,6 +1045,7 @@ export default function DeliveryAddEditPage() {
                           Net: "",
                           Vat: "",
                           Total: "",
+                          is_promotional: false,
                         }]);
                         (async () => {
                           await fetchAgentDeliveries(
@@ -1078,20 +1087,35 @@ export default function DeliveryAddEditPage() {
                             const computedVat =
                               d.vat != null ? Number(d.vat) : 0;
                             const preVat = computedTotal - computedVat;
+                            // Ensure item_uoms is always an array
+                            const uomsArr = Array.isArray(d.item_uoms)
+                              ? d.item_uoms
+                              : d.item_uoms
+                                ? [d.item_uoms]
+                                : [];
+                            // Find the selected UOM option by uom_id
+                            const selectedUomId = d.uom_id ? String(d.uom_id) : "";
+                            const UOMOptions = uomsArr.map((uom: any) => ({
+                              label: uom.name ?? "",
+                              value: uom.id !== undefined ? String(uom.id) : (uom.uom_id !== undefined ? String(uom.uom_id) : ""),
+                              price: String(uom.price ?? ""),
+                            }));
+                            // If the selected UOM is not in the options, add it
+                            if (selectedUomId && !UOMOptions.some(opt => opt.value === selectedUomId) && d.uom_name) {
+                              UOMOptions.push({
+                                label: d.uom_name,
+                                value: selectedUomId,
+                                price: d.item_price != null ? String(d.item_price) : "",
+                              });
+                            }
                             return {
                               item_id: String(d.item_id ?? ""),
                               item_name: d.item_name ?? "",
                               item_label: `${d.erp_code ?? ""}${
                                 d.erp_code ? " - " : ""
                               }${d.item_name ?? ""}`,
-                              UOM: d.item_uoms
-                                ? d.item_uoms.map((uom: any) => ({
-                                    label: uom.name ?? "",
-                                    value: String(uom.id),
-                                    price: String(uom.price ?? ""),
-                                  }))
-                                : [],
-                              uom_id: d.uom_id ? String(d.uom_id) : "",
+                              UOM: UOMOptions,
+                              uom_id: selectedUomId,
                               Quantity: String(d.quantity ?? "1"),
                               Price:
                                 d.item_price != null
@@ -1119,6 +1143,7 @@ export default function DeliveryAddEditPage() {
                                   ? preVat.toFixed(2)
                                   : String(preVat)
                               ),
+                              is_promotional: d.is_promotional ?? false,
                             } as ItemData;
                           });
                           setItemData(
@@ -1137,6 +1162,7 @@ export default function DeliveryAddEditPage() {
                                     Net: "",
                                     Vat: "",
                                     Total: "",
+                                    is_promotional: false,
                                   },
                                 ]
                           );
@@ -1300,7 +1326,7 @@ export default function DeliveryAddEditPage() {
                                 // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={!row.uom_id || !values.order_code}
+                                disabled={!row.uom_id || !values.order_code || row.Quantity == 0}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement)
                                     .value;
@@ -1356,16 +1382,14 @@ export default function DeliveryAddEditPage() {
                           if (
                             !price ||
                             price === "" ||
-                            price === "0" ||
-                            price === "-"
+                           
+                            price === "0.00"
                           ) {
                             return (
                               <span
-                                className="
-                                  text-gray-400
-                                "
+                                
                               >
-                                -
+                                0.00
                               </span>
                             );
                           }

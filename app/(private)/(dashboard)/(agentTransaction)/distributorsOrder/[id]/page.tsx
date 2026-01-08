@@ -10,7 +10,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
-import { agentCustomerGlobalSearch, warehouseStockTopOrders, agentCustomerList, genearateCode, getAllActiveWarehouse, itemGlobalSearch, itemList, itemWarehouseStock, pricingHeaderGetItemPrice, saveFinalCode, warehouseList, warehouseListGlobalSearch } from "@/app/services/allApi";
+import { agentCustomerGlobalSearch, warehouseStockTopOrders, agentCustomerList, genearateCode, getAllActiveWarehouse, itemGlobalSearch, itemList, itemWarehouseStock, pricingHeaderGetItemPrice, saveFinalCode, warehouseList, warehouseListGlobalSearch, applyPromotion } from "@/app/services/allApi";
 import { addAgentOrder } from "@/app/services/agentTransaction";
 import { Formik, FormikHelpers, FormikProps, FormikValues } from "formik";
 import * as Yup from "yup";
@@ -18,6 +18,20 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import StepperForm, {
+  StepperStep,
+  useStepperForm,
+} from "@/app/components/stepperForm";
+
+import Link from "next/link";
+import { AnyARecord } from "dns";
+
+
 
 interface FormData {
   id: number,
@@ -94,8 +108,87 @@ interface ItemData {
   Vat: string;
   Total: string;
   available_stock?: string; // Store available warehouse stock for validation
-  [key: string]: string | { label: string; value: string; price?: string }[] | undefined;
+  [key: string]: string | { label: string; value: string; price?: string; isPrmotion?: boolean; }[] | undefined | any;
 }
+
+type OrderInput = {
+  customer_id: number;
+  warehouse_id: number;
+  details: {
+    item_id: number;
+    quantity: number;
+    uom_id: number;
+  }[];
+};
+
+type ConvertedOrder = {
+  customer_id: number;
+  warehouse_id: number;
+  items: {
+    item_id: number;
+    item_uom_id: number;
+    item_qty: number;
+  }[];
+};
+
+export function convertOrderPayload(order: any): ConvertedOrder {
+  return {
+    customer_id: order.customer_id,
+    warehouse_id: order.warehouse_id,
+    items: order.details.map((detail:any) => ({
+      item_id: detail.item_id,
+      item_uom_id: detail.uom_id,
+      item_qty: detail.quantity,
+    })),
+  };
+}
+
+type PromotionItems = {
+  id: number;
+  item_code: string;
+  item_name: string;
+  item_uom_id: string;
+  name: string;
+};
+
+type Promotion = {
+  id: number;
+  name: string;
+  bundle_combination: string;
+  promotion_type: string;
+  FocQty: number;
+  promotion_items: PromotionItems[];
+};
+
+type ResultItem = PromotionItems & {
+  focQty: number;
+};
+
+function getPromotionItemsByIndex(
+  promotions: Promotion[],
+  itemIds: number[]
+): ResultItem[] {
+  const result: ResultItem[] = [];
+
+  itemIds.forEach((itemId, index) => {
+    const promotion = promotions[index];
+    if (!promotion) return;
+
+    const matchedItem = promotion.promotion_items.find(
+      (item) => item.id === itemId
+    );
+
+    if (matchedItem) {
+      result.push({
+        ...matchedItem,
+        focQty: promotion.FocQty,
+      });
+    }
+  });
+
+  return result;
+}
+
 
 export default function OrderAddEditPage() {
   const itemRowSchema = Yup.object({
@@ -144,6 +237,10 @@ export default function OrderAddEditPage() {
     note: "",
     delivery_date: new Date().toISOString().slice(0, 10),
   };
+  const [openPromotion, setOpenPromotion] = useState(false);
+  const [promotions, setPromotions] = useState([]);
+  const [selectedPromotionsItems, setSelectedPromotionsItems] = useState([]);
+  const [checkout,setCheckout]=useState(1);
 
   const [orderData, setOrderData] = useState<FormData[]>([]);
   const [itemsOptions, setItemsOptions] = useState<{ label: string; value: string }[]>([]);
@@ -171,7 +268,7 @@ export default function OrderAddEditPage() {
 
   // per-row loading (for UOM / price) so UI can show skeletons while fetching
   const [itemLoading, setItemLoading] = useState<Record<number, { uom?: boolean; price?: boolean }>>({});
-  
+ 
   // Debounce timeout ref for warehouse selection
   const warehouseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const validateRow = async (index: number, row?: ItemData, options?: { skipUom?: boolean }) => {
@@ -187,7 +284,7 @@ export default function OrderAddEditPage() {
 
     try {
       const validationErrors: Record<string, string> = {};
-      
+     
       if (options?.skipUom) {
         // validate only item_id and Quantity to avoid showing UOM required immediately after selecting item
         try {
@@ -210,12 +307,12 @@ export default function OrderAddEditPage() {
         if (itemUOMData) {
           const totalStockQty = Number(itemUOMData.stock_qty);
           const currentUomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowData.uom_id));
-          
+         
           if (currentUomInfo) {
             const currentUpc = Number(itemUOMData.uomDetails[String(rowData.uom_id)]?.upc || "1");
             const requestedQuantity = Number(rowData.Quantity);
             const requestedInBaseUnits = requestedQuantity * currentUpc;
-            
+           
             // Calculate total used in base units for this item in other rows
             let totalUsedInBaseUnits = 0;
             itemData.forEach((item, i) => {
@@ -227,9 +324,9 @@ export default function OrderAddEditPage() {
                 }
               }
             });
-            
+           
             const totalRequestedInBaseUnits = requestedInBaseUnits + totalUsedInBaseUnits;
-            
+           
             if (totalRequestedInBaseUnits > totalStockQty) {
               const availableInCurrentUom = Math.floor((totalStockQty - totalUsedInBaseUnits) / currentUpc);
               if (totalUsedInBaseUnits > 0) {
@@ -268,12 +365,12 @@ export default function OrderAddEditPage() {
         if (itemUOMData) {
           const totalStockQty = Number(itemUOMData.stock_qty);
           const currentUomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowData.uom_id));
-          
+         
           if (currentUomInfo) {
             const currentUpc = Number(itemUOMData.uomDetails[String(rowData.uom_id)]?.upc || "1");
             const requestedQuantity = Number(rowData.Quantity);
             const requestedInBaseUnits = requestedQuantity * currentUpc;
-            
+           
             // Calculate total used in base units for this item in other rows
             let totalUsedInBaseUnits = 0;
             itemData.forEach((item, i) => {
@@ -285,9 +382,9 @@ export default function OrderAddEditPage() {
                 }
               }
             });
-            
+           
             const totalRequestedInBaseUnits = requestedInBaseUnits + totalUsedInBaseUnits;
-            
+           
             if (totalRequestedInBaseUnits > totalStockQty) {
               const availableInCurrentUom = Math.floor((totalStockQty - totalUsedInBaseUnits) / currentUpc);
               if (totalUsedInBaseUnits > 0) {
@@ -315,7 +412,7 @@ export default function OrderAddEditPage() {
 
     try {
       setSkeleton(prev => ({ ...prev, item: true }));
-      
+     
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
       const stockRes = await warehouseStockTopOrders(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
@@ -337,10 +434,10 @@ export default function OrderAddEditPage() {
 
       // Create items with UOM data map for easy access
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string, uomDetails: Record<string, { upc: string }> }> = {};
-      
+     
       const processedItems = filteredStocks.map((stockItem: any) => {
         const uomDetailsMap: Record<string, { upc: string }> = {};
-        
+       
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
           // Override with specific pricing from the API response
@@ -349,13 +446,13 @@ export default function OrderAddEditPage() {
           } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || "-";
           }
-          
+         
           // Store UPC for each UOM
-          const uomId = uom.id || `${stockItem.item_id}_${uom.uom_type}`;
+          const uomId = uom.uom_id;
           uomDetailsMap[String(uomId)] = { upc: String(uom.upc || "1") };
-          
-          return { 
-            ...uom, 
+         
+          return {
+            ...uom,
             price,
             id: uomId,
             item_id: stockItem.item_id
@@ -369,7 +466,7 @@ export default function OrderAddEditPage() {
           uomDetails: uomDetailsMap
         };
 
-        return { 
+        return {
           id: stockItem.item_id,
           name: stockItem.item_name,
           item_code: stockItem.item_code,
@@ -394,7 +491,7 @@ export default function OrderAddEditPage() {
 
       setItemsOptions(options);
       setSkeleton(prev => ({ ...prev, item: false }));
-      
+     
       return options;
     } catch (error) {
       console.error("Error fetching warehouse items:", error);
@@ -436,32 +533,32 @@ export default function OrderAddEditPage() {
     if (!uomInfo) return "";
 
     const upc = Number(itemUOMData.uomDetails[String(uomId)]?.upc || "1");
-    
+   
     // Use provided data or fall back to state
     const dataToUse = currentData || itemData;
-    
+   
     // Calculate total consumed stock in base units (primary UOM) across all rows except current
     let totalConsumedInBaseUnits = 0;
-    
+   
     dataToUse.forEach((row, idx) => {
       if (idx === currentRowIndex || row.item_id !== itemId) return;
-      
+     
       const rowUomId = row.uom_id;
       if (!rowUomId) return;
-      
+     
       const rowUomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowUomId));
       if (!rowUomInfo) return;
-      
+     
       const rowUpc = Number(itemUOMData.uomDetails[String(rowUomId)]?.upc || "1");
       const rowQty = Number(row.Quantity) || 0;
-      
+     
       // Convert to base units
       totalConsumedInBaseUnits += rowQty * rowUpc;
     });
 
     // Calculate remaining stock in base units
     const remainingBaseUnits = totalStockQty - totalConsumedInBaseUnits;
-    
+   
     // Convert to the current UOM
     if (uomInfo.uom_type === "secondary") {
       // Secondary UOM (e.g., CSE): divide by UPC and floor
@@ -500,15 +597,15 @@ export default function OrderAddEditPage() {
             } else if (uom?.uom_type === "secondary") {
               price = stockItem.buom_ctn_price || uom.price;
             }
-            return { 
-              ...uom, 
+            return {
+              ...uom,
               price,
               id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
               item_id: stockItem.item_id
             };
           }) : [];
 
-          return { 
+          return {
             id: stockItem.item_id,
             name: stockItem.item_name,
             item_code: stockItem.item_code,
@@ -616,19 +713,19 @@ export default function OrderAddEditPage() {
       } else {
         const selectedOrder = orderData.find((order: FormData) => order.id.toString() === value);
         const itemUOMData = itemsWithUOM[value];
-        
+       
         item.item_id = selectedOrder ? String(selectedOrder.id || value) : value;
         item.item_name = selectedOrder?.name ?? "";
-        
+       
         if (itemUOMData?.uoms) {
-          item.UOM = itemUOMData.uoms.map(uom => ({ 
-            label: uom.name, 
-            value: String(uom.id || ''), 
-            price: uom.price 
+          item.UOM = itemUOMData.uoms.map(uom => ({
+            label: uom.name,
+            value: String(uom.id || ''),
+            price: uom.price
           }));
           item.uom_id = itemUOMData.uoms[0]?.id ? String(itemUOMData.uoms[0].id) : "";
           item.Price = itemUOMData.uoms[0]?.price ? String(itemUOMData.uoms[0].price) : "";
-          
+         
           // Calculate available stock for the first UOM
           const firstUomId = String(itemUOMData.uoms[0]?.id || "");
           if (firstUomId) {
@@ -645,13 +742,13 @@ export default function OrderAddEditPage() {
             } else if (uom.uom_type === "secondary") {
               price = selectedOrder.pricing?.buom_ctn_price || uom.price;
             }
-            return { 
-              label: uom.name, 
-              value: String(uom.id || ''), 
-              price: price 
+            return {
+              label: uom.name,
+              value: String(uom.id || ''),
+              price: price
             };
           });
-          
+         
           // Set price based on UOM type
           const firstUom = selectedOrder.item_uoms[0];
           if (firstUom) {
@@ -675,7 +772,7 @@ export default function OrderAddEditPage() {
           item.Price = "";
           item.available_stock = "";
         }
-        
+       
         item.Quantity = "1";
         // persist a readable label
         const computedLabel = selectedOrder ? `${selectedOrder.item_code ?? selectedOrder.erp_code ?? ''}${selectedOrder.item_code || selectedOrder.erp_code ? ' - ' : ''}${selectedOrder.name ?? ''}` : "";
@@ -697,7 +794,7 @@ export default function OrderAddEditPage() {
       if (selectedUOM?.price) {
         item.Price = selectedUOM.price;
       }
-      
+     
       // Recalculate available stock based on new UOM
       if (item.item_id) {
         const newAvailableStock = calculateAvailableStock(item.item_id, value, index);
@@ -734,7 +831,7 @@ export default function OrderAddEditPage() {
         newData[index] = item;
         setItemData(newData);
         validateRow(index, newData[index]);
-        
+       
         // Revalidate all other rows with the same item (for validation errors only)
         newData.forEach((otherItem, otherIndex) => {
           if (otherIndex !== index && otherItem.item_id === item.item_id) {
@@ -839,6 +936,7 @@ export default function OrderAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
+        isPrmotion: item.isPrmotion  == true ? true : false,
       })),
     };
   };
@@ -870,7 +968,7 @@ export default function OrderAddEditPage() {
 
         const totalStockQty = Number(itemUOMData.stock_qty);
         const uomInfo = itemUOMData.uoms.find(u => String(u.id) === String(item.uom_id));
-        
+       
         if (!uomInfo) return;
 
         const upc = Number(itemUOMData.uomDetails[String(item.uom_id)]?.upc || "1");
@@ -900,6 +998,27 @@ export default function OrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
+      console.log(payload,"payload")
+      let promotionPayload = convertOrderPayload(payload)
+      console.log(promotionPayload,"promotionPayload")
+      const promotionRes = await applyPromotion(promotionPayload);
+      console.log(promotionRes,"promotionRes")
+      if(checkout == 1)
+      {
+      if (promotionRes?.data?.itemPromotionInfo.length > 0) {
+       
+        // setPromotions(data);
+        setPromotions(promotionRes?.data?.itemPromotionInfo);
+         setOpenPromotion(true);
+
+      }
+      else{
+
+
+        setCheckout(2);
+      }
+    }
+      else{
       const res = await addAgentOrder(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create order", "error");
@@ -916,6 +1035,8 @@ export default function OrderAddEditPage() {
         showSnackbar("Order created successfully", "success");
         router.push("/distributorsOrder");
       }
+    }
+   
     } catch (err) {
       console.error(err);
       showSnackbar("Failed to submit order", "error");
@@ -1050,7 +1171,7 @@ export default function OrderAddEditPage() {
                           setFieldValue("warehouse", e.target.value);
                           setSkeleton((prev) => ({ ...prev, customer: true }));
                           setFieldValue("customer", "");
-                          
+                         
                           // Reset items when warehouse changes
                           setItemData([{
                             item_id: "",
@@ -1066,7 +1187,7 @@ export default function OrderAddEditPage() {
                             Total: "",
                             available_stock: "",
                           }]);
-                          
+                         
                           // Trigger debounced warehouse items fetch
                           handleWarehouseChange(e.target.value);
                         } else {
@@ -1093,17 +1214,17 @@ export default function OrderAddEditPage() {
                       }}
                       onClear={() => {
                         setFieldValue("customer", "");
-                        setItemData([{ 
-                          item_id: "", 
-                          item_name: "", 
-                          item_label: "", 
-                          UOM: [], 
-                          Quantity: "1", 
-                          Price: "", 
-                          Excise: "", 
-                          Discount: "", 
-                          Net: "", 
-                          Vat: "", 
+                        setItemData([{
+                          item_id: "",
+                          item_name: "",
+                          item_label: "",
+                          UOM: [],
+                          Quantity: "1",
+                          Price: "",
+                          Excise: "",
+                          Discount: "",
+                          Net: "",
+                          Vat: "",
                           Total: "",
                           available_stock: ""
                         }]);
@@ -1154,6 +1275,7 @@ export default function OrderAddEditPage() {
                     Vat: String(row.Vat ?? ""),
                     Total: String(row.Total ?? ""),
                     PreVat: String(row.PreVat ?? ""),
+                    isPrmotion: row.isPrmotion ? true : false,
                     available_stock: String(row.available_stock ?? ""),
                   }))}
                   config={{
@@ -1225,7 +1347,7 @@ export default function OrderAddEditPage() {
                           const availableStock = currentItem?.available_stock;
                           const itemId = currentItem?.item_id;
                           const uomId = currentItem?.uom_id;
-                          
+                         
                           // Get UOM name for display
                           let uomName = "";
                           if (itemId && uomId) {
@@ -1233,7 +1355,7 @@ export default function OrderAddEditPage() {
                             const uomInfo = itemUOMData?.uoms.find(u => String(u.id) === String(uomId));
                             uomName = uomInfo?.name || "";
                           }
-                          
+                         
                           return (
                             <div className={`${ availableStock ? "pt-5" : ""}`}>
                               <InputFields
@@ -1241,8 +1363,9 @@ export default function OrderAddEditPage() {
                                 type="number"
                                 name="Quantity"
                                 placeholder="Enter Qty"
+                         
                                 value={row.Quantity}
-                                disabled={!row.uom_id || !values.customer}
+                                disabled={!row.uom_id || !values.customer || row.isPrmotion}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement).value;
                                   const intPart = raw.split('.')[0];
@@ -1256,7 +1379,7 @@ export default function OrderAddEditPage() {
                               />
                               {availableStock && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  Available Stock: {availableStock} 
+                                  Available Stock: {availableStock}
                                 </div>
                               )}
                             </div>
@@ -1368,13 +1491,253 @@ export default function OrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : "Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
+                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );
           }}
         </Formik>
       </ContainerCard>
+
+        <Dialog
+        open={openPromotion}
+        onClose={()=>setOpenPromotion(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+       
+      >
+        <DialogContent>
+          {/* <DialogContentText id="alert-dialog-description"> */}
+           <PromotionStepper setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
+          {/* </DialogContentText> */}
+        </DialogContent>
+       
+      </Dialog>
     </div>
   );
 }
+
+
+
+
+
+
+
+// const promotions = [
+//   {
+//     id: 77,
+//     name: "CSD (10+1) Special",
+//     bundle_combination: "range",
+//     promotion_type: "quantity",
+//     FocQty: 1,
+//     promotion_items: [],
+//   },
+//   {
+//     id: 78,
+//     name: "New Year Offer",
+//     bundle_combination: "single",
+//     promotion_type: "amount",
+//     FocQty: 2,
+//     promotion_items: [],
+//   },
+// ];
+
+
+
+ function PromotionStepper({setCheckout, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
+  const { showSnackbar } = useSnackbar();
+
+  /** 🔹 Convert promotions → steps */
+  const steps: StepperStep[] = promotions.map((promo:any, index:any) => ({
+    id: index + 1,
+    label: promo.name,
+  }));
+
+  const {
+    currentStep,
+    nextStep,
+    prevStep,
+    isLastStep,
+    markStepCompleted,
+    isStepCompleted,
+  } = useStepperForm(steps.length);
+
+  const handleNext = () => {
+    markStepCompleted(currentStep);
+    nextStep();
+  };
+
+  const handleSubmit = () => {
+    console.log(selectedPromotionsItems,"selectedPromotionsItems",itemData)
+
+    let result = getPromotionItemsByIndex(promotions,selectedPromotionsItems)
+    console.log(result,"result",selectedPromotionsItems)
+
+    result.map((item:any)=>{
+      console.log(item,"item")
+      itemData.push({
+      item_id: item.id,
+      item_name: `${item.item_code}-${item.item_name}`,
+      item_label: `${item.item_code}-${item.item_name}`,
+      UOM: [{
+        value: item.item_uom_id,
+        label: item.name,
+      }],
+      uom_id: item.item_uom_id,
+      Quantity: item.focQty,
+      Price: "0.00",
+      Excise: "0",
+      Discount: "0",
+      Net: "0",
+      Vat: "0",
+      Total: "0.00",
+      available_stock: "",
+      isPrmotion: true,
+    })
+    })
+      //  itemData.pop()
+       setItemData([...itemData]);
+
+   
+    // recalculateItem(Number(itemData.length), "item_id", selectedPromotionsItems[0])
+setOpenPromotion(false);
+setCheckout(2)
+    // showSnackbar("All promotions processed successfully", "success");
+  };
+
+
+
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-4">
+        <Link href="/promotion">
+          <Icon icon="lucide:arrow-left" width={22} />
+        </Link>
+        <h1 className="text-xl font-semibold">
+          Promotion Setup
+        </h1>
+      </div>
+
+      <StepperForm
+        steps={steps.map((step) => ({
+          ...step,
+          isCompleted: isStepCompleted(step.id),
+        }))}
+        currentStep={currentStep}
+        onStepClick={() => {}}
+        onBack={prevStep}
+        onNext={handleNext}
+        onSubmit={handleSubmit}
+        showSubmitButton={isLastStep}
+        showNextButton={!isLastStep}
+        nextButtonText="Save & Next"
+        submitButtonText="Finish"
+      >
+        <RenderStepContent promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} setSelectedPromotionsItems={setSelectedPromotionsItems} setPromotions={setPromotions} currentStep={currentStep} promotionItems={promotions.promotion_items}/>
+      </StepperForm>
+    </>
+  );
+}
+
+
+
+interface PromotionItem {
+  id: number;
+  item_code: string;
+  item_name: string;
+  item_uom_id: string;
+  name: any;
+}
+
+interface Props {
+  promotionItems: PromotionItem[];
+  qtyData: Record<number, string>;
+ 
+  setQtyData: (idx: number, value: string) => void;
+}
+
+ function PromotionItemsQtyTable({
+  selectedItems, setSelectedItems, promotions, setPromotions, currentStep, selectedPromotionsItems, setSelectedPromotionsItems,
+  promotionItems,
+}: any) {
+  const [qtyData, setQtyData] = useState<any>(0);
+  const [selects, setSelects] = useState<any>("");
+
+  useEffect(() => {
+    const selectedItemId = selectedPromotionsItems[currentStep - 1] || "";
+    setSelects(selectedItemId);
+  }, [currentStep, selectedPromotionsItems]);
+                          // const options = JSON.parse(row.UOM ?? "[]");
+
+
+  return (
+    <div style={{height:"300px"}}>
+       <InputFields
+                                label=""
+                                name={`item_id`}
+                                value={selects}
+                                searchable={true}
+                                onChange={(e) => {
+                                  console.log(e.target.value,"e.target.value")
+                                  setSelects(e.target.value);    
+                                  selectedPromotionsItems[currentStep - 1] = e.target.value;
+                                  console.log(selectedPromotionsItems,"selectedPromotionsItems1.2")
+                                  setSelectedPromotionsItems([...selectedPromotionsItems]);  
+
+                                }}
+                                options={promotionItems.map((row:any, idx:any) => ({
+                                  value: row.id,
+                                  label: row.item_name,
+      }))}
+                                placeholder="Search item"
+                                // disabled={!values.customer}
+                                // error={err && err}
+                              />
+                              <div className="mt-4">
+                              <InputFields
+                                label="Quantity"
+                                type="number"
+                                name="Quantity"
+                                placeholder="Enter Qty"
+                                value={promotions[currentStep - 1]?.FocQty}
+                                onChange={(e) => {
+                                   
+                                }}
+                               disabled={true}
+                              />
+                             
+                              </div>
+                               <div>
+                              <InputFields
+                                label="Uom"
+                                value={promotionItems[0]?.name}
+                                placeholder="Select UOM"
+                                width="max-w-[150px]"
+                                onChange={()=>{}}
+                                disabled={true}
+                              />
+                            </div>
+
+    </div>
+  );
+}
+
+    const RenderStepContent = ({promotions,selectedPromotionsItems,setSelectedPromotionsItems,setPromotions,currentStep,promotionItems}:any) => {
+    const promotion = promotions[currentStep - 1];
+  const [selectedItems, setSelectedItems] = useState<any>(selectedPromotionsItems[currentStep - 1]);
+   
+
+    return (
+      <ContainerCard>
+
+        <PromotionItemsQtyTable selectedItems={selectedItems} setSelectedItems={setSelectedItems} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} setSelectedPromotionsItems={setSelectedPromotionsItems} setPromotions={setPromotions} currentStep={currentStep} promotionItems={promotion.promotion_items}/>
+       
+         
+        {/* <h2 className="mb-4 text-lg font-semibold">
+          {promotion?.name}
+        </h2> */}
+
+     
+      </ContainerCard>
+    );
+  };

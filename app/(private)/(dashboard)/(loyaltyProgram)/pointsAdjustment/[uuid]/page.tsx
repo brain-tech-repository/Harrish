@@ -335,8 +335,8 @@ export default function AddEditTier() {
             <div className="flex flex-col">
               <AutoSuggestion
                 required
-                label="Warehouse"
-                placeholder="Search warehouse"
+                label="Distributor"
+                placeholder="Search distributor"
                 onSearch={(q) => fetchWarehouses(q)}
                 selectedOption={selectedWarehouseOption}
                 onSelect={(opt) => {

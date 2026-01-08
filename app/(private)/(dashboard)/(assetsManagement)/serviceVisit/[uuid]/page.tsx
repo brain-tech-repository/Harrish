@@ -1,38 +1,39 @@
 
 "use client";
 
-import StepperForm, {
-    useStepperForm,
-    StepperStep,
-} from "@/app/components/stepperForm";
 import ContainerCard from "@/app/components/containerCard";
-import InputFields from "@/app/components/inputFields";
-import { useSnackbar } from "@/app/services/snackbarContext";
-import { useRouter } from "next/navigation";
-import * as Yup from "yup";
-import {
-    Formik,
-    Form,
-    FormikHelpers,
-    FormikErrors,
-    FormikTouched,
-    ErrorMessage,
-} from "formik";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import InputFields from "@/app/components/inputFields";
+import StepperForm, {
+    StepperStep,
+    useStepperForm,
+} from "@/app/components/stepperForm";
+import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import axios from "axios";
+import {
+    ErrorMessage,
+    Form,
+    Formik,
+    FormikErrors,
+    FormikHelpers,
+    FormikTouched,
+} from "formik";
+import { useRouter } from "next/navigation";
+import * as Yup from "yup";
 
-import { warehouseList } from "@/app/services/allApi";
+import Loading from "@/app/components/Loading";
+import { saveFinalCode } from "@/app/services/allApi";
 import {
     addServiceVisit,
+    chillerList,
     getServiceVisitById,
-    updateServiceVisit,
+    getTechicianList,
+    serviceVisitGenearateCode,
+    updateServiceVisit
 } from "@/app/services/assetsApi";
-import { salesmanList } from "@/app/services/allApi";
-import { channelList } from "@/app/services/allApi";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Loading from "@/app/components/Loading";
+import { useEffect, useRef, useState } from "react";
 
 // File validation helper
 const FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
@@ -76,16 +77,23 @@ const validationSchema = Yup.object({
         .trim()
         .required("Outlet Name is required")
         .max(100, "Outlet Name cannot exceed 100 characters"),
+    // owner_name: Yup.string()
+    //     .trim()
+    //     .required("Owner Name is required")
+    //     .max(100, "Owner Name cannot exceed 100 characters"),
     contact_person: Yup.string()
         .trim()
         .max(100, "Contact Person cannot exceed 100 characters"),
     technician_id: Yup.string()
         .trim()
         .max(100, "Technician ID cannot exceed 100 characters"),
-    ct_status: Yup.boolean(),
+    ticket_status: Yup.boolean(),
     cts_comment: Yup.string()
         .trim()
         .max(255, "CTS Comment cannot exceed 255 characters"),
+    chiller_id: Yup.string()
+        .trim()
+        .max(100, "Chiller ID cannot exceed 100 characters"),
     model_no: Yup.string()
         .trim()
         .max(100, "Model No cannot exceed 100 characters"),
@@ -145,18 +153,20 @@ const stepSchemas = [
         ticket_type: validationSchema.fields.ticket_type,
         time_in: validationSchema.fields.time_in,
         time_out: validationSchema.fields.time_out,
+        ticket_status: validationSchema.fields.ticket_status,
     }),
     Yup.object().shape({
         outlet_name: validationSchema.fields.outlet_name,
+        // owner_name: validationSchema.fields.owner_name,
         contact_person: validationSchema.fields.contact_person,
         technician_id: validationSchema.fields.technician_id,
-        ct_status: validationSchema.fields.ct_status,
         cts_comment: validationSchema.fields.cts_comment,
 
     }),
 
     // Step 2: Location and Personnel
     Yup.object().shape({
+        chiller_id: validationSchema.fields.chiller_id,
         model_no: validationSchema.fields.model_no,
         serial_no: validationSchema.fields.serial_no,
         asset_no: validationSchema.fields.asset_no,
@@ -199,16 +209,20 @@ const stepSchemas = [
 ];
 
 type ServiceVisit = {
+    model_name: string;
     osa_code: string;
     outlet_name: string;
+    // owner_name: string;
     contact_person: string;
     ticket_type: string;
     time_in: string;
     time_out: string;
+    status: string;
     model_no: string;
     serial_no: string;
     asset_no: string;
     branding: string;
+    ticket_status: string;
     ct_status: string;
     technician_id: string;
     is_machine_in_working: string;
@@ -223,6 +237,7 @@ type ServiceVisit = {
     cts_comment: string;
     current_voltage: string;
     amps: string;
+    chiller_id: string;
     cabin_temperature: string;
     work_status: string;
     technical_behaviour: string;
@@ -249,6 +264,13 @@ type FileField = {
     label: string;
     accept?: string;
 };
+
+const TICKET_MODEL_MAP: Record<string, string> = {
+    BD: "BD",
+    RB: "RB",
+    TR: "TR",
+};
+
 
 const fileFields: FileField[] = [
     { fieldName: "type_details_photo1", label: "Type Details Photo 1", accept: "image/*,.pdf" },
@@ -292,10 +314,15 @@ export default function AddServiceVisitStepper() {
     const [isLoading, setIsLoading] = useState(true);
     const [existingData, setExistingData] = useState<ServiceVisit | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { channelOptions, assetsModelOptions, locationOptions, brandingOptions, ensureBrandingLoaded, ensureChannelLoaded, ensureAssetsModelLoaded, ensureLocationLoaded } = useAllDropdownListData();
-
+    const { channelOptions, assetsModelOptions, agentCustomerOptions, brandingOptions, ensureAgentCustomerLoaded, ensureBrandingLoaded, ensureChannelLoaded, ensureAssetsModelLoaded, ensureLocationLoaded } = useAllDropdownListData();
+    const [technicianOptions, setTechnicianOptions] = useState<{ value: string; label: string }[]>([]);
+    const [chillerOptions, setChillerOptions] = useState<{ value: string; label: string }[]>([]);
+    const codeGeneratedRef = useRef(false);
     const params = useParams();
     const uuid = params?.id;
+    const isAddMode = uuid === "add" || !uuid;
+    const [chillers, setChillers] = useState<any[]>([]);
+
 
     const steps: StepperStep[] = [
         { id: 1, label: "Basic Information" },
@@ -323,7 +350,55 @@ export default function AddServiceVisitStepper() {
         ensureLocationLoaded();
         ensureAssetsModelLoaded();
         ensureBrandingLoaded();
+        ensureAgentCustomerLoaded();
     }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const response = await getTechicianList();
+                const techData = Array.isArray(response?.data)
+                    ? response.data
+                    : (response?.data?.data || []);
+
+                const options = techData.map((item: { id: string | number; osa_code: string; name: string }) => ({
+                    value: String(item.id),
+                    label: `${item.osa_code} - ${item.name}`,
+                }));
+
+                setTechnicianOptions(options);
+            } catch (error) {
+                showSnackbar("Failed to fetch technician data", "error");
+            }
+        })();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const response = await chillerList();
+
+                const chillerData = Array.isArray(response?.data)
+                    ? response.data
+                    : response?.data?.data ?? [];
+
+                setChillers(chillerData);
+
+                const options = chillerData.map((item: any) => ({
+                    value: String(item.id),
+                    label: item.osa_code,
+                }));
+
+                setChillerOptions(options);
+            } catch (error) {
+                showSnackbar("Failed to fetch chiller data", "error");
+            }
+        })();
+    }, []);
+
+    // This effect will be handled inside the Formik component through onChange handler
+
+
 
     useEffect(() => {
         const checkEditMode = async () => {
@@ -354,17 +429,22 @@ export default function AddServiceVisitStepper() {
 
                 // Transform the API response to match our ServiceVisit type
                 const transformedData: ServiceVisit = {
+                    model_name: data.model_name || "",
                     osa_code: data.osa_code || "",
                     outlet_name: data.outlet_name || "",
+                    // owner_name: data.owner_name || "",
                     contact_person: data.contact_person || "",
                     ticket_type: data.ticket_type || "",
                     time_in: data.time_in || "",
                     time_out: data.time_out || "",
                     model_no: data.model_no || "",
+                    status: data.status || "",
                     serial_no: data.serial_no || "",
                     asset_no: data.asset_no || "",
                     branding: data.branding || "",
+                    ticket_status: data.ticket_status || "",
                     ct_status: data.ct_status || "",
+                    chiller_id: data.chiller_id || "",
                     is_machine_in_working: data.is_machine_in_working || "",
                     cleanliness: data.cleanliness || "",
                     condensor_coil_cleand: data.condensor_coil_cleand || "",
@@ -440,6 +520,31 @@ export default function AddServiceVisitStepper() {
             setIsLoading(false);
         }
     };
+
+    const ticketTypeRef = useRef<string>("");
+
+    const handleTicketTypeChange = async (ticketType: string) => {
+        if (!ticketType) return;
+
+        const modelName = TICKET_MODEL_MAP[ticketType];
+        if (!modelName) return;
+
+        // prevent re-trigger in edit mode
+        if (codeGeneratedRef.current) return;
+
+        try {
+            codeGeneratedRef.current = true;
+
+            const res = await serviceVisitGenearateCode({
+                model_name: modelName,
+            });
+
+            // This will be called from the form with setFieldValue
+        } catch (err) {
+            showSnackbar("Failed to generate code", "error");
+        }
+    };
+
 
 
     const handleFileChange = (
@@ -601,17 +706,22 @@ export default function AddServiceVisitStepper() {
     };
 
     const initialValues: ServiceVisit = {
+        model_name: "",
         osa_code: "",
         outlet_name: "",
+        // owner_name: "",
         contact_person: "",
         ticket_type: "",
         time_in: "",
         time_out: "",
+        status: "",
         model_no: "",
         serial_no: "",
         asset_no: "",
         branding: "",
+        ticket_status: "",
         ct_status: "",
+        chiller_id: "",
         is_machine_in_working: "",
         cleanliness: "",
         condensor_coil_cleand: "",
@@ -642,7 +752,7 @@ export default function AddServiceVisitStepper() {
     };
 
     const stepFields = [
-        ["owner_name", "outlet_name", "landmark", "district", "location", "town_village", "longitude", "latitude", "contact_no", "contact_no2", "contact_person", "ticket_type", "time_in", "time_out", "model_no", "serial_no", "asset_no", "branding", "ct_status", "is_machine_in_working", "cleanliness", "condensor_coil_cleand", "gaskets", "light_working", "branding_no", "propper_ventilation_available", "leveling_positioning", "stock_availability_in", "complaint_type", "comment", "cts_comment", "spare_part_used", "pending_other_comments", "any_dispute", "current_voltage", "amps", "cabin_temperature", "work_status", "wrok_status_pending_reson", "spare_request", "work_done_type", "spare_details", "technical_behaviour", "service_quality", "nature_of_call_id", "technician_id", "type_details_photo1", "type_details_photo2"],
+        ["owner_name", "outlet_name", "landmark", "district", "location", "town_village", "longitude", "latitude", "contact_no", "contact_no2", "contact_person", "ticket_type", "time_in", "time_out", "model_no", "serial_no", "asset_no", "branding", "ticket_status", "is_machine_in_working", "cleanliness", "condensor_coil_cleand", "gaskets", "light_working", "branding_no", "propper_ventilation_available", "leveling_positioning", "stock_availability_in", "complaint_type", "comment", "cts_comment", "spare_part_used", "pending_other_comments", "any_dispute", "current_voltage", "amps", "cabin_temperature", "work_status", "wrok_status_pending_reson", "spare_request", "work_done_type", "spare_details", "technical_behaviour", "service_quality", "nature_of_call_id", "technician_id", "type_details_photo1", "type_details_photo2"],
         ["is_machine_in_working_img", "cleanliness_img", "condensor_coil_cleand_img", "gaskets_img", "light_working_img", "branding_no_img", "propper_ventilation_available_img", "leveling_positioning_img", "stock_availability_in_img", "cooler_image", "cooler_image2", "customer_signature"],
 
     ];
@@ -729,6 +839,13 @@ export default function AddServiceVisitStepper() {
                     `ServiceVisit ${isEditMode ? "updated" : "added"} successfully`,
                     "success"
                 );
+
+                if (isAddMode) {
+                    await saveFinalCode({
+                        reserved_code: values.osa_code,
+                        model_name: values.osa_code,
+                    });
+                }
                 router.push("/serviceVisit");
             }
         } catch (error) {
@@ -763,14 +880,7 @@ export default function AddServiceVisitStepper() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
-                                    label="OSA Code"
-                                    name="osa_code"
-                                    value={values.osa_code}
-                                    onChange={(e) => setFieldValue("osa_code", e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <InputFields
+                                    required
                                     label="Ticket Type"
                                     name="ticket_type"
                                     value={values.ticket_type}
@@ -779,9 +889,37 @@ export default function AddServiceVisitStepper() {
                                         { label: "RB", value: "RB" },
                                         { label: "TR", value: "TR" },
                                     ]}
-                                    onChange={(e) => setFieldValue("ticket_type", e.target.value)}
+                                    onChange={async (e) => {
+                                        const ticketType = e.target.value;
+
+                                        // reset guard when ticket type changes
+                                        if (ticketType !== values.ticket_type) {
+                                            codeGeneratedRef.current = false;
+                                        }
+
+                                        setFieldValue("ticket_type", ticketType);
+
+                                        const modelName = TICKET_MODEL_MAP[ticketType];
+                                        if (!modelName) return;
+
+                                        if (codeGeneratedRef.current) return;
+                                        codeGeneratedRef.current = true;
+
+                                        try {
+                                            const res = await serviceVisitGenearateCode({
+                                                prefix: modelName,
+                                            });
+
+                                            setFieldValue("prefix", modelName);
+                                            setFieldValue("osa_code", res?.data?.osa_code || "");
+                                        } catch (err) {
+                                            codeGeneratedRef.current = false; // allow retry
+                                            showSnackbar("Failed to generate code", "error");
+                                        }
+                                    }}
                                     error={touched.ticket_type && errors.ticket_type}
                                 />
+
                                 <ErrorMessage
                                     name="ticket_type"
                                     component="div"
@@ -790,6 +928,31 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
+                                    label="Code"
+                                    name="osa_code"
+                                    value={values.osa_code}
+                                    disabled
+                                    onChange={(e) => setFieldValue("osa_code", e.target.value)}
+                                    error={touched.osa_code && errors.osa_code}
+                                />
+                            </div>
+                            <div>
+                                <InputFields
+                                    required
+                                    label="Ticket Status"
+                                    name="ticket_status"
+                                    value={values.ticket_status}
+                                    options={[
+                                        { value: "0", label: "Pending" },
+                                        { value: "1", label: "Closed By Technician" },
+                                    ]}
+                                    onChange={(e) => setFieldValue("ticket_status", e.target.value)}
+                                    error={touched.ticket_status && errors.ticket_status}
+                                />
+                            </div>
+                            <div>
+                                <InputFields
+                                    required
                                     label="Time In"
                                     name="time_in"
                                     type="date"
@@ -805,6 +968,7 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
+                                    required
                                     label="Time Out"
                                     name="time_out"
                                     type="date"
@@ -827,16 +991,18 @@ export default function AddServiceVisitStepper() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
+                                    required
                                     label="Outlet Name"
                                     name="outlet_name"
                                     value={values.outlet_name}
-                                    options={channelOptions}
+                                    options={agentCustomerOptions}
                                     onChange={(e) => setFieldValue("outlet_name", e.target.value)}
                                     error={touched.outlet_name && errors.outlet_name}
                                 />
                             </div>
                             <div>
                                 <InputFields
+                                    required
                                     label="Contact Person"
                                     name="contact_person"
                                     value={values.contact_person}
@@ -851,9 +1017,11 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
+                                    required
                                     label="Technician"
                                     name="technician_id"
                                     value={values.technician_id}
+                                    options={technicianOptions}
                                     onChange={(e) => setFieldValue("technician_id", e.target.value)}
                                     error={touched.technician_id && errors.technician_id}
                                 />
@@ -865,10 +1033,16 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
+                                    required
                                     label="CT Status"
                                     name="ct_status"
                                     value={values.ct_status}
+                                    options={[
+                                        { value: "1", label: "Same Outlet" },
+                                        { value: "0", label: "Missmatch Outlet" },
+                                    ]}
                                     onChange={(e) => setFieldValue("ct_status", e.target.value)}
+                                    error={touched.ct_status && errors.ct_status}
                                 />
                                 <ErrorMessage
                                     name="ct_status"
@@ -902,9 +1076,39 @@ export default function AddServiceVisitStepper() {
 
                             <div>
                                 <InputFields
+                                    label="Chiller"
+                                    name="chiller_id"
+                                    options={chillerOptions}
+                                    value={values.chiller_id}
+                                    onChange={(e) => {
+                                        setFieldValue("chiller_id", e.target.value);
+
+                                        // Auto-fill chiller details
+                                        const selectedChiller = chillers.find(
+                                            (c) => String(c.id) === e.target.value
+                                        );
+
+                                        if (selectedChiller) {
+                                            setFieldValue("asset_no", selectedChiller.assets_type || "");
+                                            setFieldValue("serial_no", selectedChiller.serial_number || "");
+                                            setFieldValue("model_no", selectedChiller.model_number?.name || "");
+                                            setFieldValue("branding", selectedChiller.branding?.name || "");
+                                        }
+                                    }}
+                                />
+
+                                <ErrorMessage
+                                    name="chiller_id"
+                                    component="div"
+                                    className="text-sm text-red-600 mb-1"
+                                />
+                            </div>
+
+                            <div>
+                                <InputFields
                                     label="Model No."
                                     name="model_no"
-                                    options={assetsModelOptions}
+                                    disabled
                                     value={values.model_no}
                                     onChange={(e) => setFieldValue("model_no", e.target.value)}
                                     error={touched.model_no && errors.model_no}
@@ -919,6 +1123,7 @@ export default function AddServiceVisitStepper() {
                                 <InputFields
                                     label="Serial No."
                                     name="serial_no"
+                                    disabled
                                     value={values.serial_no}
                                     onChange={(e) => setFieldValue("serial_no", e.target.value)}
                                     error={touched.serial_no && errors.serial_no}
@@ -931,8 +1136,9 @@ export default function AddServiceVisitStepper() {
                             </div>
                             <div>
                                 <InputFields
-                                    label="Asset No."
+                                    label="Asset Type"
                                     name="asset_no"
+                                    disabled
                                     value={values.asset_no}
                                     onChange={(e) => setFieldValue("asset_no", e.target.value)}
                                     error={touched.asset_no && errors.asset_no}
@@ -947,7 +1153,7 @@ export default function AddServiceVisitStepper() {
                                 <InputFields
                                     label="Branding"
                                     name="branding"
-                                    options={brandingOptions}
+                                    disabled
                                     value={values.branding}
                                     onChange={(e) => setFieldValue("branding", e.target.value)}
                                     error={touched.branding && errors.branding}
@@ -969,7 +1175,7 @@ export default function AddServiceVisitStepper() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <InputFields
-                                    label="Nature of Call ID"
+                                    label="Nature of Call"
                                     name="nature_of_call_id"
                                     value={values.nature_of_call_id}
                                     onChange={(e) => setFieldValue("nature_of_call_id", e.target.value)}
@@ -1036,6 +1242,10 @@ export default function AddServiceVisitStepper() {
                                     label="Work Status"
                                     name="work_status"
                                     value={values.work_status}
+                                    options={[
+                                        { value: "1", label: "Active" },
+                                        { value: "0", label: "Inactive" },
+                                    ]}
                                     onChange={(e) => setFieldValue("work_status", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1067,7 +1277,7 @@ export default function AddServiceVisitStepper() {
 
                             <div>
                                 <InputFields
-                                    label="Technical Behaviour"
+                                    label="Technical Behaviour Rating"
                                     name="technical_behaviour"
                                     value={values.technical_behaviour}
                                     onChange={(e) => setFieldValue("technical_behaviour", e.target.value)}
@@ -1081,7 +1291,7 @@ export default function AddServiceVisitStepper() {
 
                             <div>
                                 <InputFields
-                                    label="Service Quality"
+                                    label="Service Quality Rating"
                                     name="service_quality"
                                     value={values.service_quality}
                                     onChange={(e) => setFieldValue("service_quality", e.target.value)}
@@ -1116,6 +1326,10 @@ export default function AddServiceVisitStepper() {
                                     label="Is Machine In Working"
                                     name="is_machine_in_working"
                                     value={values.is_machine_in_working}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("is_machine_in_working", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1130,6 +1344,10 @@ export default function AddServiceVisitStepper() {
                                     label="Cleanliness"
                                     name="cleanliness"
                                     value={values.cleanliness}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("cleanliness", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1144,6 +1362,10 @@ export default function AddServiceVisitStepper() {
                                     label="Condensor Coil Cleaned"
                                     name="condensor_coil_cleand"
                                     value={values.condensor_coil_cleand}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("condensor_coil_cleand", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1158,6 +1380,10 @@ export default function AddServiceVisitStepper() {
                                     label="Gaskets"
                                     name="gaskets"
                                     value={values.gaskets}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("gaskets", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1172,6 +1398,10 @@ export default function AddServiceVisitStepper() {
                                     label="Light Working"
                                     name="light_working"
                                     value={values.light_working}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("light_working", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1186,6 +1416,10 @@ export default function AddServiceVisitStepper() {
                                     label="Branding No"
                                     name="branding_no"
                                     value={values.branding_no}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("branding_no", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1199,6 +1433,10 @@ export default function AddServiceVisitStepper() {
                                     label="Proper Ventilation Available"
                                     name="propper_ventilation_available"
                                     value={values.propper_ventilation_available}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("propper_ventilation_available", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1213,6 +1451,10 @@ export default function AddServiceVisitStepper() {
                                     label="Leveling Positioning"
                                     name="leveling_positioning"
                                     value={values.leveling_positioning}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("leveling_positioning", e.target.value)}
                                 />
                                 <ErrorMessage
@@ -1227,6 +1469,10 @@ export default function AddServiceVisitStepper() {
                                     label="Stock Availability In"
                                     name="stock_availability_in"
                                     value={values.stock_availability_in}
+                                    options={[
+                                        { value: "1", label: "Yes" },
+                                        { value: "0", label: "No" },
+                                    ]}
                                     onChange={(e) => setFieldValue("stock_availability_in", e.target.value)}
                                 />
                                 <ErrorMessage

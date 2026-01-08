@@ -796,7 +796,7 @@ export default function InputFields({
                           type="text"
                           placeholder={
                             selected.length === 0
-                              ? `Search ${label}`
+                              ? (label ? `Search ${label}` : "Search")
                               : undefined
                           }
                           value={displayValue}
@@ -839,7 +839,7 @@ export default function InputFields({
                       return (
                         <div className="flex-1 flex items-center gap-2 flex-nowrap overflow-hidden min-w-0">
                           {selected.length === 0 && (
-                            <span className="text-gray-400">{`Select ${label}`}</span>
+                            <span className="text-gray-400">{label ? `Select ${label}` : 'Select option'}</span>
                           )}
                           {selected.map((s, idx) => {
                             if (idx >= 2) return null;
@@ -882,7 +882,7 @@ export default function InputFields({
                         >
                           {(() => {
                             if (selected.length === 0)
-                              return `Select ${label}`;
+                              return label ? `Select ${label}` : 'Select option';
                             if (selected.length <= 2)
                               return selected.map((s) => s.label).join(", ");
                             return selected
@@ -1144,7 +1144,7 @@ export default function InputFields({
                       <input
                         type="text"
                         placeholder={
-                          placeholder ? placeholder : `Search ${label}`
+                          placeholder ? placeholder : (label ? `Search ${label}` : "Search")
                         }
                         disabled={disabled}
                         value={displayValue}
@@ -1186,7 +1186,7 @@ export default function InputFields({
                       }`}
                   >
                     {!value
-                      ? `Select ${label}`
+                      ? label ? `Select ${label}` : 'Select option'
                       : options?.find((opt) => opt.value === value)?.label}
                   </span>
                 )}

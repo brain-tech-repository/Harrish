@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import ItemPage from "./itemPopup";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 interface DropdownItem {
   icon: string;
   label: string;
@@ -40,17 +40,21 @@ interface LocalTableDataType {
 
 
 export default function Item() {
+  const { itemCategoryAllOptions, ensureAllItemCategoryLoaded } = useAllDropdownListData();
   const { setLoading } = useLoading();
   const { can, permissions } = usePagePermissions();
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    ensureAllItemCategoryLoaded();
+  }, [ensureAllItemCategoryLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+const [categoryId, setcategoryId] = useState<string>("");
   // const [showDropdown, setShowDropdown] = useState(false);
   // const [showDeletePopup, setShowDeletePopup] = useState(false);
   // const [selectedRow, setSelectedRow] = useState<LocalTableDataType | null>(null);
@@ -81,6 +85,17 @@ export default function Item() {
       label: "Category",
       showByDefault: true,
       render: (row: LocalTableDataType) => row.item_category?.category_name || "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: Array.isArray(itemCategoryAllOptions) ? itemCategoryAllOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setcategoryId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: categoryId,
+            },
     },
     {
       key: "base_uom",
@@ -132,7 +147,9 @@ export default function Item() {
       },
     },
   ];
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [categoryId]);
   const fetchItems = useCallback(
     async (
       page: number = 1,
@@ -140,7 +157,14 @@ export default function Item() {
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-        const res = await itemList({ page: page.toString(), per_page: pageSize.toString() });
+         const params: any = {
+                page: page.toString(),
+                per_page: pageSize.toString(),
+            };
+            if (categoryId) {
+                params.category_id = categoryId;
+            }
+        const res = await itemList(params);
         // setLoading(false);
         const data = res.data.map((item: LocalTableDataType) => ({
           ...item,
@@ -157,7 +181,7 @@ export default function Item() {
         throw error;
       }
     },
-    []
+    [categoryId]
   );
 
   const searchItems = useCallback(
@@ -189,48 +213,32 @@ export default function Item() {
     },
     []
   );
-
-  const handleStatusChange = async (
-    data: TableDataType[],
-    selectedRow: number[] | undefined,
-    status: "0" | "1"
-  ) => {
-    if (!selectedRow || selectedRow.length === 0) {
-      showSnackbar("Please select at least one salesman", "error");
-      return;
-    }
-
-    // const selectedItem = data.filter((_, index) =>
-    //   selectedRow.includes(index)
-    // );
-
-    const failedUpdates: string[] = [];
-
-    const selectedRowsData: string[] = data.filter((value, index) => selectedRow?.includes(index)).map((item) => item.id);
+ const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
     try {
       // setLoading(true);
-
-      const res = await updateItemStatus({ item_ids: selectedRowsData, status });
-
-      if (failedUpdates.length > 0) {
-        showSnackbar(
-          `Failed to update status for: ${failedUpdates.join(", ")}`,
-          "error"
-        );
-      } else {
-        setRefreshKey((k) => k + 1);
-        showSnackbar("Status updated successfully", "success");
-        // fetchItems();
+      if (!ids || ids.length === 0) {
+        showSnackbar("No vehicle selected", "error");
+        return;
       }
-
-    } catch (error) {
-      console.error("Status update error:", error);
-      showSnackbar("An error occurred while updating status", "error");
-    } finally {
+      const selectedRowsData: number[] = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+      if (selectedRowsData.length === 0) {
+        showSnackbar("No vehicle selected", "error");
+        return;
+      }
+      await updateItemStatus({ item_ids: selectedRowsData, status });
+      // Refresh vehicle list after 3 seconds
+      // (async () => {
+        // fetchVehicles();
+        setRefreshKey((k) => k + 1);
+      // });
+      showSnackbar("Vehicle status updated successfully", "success");
       // setLoading(false);
-      // setShowDropdown(false);
+    } catch (error) {
+      showSnackbar("Failed to update vehicle status", "error");
+      // setLoading(false);
     }
   };
+
 
   const exportFile = async (format: string) => {
     try {
@@ -264,6 +272,7 @@ export default function Item() {
               title: "Item",
               searchBar: true,
                exportButton: {
+                threeDotLoading:  threeDotLoading,
                 show: true,
                 onClick: () => exportFile("xlsx"), 
               },
@@ -280,14 +289,50 @@ export default function Item() {
                 //   labelTw: "text-[12px] hidden sm:block",
                 //   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 // },
+                
                 {
                   icon: "lucide:radio",
                   label: "Inactive",
-                  showOnSelect: true,
-                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
-                    handleStatusChange(data, selectedRow, "0");
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                    if (!selectedRow || selectedRow.length === 0) return false;
+                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    return status?.includes("1") || false;
                   },
-                }
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const status: string[] = [];
+                    const ids = selectedRow?.map((id) => {
+                      const currentStatus = data[id].status;
+                      if (!status.includes(currentStatus)) {
+                        status.push(currentStatus);
+                      }
+                      return data[id].id;
+                    })
+                    statusUpdate(ids, Number(0));
+                  },
+                },
+                {
+                  icon: "lucide:radio",
+                  label: "Active",
+                  // showOnSelect: true,
+                  showWhen: (data: TableDataType[], selectedRow?: number[]) => {
+                    if (!selectedRow || selectedRow.length === 0) return false;
+                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    return status?.includes("0") || false;
+                  },
+                  onClick: (data: TableDataType[], selectedRow?: number[]) => {
+                    const status: string[] = [];
+                    const ids = selectedRow?.map((id) => {
+                      const currentStatus = data[id].status;
+                      if (!status.includes(currentStatus)) {
+                        status.push(currentStatus);
+                      }
+                      return data[id].id;
+                    })
+                    statusUpdate(ids, Number(1));
+                  },
+                },
+              
               ],
               columnFilter: true,
               actions: can("create") ? [

@@ -190,24 +190,31 @@ export default function CustomerInvoicePage() {
     xlsx: false,
   });
 
+  // Memoize the fetchOrders API call so it only fetches once per session
+  const fetchOrdersCache = useRef<{ [key: string]: listReturnType }>({});
   const fetchOrders = useCallback(
     async (
       page: number = 1,
       pageSize: number = 50
     ): Promise<listReturnType> => {
+      const cacheKey = `${page}_${pageSize}`;
+      if (fetchOrdersCache.current[cacheKey]) {
+        return fetchOrdersCache.current[cacheKey];
+      }
       try {
         // setLoading(true);
         const listRes = await agentOrderList({
           limit: pageSize.toString(),
           page: page.toString(),
         });
-        // setLoading(false);
-        return {
+        const result = {
           data: listRes.data || [],
           total: listRes.pagination.totalPages,
           currentPage: listRes.pagination.page,
           pageSize: listRes.pagination.limit,
         };
+        fetchOrdersCache.current[cacheKey] = result;
+        return result;
       } catch (error: unknown) {
         console.error("API Error:", error);
         setLoading(false);

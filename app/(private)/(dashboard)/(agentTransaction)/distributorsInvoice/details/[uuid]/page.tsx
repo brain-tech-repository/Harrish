@@ -8,7 +8,7 @@ import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, RefObject, Fragment } from "react";
-import { deliveryByUuid, exportInvoiceWithDetails, exportInvoiceDetails, invoiceByUuid } from "@/app/services/agentTransaction";
+import { invoiceByUuid } from "@/app/services/agentTransaction";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
@@ -18,8 +18,8 @@ import PrintButton from "@/app/components/printButton";
 import KeyValueData from "@/app/components/keyValueData";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 import { isValidDate } from "@/app/utils/formatDate";
-import { downloadFile } from "@/app/services/allApi";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
+import FrontendPdfDownloadButton from "@/app/components/FrontendPdfDownloadButton";
 // const CURRENCY = localStorage.getItem("country") || "";
 
 interface DeliveryDetail {
@@ -80,13 +80,32 @@ interface InvoiceData {
   details: {
     item_code: string,
     item_name: string,
+    erp_code?: string,
+    uom_id?: number,
     uom_name: string,
     quantity: number,
+    item_price?: string | number | null,
+    itemprice?: string | number | null,
     itemvalue: number,
     vat: number,
     pre_vat: number,
     net_total: number,
     item_total: number
+    item_uoms?:
+      | {
+          name?: string;
+          uom_id?: number;
+          uom_type?: string;
+          upc?: string;
+          price?: string | number;
+        }
+      | Array<{
+          name?: string;
+          uom_id?: number;
+          uom_type?: string;
+          upc?: string;
+          price?: string | number;
+        }>;
   }[]
 }
 
@@ -112,7 +131,7 @@ const columns = [
   { key: "Quantity", label: "Quantity" },
   { key: "Price", label: "Price", render: (value: TableDataType) => <>{toInternationalNumber(value.Price) || '0.00'}</> },
   { key: "Net", label: "Net", render: (value: TableDataType) => <>{toInternationalNumber(value.Net) || '0.00'}</> },
-  { key: "vat", label: "VAT", render: (value: TableDataType) => <>{toInternationalNumber(value.Vat) || '0.00'}</> },
+  { key: "vat", label: "VAT", render: (value: TableDataType) => <>{toInternationalNumber(value.Vat, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</> },
   // { key: "preVat", label: "Pre VAT", render: (value: TableDataType) => <>{toInternationalNumber(Number(value.preVat)) || '0.00'}</> },
   // { key: "discount", label: "Discount", render: (value: TableDataType) => <>{toInternationalNumber(value.discount) || '0.00'}</> },
   // { key: "total_gross", label: "Gross", render: (value: TableDataType) => <>{toInternationalNumber(value.total_gross) || '0.00'}</> },
@@ -127,7 +146,6 @@ export default function OrderDetailPage() {
   // const [showDropdown, setShowDropdown] = useState(false);
   const [deliveryData, setDeliveryData] = useState<InvoiceData | null>(null);
   const [tableData, setTableData] = useState<TableRow[]>([]);
-  const [loading, setLoadingState] = useState<boolean>(false);
   const uuid = params?.uuid as string;
   const CURRENCY = localStorage.getItem("country") || "";
   const PATH = "/distributorsInvoice/details/";
@@ -144,21 +162,39 @@ export default function OrderDetailPage() {
 
           // Map details to table data
           if (data?.details && Array.isArray(data.details)) {
-            const mappedData = data.details.map((detail: TableRow, index: number) => ({
+            const mappedData = data.details.map((detail: any, index: number) => {
+              const uomId: number | undefined =
+                typeof detail?.uom_id === 'number' ? detail.uom_id : undefined;
+
+              const itemUoms = detail?.item_uoms;
+              const matchedUom = Array.isArray(itemUoms)
+                ? itemUoms.find((u: any) => (typeof u?.uom_id === 'number' ? u.uom_id : undefined) === uomId)
+                : (itemUoms && typeof itemUoms === 'object'
+                    ? ((typeof itemUoms?.uom_id === 'number' ? itemUoms.uom_id : undefined) === uomId ? itemUoms : null)
+                    : null);
+
+              const uomName =
+                (matchedUom?.name ?? detail?.uom_name ?? detail?.uom ?? '-') as string;
+
+              const priceValue =
+                detail?.itemvalue ?? 0;
+
+              return {
               id: String(index + 1),
               itemCode: String(detail.item_code ?? "-"),
               erp_code: String(detail.erp_code ?? "-"),
               itemName: String(detail.item_name ?? "-"),
-              UOM: String(detail.uom_name ?? detail.uom ?? "-"),
+              UOM: String(uomName),
               Quantity: String(detail.quantity ?? 0),
-              Price: String(detail.uom_type === "secondary" ? detail.itemprice : detail.item_price),
+              Price: String(priceValue ?? 0),
               Excise: String(detail.excise ?? "0"),
               Discount: String(detail.discount ?? "0"),
               Net: String(detail.net_total ?? "0"),
               Vat: String(detail.vat ?? "0"),
               preVat: String(detail.pre_vat ?? "0"),
-              Total: String(data.total_amount ?? "0"),
-            }));
+              Total: String(detail.item_total ?? data.total_amount ?? "0"),
+            };
+            });
             setTableData(mappedData);
           }
         } catch (error) {
@@ -170,23 +206,6 @@ export default function OrderDetailPage() {
       })();
     }
   }, [uuid, setLoading, showSnackbar]);
-
-  const exportFile = async () => {
-    try {
-      setLoadingState(true);
-      const response = await exportInvoiceWithDetails({ uuid: uuid, format: "pdf" });
-      if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully ", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-    } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
-    } finally {
-      setLoadingState(false);
-    }
-  };
 
   const keyValueData = [
     // { key: "Gross Total", value: `AED ${deliveryData?.gross_total || "0.00"}` },
@@ -389,11 +408,12 @@ export default function OrderDetailPage() {
 
           {/* ---------- Footer Buttons ---------- */}
           <div className="flex flex-wrap justify-end gap-[20px] print:hidden">
-            <SidebarBtn
-              leadingIcon={loading ? "eos-icons:three-dots-loading" : "lucide:download"}
-              leadingIconSize={20}
+            <FrontendPdfDownloadButton
+              targetRef={targetRef as unknown as RefObject<HTMLElement>}
               label="Download"
-              onClick={exportFile}
+              filename={`invoice-${deliveryData?.invoice_code || uuid}.pdf`}
+              onSuccess={() => showSnackbar("PDF downloaded successfully", "success")}
+              onError={() => showSnackbar("Failed to generate PDF", "error")}
             />
             <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
           </div>

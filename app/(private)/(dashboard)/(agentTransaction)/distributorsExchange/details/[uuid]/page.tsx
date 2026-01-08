@@ -14,6 +14,7 @@ import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import PrintButton from "@/app/components/printButton";
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 
 interface TableRow {
   id: string;
@@ -134,8 +135,8 @@ export default function OrderDetailPage() {
                 itemName: detail.item_name || "-",
                 UOM: detail.uom_name || "-",
                 Quantity: detail.item_quantity?.toString() || "0",
-                Price: detail.item_price || "0",
-                Total: detail.total || "0",
+                Price: toInternationalNumber(detail.item_price || "0"),
+                Total: toInternationalNumber(detail.total || "0"),
                 return_type: getReturnTypeLabel(detail.return_type ?? ""),
                 region: getRegionLabel(detail.return_type ?? "", detail.region ?? ""),
               })

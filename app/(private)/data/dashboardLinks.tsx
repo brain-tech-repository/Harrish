@@ -65,8 +65,8 @@ export const initialLinkData: SidebarDataType[] = [
           },
           {
             isActive: false,
-            href: "/keyCustomer",
-            label: "Key Customers",
+            href: "/companyCustomer",
+            label: "Company Customers",
             leadingIcon: "lucide:user",
             iconColor: "text-green-500",
           },
@@ -140,13 +140,13 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "carbon:delivery-parcel",
             iconColor: "text-cyan-500"
           },
-          {
-            isActive: false,
-            href: "/distributorsStock",
-            label: "Distributors Stock",
-            leadingIcon: "carbon:heat-map-stocks",
-            iconColor: "text-cyan-500"
-          },
+          // {
+          //   isActive: false,
+          //   href: "/distributorsStock",
+          //   label: "Distributors Stock",
+          //   leadingIcon: "carbon:heat-map-stocks",
+          //   iconColor: "text-cyan-500"
+          // },
 
         ]
       },

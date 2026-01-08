@@ -292,7 +292,6 @@ export default function CustomerInvoicePage() {
               filterRenderer: FilterComponent,
               actions: [],
             },
-            rowSelection: true,
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             pageSize: 10,

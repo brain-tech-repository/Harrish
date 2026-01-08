@@ -470,10 +470,12 @@ export const iroList = async (params: Params) => {
   }
 };
 
-export const iroViewList = async (id: string) => {
+export const iroViewList = async (id: string, params: Params) => {
   try {
-    const res = await API.get(`/api/assets/iro/${id}`);
-    return res.data?.count?.headers;
+    const res = await API.get(`/api/assets/iro/${id}`, {
+      params: params,
+    });
+    return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
@@ -1151,6 +1153,15 @@ export const serviceVisitExport = async (params?: Params) => {
 export const crfExport = async (params?: Params) => {
   try {
     const res = await API.get(`/api/assets/chiller-request/crf-export`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const serviceVisitGenearateCode = async (body: object) => {
+  try {
+    const res = await API.post("/api/assets/service-visit/generate-code", body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

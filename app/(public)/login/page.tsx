@@ -69,7 +69,7 @@ const LoginPage = () => {
                                         {/* User ID */}
                                         <div>
                                             <CustomTextInput
-                                                label="User ID"
+                                                label="User ID/Email"
                                                 value={values.userId}
                                                 onChange={handleChange(
                                                     "userId"
@@ -100,12 +100,12 @@ const LoginPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-between">
+                                    {/* <div className="flex justify-between">
                                         <RememberCheckbox />
                                         <span className="text-[#EA0A2A] font-semibold text-sm cursor-pointer">
                                             Forgot password?
                                         </span>
-                                    </div>
+                                    </div> */}
 
                                     <Button
                                         type="submit"

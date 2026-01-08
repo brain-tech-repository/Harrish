@@ -34,6 +34,16 @@ interface ShelfDisplayItem {
   valid_to: string;
 }
 
+interface ShelfDisplayItemSearch {
+  uuid: string;
+  shelf_name: string;
+  height: string;
+  width: string;
+  depth: string;
+  valid_from: string;
+  valid_to: string;
+}
+
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
 ];
@@ -151,9 +161,9 @@ export default function ShelfDisplay() {
         setLoading(false);
         if (res.error) throw new Error(res.message || "Search failed");
 
-        const data: TableDataType[] = res.data.map((item: ShelfDisplayItem) => ({
+        const data: TableDataType[] = res.data.map((item: ShelfDisplayItemSearch) => ({
           id: item.uuid,
-          self_name: item.self_name,
+          shelf_name: item.shelf_name,
           height: item.height,
           width: item.width,
           depth: item.depth,

@@ -73,7 +73,7 @@ export default function CompanyCustomers() {
     const res = await getCompanyCustomers({ page: pageNo.toString(), pageSize: pageSize.toString() });
     // setLoading(false);
     if (res.error) {
-      showSnackbar(res.data.message || "Failed to fetch Key Customers", "error");
+      showSnackbar(res.data.message || "Failed to fetch Company Customers", "error");
       throw new Error(res.data.message);
     }
     return {
@@ -119,15 +119,18 @@ export default function CompanyCustomers() {
     },
     { key: "business_name", label: "Business Name", },
     { key: "district", label: "District", },
-    { key: "creditlimit", label: "Credit Limit",render: (row: TableDataType) => {
-        
+    {
+      key: "creditlimit", label: "Credit Limit", render: (row: TableDataType) => {
+
         return toInternationalNumber(row.creditlimit || "-");
       },
     },
-    { key: "totalcreditlimit", label: "Total Credit Limit" ,render: (row: TableDataType) => {
-        
+    {
+      key: "totalcreditlimit", label: "Total Credit Limit", render: (row: TableDataType) => {
+
         return toInternationalNumber(row.totalcreditlimit || "-");
-      },},
+      },
+    },
     {
       key: "payment_type", label: "Payment Type",
       render: (row: TableDataType) => {
@@ -143,7 +146,7 @@ export default function CompanyCustomers() {
     {
       key: "status",
       label: "Status",
-      isSortable: true,
+      // isSortable: true,
       render: (row: TableDataType) => {
         return <StatusBtn isActive={String(row.status) > "0"} />;
       },
@@ -163,6 +166,7 @@ export default function CompanyCustomers() {
         setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
 
       }
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
     } catch (error) {
       showSnackbar("Failed to download distributor data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }))
@@ -198,10 +202,10 @@ export default function CompanyCustomers() {
               search: search,
             },
             header: {
-              title: "Key Customer",
-               exportButton: {
+              title: "Company Customer",
+              exportButton: {
                 show: true,
-                onClick: () => exportFile("xlsx"), 
+                onClick: () => exportFile("xlsx"),
               },
               // threeDot: [
               //   {
@@ -222,7 +226,7 @@ export default function CompanyCustomers() {
               actions: can("create") ? [
                 <SidebarBtn
                   key="add-company-customer"
-                  href="/keyCustomer/add"
+                  href="/companyCustomer/add"
                   leadingIcon="lucide:plus"
                   label="Add"
                   labelTw="hidden sm:block"
@@ -286,45 +290,22 @@ export default function CompanyCustomers() {
               {
                 icon: "lucide:eye",
                 onClick: (data: TableDataType) => {
-                  router.push(`/keyCustomer/details/${data.uuid}`);
+                  router.push(`/companyCustomer/details/${data.uuid}`);
                 },
               },
               ...(can("edit") ? [{
                 icon: "lucide:edit-2",
                 onClick: (row: TableDataType) => {
                   router.push(
-                    `/keyCustomer/${row.uuid}`
+                    `/companyCustomer/${row.uuid}`
                   )
                 }
               }] : []),
-              // {
-              //   icon: "lucide:trash-2",
-              //   onClick: (row: TableDataType) => {
-              //     const fullRow = customers.find(
-              //       (c) => c.id.toString() === row.id
-              //     );
-              //     if (fullRow) {
-              //       setSelectedRow(fullRow);
-              //       setShowDeletePopup(true);
-              //     }
-              //   },
-              // },
             ],
             pageSize: 50,
           }}
         />
       </div>
-
-      {/* Delete Popup */}
-      {/* {showDeletePopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <DeleteConfirmPopup
-            title="Company Customer"
-            onClose={() => setShowDeletePopup(false)}
-            onConfirm={handleConfirmDelete}
-          />
-        </div>
-      )} */}
     </>
   );
 }
