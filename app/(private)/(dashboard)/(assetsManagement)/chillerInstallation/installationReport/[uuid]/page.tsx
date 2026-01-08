@@ -238,7 +238,7 @@ export default function AddInstallationReportPage() {
 
             setWarehouseName(
                 selectedIRO
-                    ? `${selectedIRO.warehouse_code} - ${selectedIRO.warehouse_name} `
+                    ? `${selectedIRO.warehouse_code} - ${selectedIRO.warehouse_name}`
                     : ""
             );
             setTechnicianOptions([]);
