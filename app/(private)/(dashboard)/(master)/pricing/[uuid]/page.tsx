@@ -395,9 +395,15 @@ export default function AddPricing() {
       if (!active) return;
       let options = regions?.data?.map((r: any) => ({ label: r.region_name || r.name, value: String(r.id) })) || [];
 
-      // Since company options are usually fully loaded, we might not strictly need preservation here, 
-      // but if Regions are paginated, we would need selectedRegionDetails.
-      // Assuming Company is stable source.
+      // Preservation Logic:
+      const currentCompanyIds = keyValue["Company"];
+      const isOriginalParent = selectedCompanyDetails.length > 0 &&
+        currentCompanyIds.every(id => selectedCompanyDetails.some(d => d.value === id));
+
+      if (isOriginalParent) {
+        const missing = selectedRegionDetails.filter(d => !options.some((o: any) => o.value === d.value));
+        options = [...options, ...missing];
+      }
 
       setRegionOptions(options);
 
@@ -412,7 +418,7 @@ export default function AddPricing() {
     }
     fetchRegions();
     return () => { active = false; };
-  }, [keyValue["Company"]]);
+  }, [keyValue["Company"], selectedCompanyDetails, selectedRegionDetails]);
 
   // When region changes, fetch areas and reset children
   useEffect(() => {
