@@ -4215,9 +4215,19 @@ export const allItemInvoiceExport = async (params?: Params) => {
   }
 };
 
-export const applyPromotion = async (payload: object) => {
+export const applyPromotion = async (payload: Object) => {
   try {
     const res = await API.post("/api/master/promotion-headers/applicable", payload);
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const warhouseStocksByFilter = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/settings/warehouse-stocks/dayYesterdayMonthWisefilter", {params});
 
     return res.data;
   } catch (error: unknown) {

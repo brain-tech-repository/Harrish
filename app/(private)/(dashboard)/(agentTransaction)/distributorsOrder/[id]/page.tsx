@@ -448,7 +448,7 @@ export default function OrderAddEditPage() {
           }
          
           // Store UPC for each UOM
-          const uomId = uom.id || `${stockItem.item_id}_${uom.uom_type}`;
+          const uomId = uom.uom_id;
           uomDetailsMap[String(uomId)] = { upc: String(uom.upc || "1") };
          
           return {

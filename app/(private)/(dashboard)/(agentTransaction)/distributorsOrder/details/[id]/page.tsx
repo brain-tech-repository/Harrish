@@ -71,7 +71,7 @@ const columns = [
     key: "vat",
     label: "VAT",
     render: (value: TableDataType) => (
-      <>{toInternationalNumber(value.vat) || "0.00"}</>
+      <>{toInternationalNumber(value.vat, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</>
     ),
   },
   // { key: "preVat", label: "Pre VAT", render: (value: TableDataType) => <>{toInternationalNumber(Number(value.total) - Number(value.vat)) || '0.00'}</> },
