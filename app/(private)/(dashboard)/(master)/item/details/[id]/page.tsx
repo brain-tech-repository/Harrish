@@ -5,8 +5,8 @@ import { useEffect, useState, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { itemById, itemReturn, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport } from "@/app/services/allApi";
-import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
+import { itemById, itemReturn, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal } from "@/app/services/allApi";
+import { exportOrderInvoice, exportReturneWithDetails, exportReturnInvoice } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 import KeyValueData from "@/app/components/keyValueData";
@@ -212,38 +212,64 @@ export default function Page() {
     [setLoading]
   );
 
+  // const downloadSalesPdf = async (uuid: string) => {
+  //   try {
+  //     // setLoading(true);
+  //     const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
+  //     if (response && typeof response === 'object' && response.download_url) {
+  //       await downloadFile(response.download_url);
+  //       showSnackbar("File downloaded successfully ", "success");
+  //     } else {
+  //       showSnackbar("Failed to get download URL", "error");
+  //     }
+  //   } catch (error) {
+  //     showSnackbar("Failed to download file", "error");
+  //   } finally {
+  //     setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
+  //     // setLoading(false);
+  //   }
+  // };
   const downloadSalesPdf = async (uuid: string) => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
       const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        const fileName = `order - ${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
         showSnackbar("File downloaded successfully ", "success");
+        setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
       } else {
         showSnackbar("Failed to get download URL", "error");
       }
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
     }
-  };
-  const downloadPdf = async (uuid: string) => {
+  }
+
+  const downloadReturnPdf = async (uuid: string) => {
     try {
-      setLoading(true);
-      const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
+      const response = await exportReturnInvoice({ id: id, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        const fileName = `return - ${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
         showSnackbar("File downloaded successfully ", "success");
+        setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
       } else {
         showSnackbar("Failed to get download URL", "error");
       }
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
     }
-  };
+  }
 
   const exportReturnFile = async (id: string, format: string) => {
     try {
@@ -252,6 +278,7 @@ export default function Page() {
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
       } else {
         showSnackbar("Failed to get download URL", "error");
       }
@@ -542,7 +569,7 @@ export default function Page() {
 
                   {
                     icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
-                    onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
+                    onClick: (row: TableDataType) => downloadReturnPdf(row.header_uuid),
                   },
                 ],
                 footer: { nextPrevBtn: true, pagination: true },
