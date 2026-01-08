@@ -1,18 +1,18 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState ,useCallback} from "react";
+import { useEffect, useState, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { itemById, itemReturn, itemSales,downloadFile,itemAllReturnExport ,allItemInvoiceExport} from "@/app/services/allApi";
-import { exportOrderInvoice,exportReturneWithDetails } from "@/app/services/agentTransaction";
+import { itemById, itemReturn, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport } from "@/app/services/allApi";
+import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useLoading } from "@/app/services/loadingContext";
-import Table, { TableDataType,listReturnType } from "@/app/components/customTable";
+import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import Image from "next/image";
 import { tabList } from "./tablelist";
@@ -84,7 +84,7 @@ export default function Page() {
   const [salesData, setSalesData] = useState<any[]>([]);
   const [itemId, setItemId] = useState("");
   // const { id, tabName } = useParams();
-  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; pdf: boolean }>({ csv: false, xlsx: false, pdf: false });
   const params = useParams<{ id: string }>();
   const id = params?.id;
 
@@ -149,7 +149,7 @@ export default function Page() {
       let result;
       setLoading(true);
       try {
-     
+
         const params: Record<string, string> = { per_page: pageSize.toString() };
         Object.keys(payload || {}).forEach((k) => {
           const v = payload[k as keyof typeof payload];
@@ -184,7 +184,7 @@ export default function Page() {
       let result;
       setLoading(true);
       try {
-     
+
         const params: Record<string, string> = { per_page: pageSize.toString() };
         Object.keys(payload || {}).forEach((k) => {
           const v = payload[k as keyof typeof payload];
@@ -212,74 +212,74 @@ export default function Page() {
     [setLoading]
   );
 
-      const downloadSalesPdf = async (uuid: string) => {
-                     try {
-                         setLoading(true);
-                         const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
-                         if (response && typeof response === 'object' && response.download_url) {
-                             await downloadFile(response.download_url);
-                             showSnackbar("File downloaded successfully ", "success");
-                         } else {
-                             showSnackbar("Failed to get download URL", "error");
-                         }
-                     } catch (error) {
-                         showSnackbar("Failed to download file", "error");
-                     } finally {
-                         setLoading(false);
-                     }
-                 };
-      const downloadPdf = async (uuid: string) => {
-                     try {
-                         setLoading(true);
-                         const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
-                         if (response && typeof response === 'object' && response.download_url) {
-                             await downloadFile(response.download_url);
-                             showSnackbar("File downloaded successfully ", "success");
-                         } else {
-                             showSnackbar("Failed to get download URL", "error");
-                         }
-                     } catch (error) {
-                         showSnackbar("Failed to download file", "error");
-                     } finally {
-                         setLoading(false);
-                     }
-                 };
+  const downloadSalesPdf = async (uuid: string) => {
+    try {
+      setLoading(true);
+      const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
+      if (response && typeof response === 'object' && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      showSnackbar("Failed to download file", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const downloadPdf = async (uuid: string) => {
+    try {
+      setLoading(true);
+      const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
+      if (response && typeof response === 'object' && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      showSnackbar("Failed to download file", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const exportReturnFile = async (id: string, format: string) => {
-                try {
-                    setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-                    const response = await itemAllReturnExport({ item_id: itemId, format }); // send proper body object
-                    if (response && typeof response === "object" && response.download_url) {
-                        await downloadFile(response.download_url);
-                        showSnackbar("File downloaded successfully", "success");
-                    } else {
-                        showSnackbar("Failed to get download URL", "error");
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showSnackbar("Failed to download data", "error");
-                } finally {
-                    setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-                }
-            };
+  const exportReturnFile = async (id: string, format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await itemAllReturnExport({ item_id: itemId, format }); // send proper body object
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
 
-                    const exportSalesFile = async (uuid: string, format: string) => {
-                        try {
-                            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-                            const response = await allItemInvoiceExport({ item_id:uuid, format}); // send proper body object
-                            if (response && typeof response === "object" && response.download_url) {
-                                await downloadFile(response.download_url);
-                                showSnackbar("File downloaded successfully", "success");
-                            } else {
-                                showSnackbar("Failed to get download URL", "error");
-                            }
-                        } catch (error) {
-                            console.error(error);
-                            showSnackbar("Failed to download data", "error");
-                        } finally {
-                            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-                        }
-                    };
+  const exportSalesFile = async (uuid: string, format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await allItemInvoiceExport({ item_id: uuid, format }); // send proper body object
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
 
 
   return (
@@ -462,29 +462,29 @@ export default function Page() {
                 },
                 header: {
                   filterRenderer: (props) => (
-                        <FilterComponent
-                        currentDate={true}
-                          {...props}
-                          onlyFilters={['from_date', 'to_date']}
-                        />
-                      ),
-                        actions: [
-                                                                                      <ExportDropdownButton
-                                                                                      disabled={salesData?.length === 0}
-                                                                                         keyType="excel"
-                                                                                          threeDotLoading={threeDotLoading}
-                                                                                          exportReturnFile={exportSalesFile}
-                                                                                          uuid={itemId}
-                                                                                      />
-                                                                                  ],
+                    <FilterComponent
+                      currentDate={true}
+                      {...props}
+                      onlyFilters={['from_date', 'to_date']}
+                    />
+                  ),
+                  actions: [
+                    <ExportDropdownButton
+                      disabled={salesData?.length === 0}
+                      keyType="excel"
+                      threeDotLoading={threeDotLoading}
+                      exportReturnFile={exportSalesFile}
+                      uuid={itemId}
+                    />
+                  ],
                 },
                 footer: { nextPrevBtn: true, pagination: true },
                 rowActions: [
-                        {
-                            icon: "lucide:download",
-                            onClick: (row: TableDataType) => downloadSalesPdf(row.header_uuid),
-                        },
-                    ],
+                  {
+                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
+                    onClick: (row: TableDataType) => downloadSalesPdf(row.header_uuid),
+                  },
+                ],
                 table: {
                   height: "400px"
                 },
@@ -516,35 +516,35 @@ export default function Page() {
                       currentPage: res.pagination?.page || 1,
                       pageSize: res.pagination?.pageSize || pageSize,
                     };
-                    
+
                   },
                   filterBy: filterByReturn
                 },
                 header: {
                   filterRenderer: (props) => (
-                        <FilterComponent
-                        currentDate={true}
-                          {...props}
-                          onlyFilters={['from_date', 'to_date']}
-                        />
-                      ),
-                        actions: [
-                                                                                       <ExportDropdownButton
-                                                                                       disabled={returnData?.length === 0}
-                                                                                          keyType="excel"
-                                                                                           threeDotLoading={threeDotLoading}
-                                                                                           exportReturnFile={exportReturnFile}
-                                                                                           uuid={id}
-                                                                                       />
-                                                                                   ],
+                    <FilterComponent
+                      currentDate={true}
+                      {...props}
+                      onlyFilters={['from_date', 'to_date']}
+                    />
+                  ),
+                  actions: [
+                    <ExportDropdownButton
+                      disabled={returnData?.length === 0}
+                      keyType="excel"
+                      threeDotLoading={threeDotLoading}
+                      exportReturnFile={exportReturnFile}
+                      uuid={id}
+                    />
+                  ],
                 },
                 rowActions: [
-                       
-                        {
-                            icon: "lucide:download",
-                            onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
-                        },
-                    ],
+
+                  {
+                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
+                    onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
+                  },
+                ],
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
                   height: "400px"

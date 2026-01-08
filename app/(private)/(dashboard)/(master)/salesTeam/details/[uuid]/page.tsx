@@ -10,7 +10,7 @@ import Image from "next/image";
 import { downloadFileGlobal, downloadPDFGlobal } from '@/app/services/allApi';
 import { forceDownload } from "@/app/services/allApi";
 import { iframeDownload } from "@/app/utils/iframeDownload";
-import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId,salesmanAttendence } from "@/app/services/allApi";
+import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 // import Role from "./role/page";
@@ -76,10 +76,11 @@ interface Salesman {
   forceful_login?: string | number;
 }
 
-const IconComponentData = ({row}:{row:TableDataType})=>{
+const IconComponentData = ({ row }: { row: TableDataType }) => {
   const [smallLoading, setSmallLoading] = useState(false)
   const { showSnackbar } = useSnackbar();
-    const exportFile = async (uuid: string, format: string) => {
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const exportFile = async (uuid: string, format: string) => {
     try {
       setSmallLoading(true)
 
@@ -87,16 +88,16 @@ const IconComponentData = ({row}:{row:TableDataType})=>{
 
       if (response && typeof response === "object" && response.download_url) {
         await downloadPDFGlobal(response.download_url, `invoice-${uuid}.pdf`);
-         iframeDownload(
-         response.download_url
+        iframeDownload(
+          response.download_url
         )
         // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
-      setSmallLoading(false)
+        setSmallLoading(false)
 
       } else {
         showSnackbar("Failed to get download URL", "error");
-      setSmallLoading(false)
+        setSmallLoading(false)
 
       }
     } catch (error) {
@@ -107,13 +108,13 @@ const IconComponentData = ({row}:{row:TableDataType})=>{
     }
   };
 
-  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
-                      exportFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+  return (smallLoading ? <Skeleton /> : <div className="cursor-pointer" onClick={() => {
+    exportFile(row.uuid, "pdf"); // or "excel", "csv" etc.
 
-      }}><Icon  icon="material-symbols:download"/></div>)
+  }}><Icon icon="material-symbols:download" /></div>)
 }
 
-const IconComponentData2 = ({row}:{row:TableDataType})=>{
+const IconComponentData2 = ({ row }: { row: TableDataType }) => {
   const [smallLoading, setSmallLoading] = useState(false)
   const { showSnackbar } = useSnackbar();
 
@@ -125,12 +126,12 @@ const IconComponentData2 = ({row}:{row:TableDataType})=>{
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
-      setSmallLoading(false)
+        setSmallLoading(false)
 
 
       } else {
         showSnackbar("Failed to get download URL", "error");
-      setSmallLoading(false)
+        setSmallLoading(false)
 
       }
     } catch (error) {
@@ -141,14 +142,14 @@ const IconComponentData2 = ({row}:{row:TableDataType})=>{
     }
   };
 
-  return(smallLoading?<Skeleton/>:<div className="cursor-pointer" onClick={()=>{
-                      exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
+  return (smallLoading ? <Skeleton /> : <div className="cursor-pointer" onClick={() => {
+    exportOrderFile(row.uuid, "pdf"); // or "excel", "csv" etc.
 
-      }}><Icon  icon="material-symbols:download"/></div>)
+  }}><Icon icon="material-symbols:download" /></div>)
 }
 
 
-export function formatDate(dateString:string) {
+export function formatDate(dateString: string) {
   const date = new Date(dateString);
 
   const day = date.getUTCDate();
@@ -160,7 +161,7 @@ export function formatDate(dateString:string) {
 
 export default function Page() {
 
-  const { id, tabName }:any = useParams();
+  const { id, tabName }: any = useParams();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
@@ -177,6 +178,8 @@ export default function Page() {
     ? params?.uuid[0] || ""
     : (params?.uuid as string) || "";
   const [salesman, setSalesman] = useState<Salesman | null>(null);
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [orderData, setOrderData] = useState<any[]>([]);
 
 
   const title = "Sales Team Details";
@@ -192,65 +195,67 @@ export default function Page() {
       // render: (row: TableDataType) => (row as any).invoice_number || (row as any).invoice_code || "-"
     },
     {
-      key: "customer_id", 
+      key: "customer_id",
       label: "Customer",
-       
-   render: (row: TableDataType | any) => {
-    const customerObj = typeof row.customer_id === "object" && 
-      row.customer_id !== null && 
-      "warehouse_name" in row.customer_id
-      ? row.customer_id
-      : row.customer;
-    
-    if (customerObj?.osa_code && customerObj?.name) {
-      return `${customerObj.osa_code} - ${customerObj.name}`;
-    }
-    return customerObj?.name || "-";
-  },
-  
+
+      render: (row: TableDataType | any) => {
+        const customerObj = typeof row.customer_id === "object" &&
+          row.customer_id !== null &&
+          "warehouse_name" in row.customer_id
+          ? row.customer_id
+          : row.customer;
+
+        if (customerObj?.osa_code && customerObj?.name) {
+          return `${customerObj.osa_code} - ${customerObj.name}`;
+        }
+        return customerObj?.name || "-";
+      },
+
       // API provides numeric customer_id plus nested customer object { id, osa_code, name }
       // render: (row: TableDataType | any) => row.customer?.osa_code || row.customer?.name || "-",
     },
-   {
-  key: "warehouse_id",
-  label: "Distributor",
-  // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
-  render: (row: TableDataType | any) => {
-    const warehouseObj = typeof row.warehouse_id === "object" && 
-      row.warehouse_id !== null && 
-      "osa_code" in row.warehouse_id
-      ? row.warehouse_id
-      : row.warehouse;
-    
-    if (warehouseObj?.warehouse_code && warehouseObj?.warehouse_name) {
-      return `${warehouseObj.warehouse_code} - ${warehouseObj.warehouse_name}`;
-    }
-    return warehouseObj?.warehouse_name || "-";
-  },
-   },
+    {
+      key: "warehouse_id",
+      label: "Distributor",
+      // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
+      render: (row: TableDataType | any) => {
+        const warehouseObj = typeof row.warehouse_id === "object" &&
+          row.warehouse_id !== null &&
+          "osa_code" in row.warehouse_id
+          ? row.warehouse_id
+          : row.warehouse;
+
+        if (warehouseObj?.warehouse_code && warehouseObj?.warehouse_name) {
+          return `${warehouseObj.warehouse_code} - ${warehouseObj.warehouse_name}`;
+        }
+        return warehouseObj?.warehouse_name || "-";
+      },
+    },
     {
       key: "route_id",
       label: "Route",
       // API provides numeric route_id plus nested route object { id, route_code, route_name }
-    render: (row: TableDataType | any) => {
-    const routeObj = typeof row.route_id === "object" && 
-      row.route_id !== null && 
-      "warehouse_name" in row.route_id
-      ? row.route_id
-      : row.route;
-    
-    if (routeObj?.route_code && routeObj?.route_name) {
-      return `${routeObj.route_code} - ${routeObj.route_name}`;
-    }
-    return routeObj?.route_name || "-";
-  },
+      render: (row: TableDataType | any) => {
+        const routeObj = typeof row.route_id === "object" &&
+          row.route_id !== null &&
+          "warehouse_name" in row.route_id
+          ? row.route_id
+          : row.route;
+
+        if (routeObj?.route_code && routeObj?.route_name) {
+          return `${routeObj.route_code} - ${routeObj.route_name}`;
+        }
+        return routeObj?.route_name || "-";
+      },
     },
     { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
-    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
-                     
+    {
+      key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
 
-      return(<IconComponentData row={row} />)
-    } },
+
+        return (<IconComponentData row={row} />)
+      }
+    },
 
 
   ];
@@ -261,87 +266,100 @@ export default function Page() {
       label: "Sales Team Type",
       // render: (row: TableDataType) => (row as any).invoice_number || (row as any).invoice_code || "-"
     },
-   
-   {
-  key: "warehouse_code,warehouse_name",
-  label: "Distributor",
-  // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
-  render: (row: TableDataType | any) => {
-   return `${row.warehouse_code} - ${row.warehouse_name}` || "-";
-  },
-   },
-   {
-  key: "route_code,route_name",
-  label: "Route",
-  // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
-  render: (row: TableDataType | any) => {
-   return `${row.route_code} - ${row.route_name}` || "-";
-  },
-   },
-   
-    { key: "time_in", label: "Time In", render: (row: TableDataType) => {
-      if (!row.time_in) return "-";
-      // If value is like '2025-10-25 09:00:00', extract time part
-      const match = String(row.time_in).match(/\b(\d{2}:\d{2}:\d{2})\b/);
-      return match ? match[1] : row.time_in;
-    } },
-    { key: "in_img", label: "Time In Image",render: (row: TableDataType) => {
-                const file = `https://api.coreexl.com/osa_developmentV2/public/storage/${row.in_img}`;
-                if (!file) return "-";
-                        return (
-                        <ImageThumbnail
-                          src={file as any}
-                          alt={(file as any)?.name || "Time In Image"}
-                          height={60}
-                        width={120}
-                          className="rounded-md"
-                          // baseUrl could be provided here if required in your environment
-                        />
-                      );
-            }, },
-             { key: "attendance_latitude_in,attendance_longitude_in", label: "Attendence In Location",render: (row: TableDataType) => {
-                        return (
-                        <Map
-                        latitude={row.attendance_latitude_in}
-                        longitude={row.attendance_longitude_in}
-                        height={70}
-                        width={125}
-                        onClick={true}
-                        />
-                      );
-            },},
-    { key: "time_out", label: "Time Out", render: (row: TableDataType) => { if (!row.time_out) return "-";
-      // If value is like '2025-10-25 09:00:00', extract time part
-      const match = String(row.time_out).match(/\b(\d{2}:\d{2}:\d{2})\b/);
-      return match ? match[1] : row.time_out;
-    } },
-    { key: "out_img", label: "Time Out Image",render: (row: TableDataType) => {
-                const file = `https://api.coreexl.com/osa_developmentV2/public/storage/${row.out_img}`;
-                if (!file) return "-";
-                        return (
-                        <ImageThumbnail
-                          src={file as any}
-                          alt={(file as any)?.name || "Time Out Image"}
-                          height={60}
-                        width={120}
-                          className="rounded-md"
-                          // baseUrl could be provided here if required in your environment
-                        />
-                      );
-            },},
-   
-    { key: "attendance_latitude_out,attendance_longitude_out", label: "Attendence Out Location",render: (row: TableDataType) => {
-                        return (
-                        <Map
-                        latitude={row.attendance_latitude_out}
-                        longitude={row.attendance_longitude_out}
-                         height={70}
-                        width={125}
-                        onClick={true}
-                        />
-                      );
-            },},
-   
+
+    {
+      key: "warehouse_code,warehouse_name",
+      label: "Distributor",
+      // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
+      render: (row: TableDataType | any) => {
+        return `${row.warehouse_code} - ${row.warehouse_name}` || "-";
+      },
+    },
+    {
+      key: "route_code,route_name",
+      label: "Route",
+      // API provides numeric warehouse_id plus nested warehouse object { id, warehouse_code, warehouse_name }
+      render: (row: TableDataType | any) => {
+        return `${row.route_code} - ${row.route_name}` || "-";
+      },
+    },
+
+    {
+      key: "time_in", label: "Time In", render: (row: TableDataType) => {
+        if (!row.time_in) return "-";
+        // If value is like '2025-10-25 09:00:00', extract time part
+        const match = String(row.time_in).match(/\b(\d{2}:\d{2}:\d{2})\b/);
+        return match ? match[1] : row.time_in;
+      }
+    },
+    {
+      key: "in_img", label: "Time In Image", render: (row: TableDataType) => {
+        const file = `https://api.coreexl.com/osa_developmentV2/public/storage/${row.in_img}`;
+        if (!file) return "-";
+        return (
+          <ImageThumbnail
+            src={file as any}
+            alt={(file as any)?.name || "Time In Image"}
+            height={60}
+            width={120}
+            className="rounded-md"
+          // baseUrl could be provided here if required in your environment
+          />
+        );
+      },
+    },
+    {
+      key: "attendance_latitude_in,attendance_longitude_in", label: "Attendence In Location", render: (row: TableDataType) => {
+        return (
+          <Map
+            latitude={row.attendance_latitude_in}
+            longitude={row.attendance_longitude_in}
+            height={70}
+            width={125}
+            onClick={true}
+          />
+        );
+      },
+    },
+    {
+      key: "time_out", label: "Time Out", render: (row: TableDataType) => {
+        if (!row.time_out) return "-";
+        // If value is like '2025-10-25 09:00:00', extract time part
+        const match = String(row.time_out).match(/\b(\d{2}:\d{2}:\d{2})\b/);
+        return match ? match[1] : row.time_out;
+      }
+    },
+    {
+      key: "out_img", label: "Time Out Image", render: (row: TableDataType) => {
+        const file = `https://api.coreexl.com/osa_developmentV2/public/storage/${row.out_img}`;
+        if (!file) return "-";
+        return (
+          <ImageThumbnail
+            src={file as any}
+            alt={(file as any)?.name || "Time Out Image"}
+            height={60}
+            width={120}
+            className="rounded-md"
+          // baseUrl could be provided here if required in your environment
+          />
+        );
+      },
+    },
+
+    {
+      key: "attendance_latitude_out,attendance_longitude_out", label: "Attendence Out Location", render: (row: TableDataType) => {
+        return (
+          <Map
+            latitude={row.attendance_latitude_out}
+            longitude={row.attendance_longitude_out}
+            height={70}
+            width={125}
+            onClick={true}
+          />
+        );
+      },
+    },
+
 
 
   ];
@@ -356,7 +374,7 @@ export default function Page() {
     {
       key: "delivery_date",
       label: "Delivery Date",
-      render: (row: TableDataType) =>row.delivery_date? formatDate(row.delivery_date) :"-",
+      render: (row: TableDataType) => row.delivery_date ? formatDate(row.delivery_date) : "-",
     },
     {
       key: "order_code",
@@ -429,12 +447,14 @@ export default function Page() {
           <span className="text-red-600 font-semibold">Inactive</span>
         ),
     },
-    { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
-                     
+    {
+      key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
 
-      return(<IconComponentData2 row={row} />)
-    } }
-    
+
+        return (<IconComponentData2 row={row} />)
+      }
+    }
+
     // Optional: download icon column
     // {
     //   key: "download",
@@ -462,7 +482,7 @@ export default function Page() {
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
-
+      setSalesData(result.data || []);
       return {
         data: result.data || [],
         currentPage: result?.pagination?.page || 1,
@@ -482,7 +502,7 @@ export default function Page() {
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
-
+      setOrderData(result.data || []);
       return {
         data: result.data || [],
         currentPage: result?.pagination?.page || 1,
@@ -495,7 +515,7 @@ export default function Page() {
 
 
 
- 
+
 
   useEffect(() => {
     if (!uuid) return;
@@ -583,7 +603,7 @@ export default function Page() {
       let result;
       setLoading(true);
       try {
-     
+
         const params: Record<string, string> = { per_page: pageSize.toString() };
         Object.keys(payload || {}).forEach((k) => {
           const v = payload[k as keyof typeof payload];
@@ -618,7 +638,7 @@ export default function Page() {
       let result;
       setLoading(true);
       try {
-     
+
         const params: Record<string, string> = { per_page: pageSize.toString() };
         Object.keys(payload || {}).forEach((k) => {
           const v = payload[k as keyof typeof payload];
@@ -626,7 +646,7 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await salesmanAttendence({ salesman_uuid:uuid,from_date: params?.from_date, to_date: params?.to_date });
+        result = await salesmanAttendence({ salesman_uuid: uuid, from_date: params?.from_date, to_date: params?.to_date });
       } finally {
         setLoading(false);
       }
@@ -646,12 +666,12 @@ export default function Page() {
     [setLoading]
   );
 
-    const salesmanAttendenceById = useCallback(
+  const salesmanAttendenceById = useCallback(
     async (
       pageNo: number = 1,
       pageSize: number = 50
     ): Promise<searchReturnType> => {
-      const result = await salesmanAttendence( {salesman_uuid:uuid ,from_date:params?.start_date,  to_date: params?.end_date,page:pageNo.toString() });
+      const result = await salesmanAttendence({ salesman_uuid: uuid, from_date: params?.start_date, to_date: params?.end_date, page: pageNo.toString() });
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
@@ -677,23 +697,23 @@ export default function Page() {
     setOpenPopup(true);
   }
 
-      const exportReturnFile = async (uuid: string, format: string) => {
-          // try {
-          //     setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          //     const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
-          //     if (response && typeof response === "object" && response.download_url) {
-          //         await downloadFile(response.download_url);
-          //         showSnackbar("File downloaded successfully", "success");
-          //     } else {
-          //         showSnackbar("Failed to get download URL", "error");
-          //     }
-          // } catch (error) {
-          //     console.error(error);
-          //     showSnackbar("Failed to download data", "error");
-          // } finally {
-          //     setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-          // }
-      };
+  const exportReturnFile = async (uuid: string, format: string) => {
+    // try {
+    //     setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+    //     const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
+    //     if (response && typeof response === "object" && response.download_url) {
+    //         await downloadFile(response.download_url);
+    //         showSnackbar("File downloaded successfully", "success");
+    //     } else {
+    //         showSnackbar("Failed to get download URL", "error");
+    //     }
+    // } catch (error) {
+    //     console.error(error);
+    //     showSnackbar("Failed to download data", "error");
+    // } finally {
+    //     setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    // }
+  };
 
   return (
     <>
@@ -756,7 +776,7 @@ export default function Page() {
         <ContainerCard className="w-full h-fit">
           <KeyValueData
             title="Sales Team Information"
-            data={salesman?.invoice_block === 1?salesman?.is_block === 1?[
+            data={salesman?.invoice_block === 1 ? salesman?.is_block === 1 ? [
               {
                 key: "Sales Team Type",
                 value: salesman?.salesman_type?.salesman_type_name || "-",
@@ -768,7 +788,7 @@ export default function Page() {
                   : "-"
               },
               { key: "Designation", value: salesman?.designation || "-" },
-              { key: "Contact No", value: salesman?.contact_no=='0' ? "-" :  salesman?.contact_no  || "-" },
+              { key: "Contact No", value: salesman?.contact_no == '0' ? "-" : salesman?.contact_no || "-" },
               {
                 key: "Distributor",
                 value: <span className="hover:text-red-500 cursor-pointer">View Distributors</span>,
@@ -794,8 +814,8 @@ export default function Page() {
                     ? "Yes"
                     : "No",
               },
-              { key: "Block Date From", value:salesman?.block_date_from? formatDate(salesman?.block_date_from):"-" },
-              { key: "Block Date To", value: salesman?.block_date_to?formatDate(salesman?.block_date_to):"-" },
+              { key: "Block Date From", value: salesman?.block_date_from ? formatDate(salesman?.block_date_from) : "-" },
+              { key: "Block Date To", value: salesman?.block_date_to ? formatDate(salesman?.block_date_to) : "-" },
               { key: "cashier Description Block", value: salesman?.cashier_description_block == "1" ? "Yes" : "No" },
               {
                 key: "Invoice Block",
@@ -810,7 +830,7 @@ export default function Page() {
                 key: "Reason",
                 value: salesman?.reason || "-",
               },
-            ]:[
+            ] : [
               {
                 key: "Sales Team Type",
                 value: salesman?.salesman_type?.salesman_type_name || "-",
@@ -862,7 +882,7 @@ export default function Page() {
                 key: "Reason",
                 value: salesman?.reason || "-",
               },
-            ]:salesman?.is_block === 1?[
+            ] : salesman?.is_block === 1 ? [
               {
                 key: "Sales Team Type",
                 value: salesman?.salesman_type?.salesman_type_name || "-",
@@ -900,8 +920,8 @@ export default function Page() {
                     ? "Yes"
                     : "No",
               },
-                { key: "Block Date From", value:salesman?.block_date_from? formatDate(salesman?.block_date_from):"-" },
-              { key: "Block Date To", value: salesman?.block_date_to?formatDate(salesman?.block_date_to):"-" },
+              { key: "Block Date From", value: salesman?.block_date_from ? formatDate(salesman?.block_date_from) : "-" },
+              { key: "Block Date To", value: salesman?.block_date_to ? formatDate(salesman?.block_date_to) : "-" },
               { key: "cashier Description Block", value: salesman?.cashier_description_block == "1" ? "Yes" : "No" },
               {
                 key: "Invoice Block",
@@ -911,7 +931,7 @@ export default function Page() {
                     ? "Yes"
                     : "No",
               }
-            ]:[
+            ] : [
               {
                 key: "Sales Team Type",
                 value: salesman?.salesman_type?.salesman_type_name || "-",
@@ -964,7 +984,7 @@ export default function Page() {
       )}
 
       {activeTab === "attendence" && (
-         <ContainerCard >
+        <ContainerCard >
 
           <div className="flex flex-col h-full">
             <Table
@@ -976,22 +996,22 @@ export default function Page() {
                 },
                 header: {
                   searchBar: false,
-    filterRenderer: (props) => (
-      <FilterComponent
-      currentDate={true}
-        {...props}
-        onlyFilters={['from_date', 'to_date']}
-      />
-    ),
-     actions: [
-                                    <ExportDropdownButton
-                                    // disabled={returnData?.length === 0}
-                                       keyType="excel"
-                                        threeDotLoading={threeDotLoading}
-                                        exportReturnFile={exportReturnFile}
-                                        uuid={uuid}
-                                    />
-                                ],
+                  filterRenderer: (props) => (
+                    <FilterComponent
+                      currentDate={true}
+                      {...props}
+                      onlyFilters={['from_date', 'to_date']}
+                    />
+                  ),
+                  actions: [
+                    <ExportDropdownButton
+                      // disabled={returnData?.length === 0}
+                      keyType="excel"
+                      threeDotLoading={threeDotLoading}
+                      exportReturnFile={exportReturnFile}
+                      uuid={uuid}
+                    />
+                  ],
                   // filterByFields: [
                   //   {
                   //     key: "start_date",
@@ -1012,10 +1032,10 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-             
+
                 pageSize: 50,
               }}
-              
+
             />
           </div>
 
@@ -1035,34 +1055,22 @@ export default function Page() {
                 },
                 header: {
                   searchBar: false,
-    filterRenderer: (props) => (
-      <FilterComponent
-      currentDate={true}
-        {...props}
-        onlyFilters={['from_date', 'to_date']}
-      />
-    ),
-     actions: [
-                                    <ExportDropdownButton
-                                    // disabled={returnData?.length === 0}
-                                       keyType="excel"
-                                        threeDotLoading={threeDotLoading}
-                                        exportReturnFile={exportReturnFile}
-                                        uuid={uuid}
-                                    />
-                                ],
-                  // filterByFields: [
-                  //   {
-                  //     key: "start_date",
-                  //     label: "Start Date",
-                  //     type: "date"
-                  //   },
-                  //   {
-                  //     key: "end_date",
-                  //     label: "End Date",
-                  //     type: "date"
-                  //   }
-                  // ]
+                  filterRenderer: (props) => (
+                    <FilterComponent
+                      currentDate={true}
+                      {...props}
+                      onlyFilters={['from_date', 'to_date']}
+                    />
+                  ),
+                  actions: [
+                    <ExportDropdownButton
+                      disabled={salesData?.length === 0}
+                      keyType="excel"
+                      threeDotLoading={threeDotLoading}
+                      exportReturnFile={exportReturnFile}
+                      uuid={uuid}
+                    />
+                  ],
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },
@@ -1071,10 +1079,10 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-             
+
                 pageSize: 50,
               }}
-              
+
             />
           </div>
 
@@ -1094,22 +1102,22 @@ export default function Page() {
                 },
                 header: {
                   searchBar: false,
-                    filterRenderer: (props) => (
-      <FilterComponent
-      currentDate={true}
-        {...props}
-        onlyFilters={['from_date', 'to_date']}
-      />
-    ),
-     actions: [
-                                    <ExportDropdownButton
-                                    // disabled={returnData?.length === 0}
-                                       keyType="excel"
-                                        threeDotLoading={threeDotLoading}
-                                        exportReturnFile={exportReturnFile}
-                                        uuid={uuid}
-                                    />
-                                ],
+                  filterRenderer: (props) => (
+                    <FilterComponent
+                      currentDate={true}
+                      {...props}
+                      onlyFilters={['from_date', 'to_date']}
+                    />
+                  ),
+                  actions: [
+                    <ExportDropdownButton
+                      disabled={orderData?.length === 0}
+                      keyType="excel"
+                      threeDotLoading={threeDotLoading}
+                      exportReturnFile={exportReturnFile}
+                      uuid={uuid}
+                    />
+                  ],
                 },
                 showNestedLoading: true,
                 footer: { nextPrevBtn: true, pagination: true },
@@ -1118,7 +1126,7 @@ export default function Page() {
                   height: 500,
                 },
                 rowSelection: false,
-               
+
                 pageSize: 50,
               }}
               data={[]}
@@ -1131,15 +1139,15 @@ export default function Page() {
       <Drawer open={openPopup} anchor="right" onClose={() => { setOpenPopup(false); }} >
         <div className="flex flex-col h-full">
           <Table
-          
+
             data={salesman?.warehouses || []}
 
             config={{
-              table:{height:"100vh"},
+              table: { height: "100vh" },
               showNestedLoading: true,
               footer: { nextPrevBtn: true, pagination: true },
               columns: warehouseColumns,
-              
+
               rowSelection: false,
 
               pageSize: 50,
@@ -1147,7 +1155,7 @@ export default function Page() {
           />
         </div>
       </Drawer>
-      <br/>
+      <br />
     </>
   );
 }
