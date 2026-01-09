@@ -23,7 +23,8 @@ import Skeleton from "@mui/material/Skeleton";
 import FilterComponent from "@/app/components/filterComponent";
 import {  exportReturneWithDetails } from "@/app/services/agentTransaction";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
-import Loading from "@/app/components/Loading";
+import { CustomTableSkelton } from "@/app/components/customSkeleton";
+
 interface Item {
     id: string;
     sap_id: string;
@@ -82,6 +83,7 @@ export default function ViewPage() {
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
     const [UUIDAgentCustomer, setUUIDAgentCustomer] = useState<string>("");
 
     const params = useParams();
@@ -95,7 +97,7 @@ export default function ViewPage() {
     }
 
     const { showSnackbar } = useSnackbar();
-    const { setLoading } = useLoading();
+    // const { setLoading } = useLoading();
     // const [loading, setLoading] = useState(false);
     const [item, setItem] = useState<Item | null>(null);
     const [warehouseId, setWarehouseId] = useState("");
@@ -557,7 +559,7 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
         {
             key: "incoming",
@@ -568,7 +570,7 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
         {
             key: "usage",
@@ -579,7 +581,7 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
 
         // {
@@ -1534,6 +1536,7 @@ export default function ViewPage() {
                 // <ContainerCard >
 
                 <div className="flex flex-col h-full">
+                    {loading ? <CustomTableSkelton /> :
                     <Table
                             data={filteredStockData || undefined}
                             config={{
@@ -1574,29 +1577,37 @@ export default function ViewPage() {
                                                 setLoading(true);
                                                 const res = await warhouseStocksByFilter({
                                                     warehouse_id: warehouseId,
-                                                    filter: filterValue,
+                                                    date_filter: filterValue,
                                                 });
-                                                if (res?.data) {
-                                                    const transformedData = res.data.map((it: any) => ({
-                                                        // Map to the table's expected keys
-                                                        osa_code: it.erp_code ?? it.item_code ?? it.item?.erp_code ?? "",
-                                                        item: {
-                                                            name: it.item_name ?? it.item?.name ?? "",
-                                                            code: it.item_code ?? it.item?.code ?? "",
-                                                            uoms: it.uoms ?? it.item?.uoms ?? [],
-                                                        },
-                                                        // current quantity (used by `qty` column)
-                                                        qty: typeof it.stock_qty === "number" ? it.stock_qty : (it.stock_qty ? Number(it.stock_qty) : 0),
-                                                        // keep other useful fields
-                                                        total_sold_qty: it.total_sold_qty ?? 0,
-                                                        purchase: it.purchase ?? 0,
-                                                        incoming: it.incoming ?? 0,
-                                                        usage: it.usage ?? it.total_sold_qty ?? 0,
-                                                        // raw payload if needed later
-                                                        _raw: it,
-                                                    }));
-                                                    setFilteredStockData(transformedData);
-                                                }
+                                                console.log("Filter API response:", res);
+                                                // Accept either `stocks` or `data` array from the API; fallback to empty array
+                                                const apiStocks = Array.isArray(res?.stocks)
+                                                    ? res!.stocks
+                                                    : Array.isArray(res?.data)
+                                                        ? res!.data
+                                                        : [];
+
+                                                const transformedData = apiStocks.map((it: any) => ({
+                                                    // Map to the table's expected keys
+                                                    osa_code: it.erp_code ?? it.item_code ?? it.item?.erp_code ?? "",
+                                                    item: {
+                                                        name: it.item_name ?? it.item?.name ?? "",
+                                                        code: it.item_code ?? it.item?.code ?? "",
+                                                        uoms: it.uoms ?? it.item?.uoms ?? [],
+                                                    },
+                                                    // current quantity (used by `qty` column)
+                                                    qty: typeof it.stock_qty === "number" ? it.stock_qty : (it.stock_qty ? Number(it.stock_qty) : 0),
+                                                    // keep other useful fields
+                                                    total_sold_qty: it.total_sold_qty ?? 0,
+                                                    purchase: it.purchase ?? 0,
+                                                    incoming: it.incoming ?? 0,
+                                                    usage: it.usage ?? it.total_sold_qty ?? 0,
+                                                    // raw payload if needed later
+                                                    _raw: it,
+                                                }));
+
+                                                // Always set filtered data (empty array will clear the table)
+                                                setFilteredStockData(transformedData);
                                             } catch (err) {
                                                 console.error("Filter API error", err);
                                             } finally {
@@ -1607,6 +1618,7 @@ export default function ViewPage() {
                                 />
                             }
                         />
+}
                 </div>
 
                 // </ContainerCard>

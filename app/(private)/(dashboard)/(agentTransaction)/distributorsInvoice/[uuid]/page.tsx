@@ -1610,17 +1610,17 @@ export default function InvoiceddEditPage() {
                             {
                                 key: "Net",
                                 label: "Net",
-                                render: (row) => toInternationalNumber(row.Net) || "0.00"
+                                render: (row) => toInternationalNumber(row.Net,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"
                             },
                             {
                                 key: "Vat",
                                 label: "VAT",
-                                render: (row) => toInternationalNumber(row.Vat) || "0.00"
+                                render: (row) => toInternationalNumber(row.Vat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"
                             },
                             {
                                 key: "Total",
                                 label: "Total",
-                                render: (row) => toInternationalNumber(Number(row.Total)) || "0.00"
+                                render: (row) => toInternationalNumber(Number(row.Total),{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"
                             },
                             {
                                 key: "action",
@@ -1720,8 +1720,8 @@ export default function InvoiceddEditPage() {
                             {[
                                 // { key: "Gross Total", value: `AED ${grossTotal.toFixed(2)}` },
                                 // { key: "Discount", value: `AED ${discount.toFixed(2)}` },
-                                { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(netAmount))}` },
-                                { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(Number(totalVat))}` },
+                                { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(netAmount),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                                { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(Number(totalVat),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                                 // { key: "preVAT", value: `AED ${toInternationalNumber(netAmount - totalVat)}` },
                                 // { key: "Delivery Charges", value: "AED 0.00" },
                             ].map((item) => (

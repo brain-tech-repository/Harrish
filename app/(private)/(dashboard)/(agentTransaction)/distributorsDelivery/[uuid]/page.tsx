@@ -829,9 +829,9 @@ export default function DeliveryAddEditPage() {
     // { key: "Discount", value: `AED ${toInternationalNumber(discount)}` },
     {
       key: "Net Total",
-      value: `${CURRENCY} ${toInternationalNumber(netAmount)}`,
+      value: `${CURRENCY} ${toInternationalNumber(netAmount,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     },
-    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat)}` },
+    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     // { key: "Pre VAT", value: `${CURRENCY} ${toInternationalNumber(preVat)}` },
     // { key: "Delivery Charges", value: `AED ${toInternationalNumber(0.00)}` },
   ];
@@ -1481,7 +1481,7 @@ export default function DeliveryAddEditPage() {
                         label: "Net",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Net) || "0.00"}
+                            {toInternationalNumber(row.Net,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },
@@ -1490,7 +1490,7 @@ export default function DeliveryAddEditPage() {
                         label: "VAT",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Vat) || "0.00"}
+                            {toInternationalNumber(row.Vat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },
@@ -1500,7 +1500,7 @@ export default function DeliveryAddEditPage() {
                         label: "Total",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Total) || "0.00"}
+                            {toInternationalNumber(row.Total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },

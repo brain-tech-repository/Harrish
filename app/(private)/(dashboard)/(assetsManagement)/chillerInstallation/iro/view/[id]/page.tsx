@@ -182,7 +182,6 @@ export default function CustomerInvoicePage() {
                 setLoading(true);
 
                 const result = await iroViewList(id, params);
-                console.log("result1", result);
 
                 const mapped =
                     result?.data?.map((h: any) => {

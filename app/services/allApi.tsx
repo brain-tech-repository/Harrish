@@ -4244,3 +4244,13 @@ export const statusFilter = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const salesmanAllInvoiceExport = async (uuid: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/salesmen/export-invoices/${uuid}`, {params});
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

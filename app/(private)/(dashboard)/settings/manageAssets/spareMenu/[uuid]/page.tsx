@@ -179,9 +179,7 @@ export default function AddEditSub() {
         try {
           
           const res = await genearateCode({ model_name: "spa_cat" });
-          console.log("Generated code response:", res);
           if (res?.code) {  
-            console.log("Setting initial values with code:", res.code);
             formik.setFieldValue("osa_code", res.code);
           }
             // formik.setFieldValue("spa_cat", res.code);
@@ -206,7 +204,6 @@ useEffect(() => {
         codeGeneratedRef.current = true;
 
         const res = await genearateCode({ model_name: "spa_cat" });
-        console.log("Generated code response:", res);
         if (res?.code) {
           setInitialValues((prev:any) => ({
             ...prev,

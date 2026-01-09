@@ -108,7 +108,6 @@ export default function SpareList() {
                 icon: "lucide:edit-2",
                 onClick: (data: TableDataType) => {
                 router.push(`/settings/manageAssets/spareMenu/${data.uuid}`);
-                console.log(data.uuid);
                 },
               },
             ],

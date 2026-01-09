@@ -129,6 +129,7 @@ export type configType = {
     pageSizeOptions?: number[]; // yet to implement
     rowSelection?: boolean;
     onRowSelectionChange?: (selectedRows: number[]) => void;
+    rowColor?: (row: TableDataType) => string;
     dragableColumn?: boolean;
     floatingInfoBar?: {
         showByDefault?: boolean;
@@ -982,14 +983,19 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                     <tbody className="text-[14px] bg-white text-[#535862]">
                         {displayedData.length > 0 &&
                             // repeat row 10 times
-                            displayedData.map((row, index) => (
+                            displayedData.map((row, index) => {
+                                const rowBgColor = config.rowColor ? config.rowColor(row) : undefined;
+                                return (
                                 <tr
                                     className="border-b-[1px] border-[#E9EAEB] capitalize"
                                     key={index}
+                                    style={{
+                                        backgroundColor: rowBgColor
+                                    }}
                                 >
                                     {rowSelection &&
                                         selectedColumns.length > 0 && (
-                                            <td className="sm:sticky left-0 bg-white px-[10px] py-[12px]">
+                                            <td className="sm:sticky left-0 px-[10px] py-[12px]" style={{ backgroundColor: rowBgColor || 'white' }}>
                                                 <div className="flex items-center gap-[12px] font-[500]">
                                                     <CustomCheckbox
                                                         id={"check" + index}
@@ -1014,13 +1020,14 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                             <td
                                                 key={col.key}
                                                 width={col.width}
-                                                className={`px-[24px] py-[12px] bg-white ${col.sticky ? "z-10 md:sticky" : ""} ${col.sticky === "left"
+                                                className={`px-[24px] py-[12px] ${col.sticky ? "z-10 md:sticky" : ""} ${col.sticky === "left"
                                                     ? "left-0"
                                                     : ""
                                                     } ${col.sticky === "right"
                                                         ? "right-0"
                                                         : ""
                                                     }`}
+                                                style={{ backgroundColor: rowBgColor || 'white' }}
                                             >
                                                 {col.render ? (
                                                     col.render(row)
@@ -1040,9 +1047,10 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                             sm:sticky right-0 z-[10]
                                             px-[2px] py-[12px]
                                             border-[#E9EAEB]
-                                            bg-white whitespace-nowrap
+                                            whitespace-nowrap
                                             before:content-[''] before:absolute before:top-0 before:left-0 before:w-[1px] before:h-full before:bg-[#E9EAEB]
                                             "
+                                            style={{ backgroundColor: rowBgColor || 'white' }}
                                             >
                                                 <div className="flex items-center gap-[4px]">
                                                     {rowActions.map(
@@ -1070,7 +1078,7 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                             </td>
                                         )}
                                 </tr>
-                            ))}
+                            )})}
                     </tbody>
                 </table>
             </div>

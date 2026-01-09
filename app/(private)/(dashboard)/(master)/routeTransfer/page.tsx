@@ -637,7 +637,6 @@ export default function StockTransfer() {
                                             <div
                                                 key={idx}
                                                 onClick={() => {
-                                                    console.log(item)
                                                     setSelectedHistoryItem(item)
                                                 }}
                                                 className="group p-4 border rounded-lg hover:border-red-300 hover:shadow-sm cursor-pointer transition-all bg-white"
