@@ -10,7 +10,7 @@ import Table, {
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice } from "@/app/services/agentTransaction";
+import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice ,invoiceExportCollapse} from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
@@ -67,7 +67,7 @@ export default function CustomerInvoicePage() {
                 setShowDrawer(true);
             }}>{row.invoice_code || "-"}</div> 
         },
-    { key: "order_code", label: "Order Code", showByDefault: false },
+    // { key: "order_code", label: "Order Code", showByDefault: false },
     { key: "delivery_code", label: "Delivery Code", showByDefault: true },
     {
         key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
@@ -164,6 +164,24 @@ export default function CustomerInvoicePage() {
             // setLoading(false);
         }
     };
+
+      const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
+        try {
+          setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+          const response = await invoiceExportCollapse({ format });
+          if (response && typeof response === "object" && response.download_url) {
+            await downloadFile(response.download_url);
+            showSnackbar("File downloaded successfully ", "success");
+          } else {
+            showSnackbar("Failed to get download URL", "error");
+          }
+          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } catch (error) {
+          showSnackbar("Failed to download warehouse data", "error");
+          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } finally {
+        }
+      };
 
     const downloadPdf = async (uuid: string) => {
         try {
@@ -347,7 +365,7 @@ export default function CustomerInvoicePage() {
                                 icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                 label: "Export Excel",
                                 labelTw: "text-[12px] hidden sm:block",
-                                onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                                onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
                             },
                             {
                                 icon: "lucide:radio",

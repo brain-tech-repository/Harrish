@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { agentCustomerGlobalSearch, agentCustomerList, agentCustomerStatusUpdate, downloadFile, exportAgentCustomerData } from "@/app/services/allApi";
+import { agentCustomerGlobalSearch, agentCustomerList, agentCustomerStatusUpdate, downloadFile, exportAgentCustomerData, statusFilter } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,7 @@ export default function AgentCustomer() {
     const [routeId, setRouteId] = useState<string>("");
     const [customerTypeId, setCustomerTypeId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
+    const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
     // Refresh table when permissions load
     useEffect(() => {
@@ -44,6 +45,30 @@ export default function AgentCustomer() {
             setRefreshKey((prev) => prev + 1);
         }
     }, [permissions]);
+
+    const { setLoading } = useLoading();
+    const router = useRouter();
+    const { showSnackbar } = useSnackbar();
+    type TableRow = TableDataType & { id?: string };
+    const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+    });
+
+    const handleStatusFilter = async (status: boolean) => {
+        try {
+            // If clicking the same filter, clear it
+            const newFilter = currentStatusFilter === status ? null : status;
+            setCurrentStatusFilter(newFilter);
+            
+            // Refresh the table with the new filter
+            setRefreshKey((k) => k + 1);
+        } catch (error) {
+            console.error("Error filtering by status:", error);
+            showSnackbar("Failed to filter by status", "error");
+        }
+    };
+
     const columns: configType["columns"] = [
         {
             key: "osa_code, name",
@@ -80,52 +105,7 @@ export default function AgentCustomer() {
                 selectedValue: customerTypeId,
             },
         },
-        {
-            key: "category",
-            label: "Customer Category",
-            render: (row: TableDataType) =>
-                typeof row.category === "object" &&
-                    row.category !== null &&
-                    "customer_category_name" in row.category
-                    ? (row.category as { customer_category_name?: string })
-                        .customer_category_name || "-"
-                    : "-",
-            filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
-                onSelect: (selected) => {
-                    setCustomerCategoryId((prev) => prev === selected ? "" : (selected as string));
-                },
-                isSingle: false,
-                selectedValue: customerCategoryId,
-            },
-            // showByDefault: true
-        },
-        {
-            key: "outlet_channel",
-            label: "Outlet Channel",
-            render: (row: TableDataType) =>
-                typeof row.outlet_channel === "object" &&
-                    row.outlet_channel !== null &&
-                    "outlet_channel" in row.outlet_channel
-                    ? (row.outlet_channel as { outlet_channel?: string })
-                        .outlet_channel || "-"
-                    : "-",
-            filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
-                onSelect: (selected) => {
-                    setChannelId((prev) => prev === selected ? "" : (selected as string));
-                },
-                isSingle: false,
-                selectedValue: channelId,
-            },
-
-            // showByDefault: true,
-        },
-        {
+         {
             key: "getWarehouse",
             label: "Distributor",
             render: (row: TableDataType) => {
@@ -188,6 +168,53 @@ export default function AgentCustomer() {
 
             // showByDefault: true,
         },
+         {
+            key: "outlet_channel",
+            label: "Outlet Channel",
+            render: (row: TableDataType) =>
+                typeof row.outlet_channel === "object" &&
+                    row.outlet_channel !== null &&
+                    "outlet_channel" in row.outlet_channel
+                    ? (row.outlet_channel as { outlet_channel?: string })
+                        .outlet_channel || "-"
+                    : "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(channelOptions) ? channelOptions : [], // [{ value, label }]
+                onSelect: (selected) => {
+                    setChannelId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: channelId,
+            },
+
+            // showByDefault: true,
+        },
+        {
+            key: "category",
+            label: "Customer Category",
+            render: (row: TableDataType) =>
+                typeof row.category === "object" &&
+                    row.category !== null &&
+                    "customer_category_name" in row.category
+                    ? (row.category as { customer_category_name?: string })
+                        .customer_category_name || "-"
+                    : "-",
+            filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
+                onSelect: (selected) => {
+                    setCustomerCategoryId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: customerCategoryId,
+            },
+            // showByDefault: true
+        },
+       
+       
         { key: "contact_no", label: "Contact No." },
         { key: "whatsapp_no", label: "Whatsapp No." },
         { key: "street", label: "Street" },
@@ -210,18 +237,14 @@ export default function AgentCustomer() {
                         row.status.toLowerCase() === "active");
                 return <StatusBtn isActive={isActive} />;
             },
+            filterStatus: {
+                enabled: true,
+                onFilter: handleStatusFilter,
+                currentFilter: currentStatusFilter,
+            },
             // showByDefault: true,
         },
     ];
-
-    const { setLoading } = useLoading();
-    const router = useRouter();
-    const { showSnackbar } = useSnackbar();
-    type TableRow = TableDataType & { id?: string };
-    const [threeDotLoading, setThreeDotLoading] = useState({
-        csv: false,
-        xlsx: false,
-    });
 
     const fetchAgentCustomers = useCallback(
         async (
@@ -230,9 +253,12 @@ export default function AgentCustomer() {
         ): Promise<listReturnType> => {
             try {
                 // setLoading(true);
+                
+                // Build params with all filters
                 const params: Record<string, string> = {
                     page: page.toString(),
                 };
+                
                 if (selectedSubCategoryId) {
                     params.subcategory_id = String(selectedSubCategoryId);
                 }
@@ -250,6 +276,12 @@ export default function AgentCustomer() {
                 }
                 if (routeId) {
                     params.route_id = String(routeId);
+                }
+                
+                // Add status filter if active (true=1, false=0)
+                if (currentStatusFilter !== null) {
+                    console.log("Applying status filter in API call:", currentStatusFilter);
+                    params.status = currentStatusFilter ? "1" : "0";
                 }
                 const listRes = await agentCustomerList(params);
                 // setLoading(false);
@@ -269,7 +301,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [agentCustomerList,selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, setLoading]
+        [agentCustomerList,selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, setLoading, currentStatusFilter]
     );
 
     const exportfile = async (format: string) => {
@@ -344,7 +376,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, currentStatusFilter]);
 
     return (
         <>

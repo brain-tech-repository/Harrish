@@ -242,6 +242,9 @@ export default function DeliveryAddEditPage() {
     },
   ]);
 
+  // Track used quantities per item to calculate remaining stock
+  const [usedQuantities, setUsedQuantities] = useState<Record<string, { secondary: number; primary: number }>>({});
+
   // per-row validation errors for item rows (keyed by row index)
   const [itemErrors, setItemErrors] = useState<
     Record<number, Record<string, string>>
@@ -251,6 +254,48 @@ export default function DeliveryAddEditPage() {
   const [itemLoading, setItemLoading] = useState<
     Record<number, { uom?: boolean; price?: boolean }>
   >({});
+
+  // Helper function to calculate available stock for a specific UOM
+  const calculateAvailableStock = (itemId: string, uomType: string, upc: number, currentRowIndex: number) => {
+    const itemInfo = itemsWithUOM[itemId];
+    if (!itemInfo) return 0;
+
+    const totalStock = Number(itemInfo.stock_qty || 0);
+    
+    // Calculate quantities used by other rows
+    let usedSecondaryQty = 0;
+    let usedPrimaryQty = 0;
+
+    itemData.forEach((row, idx) => {
+      if (idx !== currentRowIndex && row.item_id === itemId && row.uom_id) {
+        const rowUOM = row.UOM.find((u: any) => u.value === row.uom_id);
+        if (rowUOM) {
+          const qty = Number(row.Quantity || 0);
+          if (rowUOM.uom_type === 'secondary') {
+            usedSecondaryQty += qty;
+          } else if (rowUOM.uom_type === 'primary') {
+            usedPrimaryQty += qty;
+          }
+        }
+      }
+    });
+
+    if (uomType === 'secondary') {
+      // For secondary UOM: available = floor((totalStock - usedPrimaryQty) / upc) - usedSecondaryQty
+      const remainingStock = totalStock - usedPrimaryQty;
+      const availableInSecondary = Math.floor(remainingStock / upc);
+      return Math.max(0, availableInSecondary - usedSecondaryQty);
+    } else if (uomType === 'primary') {
+      // For primary UOM: available = totalStock - (usedSecondaryQty * their_upc) - usedPrimaryQty
+      // Find secondary UOM's UPC to calculate stock used by secondary
+      const secondaryUOM = itemInfo.uoms.find((u: any) => u.uom_type === 'secondary');
+      const secondaryUpc = secondaryUOM ? Number(secondaryUOM.upc || 1) : 1;
+      const stockUsedBySecondary = usedSecondaryQty * secondaryUpc;
+      return Math.max(0, totalStock - stockUsedBySecondary - usedPrimaryQty);
+    }
+
+    return 0;
+  };
   const validateRow = async (
     index: number,
     row?: ItemData,
@@ -286,7 +331,7 @@ export default function DeliveryAddEditPage() {
           const requestedQuantity = Number(rowData.Quantity);
           
           if (requestedQuantity > availableStock) {
-            partialErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+            partialErrors["Quantity"] = `Quantity cannot exceed available stock (${Math.floor(availableStock)})`;
           }
         }
         
@@ -310,7 +355,7 @@ export default function DeliveryAddEditPage() {
           
           if (requestedQuantity > availableStock) {
             const validationErrors: Record<string, string> = {};
-            validationErrors["Quantity"] = `Quantity cannot exceed available stock (${availableStock})`;
+            validationErrors["Quantity"] = `Quantity cannot exceed available stock (${Math.floor(availableStock)})`;
             setItemErrors((prev) => ({ ...prev, [index]: validationErrors }));
             return;
           }
@@ -549,9 +594,16 @@ export default function DeliveryAddEditPage() {
         
         item.Quantity = "1";
         
-        // Set available stock from warehouse
-        if ((selectedOrder as any)?.warehouse_stock) {
-          item.available_stock = String((selectedOrder as any).warehouse_stock);
+        // Set available stock from warehouse based on first UOM
+        if ((selectedOrder as any)?.warehouse_stock && selectedOrder?.item_uoms?.[0]) {
+          const firstUom = selectedOrder.item_uoms[0];
+          const uomType = firstUom.uom_type || 'primary';
+          const upc = Number(firstUom.upc || 1);
+          const totalStock = Number((selectedOrder as any).warehouse_stock || 0);
+          
+          // Calculate available stock for the first UOM
+          const availableStock = calculateAvailableStock(item.item_id, uomType, upc, index);
+          item.available_stock = String(availableStock);
         } else {
           item.available_stock = "";
         }
@@ -576,12 +628,27 @@ export default function DeliveryAddEditPage() {
       }
     }
     
-    // If user changes UOM, update price based on warehouse pricing
+    // If user changes UOM, update price and available stock based on warehouse pricing
     if (field === "uom_id" && value) {
       item.uom_id = value;
       const selectedUOM = item.UOM.find((uom: any) => uom.value === value);
       if (selectedUOM?.price) {
         item.Price = selectedUOM.price;
+      }
+      
+      // Calculate available stock for this UOM type
+      if (item.item_id && selectedUOM) {
+        const uomType = selectedUOM.uom_type || 'primary';
+        const upc = Number(selectedUOM.uom_type === 'secondary' ? 
+          (orderData.find((o: any) => String(o.id) === item.item_id)?.item_uoms?.find((u: any) => u.id === Number(value))?.upc || 1) : 1);
+        
+        const availableStock = calculateAvailableStock(item.item_id, uomType, upc, index);
+        item.available_stock = String(availableStock);
+        
+        // Reset quantity if it exceeds available stock
+        if (Number(item.Quantity) > availableStock) {
+          item.Quantity = String(Math.min(Number(item.Quantity), availableStock));
+        }
       }
     }
     const qty = Number(item.Quantity) || 0;
@@ -1326,12 +1393,12 @@ export default function DeliveryAddEditPage() {
                                 // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={!row.uom_id || !values.order_code || row.Quantity == 0}
+                                disabled={currentItem?.is_promotional === true ||  !row.uom_id || !values.order_code}
                                 onChange={(e) => {
                                   const raw = (e.target as HTMLInputElement)
                                     .value;
                                   const intPart = raw.split(".")[0];
-                                  const sanitized =
+                                  let sanitized =
                                     intPart === ""
                                       ? ""
                                       : String(
@@ -1340,6 +1407,16 @@ export default function DeliveryAddEditPage() {
                                             parseInt(intPart, 10) || 0
                                           )
                                         );
+                                  
+                                  // Enforce max stock limit
+                                  if (availableStock && sanitized) {
+                                    const maxStock = Math.floor(Number(availableStock));
+                                    const inputValue = parseInt(sanitized, 10);
+                                    if (inputValue > maxStock) {
+                                      sanitized = String(maxStock);
+                                    }
+                                  }
+                                  
                                   recalculateItem(
                                     Number(row.idx),
                                     "Quantity",
@@ -1347,13 +1424,13 @@ export default function DeliveryAddEditPage() {
                                   );
                                 }}
                                 min={1}
-                                max={availableStock}
+                                max={availableStock ? Math.floor(Number(availableStock)) : undefined}
                                 integerOnly={true}
                                 error={err && err}
                               />
                               {availableStock && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  Stock: {availableStock}
+                                  Stock: {Math.floor(Number(availableStock))}
                                 </div>
                               )}
                             </div>

@@ -15,6 +15,7 @@ import {
   salesmanList,
   SalesmanListGlobalSearch,
   updateSalesmanStatus,
+  statusFilter,
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -31,6 +32,7 @@ const SalesmanPage = () => {
     });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -49,7 +51,17 @@ const SalesmanPage = () => {
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [routeId, setRouteId] = useState<string>("");
 
-
+  const handleStatusFilter = async (status: boolean) => {
+    try {
+      const newFilter = currentStatusFilter === status ? null : status;
+      setCurrentStatusFilter(newFilter);
+      
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Error filtering by status:", error);
+      showSnackbar("Failed to filter by status", "error");
+    }
+  };
 
     const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
       try {
@@ -130,9 +142,19 @@ const exportFile = async (format: string) => {
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-        const listRes = await salesmanList({
+        
+        // Build params with all filters
+        const params: any = {
           page: page.toString(),
-        });
+        };
+        
+        // Add status filter if active (true=1, false=0)
+        if (currentStatusFilter !== null) {
+          console.log("Applying status filter in API call:", currentStatusFilter);
+          params.status = currentStatusFilter ? "1" : "0";
+        }
+        
+        const listRes = await salesmanList(params);
         // setLoading(false);
         return {
           data: listRes.data || [],
@@ -146,7 +168,7 @@ const exportFile = async (format: string) => {
         throw error;
       }
     },
-    []
+    [currentStatusFilter]
   );
 
   const columns = [
@@ -227,6 +249,11 @@ const exportFile = async (format: string) => {
       render: (row: TableDataType) => (
         <StatusBtn isActive={String(row.status) === "1"} />
       ),
+      filterStatus: {
+        enabled: true,
+        onFilter: handleStatusFilter,
+        currentFilter: currentStatusFilter,
+      },
     },
   ];
 

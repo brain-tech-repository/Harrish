@@ -4257,3 +4257,22 @@ export const warhouseStocksByFilter = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const statusFilter = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/master/master-data/list", {params});
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const warehouseFilter = async (params?: Params) => {
+  try {
+    const res = await API.get("api/assets/chiller/getupdatewarehouse_chiller", {params});
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
