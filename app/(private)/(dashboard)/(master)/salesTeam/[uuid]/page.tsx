@@ -113,6 +113,30 @@ export default function AddEditSalesman() {
     whatsapp_no: { name: "Uganda", code: "+256", flag: "🇺🇬" },
   });
 
+  // Minimal mapping for common country codes to name/flag shown in UI.
+  const getCountryFromCode = (code?: string) => {
+    if (!code) return undefined;
+    const map: Record<string, { name: string; flag: string }> = {
+      "+91": { name: "India", flag: "🇮🇳" },
+      "+256": { name: "Uganda", flag: "🇺🇬" },
+      "+1": { name: "United States", flag: "🇺🇸" },
+      "+44": { name: "United Kingdom", flag: "🇬🇧" },
+      "+61": { name: "Australia", flag: "🇦🇺" },
+      "+33": { name: "France", flag: "🇫🇷" },
+      "+49": { name: "Germany", flag: "🇩🇪" },
+      "+86": { name: "China", flag: "🇨🇳" },
+      "+81": { name: "Japan", flag: "🇯🇵" },
+      "+1_ca": { name: "Canada", flag: "🇨🇦" },
+    };
+    // prefer exact match; fallback to first two/three chars
+    if (map[code]) return { name: map[code].name, code, flag: map[code].flag };
+    const two = code.slice(0, 2);
+    if (map[two]) return { name: map[two].name, code, flag: map[two].flag };
+    const three = code.slice(0, 3);
+    if (map[three]) return { name: map[three].name, code, flag: map[three].flag };
+    return { name: code, code, flag: "" } as contactCountry;
+  };
+
   const [initialValues, setInitialValues] = useState<SalesmanFormValues>({
     osa_code: "",
     name: "",
@@ -268,8 +292,24 @@ export default function AddEditSalesman() {
       if (isEditMode) {
         try {
           const res = await getSalesmanById(salesmanId as string);
-          if (res && !res.error && res.data) {
+            if (res && !res.error && res.data) {
             const d = res.data;
+            // parse contact to extract country code and number (e.g. "+256 798732189")
+            const rawContact = (d.contact_no || "").toString().trim();
+            let parsedCountryCode = country.contact_no?.code || "";
+            let parsedNumber = rawContact;
+            if (rawContact && rawContact.startsWith("+")) {
+              const parts = rawContact.split(/\s+/);
+              if (parts.length > 0) {
+                parsedCountryCode = parts.shift() || parsedCountryCode;
+                parsedNumber = parts.join(" ");
+              }
+            }
+            // update country state with parsed code (set name/flag if known)
+            setCountry((prev) => {
+              const info = getCountryFromCode(parsedCountryCode) as contactCountry | undefined;
+              return { ...prev, contact_no: { ...prev.contact_no, ...(info || {}), code: parsedCountryCode } };
+            });
             const derivedType = d.salesman_type?.id?.toString() || d.type?.toString() || d.salesman_type_id?.toString() || "";
             
             if (d.salesman_type?.id && d.salesman_type?.salesman_type_name) {
@@ -292,7 +332,7 @@ export default function AddEditSalesman() {
               designation: d.designation || "",
               route_id: d.route?.id?.toString() || "",
               password: "", // password is not returned from API → leave empty
-              contact_no: d.contact_no || "",
+              contact_no: parsedNumber || "",
               warehouse_id: d.salesman_type?.id?.toString() === "6" ? idsWareHouses : d.warehouses?.[0]?.id?.toString(),
               is_block: d.is_block?.toString() || "0",
               forceful_login: d.forceful_login?.toString() || "1",
@@ -406,7 +446,7 @@ export default function AddEditSalesman() {
         forceful_login: values.forceful_login,
         is_block: values.is_block,
         password: values.password,
-        contact_no: values.contact_no,
+        contact_no: `${country.contact_no?.code ? country.contact_no.code + ' ' : ''}${values.contact_no}`.trim(),
         warehouse_id: values.warehouse_id.toString(),
         status: values.status,
         cashier_description_block: values.cashier_description_block,
@@ -670,15 +710,15 @@ export default function AddEditSalesman() {
                   type="contact"
                   label="Owner Contact Number"
                   name="contact_no"
-                  // setSelectedCountry={(country: contactCountry) => setCountry(prev => ({ ...prev, contact_no: country }))}
+                  setSelectedCountry={(country: contactCountry) => setCountry(prev => ({ ...prev, contact_no: country }))}
                   selectedCountry={country.contact_no}
                   value={`${values.contact_no ?? ""}`}
                   onChange={(e) => setFieldValue("contact_no", e.target.value)}
-                error={
-                  errors?.contact_no && touched?.contact_no
-                    ? errors.contact_no
-                    : false
-                }
+                  error={
+                    errors?.contact_no && touched?.contact_no
+                      ? errors.contact_no
+                      : false
+                  }
                 />
                
               </div>

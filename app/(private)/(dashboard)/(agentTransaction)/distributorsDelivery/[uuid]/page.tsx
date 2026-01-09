@@ -421,9 +421,9 @@ export default function DeliveryAddEditPage() {
           let price = uom.price;
           // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            price = stockItem.buom_ctn_price || "-";
-          } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || "-";
+          } else if (uom?.uom_type === "secondary") {
+            price = stockItem.buom_ctn_price || "-";
           }
           return { 
             ...uom, 
@@ -555,9 +555,9 @@ export default function DeliveryAddEditPage() {
             // Apply warehouse stock pricing if available
             if ((selectedOrder as any)?.pricing) {
               if (uom.uom_type === "primary") {
-                price = (selectedOrder as any).pricing?.auom_pc_price || uom.price;
+                price = (selectedOrder as any).pricing?.auom_pc_price;
               } else if (uom.uom_type === "secondary") {
-                price = (selectedOrder as any).pricing?.buom_ctn_price || uom.price;
+                price = (selectedOrder as any).pricing?.buom_ctn_price;
               }
             }
             return {
@@ -582,9 +582,9 @@ export default function DeliveryAddEditPage() {
           let price = firstUom.price;
           if ((selectedOrder as any)?.pricing) {
             if (firstUom.uom_type === "primary") {
-              price = (selectedOrder as any).pricing?.auom_pc_price || firstUom.price;
+              price = (selectedOrder as any).pricing?.auom_pc_price;
             } else if (firstUom.uom_type === "secondary") {
-              price = (selectedOrder as any).pricing?.buom_ctn_price || firstUom.price;
+              price = (selectedOrder as any).pricing?.buom_ctn_price;
             }
           }
           item.Price = String(price);

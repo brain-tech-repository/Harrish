@@ -110,10 +110,10 @@ const columns = [
   {
     key: "Net",
     label: "Net",
-    render: (value: any) => <>{toInternationalNumber(Number(value.Net || 0)) || "0.00"}</>,
+    render: (value: any) => <>{toInternationalNumber(Number(value.Net || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>,
   },
-  { key: "Vat", label: "VAT", render: (value: any) => <>{toInternationalNumber(Number(value.Vat || 0)) || "0.00"}</> },
-  { key: "Total", label: "Total", render: (value: any) => <>{toInternationalNumber(Number(value.Total || 0)) || "0.00"}</> },
+  { key: "Vat", label: "VAT", render: (value: any) => <>{toInternationalNumber(Number(value.Vat || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</> },
+  { key: "Total", label: "Total", render: (value: any) => <>{toInternationalNumber(Number(value.Total || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</> },
 ];
 
 export default function OrderDetailPage() {
@@ -202,8 +202,8 @@ export default function OrderDetailPage() {
 
   // Always show these fields (not conditionally hidden)
   const keyValueData = [
-    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(netTotal)}` },
-    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(vatTotal)}` },
+    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(netTotal, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(vatTotal, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     // { key: "Pre VAT", value: `${CURRENCY} ${toInternationalNumber(computedPreVat)}` },
     // (deliveryData?.delivery_charges) && {
     //   key: "Delivery Charges",

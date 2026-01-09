@@ -727,7 +727,7 @@ export default function AddPricing() {
           { id: "1", label: "Company", isSelected: false },
           { id: "2", label: "Region", isSelected: false },
           { id: "4", label: "Area", isSelected: false },
-          { id: "3", label: "Warehouse", isSelected: false },
+          { id: "3", label: "Distributor", isSelected: false },
           { id: "5", label: "Route", isSelected: false },
         ],
       },
@@ -1431,7 +1431,7 @@ export default function AddPricing() {
     );
   }
   return (
-    <div className="p-6">
+    <div className="">
       <div className="flex items-center gap-2">
         <Link href="/pricing">
           <Icon icon="lucide:arrow-left" width={24} />

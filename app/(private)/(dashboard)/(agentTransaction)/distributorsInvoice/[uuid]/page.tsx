@@ -429,9 +429,9 @@ export default function InvoiceddEditPage() {
                     let price = uom.price;
                     // Override with specific pricing from the API response
                     if (uom?.uom_type === "primary") {
-                        price = stockItem.buom_ctn_price || uom.price;
-                    } else if (uom?.uom_type === "secondary") {
                         price = stockItem.auom_pc_price || uom.price;
+                    } else if (uom?.uom_type === "secondary") {
+                        price = stockItem.buom_ctn_price || uom.price;
                     }
                     return {
                         ...uom,
@@ -1474,9 +1474,9 @@ export default function InvoiceddEditPage() {
                                                             newData[index].uom_id = String(firstUom.uom_id || ""); // Use uom_id instead of id
                                                             newData[index].UOM = String(firstUom.uom_id || "");
                                                             if (firstUom.uom_type === "primary") {
-                                                                newData[index].Price = (selectedOrder as any).pricing?.auom_pc_price || firstUom.price || "";
+                                                                newData[index].Price = (selectedOrder as any).pricing?.auom_pc_price || "";
                                                             } else if (firstUom.uom_type === "secondary") {
-                                                                newData[index].Price = (selectedOrder as any).pricing?.buom_ctn_price || firstUom.price || "";
+                                                                newData[index].Price = (selectedOrder as any).pricing?.buom_ctn_price ||  "";
                                                             } else {
                                                                 newData[index].Price = firstUom.price || "";
                                                             }

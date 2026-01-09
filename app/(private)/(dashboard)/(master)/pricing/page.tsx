@@ -134,7 +134,7 @@ export default function Pricing() {
 
     return (
         <>
-            <div className="h-[calc(100%-60px)]">
+            <div className="h-full">
                 <Table
                     refreshKey={refreshKey}
                     config={{
