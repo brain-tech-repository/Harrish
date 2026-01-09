@@ -13,7 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import { returnList, agentReturnExport, exportReturneWithDetails } from "@/app/services/agentTransaction";
+import { returnList, agentReturnExport, exportReturneWithDetails,returnExportCollapse } from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { downloadFile } from "@/app/services/allApi";
@@ -107,6 +107,10 @@ export default function CustomerInvoicePage() {
         region: "",
         routeCode: "",
     });
+     const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
 
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -231,7 +235,23 @@ export default function CustomerInvoicePage() {
             setLoading(false);
         }
     };
-
+  const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await returnExportCollapse({ format });
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } catch (error) {
+      showSnackbar("Failed to download warehouse data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+    }
+  };
     const downloadPdf = async (uuid: string) => {
         try {
             setLoading(true);
@@ -261,25 +281,29 @@ export default function CustomerInvoicePage() {
                         columnFilter: true,
                         threeDot: [
                             {
-                                icon: "gala:file-document",
-                                label: isExporting ? "Exporting..." : "Export CSV",
+                                icon: threeDotLoading.csv
+                    ? "eos-icons:three-dots-loading"
+                    : "gala:file-document",
+                                label: "Export CSV",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     if (isExporting) return;
                                     const ids = selectedRow?.map((id) => {
                                         return data[id].id;
                                     })
-                                    exportFile("csv");
+                                   !threeDotLoading.csv && exportFile("csv");
                                 }
                             },
                             {
-                                icon: "gala:file-document",
-                                label: isExporting ? "Exporting..." : "Export Excel",
+                                icon: threeDotLoading.csv
+                    ? "eos-icons:three-dots-loading"
+                    : "gala:file-document",
+                                label: "Export Excel",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     if (isExporting) return;
                                     const ids = selectedRow?.map((id) => {
                                         return data[id].id;
                                     })
-                                    exportFile("csv");
+                                    !threeDotLoading.csv && exportCollapseFile("xlsx");
                                 }
                             },
                         ],

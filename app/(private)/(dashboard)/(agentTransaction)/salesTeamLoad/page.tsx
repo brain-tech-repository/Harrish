@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload } from "@/app/services/agentTransaction";
+import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse } from "@/app/services/agentTransaction";
 import { useRef } from "react";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -282,6 +282,24 @@ export default function SalemanLoad() {
     }
   };
 
+  const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
+      try {
+        setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+        const response = await loadExportCollapse({ format });
+        if (response && typeof response === "object" && response.download_url) {
+          await downloadFile(response.download_url);
+          showSnackbar("File downloaded successfully ", "success");
+        } else {
+          showSnackbar("Failed to get download URL", "error");
+        }
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+      } catch (error) {
+        showSnackbar("Failed to download warehouse data", "error");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+      } finally {
+      }
+    };
+
   return (
     <div className="flex flex-col h-full">
       <Table
@@ -306,7 +324,7 @@ export default function SalemanLoad() {
                 icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export Excel",
                 labelTw: "text-[12px] hidden sm:block",
-                onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
               },
             ],
             filterRenderer: FilterComponent,

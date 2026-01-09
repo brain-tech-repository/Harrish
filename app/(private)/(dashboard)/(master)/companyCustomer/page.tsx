@@ -8,7 +8,8 @@ import {
   companyCustomerStatusUpdate,
   downloadFile,
   exportCompanyCustomerData,
-  getCompanyCustomers
+  getCompanyCustomers,
+  statusFilter
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -49,6 +50,7 @@ interface CustomerItem {
 export default function CompanyCustomers() {
   const { can, permissions } = usePagePermissions();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -68,9 +70,36 @@ export default function CompanyCustomers() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
 
+  const handleStatusFilter = async (status: boolean) => {
+    try {
+      // If clicking the same filter, clear it
+      const newFilter = currentStatusFilter === status ? null : status;
+      setCurrentStatusFilter(newFilter);
+      
+      // Refresh the table with the new filter
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error("Error filtering by status:", error);
+      showSnackbar("Failed to filter by status", "error");
+    }
+  };
+
   const fetchCompanyCustomers = async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
     // setLoading(true);
-    const res = await getCompanyCustomers({ page: pageNo.toString(), pageSize: pageSize.toString() });
+    
+    // Build params with all filters
+    const params: any = {
+      page: pageNo.toString(),
+      pageSize: pageSize.toString()
+    };
+    
+    // Add status filter if active (true=1, false=0)
+    if (currentStatusFilter !== null) {
+      console.log("Applying status filter in API call:", currentStatusFilter);
+      params.status = currentStatusFilter ? "1" : "0";
+    }
+    
+    const res = await getCompanyCustomers(params);
     // setLoading(false);
     if (res.error) {
       showSnackbar(res.data.message || "Failed to fetch Company Customers", "error");
@@ -149,6 +178,11 @@ export default function CompanyCustomers() {
       // isSortable: true,
       render: (row: TableDataType) => {
         return <StatusBtn isActive={String(row.status) > "0"} />;
+      },
+      filterStatus: {
+        enabled: true,
+        onFilter: handleStatusFilter,
+        currentFilter: currentStatusFilter,
       },
       // showByDefault: true,
     },

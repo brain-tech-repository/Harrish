@@ -175,6 +175,11 @@ export type configType = {
                 ) => Promise<listReturnType> | listReturnType
             ) => React.ReactNode;
         };
+        filterStatus?: {
+            enabled: boolean;
+            onFilter: (status: boolean) => Promise<void>;
+            currentFilter?: boolean | null;
+        };
     }[];
 };
 
@@ -929,6 +934,32 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                             )
                                                         }
                                                     />
+                                                )}
+                                                {col.filterStatus?.enabled && (
+                                                    <div className="flex flex-col gap-0 ml-1">
+                                                        <Icon
+                                                            icon="ep:arrow-up"
+                                                            width={12}
+                                                            height={12}
+                                                            className={`cursor-pointer transition-colors ${
+                                                                col.filterStatus.currentFilter === true
+                                                                    ? "text-blue-600"
+                                                                    : "text-gray-400 hover:text-gray-600"
+                                                            }`}
+                                                            onClick={() => col.filterStatus?.onFilter(true)}
+                                                        />
+                                                        <Icon
+                                                            icon="ep:arrow-down"
+                                                            width={12}
+                                                            height={12}
+                                                            className={`cursor-pointer transition-colors ${
+                                                                col.filterStatus.currentFilter === false
+                                                                    ? "text-blue-600"
+                                                                    : "text-gray-400 hover:text-gray-600"
+                                                            }`}
+                                                            onClick={() => col.filterStatus?.onFilter(false)}
+                                                        />
+                                                    </div>
                                                 )}
                                             </div>
                                         </th>

@@ -592,6 +592,13 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:adjust",
             iconColor: "text-cyan-500",
           },
+          {
+            isActive: false,
+            href: "/customerReport",
+            label: "Customer Report",
+            leadingIcon: "stash:person-duotone",
+            iconColor: "text-cyan-500",
+          },
         ],
       },
     ],

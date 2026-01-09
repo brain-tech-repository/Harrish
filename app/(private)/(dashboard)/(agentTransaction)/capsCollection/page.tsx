@@ -10,7 +10,7 @@ import Table, {
   TableDataType,
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { capsCollectionList, exportCapsCollection, capsCollectionStatusUpdate } from "@/app/services/agentTransaction";
+import { capsCollectionList, exportCapsCollection, capsCollectionStatusUpdate,capsExportCollapse } from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext"; // ✅ import snackbar
 import { useLoading } from "@/app/services/loadingContext";
@@ -175,6 +175,23 @@ export default function SalemanLoad() {
     } finally {
     }
   };
+  const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await capsExportCollapse({ format });
+      if (response && typeof response === 'object' && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } catch (error) {
+      showSnackbar("Failed to download Salesman Load data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+    }
+  };
 
 
   const statusUpdate = async (
@@ -311,7 +328,7 @@ export default function SalemanLoad() {
                 icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export Excel",
                 labelTw: "text-[12px] hidden sm:block",
-                onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
               },
             ],
             columnFilter: true,
