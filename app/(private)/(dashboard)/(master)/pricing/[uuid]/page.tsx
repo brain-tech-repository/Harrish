@@ -64,8 +64,8 @@ const initialKeys: KeyGroup[] = [
     options: [
       { id: "1", label: "Company", isSelected: false },
       { id: "2", label: "Region", isSelected: false },
-      { id: "3", label: "Area", isSelected: false },
-      { id: "4", label: "Warehouse", isSelected: false },
+      { id: "4", label: "Area", isSelected: false },
+      { id: "3", label: "Warehouse", isSelected: false },
       { id: "5", label: "Route", isSelected: false },
     ],
   },
@@ -343,8 +343,18 @@ export default function AddPricing() {
   const [itemCategoryOptions, setItemCategoryOptions] = useState<{ label: string; value: string }[]>([]);
   const [itemOptions, setItemOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedItemDetails, setSelectedItemDetails] = useState<ItemDetail[]>([]);
+  const [selectedRegionDetails, setSelectedRegionDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedAreaDetails, setSelectedAreaDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedWarehouseDetails, setSelectedWarehouseDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedRouteDetails, setSelectedRouteDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedCompanyDetails, setSelectedCompanyDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedChannelDetails, setSelectedChannelDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedCustomerCategoryDetails, setSelectedCustomerCategoryDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedCustomerDetails, setSelectedCustomerDetails] = useState<{ label: string; value: string }[]>([]);
+  const [selectedItemCategoryDetails, setSelectedItemCategoryDetails] = useState<{ label: string; value: string }[]>([]);
 
-  // Removed duplicate keyValue declaration
+  // No duplicate keyValue declaration
+
   useEffect(() => {
     async function loadCompanies() {
       const companies = await companyList();
@@ -354,18 +364,18 @@ export default function AddPricing() {
     // preload some channel and categories for better UX
     (async () => {
       try {
-        const ch = await channelList({ dropdown: 'true',per_page: "50" });
+        const ch = await channelList({ dropdown: 'true', per_page: "50" });
         setChannelOptions((ch?.data || []).map((c: any) => ({
           label: `${c.outlet_channel || c.outlet_channel_name || c.channel_name || c.name || ''}`,
           value: String(c.id),
         })));
       } catch (e) { }
       try {
-        const cat = await customerCategoryGlobalSearch({ dropdown: 'true',per_page: "50" });
+        const cat = await customerCategoryGlobalSearch({ dropdown: 'true', per_page: "50" });
         setCustomerCategoryOptions((cat?.data || []).map((c: any) => ({ label: `${c.customer_category_name || ''}`, value: String(c.id) })));
       } catch (e) { }
       try {
-        const ic = await itemCategory({ dropdown: 'true',per_page: "50" });
+        const ic = await itemCategory({ dropdown: 'true', per_page: "50" });
         setItemCategoryOptions((ic?.data || []).map((c: any) => ({ label: c.category_name || c.name || "", value: String(c.id) })));
       } catch (e) { }
     })();
@@ -375,67 +385,122 @@ export default function AddPricing() {
   useEffect(() => {
     if (!keyValue["Company"] || keyValue["Company"].length === 0) {
       setRegionOptions([]);
-      setAreaOptions([]);
-      setWarehouseOptions([]);
-      setRouteOptions([]);
-      setKeyValue((kv) => ({ ...kv, Region: [], Area: [], Warehouse: [], Route: [] }));
+      // setAreaOptions([]); // Handled by cascading effect? No, we should clear immediate options.
+      // But we should NOT clear the keyValue, as it might be populated by Edit mode despite empty parent.
       return;
     }
+    let active = true;
     async function fetchRegions() {
       const regions = await regionList({ company_id: keyValue["Company"].join(",") });
-      setRegionOptions(regions?.data?.map((r: any) => ({ label: r.region_name || r.name, value: String(r.id) })) || []);
-      setKeyValue((kv) => ({ ...kv, Region: [], Area: [], Warehouse: [], Route: [] }));
+      if (!active) return;
+      let options = regions?.data?.map((r: any) => ({ label: r.region_name || r.name, value: String(r.id) })) || [];
+
+      // Preservation Logic:
+      const currentCompanyIds = keyValue["Company"];
+      const isOriginalParent = selectedCompanyDetails.length > 0 &&
+        currentCompanyIds.every(id => selectedCompanyDetails.some(d => d.value === id));
+
+      if (isOriginalParent) {
+        const missing = selectedRegionDetails.filter(d => !options.some((o: any) => o.value === d.value));
+        options = [...options, ...missing];
+      }
+
+      setRegionOptions(options);
+
+      // Standard filter: remove selected Regions that are no longer in the valid options
+      const validIds = new Set(options.map((o: any) => o.value));
+
+      // If we had selectedCompanyDetails we could do the parent check, but skipping for Region as it's top-level-ish
+      setKeyValue((kv) => ({
+        ...kv,
+        Region: (kv["Region"] || []).filter((id) => validIds.has(id)),
+      }));
     }
     fetchRegions();
-  }, [keyValue["Company"]]);
+    return () => { active = false; };
+  }, [keyValue["Company"], selectedCompanyDetails, selectedRegionDetails]);
 
   // When region changes, fetch areas and reset children
   useEffect(() => {
     if (!keyValue["Region"] || keyValue["Region"].length === 0) {
       setAreaOptions([]);
-      setWarehouseOptions([]);
-      setRouteOptions([]);
-      setKeyValue((kv) => ({ ...kv, Area: [], Warehouse: [], Route: [] }));
       return;
     }
     async function fetchAreas() {
       const areas = await subRegionList({ region_id: keyValue["Region"].join(",") });
       setAreaOptions(areas?.data?.map((a: any) => ({ label: a.area_name || a.name, value: String(a.id) })) || []);
-      setKeyValue((kv) => ({ ...kv, Area: [], Warehouse: [], Route: [] }));
     }
     fetchAreas();
   }, [keyValue["Region"]]);
+
 
   // When area changes, fetch warehouses and reset children
   useEffect(() => {
     if (!keyValue["Area"] || keyValue["Area"].length === 0) {
       setWarehouseOptions([]);
-      setRouteOptions([]);
-      setKeyValue((kv) => ({ ...kv, Warehouse: [], Route: [] }));
       return;
     }
+    let active = true;
     async function fetchWarehouses() {
       const warehouses = await warehouseList({ area_id: keyValue["Area"].join(",") });
-      setWarehouseOptions(warehouses?.data?.map((w: any) => ({ label: w.warehouse_name || w.name, value: String(w.id) })) || []);
-      setKeyValue((kv) => ({ ...kv, Warehouse: [], Route: [] }));
+      if (!active) return;
+      let options = warehouses?.data?.map((w: any) => ({ label: w.warehouse_name || w.name, value: String(w.id) })) || [];
+
+      // Preservation Logic:
+      const currentAreaIds = keyValue["Area"];
+      const isOriginalParent = selectedAreaDetails.length > 0 &&
+        currentAreaIds.every(id => selectedAreaDetails.some(d => d.value === id));
+
+      if (isOriginalParent) {
+        const missing = selectedWarehouseDetails.filter(d => !options.some((o: any) => o.value === d.value));
+        options = [...options, ...missing];
+      }
+
+      setWarehouseOptions(options);
+
+      const validIds = new Set(options.map((o: any) => o.value));
+      setKeyValue((kv) => ({
+        ...kv,
+        Warehouse: (kv["Warehouse"] || []).filter((id) => validIds.has(id)),
+      }));
     }
     fetchWarehouses();
-  }, [keyValue["Area"]]);
+    return () => { active = false; };
+  }, [keyValue["Area"], selectedAreaDetails, selectedWarehouseDetails]);
 
   // When warehouse changes, fetch routes and reset child
   useEffect(() => {
     if (!keyValue["Warehouse"] || keyValue["Warehouse"].length === 0) {
       setRouteOptions([]);
-      setKeyValue((kv) => ({ ...kv, Route: [] }));
       return;
     }
+    let active = true;
     async function fetchRoutes() {
       const routes = await routeList({ warehouse_id: keyValue["Warehouse"].join(",") });
-      setRouteOptions(routes?.data?.map((r: any) => ({ label: r.route_name || r.name, value: String(r.id) })) || []);
-      setKeyValue((kv) => ({ ...kv, Route: [] }));
+      if (!active) return;
+      let options = routes?.data?.map((r: any) => ({ label: r.route_name || r.name, value: String(r.id) })) || [];
+
+      // Preservation Logic:
+      const currentWarehouseIds = keyValue["Warehouse"];
+      const isOriginalParent = selectedWarehouseDetails.length > 0 &&
+        currentWarehouseIds.every(id => selectedWarehouseDetails.some(d => d.value === id));
+
+      if (isOriginalParent) {
+        const missing = selectedRouteDetails.filter(d => !options.some((o: any) => o.value === d.value));
+        options = [...options, ...missing];
+      }
+
+      setRouteOptions(options);
+
+      const validIds = new Set(options.map((o: any) => o.value));
+      setKeyValue((kv) => ({
+        ...kv,
+        Route: (kv["Route"] || []).filter((id) => validIds.has(id)),
+      }));
     }
     fetchRoutes();
-  }, [keyValue["Warehouse"]]);
+    return () => { active = false; };
+  }, [keyValue["Warehouse"], selectedWarehouseDetails, selectedRouteDetails]);
 
   const steps: StepperStep[] = [
     { id: 1, label: "Key Combination" },
@@ -585,6 +650,81 @@ export default function AddPricing() {
             // set keyValue in one go
             setKeyValue((kv) => ({ ...kv, ...nextKeyValue }));
 
+
+
+            // Set options from response data
+            const regionData = (res as any).region;
+            if (Array.isArray(regionData) && regionData.length > 0 && typeof regionData[0] === 'object') {
+              setSelectedRegionDetails(regionData.map((r: any) => ({
+                label: `${r.region_name || r.name || ""}`,
+                value: String(r.id)
+              })));
+            }
+
+            const areaData = (res as any).area;
+            if (Array.isArray(areaData) && areaData.length > 0 && typeof areaData[0] === 'object') {
+              setSelectedAreaDetails(areaData.map((a: any) => ({
+                label: `${a.area_name || a.name || ""}`,
+                value: String(a.id)
+              })));
+            }
+            const warehouseData = (res as any).warehouse;
+
+            if (Array.isArray(warehouseData) && warehouseData.length > 0 && typeof warehouseData[0] === 'object') {
+              setSelectedWarehouseDetails(warehouseData.map((w: any) => ({
+                label: `${w.warehouse_code || w.code || ""} - ${w.warehouse_name || w.name || ""}`,
+                value: String(w.id)
+              })));
+            }
+
+            const routeData = (res as any).route;
+            if (Array.isArray(routeData) && routeData.length > 0 && typeof routeData[0] === 'object') {
+              setSelectedRouteDetails(routeData.map((r: any) => ({
+                label: `${r.route_code || r.code || ""} - ${r.route_name || r.name || ""}`,
+                value: String(r.id)
+              })));
+            }
+
+            const companyData = (res as any).company;
+            if (Array.isArray(companyData) && companyData.length > 0 && typeof companyData[0] === 'object') {
+              setSelectedCompanyDetails(companyData.map((c: any) => ({
+                label: `${c.company_code || c.code || ""} - ${c.company_name || c.name || ""}`,
+                value: String(c.id)
+              })));
+            }
+
+            const channelData = (res as any).outlet_channel;
+            if (Array.isArray(channelData) && channelData.length > 0 && typeof channelData[0] === 'object') {
+              setSelectedChannelDetails(channelData.map((c: any) => ({
+                label: `${c.outlet_channel || c.outlet_channel_name || c.channel_name || c.name || ''}`,
+                value: String(c.id)
+              })));
+            }
+
+            const customerCategoryData = (res as any).customer_category;
+            if (Array.isArray(customerCategoryData) && customerCategoryData.length > 0 && typeof customerCategoryData[0] === 'object') {
+              setSelectedCustomerCategoryDetails(customerCategoryData.map((c: any) => ({
+                label: `${c.customer_category_name || c.name || ''}`,
+                value: String(c.id)
+              })));
+            }
+
+            const customerData = (res as any).customer;
+            if (Array.isArray(customerData) && customerData.length > 0 && typeof customerData[0] === 'object') {
+              setSelectedCustomerDetails(customerData.map((c: any) => ({
+                label: `${c.osa_code || c.code || ""}${c.name ? " - " + (c.name || c.customer_name || c.outlet_name) : ""}`,
+                value: String(c.id)
+              })));
+            }
+
+            const itemCategoryData = (res as any).item_category;
+            if (Array.isArray(itemCategoryData) && itemCategoryData.length > 0 && typeof itemCategoryData[0] === 'object') {
+              setSelectedItemCategoryDetails(itemCategoryData.map((c: any) => ({
+                label: `${c.category_name || c.name || ""}`,
+                value: String(c.id)
+              })));
+            }
+
             // If API returned full item objects, use them; otherwise fetch details by ids
             const itemField = (res as Record<string, unknown>).item;
             if (Array.isArray(itemField) && itemField.length > 0) {
@@ -720,33 +860,6 @@ export default function AddPricing() {
 
   const handleSubmit = async () => {
     clearErrors();
-    const initialKeys = [
-      {
-        type: "Location",
-        options: [
-          { id: "1", label: "Company", isSelected: false },
-          { id: "2", label: "Region", isSelected: false },
-          { id: "4", label: "Area", isSelected: false },
-          { id: "3", label: "Distributor", isSelected: false },
-          { id: "5", label: "Route", isSelected: false },
-        ],
-      },
-      {
-        type: "Customer",
-        options: [
-          { id: "6", label: "Channel", isSelected: false },
-          { id: "7", label: "Customer Category", isSelected: false },
-          { id: "8", label: "Customer", isSelected: false },
-        ],
-      },
-      {
-        type: "Item",
-        options: [
-          { id: "9", label: "Item Category", isSelected: false },
-          { id: "10", label: "Item", isSelected: false },
-        ],
-      },
-    ];
     function getKeyIds(type: string, selectedLabels: string[]): number[] {
       const group = initialKeys.find((g) => g.type === type);
       if (!group) return [];
@@ -775,16 +888,16 @@ export default function AddPricing() {
       end_date: promotion.endDate,
       apply_on: 1, // static/mapped as per requirement
       status: promotion.status, // or fix to 1 if static
-      // arrays of selected ids for each key (as requested)
-      company: keyValue["Company"] || [],
-      region: keyValue["Region"] || [],
-      area: keyValue["Area"] || [],
-      warehouse: keyValue["Warehouse"] || [],
-      route: keyValue["Route"] || [],
-      outlet_channel: keyValue["Channel"] || [],
-      customer_category: keyValue["Customer Category"] || [],
-      customer: keyValue["Customer"] || [],
-      item_category: keyValue["Item Category"] || [],
+      // arrays of selected ids for each key (as requested), filtered by keyCombo activity
+      company: keyCombo.Location.includes("Company") ? (keyValue["Company"] || []) : [],
+      region: keyCombo.Location.includes("Region") ? (keyValue["Region"] || []) : [],
+      area: keyCombo.Location.includes("Area") ? (keyValue["Area"] || []) : [],
+      warehouse: keyCombo.Location.includes("Warehouse") ? (keyValue["Warehouse"] || []) : [],
+      route: keyCombo.Location.includes("Route") ? (keyValue["Route"] || []) : [],
+      outlet_channel: keyCombo.Customer.includes("Channel") ? (keyValue["Channel"] || []) : [],
+      customer_category: keyCombo.Customer.includes("Customer Category") ? (keyValue["Customer Category"] || []) : [],
+      customer: keyCombo.Customer.includes("Customer") ? (keyValue["Customer"] || []) : [],
+      item_category: keyCombo.Item.includes("Item Category") ? (keyValue["Item Category"] || []) : [],
       item: selectedItemIds,
       // keep legacy CSV field for compatibility
       item_id: selectedItemIds.join(","),
@@ -904,7 +1017,7 @@ export default function AddPricing() {
         const handleCompanySearch = async (q: string) => {
           if (!q || q.trim().length === 0) return companyOptions;
           try {
-            const res = await companyListGlobalSearch({ query: q, dropdown: 'true' ,per_page: "50"});
+            const res = await companyListGlobalSearch({ query: q, dropdown: 'true', per_page: "50" });
             const data = Array.isArray(res?.data) ? res.data : [];
             return data.map((c: any) => ({ value: String(c.id), label: `${c.company_code || c.name || ""} - ${c.company_name || c.name || ""}` }));
           } catch (err) {
@@ -915,7 +1028,7 @@ export default function AddPricing() {
         const handleRegionSearch = async (q: string) => {
           if (!q || q.trim().length === 0) return regionOptions;
           try {
-            const params: any = { query: q, dropdown: 'true',per_page: "50" };
+            const params: any = { query: q, dropdown: 'true', per_page: "50" };
             if (keyValue["Company"] && keyValue["Company"].length > 0) params.company_id = keyValue["Company"].join(",");
             const res = await regionGlobalSearch(params);
             const data = Array.isArray(res?.data) ? res.data : [];
@@ -941,7 +1054,7 @@ export default function AddPricing() {
         const handleWarehouseSearch = async (q: string) => {
           if (!q || q.trim().length === 0) return warehouseOptions;
           try {
-            const params: any = { query: q, dropdown: 'true',per_page: "50" };
+            const params: any = { query: q, dropdown: 'true', per_page: "50" };
             if (keyValue["Area"] && keyValue["Area"].length > 0) params.area_id = keyValue["Area"].join(",");
             const res = await warehouseListGlobalSearch(params);
             const data = Array.isArray(res?.data) ? res.data : [];
@@ -954,7 +1067,7 @@ export default function AddPricing() {
         const handleRouteSearch = async (q: string) => {
           if (!q || q.trim().length === 0) return routeOptions;
           try {
-            const params: any = { query: q, dropdown: 'true',per_page: "50" };
+            const params: any = { query: q, dropdown: 'true', per_page: "50" };
             if (keyValue["Warehouse"] && keyValue["Warehouse"].length > 0) params.warehouse_id = keyValue["Warehouse"].join(",");
             const res = await routeGlobalSearch(params);
             const data = Array.isArray(res?.data) ? res.data : [];
@@ -1066,8 +1179,37 @@ export default function AddPricing() {
                           multiple={true}
                           initialSelected={(() => {
                             const sel = keyValue[locKey] || [];
-                            const opts = locKey === "Company" ? companyOptions : locKey === "Region" ? regionOptions : locKey === "Area" ? areaOptions : locKey === "Warehouse" ? warehouseOptions : routeOptions;
-                            return opts.filter((o) => sel.includes(o.value));
+                            if (locKey === "Warehouse") {
+                              return [
+                                ...selectedWarehouseDetails.filter(d => sel.includes(d.value)),
+                                ...warehouseOptions.filter(o => sel.includes(o.value) && !selectedWarehouseDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (locKey === "Route") {
+                              return [
+                                ...selectedRouteDetails.filter(d => sel.includes(d.value)),
+                                ...routeOptions.filter(o => sel.includes(o.value) && !selectedRouteDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (locKey === "Company") {
+                              return [
+                                ...selectedCompanyDetails.filter(d => sel.includes(d.value)),
+                                ...companyOptions.filter(o => sel.includes(o.value) && !selectedCompanyDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (locKey === "Region") {
+                              return [
+                                ...selectedRegionDetails.filter(d => sel.includes(d.value)),
+                                ...regionOptions.filter(o => sel.includes(o.value) && !selectedRegionDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (locKey === "Area") {
+                              return [
+                                ...selectedAreaDetails.filter(d => sel.includes(d.value)),
+                                ...areaOptions.filter(o => sel.includes(o.value) && !selectedAreaDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            return [];
                           })()}
                           onSearch={async (q: string) => {
                             if (locKey === "Company") return await handleCompanySearch(q as string);
@@ -1078,10 +1220,39 @@ export default function AddPricing() {
                             return [];
                           }}
                           onChangeSelected={(selected) => {
-                            setKeyValue((s) => ({ ...s, [locKey]: selected.map((o) => o.value) }));
+                            // Update details state for persistence
+                            const updateDetails = (setter: React.Dispatch<React.SetStateAction<{ label: string; value: string }[]>>) => {
+                              setter(prev => {
+                                const selectedIds = selected.map(s => s.value);
+                                const kept = prev.filter(d => selectedIds.includes(d.value));
+                                const newDetails = selected.filter(s => !kept.some(k => k.value === s.value));
+                                return [...kept, ...newDetails];
+                              });
+                            };
+
+                            if (locKey === "Company") updateDetails(setSelectedCompanyDetails);
+                            if (locKey === "Region") updateDetails(setSelectedRegionDetails);
+                            if (locKey === "Area") updateDetails(setSelectedAreaDetails);
+                            if (locKey === "Warehouse") updateDetails(setSelectedWarehouseDetails);
+                            if (locKey === "Route") updateDetails(setSelectedRouteDetails);
+
+                            setKeyValue((s) => {
+                              const newState = { ...s, [locKey]: selected.map((o) => o.value) };
+                              return newState;
+                            });
                           }}
-                          onSelect={(opt: { value: string }) => {
-                            // maintain backward compatibility: add selection if not present
+                          onSelect={(opt: { value: string; label: string }) => {
+                            // Update details state for persistence on single select addition
+                            const addDetail = (setter: React.Dispatch<React.SetStateAction<{ label: string; value: string }[]>>) => {
+                              setter(prev => prev.some(p => p.value === opt.value) ? prev : [...prev, opt]);
+                            };
+
+                            if (locKey === "Company") addDetail(setSelectedCompanyDetails);
+                            if (locKey === "Region") addDetail(setSelectedRegionDetails);
+                            if (locKey === "Area") addDetail(setSelectedAreaDetails);
+                            if (locKey === "Warehouse") addDetail(setSelectedWarehouseDetails);
+                            if (locKey === "Route") addDetail(setSelectedRouteDetails);
+
                             setKeyValue((s) => {
                               const prev = s[locKey] || [];
                               if (prev.includes(String(opt.value))) return s;
@@ -1112,10 +1283,22 @@ export default function AddPricing() {
                           multiple={true}
                           initialSelected={(() => {
                             const sel = keyValue[custKey] || [];
-                            // for customer category we may not have a local cache; fall back to empty
-                            if (custKey === "Customer Category") return customerCategoryOptions.filter((o) => sel.includes(o.value));
-                            if (custKey === "Channel") return channelOptions.filter((o) => sel.includes(o.value));
-                            if (custKey === "Customer") return [];
+                            if (custKey === "Channel") {
+                              return [
+                                ...selectedChannelDetails.filter(d => sel.includes(d.value)),
+                                ...channelOptions.filter(o => sel.includes(o.value) && !selectedChannelDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (custKey === "Customer Category") {
+                              return [
+                                ...selectedCustomerCategoryDetails.filter(d => sel.includes(d.value)),
+                                ...customerCategoryOptions.filter(o => sel.includes(o.value) && !selectedCustomerCategoryDetails.some(d => d.value === o.value))
+                              ];
+                            }
+                            if (custKey === "Customer") {
+                              return selectedCustomerDetails.filter(d => sel.includes(d.value));
+                              // Customer options are dynamic, so we rely heavily on selectedCustomerDetails
+                            }
                             return [];
                           })()}
                           onSearch={async (q: string) => {
@@ -1125,9 +1308,32 @@ export default function AddPricing() {
                             return [];
                           }}
                           onChangeSelected={(selected) => {
-                            setKeyValue((s) => ({ ...s, [custKey]: selected.map((o) => o.value) }));
+                            const updateDetails = (setter: React.Dispatch<React.SetStateAction<{ label: string; value: string }[]>>) => {
+                              setter(prev => {
+                                const selectedIds = selected.map(s => s.value);
+                                const kept = prev.filter(d => selectedIds.includes(d.value));
+                                const newDetails = selected.filter(s => !kept.some(k => k.value === s.value));
+                                return [...kept, ...newDetails];
+                              });
+                            };
+
+                            if (custKey === "Channel") updateDetails(setSelectedChannelDetails);
+                            if (custKey === "Customer Category") updateDetails(setSelectedCustomerCategoryDetails);
+                            if (custKey === "Customer") updateDetails(setSelectedCustomerDetails);
+
+                            setKeyValue((s) => {
+                              const newState = { ...s, [custKey]: selected.map((o) => o.value) };
+                              return newState;
+                            });
                           }}
-                          onSelect={(opt: { value: string }) => {
+                          onSelect={(opt: { value: string; label: string }) => {
+                            const addDetail = (setter: React.Dispatch<React.SetStateAction<{ label: string; value: string }[]>>) => {
+                              setter(prev => prev.some(p => p.value === opt.value) ? prev : [...prev, opt]);
+                            };
+                            if (custKey === "Channel") addDetail(setSelectedChannelDetails);
+                            if (custKey === "Customer Category") addDetail(setSelectedCustomerCategoryDetails);
+                            if (custKey === "Customer") addDetail(setSelectedCustomerDetails);
+
                             setKeyValue((s) => {
                               const prev = s[custKey] || [];
                               if (prev.includes(String(opt.value))) return s;
@@ -1166,7 +1372,12 @@ export default function AddPricing() {
                                 itemData: it
                               }));
                           }
-                          if (itemKey === "Item Category") return itemCategoryOptions.filter((o) => sel.includes(o.value));
+                          if (itemKey === "Item Category") {
+                            return [
+                              ...selectedItemCategoryDetails.filter(d => sel.includes(d.value)),
+                              ...itemCategoryOptions.filter(o => sel.includes(o.value) && !selectedItemCategoryDetails.some(d => d.value === o.value))
+                            ];
+                          }
                           return [];
                         })()}
                         onSearch={async (q: string) => {
@@ -1175,6 +1386,21 @@ export default function AddPricing() {
                           return [];
                         }}
                         onChangeSelected={(selected) => {
+                          if (itemKey === "Item Category") {
+                            setKeyValue((s) => ({ ...s, [itemKey]: selected.map((o) => o.value), "Item": [] }));
+
+                            // Update details specifically for Item Category
+                            setSelectedItemCategoryDetails(prev => {
+                              const selectedIds = selected.map(s => s.value);
+                              const kept = prev.filter(d => selectedIds.includes(d.value));
+                              const newDetails = selected.filter(s => !kept.some(k => k.value === s.value));
+                              return [...kept, ...newDetails];
+                            });
+
+                            // For Item itself, we clear it below (setSelectedItemDetails([])), so persistence there is reset.
+                            setSelectedItemDetails([]);
+                            return;
+                          }
                           if (itemKey === "Item") {
                             // Extract itemData from selected items and merge with existing items
                             const newItemDetails = selected.map((item: any) => item.itemData).filter(Boolean);

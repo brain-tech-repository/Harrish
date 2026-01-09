@@ -34,6 +34,7 @@ import * as yup from "yup";
 // ---- Types ----
 interface Uom {
   id: string;
+  uom_id?: string;
   name?: string;
   price?: string | number;
   uom_price?: string | number;
@@ -139,7 +140,7 @@ export default function OrderAddEditPage() {
     itemOptions: rawItemOptions,
     fetchAgentCustomerOptions,
     routeOptions,
-   ensureAgentCustomerLoaded, ensureCompanyCustomersLoaded, ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+    ensureAgentCustomerLoaded, ensureCompanyCustomersLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -195,12 +196,10 @@ export default function OrderAddEditPage() {
   ];
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
   // per-row validation errors for item rows (keyed by row index)
   const [itemErrors, setItemErrors] = useState<
     Record<number, Record<string, string>>
   >({});
-  
   // UOM options per row
   const [rowUomOptions, setRowUomOptions] = useState<
     Record<string, { value: string; label: string; price?: string | number; uom_type?: string | number }[]>
@@ -321,7 +320,7 @@ export default function OrderAddEditPage() {
                 } else if (uom.uom_type === "secondary") {
                   finalPrice = selectedItem.pricing?.buom_ctn_price ?? "-";
                 }
-                return { value: uom.id ?? "", label: uom.name ?? "", price: finalPrice, uom_type: uom.uom_type };
+                return { value: uom.uom_id ?? "", label: uom.name ?? "", price: finalPrice, uom_type: uom.uom_type };
               });
 
               // set row UOM options
@@ -415,7 +414,6 @@ export default function OrderAddEditPage() {
     }
 
     try {
-      
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
       const stockRes = await warehouseStockTopOrders(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
@@ -432,12 +430,12 @@ export default function OrderAddEditPage() {
         if (!searchTerm) return true;
         const searchLower = searchTerm.toLowerCase();
         return stock.item_name?.toLowerCase().includes(searchLower) ||
-               stock.item_code?.toLowerCase().includes(searchLower);
+          stock.item_code?.toLowerCase().includes(searchLower);
       });
 
       // Create items with UOM data map for easy access
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
-      
+
       const processedItems = filteredStocks.map((stockItem: any) => {
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
@@ -447,10 +445,10 @@ export default function OrderAddEditPage() {
           } else if (uom?.uom_type === "secondary") {
             price = stockItem.buom_ctn_price || uom.price;
           }
-          return { 
-            ...uom, 
+          return {
+            ...uom,
             price,
-            id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+            id: uom.uom_id || `${stockItem.item_id}_${uom.uom_type}`,
             item_id: stockItem.item_id
           };
         }) : [];
@@ -461,7 +459,7 @@ export default function OrderAddEditPage() {
           stock_qty: stockItem.stock_qty
         };
 
-        return { 
+        return {
           id: stockItem.item_id,
           name: stockItem.item_name,
           item_code: stockItem.item_code,
@@ -486,7 +484,7 @@ export default function OrderAddEditPage() {
 
       setItemsOptions(options);
       setLoading(false);
-      
+
       return options;
     } catch (error) {
       console.error("Error fetching warehouse items:", error);
@@ -578,7 +576,7 @@ export default function OrderAddEditPage() {
     item.Total = (priceNum * qtyNum).toFixed(2);
     newData[index] = item;
     setItemData(newData);
-    
+
     // Validate row after update
     if (field !== "item_id") {
       validateRow(index, newData[index]);
@@ -765,11 +763,11 @@ export default function OrderAddEditPage() {
 
   const handleItemSearch = async (searchText: string) => {
     if (!form.warehouse) return [];
-    
+
     // For warehouse items, filter from already loaded itemsOptions
     if (itemsOptions.length > 0) {
       const searchLower = searchText.toLowerCase();
-      return itemsOptions.filter(opt => 
+      return itemsOptions.filter(opt =>
         opt.label.toLowerCase().includes(searchLower)
       );
     }
@@ -922,10 +920,10 @@ export default function OrderAddEditPage() {
                           const uoms: ItemUOM[] = uomInfo?.uoms || itemData_fromWarehouse?.item_uoms || [];
 
                           if (uoms && uoms.length > 0) {
-                            const uomOpts = uoms.map((uom: ItemUOM) => ({ 
-                              value: String(uom.id || ""), 
-                              label: uom.name || "", 
-                              price: String(uom.price ?? "0") 
+                            const uomOpts = uoms.map((uom: ItemUOM) => ({
+                              value: String(uom.uom_id || ""),
+                              label: uom.name || "",
+                              price: String(uom.price ?? "0")
                             }));
                             setRowUomOptions(prev => ({ ...prev, [row.idx]: uomOpts }));
 
