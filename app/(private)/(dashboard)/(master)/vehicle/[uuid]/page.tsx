@@ -73,12 +73,54 @@ const VehicleSchema = Yup.object().shape({
     )
     .required("Valid From date is required"),
   validTo: Yup.date()
-    .transform((value, originalValue) =>
-      originalValue === "" ? undefined : value
-    )
-    .min(Yup.ref("validFrom"), "Valid To must be after Valid From")
-    .required("Valid To date is required"),
+    .required("Valid To date is required")
+    .when("validFrom", (validFrom, schema) => {
+      return validFrom
+        ? schema.min(validFrom, "Valid To must be after Valid From")
+        : schema;
+    }),
 });
+
+const stepSchemas = [
+  Yup.object({
+    vehicleBrand: Yup.string().required("Vehicle Brand is required"),
+    numberPlate: Yup.string().required("Number Plate is required"),
+    chassisNumber: Yup.string().required("Chassis Number is required"),
+    vehicleType: Yup.string().required("Vehicle Type is required"),
+  }),
+  Yup.object({
+    ownerType: Yup.string().required("Owner Type is required"),
+  }),
+  Yup.object({
+    odoMeter: Yup.number()
+      .transform((value, originalValue) =>
+        originalValue === "" ? undefined : value
+      )
+      .required("Odometer is required"),
+    capacity: Yup.string()
+      .transform((value, originalValue) =>
+        originalValue === "" ? undefined : value
+      )
+      .required("Capacity is required"),
+    fuel_reading: Yup.string()
+      .required("Fuel Reading is required")
+      .max(999, "Fuel Reading must be at most 3 digits"),
+    status: Yup.string().required("Status is required"),
+    validFrom: Yup.date()
+      .transform((value, originalValue) =>
+        originalValue === "" ? undefined : value
+      )
+      .required("Valid From date is required"),
+    validTo: Yup.date()
+      .required("Valid To date is required")
+      .when("validFrom", (validFrom, schema) => {
+        return validFrom
+          ? schema.min(validFrom, "Valid To must be after Valid From")
+          : schema;
+      }),
+  }
+  ),
+];
 
 export default function AddEditVehicleWithStepper() {
   const steps: StepperStep[] = [
@@ -278,7 +320,8 @@ export default function AddEditVehicleWithStepper() {
         "description",
       ];
     try {
-      await VehicleSchema.validate(form, { abortEarly: false });
+      const schema = stepSchemas[step - 1];
+      await schema.validate(form, { abortEarly: false });
       setErrors({});
       return true;
     } catch (err) {
@@ -494,13 +537,13 @@ export default function AddEditVehicleWithStepper() {
                   name="ownerType"
                   error={touched.ownerType && errors.ownerType}
                   options={[
-                    { value: "company", label: "Company" },
-                    { value: "agent", label: "Distributor" },
+                    { value: "Company", label: "Company" },
+                    { value: "Distributor", label: "Distributor" },
                   ]}
                 />
               </div>
 
-              {form.ownerType !== "company" && (
+              {form.ownerType !== "Company" && (
                 <div>
                   <InputFields
                     label="Distributor"
@@ -588,6 +631,7 @@ export default function AddEditVehicleWithStepper() {
                   value={form.validTo}
                   onChange={handleChange}
                   name="validTo"
+                  min={form.validFrom}
                   error={touched.validTo && errors.validTo}
                 />
               </div>
@@ -640,7 +684,7 @@ export default function AddEditVehicleWithStepper() {
             isCompleted: isStepCompleted(step.id),
           }))}
           currentStep={currentStep}
-          onStepClick={() => {}}
+          onStepClick={() => { }}
           onBack={prevStep}
           onNext={handleNext}
           onSubmit={handleSubmit}

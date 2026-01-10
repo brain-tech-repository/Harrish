@@ -41,7 +41,7 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
       } else {
         const importedCustomers = Array.isArray(res.data?.customer_details) ? res.data.customer_details : [];
         const missing = Array.isArray(res.data?.missing_customer_codes) ? res.data.missing_customer_codes : [];
-        
+
         if (importedCustomers.length === 0 && missing.length === 0) {
           showSnackbar("No customers found in file", "warning");
         } else {
@@ -110,13 +110,14 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
             {keyCombo.Location && (
               <div className="mb-4">
                 <div className="mb-2 text-base font-medium">
-                  {keyCombo.Location}
+                  {keyCombo.Location == "Warehouse" ? "Distributors" : keyCombo.Location}
                   <span className="text-red-500 ml-1">*</span>
                 </div>
                 <InputFields
                   label=""
                   type="select"
                   isSingle={false}
+                  placeholder={`Select ${keyCombo.Location == "Warehouse" ? "Distributors" : keyCombo.Location}`}
                   options={locationDropdownMap[keyCombo.Location] ? [{ label: `Select ${keyCombo.Location}`, value: "" }, ...locationDropdownMap[keyCombo.Location]] : [{ label: `Select ${keyCombo.Location}`, value: "" }]}
                   value={keyValue[keyCombo.Location] || ""}
                   onChange={e => {
@@ -141,11 +142,11 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
               <div className="font-semibold text-lg mb-4">Customer</div>
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                   <div className="text-base font-medium">
+                  <div className="text-base font-medium">
                     {keyCombo.Customer}
                     <span className="text-red-500 ml-1">*</span>
-                   </div>
-                   {keyCombo.Customer === "Customer" && (
+                  </div>
+                  {keyCombo.Customer === "Customer" && (
                     <>
                       <input
                         type="file"
@@ -185,7 +186,7 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
                         </div>
                       )}
                     </>
-                   )}
+                  )}
                 </div>
                 {keyCombo.Customer === "Customer" ? (
                   !hasCustomerData ? (
@@ -268,7 +269,7 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
               <Icon icon="lucide:x" width={20} />
             </button>
           </div>
-          
+
           {previewData.length > 0 && (
             <div className="overflow-auto max-h-[40vh] border border-gray-200 rounded-md">
               <table className="w-full text-sm text-left text-gray-500">
