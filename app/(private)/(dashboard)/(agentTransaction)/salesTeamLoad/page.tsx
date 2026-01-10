@@ -86,32 +86,17 @@ export default function SalemanLoad() {
       },
     },
     {
-      key: "salesman_type", label: "Salesman Type",
+      key: "salesman_type", label: "Sales Team Type",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
-        return `${s.salesman_type?.code ?? ""} - ${s.salesman_type?.name ?? ""}`;
+        return `${s.salesman_type?.name ?? ""}`;
       },
     },
     {
       key: "project_type",
-      label: "Salesman Role",
+      label: "Sales Team Role",
       render: (row: TableDataType) => {
-        const s = row as SalesmanLoadRow;
-
-        // Use project_type if present, otherwise fallback to salesman_type
-        if (s.project_type && typeof s.project_type === "object") {
-          const { code, name } = s.project_type;
-          if (code || name) return `${code ?? ""} - ${name ?? ""}`;
-        }
-
-        if (s.project_type && typeof s.project_type === "object") {
-          const { code, name } = s.project_type;
-          if (code || name) return `${code ?? ""} - ${name ?? ""}`;
-        }
-
-        if (typeof s.project_type === "string") return s.project_type;
-
-        return "-";
+       return `${(row as SalesmanLoadRow).project_type?.name ?? ""}`;
       },
     },
     {

@@ -349,7 +349,7 @@ export default function ExchangeAddEditPage() {
         
         // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
         const stockRes = await warehouseStockTopOrders(warehouseId);
-        const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
+        const stocksArray = stockRes.data?.stocks || stockRes.stocks || stockRes.data?.items || [];
   
         // Store warehouse stocks for validation
         setWarehouseStocks(prev => ({
@@ -415,7 +415,7 @@ export default function ExchangeAddEditPage() {
           value: String(item.id),
           label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
         }));
-  
+        console.log("Fetched warehouse items:", options);
         setItemsOptions(options);
         setSkeleton(prev => ({ ...prev, item: false }));
         

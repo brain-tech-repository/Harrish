@@ -79,6 +79,7 @@ export default function ViewPage() {
     const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const [routeId, setRouteId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
+    const [stockData, setStockData] = useState<TableDataType[]>([]);
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
@@ -962,7 +963,7 @@ export default function ViewPage() {
             if (result.error) {
                 throw new Error(result.data?.message || "Search failed");
             }
-
+            setStockData(result.data);
             return {
                 data: result.data || [],
                 currentPage: result?.pagination?.current_page || 1,
@@ -1565,6 +1566,7 @@ export default function ViewPage() {
                                         { value: "last_7_days", label: "Last 7 Days" },
                                         { value: "last_month", label: "Last Month" },
                                     ]}
+                                    disabled={stockData.length == 0}
                                     onChange={async (e) => {
                                         const filterValue = e.target.value;
                                         setSelectedFilter(filterValue);
