@@ -6,6 +6,7 @@ import { FilterRendererProps } from "./customTable";
 type FilterComponentProps = FilterRendererProps & {
   onlyFilters?: string[]; // e.g. ['warehouse_id', 'company_id']
   currentDate?: boolean;
+  api?: (payload: any) => Promise<any>; // Optional API function to call on filter submit
 };
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
@@ -62,7 +63,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     ensureCompanyLoaded();
     ensureSalesmanLoaded();
   }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
-  const { onlyFilters, currentDate } = filterProps;
+  const { onlyFilters, currentDate, api } = filterProps;
 
   // Set default date for from_date and to_date to today if currentDate is true
   useEffect(() => {
@@ -259,6 +260,26 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
   return (
     <div className="grid grid-cols-2 gap-4">
+      {/* Day Filter Dropdown */}
+      <InputFields
+        label="Day Filter"
+        name="day_filter"
+        placeholder="Select Filter"
+        type="select"
+        options={[
+          { value: "yesterday", label: "Yesterday" },
+          { value: "today", label: "Today" },
+          { value: "last_3_days", label: "Last 3 Days" },
+          { value: "last_7_days", label: "Last 7 Days" },
+          { value: "last_month", label: "Last Month" },
+        ]}
+        value={payload.day_filter || ""}
+        disabled={!!payload.from_date || !!payload.to_date}
+        onChange={(e) => {
+          const raw = (e as any)?.target?.value ?? e;
+          setPayload((prev) => ({ ...prev, day_filter: raw }));
+        }}
+      />
       {/* Start Date */}
       {showFilter("from_date") && (
         <InputFields
@@ -270,6 +291,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? String(payload.from_date)
               : (payload.from_date as string | undefined) ?? ""
           }
+          disabled={!!payload.day_filter}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             setPayload((prev) => ({ ...prev, from_date: raw }));
@@ -288,7 +310,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? String(payload.to_date)
               : (payload.to_date as string | undefined) ?? ""
           }
-          disabled={!payload.from_date}
+          disabled={!!payload.day_filter || !payload.from_date}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             setPayload((prev) => ({ ...prev, to_date: raw }));
@@ -462,7 +484,12 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         <SidebarBtn
           isActive={true}
           type="button"
-          onClick={() => submit(payload)}
+          onClick={async () => {
+            if (api) {
+              await api(payload);
+            }
+            submit(payload);
+          }}
           label="Apply Filter"
           buttonTw="px-4 py-2 h-9"
           disabled={isApplying || activeFilterCount === 0}

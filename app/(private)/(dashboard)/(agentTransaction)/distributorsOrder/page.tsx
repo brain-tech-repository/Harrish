@@ -309,7 +309,7 @@ export default function CustomerInvoicePage() {
 
   const downloadPdf = async (uuid: string) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const response = await agentOrderExport({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
         const fileName = `order-${uuid}.pdf`;
@@ -321,7 +321,7 @@ export default function CustomerInvoicePage() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 

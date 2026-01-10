@@ -6,7 +6,7 @@ import { useLoading } from "@/app/services/loadingContext";
 // import { pricingHeaderById } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams } from "next/navigation";
-import Table from "@/app/components/customTable";
+import Table, { TableDataType } from "@/app/components/customTable";
 
 
 // Your static mapping
@@ -168,8 +168,8 @@ const arrayColumns = {
     { key: "category_name", label: "Name" },
   ],
   item: [
-    { key: "erp_code", label: "Code" },
-    { key: "name", label: "Name" },
+    { key: "erp_code,name", label: "Item", render: (row: TableDataType) => `${row.erp_code} - ${row.name}` },
+    // { key: "name", label: "Name" },
     { key: "buom_ctn_price", label: "Base Price" },
     { key: "auom_pc_price", label: "Secondary Price" },
   ]

@@ -7,25 +7,20 @@ import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import Image from "next/image";
-import { downloadFileGlobal, downloadPDFGlobal } from '@/app/services/allApi';
-import { forceDownload } from "@/app/services/allApi";
+import {  downloadPDFGlobal } from '@/app/services/allApi';
 import { iframeDownload } from "@/app/utils/iframeDownload";
-import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence } from "@/app/services/allApi";
+import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence,salesmanAllInvoiceExport } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
-// import Role from "./role/page";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import { exportInvoice, exportOrderInvoice } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
-import Popup from "@/app/components/popUp";
-import Loading from "@/app/components/Loading";
 import Skeleton from "@mui/material/Skeleton";
 import Drawer from "@mui/material/Drawer";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
-// import Attendance from "./attendance/page";
 import ImageThumbnail from "@/app/components/ImageThumbnail";
 import Map from "@/app/components/map";
 
@@ -482,7 +477,7 @@ export default function Page() {
       if (result.error) {
         throw new Error(result.data?.message || "Search failed");
       }
-      setSalesData(result.data || []);
+      setSalesData(result.data);
       return {
         data: result.data || [],
         currentPage: result?.pagination?.page || 1,
@@ -557,7 +552,7 @@ export default function Page() {
     { key: "overview", label: "Overview" },
     { key: "attendence", label: "Attendence" },
     { key: "sales", label: "Sales" },
-    { key: "order", label: "Purchase Order" },
+    // { key: "order", label: "Purchase Order" },
   ];
 
   const filterBy = useCallback(
@@ -698,21 +693,21 @@ export default function Page() {
   }
 
   const exportReturnFile = async (uuid: string, format: string) => {
-    // try {
-    //     setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-    //     const response = await agentCustomerReturnExport({ uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
-    //     if (response && typeof response === "object" && response.download_url) {
-    //         await downloadFile(response.download_url);
-    //         showSnackbar("File downloaded successfully", "success");
-    //     } else {
-    //         showSnackbar("Failed to get download URL", "error");
-    //     }
-    // } catch (error) {
-    //     console.error(error);
-    //     showSnackbar("Failed to download data", "error");
-    // } finally {
-    //     setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    // }
+    try {
+        setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+        const response = await salesmanAllInvoiceExport(uuid,{  format}); // send proper body object
+        if (response && typeof response === "object" && response.data.download_url) {
+            await downloadFile(response.data.download_url);
+            showSnackbar("File downloaded successfully", "success");
+        } else {
+            showSnackbar("Failed to get download URL", "error");
+        }
+    } catch (error) {
+        console.error(error);
+        showSnackbar("Failed to download data", "error");
+    } finally {
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
   };
 
   return (

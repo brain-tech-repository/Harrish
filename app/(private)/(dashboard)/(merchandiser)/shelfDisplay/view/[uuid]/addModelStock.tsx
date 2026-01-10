@@ -17,15 +17,16 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import * as yup from "yup";
 
-export default function AddEditRoute() {
-    const { routeTypeOptions, itemOptions, shelvesOptions, ensureRouteTypeLoaded, ensureItemLoaded, ensureShelvesLoaded } =
+export default function AddModelStock({ selfName, onClose, isEditMode: initialIsEditMode, editingId, onSuccess }: { selfName: { id: string; shelf_name: string }, onClose?: () => void, isEditMode?: boolean, editingId?: string, onSuccess?: () => void }) {
+    const { routeTypeOptions, itemOptions, ensureRouteTypeLoaded, ensureItemLoaded } =
         useAllDropdownListData();
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
     const params = useParams();
-    const routeId = params?.uuid as string | undefined;
-    const isEditMode = routeId !== undefined && routeId !== "add";
-
+    const routeId = editingId || (params?.uuid as string | undefined);
+    // Only use URL params to detect edit mode if not in modal (initialIsEditMode not provided)
+    const isEditMode = initialIsEditMode !== undefined ? initialIsEditMode : (routeId !== undefined && routeId !== "add");
+    const [refreshKey, setRefreshKey] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [codeMode, setCodeMode] = useState<"auto" | "manual">("auto");
     const [prefix, setPrefix] = useState("");
@@ -53,7 +54,7 @@ export default function AddEditRoute() {
                     const res = await modelStockById(String(routeId));
                     const data = res?.data ?? res;
                     setForm({
-                        shelf_id: data?.shelf?.id.toString() || "",
+                        shelf_id: selfName.id,
                         product_id: data?.item?.id.toString() || "",
                         capacity: data?.capacity || "",
                         total_no_of_fatching: data?.total_no_of_fatching || "",
@@ -69,15 +70,28 @@ export default function AddEditRoute() {
         }
     }, [isEditMode, routeId]);
 
+    // useEffect(() => {
+    //     try {
+    //         const res = await modelStockById(String(routeId));
+    //         const data = res?.data ?? res;
+    //         setForm({
+    //             shelf_id: data?.shelf?.id.toString() || "",
+    //             product_id: data?.item?.id.toString() || "",
+    //             capacity: data?.capacity || "",
+    //             total_no_of_fatching: data?.total_no_of_fatching || "",
+    //         });
+    //     } catch (error) {
+
+    //     }
+    // }, []);
+
     useEffect(() => {
         ensureRouteTypeLoaded();
         ensureItemLoaded();
-        ensureShelvesLoaded();
     }, []);
 
     // Validation schema
     const validationSchema = yup.object().shape({
-        shelf_id: yup.string().required("Shelf ID is required"),
         product_id: yup
             .string()
             .required("Product ID is required"),
@@ -98,7 +112,7 @@ export default function AddEditRoute() {
             setSubmitting(true);
 
             const payload = {
-                shelf_id: form.shelf_id,
+                shelf_id: selfName.id,
                 product_id: form.product_id,
                 capacity: form.capacity,
                 total_no_of_fatching: form.total_no_of_fatching,
@@ -106,9 +120,11 @@ export default function AddEditRoute() {
 
             let res;
             if (isEditMode && routeId) {
+                setRefreshKey((prev) => prev + 1);
                 res = await updateModelStock(routeId, payload);
             } else {
                 res = await addModelStock(payload);
+                setRefreshKey((prev) => prev + 1);
             }
 
             if (res?.error) {
@@ -118,7 +134,12 @@ export default function AddEditRoute() {
                     isEditMode ? "Model Stock updated successfully" : "Model Stock added successfully",
                     "success"
                 );
-                router.back();
+                onSuccess?.();
+                onClose?.();
+                // if (!editingId) {
+                //     // Only navigate back if not in modal
+                //     router.back();
+                // }
             }
         } catch (err) {
             if (err instanceof yup.ValidationError) {
@@ -141,7 +162,7 @@ export default function AddEditRoute() {
 
     if ((isEditMode && loading) || !itemOptions || !routeTypeOptions) {
         return (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className= "flex flex-col max-w-40 max-h-50  items-center justify-center ml-55">
                 <Loading />
             </div>
         );
@@ -152,13 +173,7 @@ export default function AddEditRoute() {
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="flex items-center"
-                    >
-                        <Icon icon="lucide:arrow-left" width={24} />
-                    </button>
+                  
 
                     <h1 className="text-xl font-semibold text-gray-900">
                         {isEditMode ? "Update Model Stock" : "Add Model Stock"}
@@ -178,13 +193,12 @@ export default function AddEditRoute() {
                             <InputFields
                                 required
                                 label="Shelf"
-                                value={form.shelf_id}
-                                options={shelvesOptions}
+                                value={selfName.shelf_name}
+                                disabled={true}
+                                // options={shelvesOptions}
                                 onChange={(e) => handleChange("shelf_id", e.target.value)}
                             />
-                            {errors.shelf_id && (
-                                <p className="text-red-500 text-sm mt-1">{errors.shelf_id}</p>
-                            )}
+                          
                         </div>
 
                         {/* Route Type */}
@@ -244,7 +258,12 @@ export default function AddEditRoute() {
                         ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
                         : "border-gray-300"
                         }`}
-                    onClick={() => router.back()}
+                    onClick={() => {
+                        onClose?.();
+                        // if (!editingId) {
+                        //     router.back();
+                        // }
+                    }}
                     disabled={submitting}
                 // disable while submitting
                 >

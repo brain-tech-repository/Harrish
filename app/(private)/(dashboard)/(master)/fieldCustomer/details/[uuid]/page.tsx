@@ -388,7 +388,7 @@ export default function CustomerDetails() {
                         params[k] = String(v);
                     }
                 });
-                result = await getAgentCustomerBySalesId(uuid, { from_date: params?.from_date, to_date: params?.to_date });
+                result = await getAgentCustomerBySalesId(uuid, { to_date: params?.from_date, from_date: params?.to_date });
             } finally {
                 setLoading(false);
             }
@@ -423,7 +423,7 @@ export default function CustomerDetails() {
                         params[k] = String(v);
                     }
                 });
-                result = await getAgentCustomerByReturnId(uuid, { from_date: params?.from_date, to_date: params?.to_date });
+                result = await getAgentCustomerByReturnId(uuid, { to_date: params?.from_date, from_date: params?.to_date });
             } finally {
                 setLoading(false);
             }

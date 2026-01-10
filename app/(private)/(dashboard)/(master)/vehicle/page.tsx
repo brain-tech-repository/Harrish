@@ -140,9 +140,7 @@ const columns = [
                 filterkey: "warehouse_id",
                 options: warehouseAllOptions,
                 onSelect: (selected: string | string[]) => {
-                  console.log("Selected warehouse filter:", selected);
                     setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-                    console.log("warehouseId filter applied:", warehouseId);
                 },
                 isSingle: false,
                 selectedValue: warehouseId,
@@ -187,13 +185,11 @@ useEffect(() => {
             
             // Add warehouse filter if selected
             if (warehouseId) {
-              console.log("Applying warehouseId filter in API call:", warehouseId);
                 params.warehouse_id = warehouseId;
             }
             
             // Add status filter if active (true=1, false=0)
             if (currentStatusFilter !== null) {
-              console.log("Applying status filter in API call:", currentStatusFilter);
               params.status = currentStatusFilter ? "1" : "0";
             }
             

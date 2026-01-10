@@ -421,9 +421,9 @@ export default function DeliveryAddEditPage() {
           let price = uom.price;
           // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            price = stockItem.buom_ctn_price || "-";
-          } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || "-";
+          } else if (uom?.uom_type === "secondary") {
+            price = stockItem.buom_ctn_price || "-";
           }
           return { 
             ...uom, 
@@ -555,9 +555,9 @@ export default function DeliveryAddEditPage() {
             // Apply warehouse stock pricing if available
             if ((selectedOrder as any)?.pricing) {
               if (uom.uom_type === "primary") {
-                price = (selectedOrder as any).pricing?.auom_pc_price || uom.price;
+                price = (selectedOrder as any).pricing?.auom_pc_price;
               } else if (uom.uom_type === "secondary") {
-                price = (selectedOrder as any).pricing?.buom_ctn_price || uom.price;
+                price = (selectedOrder as any).pricing?.buom_ctn_price;
               }
             }
             return {
@@ -582,9 +582,9 @@ export default function DeliveryAddEditPage() {
           let price = firstUom.price;
           if ((selectedOrder as any)?.pricing) {
             if (firstUom.uom_type === "primary") {
-              price = (selectedOrder as any).pricing?.auom_pc_price || firstUom.price;
+              price = (selectedOrder as any).pricing?.auom_pc_price;
             } else if (firstUom.uom_type === "secondary") {
-              price = (selectedOrder as any).pricing?.buom_ctn_price || firstUom.price;
+              price = (selectedOrder as any).pricing?.buom_ctn_price;
             }
           }
           item.Price = String(price);
@@ -829,9 +829,9 @@ export default function DeliveryAddEditPage() {
     // { key: "Discount", value: `AED ${toInternationalNumber(discount)}` },
     {
       key: "Net Total",
-      value: `${CURRENCY} ${toInternationalNumber(netAmount)}`,
+      value: `${CURRENCY} ${toInternationalNumber(netAmount,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     },
-    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat)}` },
+    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     // { key: "Pre VAT", value: `${CURRENCY} ${toInternationalNumber(preVat)}` },
     // { key: "Delivery Charges", value: `AED ${toInternationalNumber(0.00)}` },
   ];
@@ -1481,7 +1481,7 @@ export default function DeliveryAddEditPage() {
                         label: "Net",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Net) || "0.00"}
+                            {toInternationalNumber(row.Net,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },
@@ -1490,7 +1490,7 @@ export default function DeliveryAddEditPage() {
                         label: "VAT",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Vat) || "0.00"}
+                            {toInternationalNumber(row.Vat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },
@@ -1500,7 +1500,7 @@ export default function DeliveryAddEditPage() {
                         label: "Total",
                         render: (row) => (
                           <span>
-                            {toInternationalNumber(row.Total) || "0.00"}
+                            {toInternationalNumber(row.Total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
                           </span>
                         ),
                       },

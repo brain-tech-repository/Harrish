@@ -442,9 +442,9 @@ export default function OrderAddEditPage() {
           let price = uom.price;
           // Override with specific pricing from the API response
           if (uom?.uom_type === "primary") {
-            price = stockItem.buom_ctn_price || "-";
-          } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || "-";
+          } else if (uom?.uom_type === "secondary") {
+            price = stockItem.buom_ctn_price || "-";
           }
          
           // Store UPC for each UOM
@@ -998,11 +998,8 @@ export default function OrderAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      console.log(payload,"payload")
       let promotionPayload = convertOrderPayload(payload)
-      console.log(promotionPayload,"promotionPayload")
       const promotionRes = await applyPromotion(promotionPayload);
-      console.log(promotionRes,"promotionRes")
       if(checkout == 1)
       {
       if (promotionRes?.data?.itemPromotionInfo.length > 0) {
@@ -1050,8 +1047,8 @@ export default function OrderAddEditPage() {
   const keyValueData = [
     // { key: "Gross Total", value: `AED ${toInternationalNumber(grossTotal)}` },
     // { key: "Discount", value: `AED ${toInternationalNumber(discount)}` },
-    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(netAmount)}` },
-    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat)}` },
+    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(netAmount,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(totalVat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     // { key: "Pre VAT", value: `AED ${toInternationalNumber(preVat)}` },
     // { key: "Delivery Charges", value: `AED ${toInternationalNumber(0.00)}` },
   ];
@@ -1405,10 +1402,10 @@ export default function OrderAddEditPage() {
                       // { key: "excise", label: "Excise", render: (row) => <span>{toInternationalNumber(row.Excise) || "0.00"}</span> },
                       // { key: "discount", label: "Discount", render: (row) => <span>{toInternationalNumber(row.Discount) || "0.00"}</span> },
                       // { key: "preVat", label: "Pre VAT", render: (row) => <span>{toInternationalNumber(row.preVat) || "0.00"}</span> },
-                      { key: "Net", label: "Net", render: (row) => <span>{toInternationalNumber(row.Net) || "0.00"}</span> },
-                      { key: "Vat", label: "VAT", render: (row) => <span>{toInternationalNumber(row.Vat) || "0.00"}</span> },
+                      { key: "Net", label: "Net", render: (row) => <span>{toInternationalNumber(row.Net,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span> },
+                      { key: "Vat", label: "VAT", render: (row) => <span>{toInternationalNumber(row.Vat,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span> },
                       // { key: "gross", label: "Gross", render: (row) => <span>{toInternationalNumber(row.gross) || "0.00"}</span> },
-                      { key: "Total", label: "Total", render: (row) => <span>{toInternationalNumber(Number(row.Total)) || "0.00"}</span> },
+                      { key: "Total", label: "Total", render: (row) => <span>{toInternationalNumber(Number(row.Total),{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span> },
                       {
                         key: "action",
                         label: "Action",
@@ -1568,13 +1565,10 @@ export default function OrderAddEditPage() {
   };
 
   const handleSubmit = () => {
-    console.log(selectedPromotionsItems,"selectedPromotionsItems",itemData)
 
     let result = getPromotionItemsByIndex(promotions,selectedPromotionsItems)
-    console.log(result,"result",selectedPromotionsItems)
 
     result.map((item:any)=>{
-      console.log(item,"item")
       itemData.push({
       item_id: item.id,
       item_name: `${item.item_code}-${item.item_name}`,
@@ -1678,10 +1672,8 @@ interface Props {
                                 value={selects}
                                 searchable={true}
                                 onChange={(e) => {
-                                  console.log(e.target.value,"e.target.value")
                                   setSelects(e.target.value);    
                                   selectedPromotionsItems[currentStep - 1] = e.target.value;
-                                  console.log(selectedPromotionsItems,"selectedPromotionsItems1.2")
                                   setSelectedPromotionsItems([...selectedPromotionsItems]);  
 
                                 }}

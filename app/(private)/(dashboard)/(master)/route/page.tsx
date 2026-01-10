@@ -16,7 +16,6 @@ import {
     routeGlobalSearch,
     routeList,
     routeStatusUpdate,
-    statusFilter,
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -56,24 +55,15 @@ export default function Route() {
 
     const handleStatusFilter = async (status: boolean) => {
         try {
-            setLoading(true);
             // If clicking the same filter, clear it
             const newFilter = currentStatusFilter === status ? null : status;
             setCurrentStatusFilter(newFilter);
             
-            if (newFilter !== null) {
-                // Call statusFilter API
-                const response = await statusFilter({ status: newFilter.toString(), model: "route" });
-                console.log("Status filter response:", response);
-            }
-            
             // Refresh the table with the new filter
             setRefreshKey((k) => k + 1);
-            setLoading(false);
         } catch (error) {
             console.error("Error filtering by status:", error);
             showSnackbar("Failed to filter by status", "error");
-            setLoading(false);
         }
     };
 
@@ -155,31 +145,19 @@ export default function Route() {
         pageSize: number = 10
     ): Promise<listReturnType> => {
         try {
-            // If currentStatusFilter is active, use statusFilter API instead
-            if (currentStatusFilter !== null) {
-                console.log("Using statusFilter API with status:", currentStatusFilter);
-                const response = await statusFilter({ 
-                    status: currentStatusFilter.toString(), 
-                    model: "route",
-                    page: pageNo.toString(),
-                    per_page: pageSize.toString()
-                });
-                
-                return {
-                    data: response.data || [],
-                    total: response.pagination?.totalPages || 1,
-                    currentPage: response.pagination?.page || pageNo,
-                    pageSize: response.pagination?.limit || pageSize,
-                };
-            }
-            
-            // Otherwise use normal list API
+            // Build params with all filters
             const params: any = {
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
             };
+            
             if (warehouseId) {
                 params.warehouse_id = warehouseId;
+            }
+            
+            // Add status filter if active (true=1, false=0)
+            if (currentStatusFilter !== null) {
+                params.status = currentStatusFilter ? "1" : "0";
             }
             const listRes = await routeList(params);
             return {

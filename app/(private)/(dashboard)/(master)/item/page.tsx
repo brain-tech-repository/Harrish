@@ -191,7 +191,6 @@ useEffect(() => {
         
         // Add status filter if active (true=1, false=0)
         if (currentStatusFilter !== null) {
-          console.log("Applying status filter in API call:", currentStatusFilter);
           params.status = currentStatusFilter ? "1" : "0";
         }
         const res = await itemList(params);

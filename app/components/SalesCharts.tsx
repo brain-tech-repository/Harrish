@@ -499,7 +499,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             className="mb-4 w-full overflow-y-auto border-b border-gray-100" 
             style={{ height: '80px' }}
           >
-            <div className="flex flex-wrap gap-x-4 gap-y-2 items-center text-[10px] text-gray-700 p-1">
+            <div className="flex flex-wrap items-center text-[10px] text-gray-700 p-1">
               {seriesData.map((item: any, idx: number) => {
                 const hidden = hiddenNames.includes(item.name);
                 return (
@@ -1402,7 +1402,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                               <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
                               <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
-                              <Legend />
+                              {/* <Legend /> */}
                               {regionNames.map((rn: string, idx: number) => (
                                 <Line
                                   key={rn}
@@ -1478,7 +1478,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                               <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
                               <YAxis tickFormatter={(value) => ` ${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
-                              <Legend />
+                              {/* <Legend /> */}
                               {areaNames.map((an: string, idx: number) => (
                                 <Line
                                   key={an}
@@ -1576,7 +1576,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                                 <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
                                 <YAxis tickFormatter={(value) => ` ${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                                 <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
-                                <Legend />
+                                {/* <Legend /> */}
                                 {warehouseNames.map((wn: string, idx: number) => (
                                   <Line
                                     key={wn}
@@ -2238,6 +2238,153 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
       </div>
     );
   };
+
+  // Company-level sales report layout
+  if (dataLevel === 'company' && reportType !== 'customer') {
+    return (
+      <div className="mt-5 space-y-6">
+        <MaximizedView />
+
+        {/* Row 1 - Sales Trend: Company Level */}
+        <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-gray-800">Company Sales Trend</h3>
+            <button 
+              onClick={() => setSelectedMaxView('trend')} 
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <Maximize2 size={16} className="text-gray-600" />
+            </button>
+          </div>
+          <div className="w-full h-[380px]">
+            {companySalesTrend.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-gray-500">
+                No data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={companySalesTrend}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="period" 
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorValue)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2 - Top Performers: Salesmen and Customers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Salesmen Chart */}
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Top Salesmen</h3>
+              <button onClick={() => setSelectedMaxView('salesmen')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
+            </div>
+            <div className="w-full h-[420px]">
+              {topSalesmenChartData.length === 0 ? (
+                <div className="flex items-center justify-center text-gray-500 text-sm">
+                  <AlertCircle size={16} className="mr-2" /> No data available
+                </div>
+              ) : (
+                <Column3DChart data={topSalesmenChartData} xAxisKey="name" yAxisKey="value" colors={salesmanColors} height="420px" />
+              )}
+            </div>
+          </div>
+
+          {/* Top Customers Chart */}
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Top Customers</h3>
+              <button onClick={() => setSelectedMaxView('customers')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
+            </div>
+            <div className="w-full h-[420px]">
+              {topCustomersChartData.length === 0 ? (
+                <div className="flex items-center justify-center text-gray-500 text-sm">
+                  <AlertCircle size={16} className="mr-2" /> No data available
+                </div>
+              ) : (
+                <Column3DChart data={topCustomersChartData} xAxisKey="name" yAxisKey="value" colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} height="420px" />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3 - Top Items + Top Warehouses */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Items */}
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Top Items</h3>
+              <button onClick={() => setSelectedMaxView('items')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
+            </div>
+            <div className="w-full h-[420px]">
+              {topItemsChartData.length === 0 ? (
+                <div className="flex items-center justify-center text-gray-500 text-sm">
+                  <AlertCircle size={16} className="mr-2" /> No data available
+                </div>
+              ) : (
+                <Column3DChart
+                  data={topItemsChartData}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={areaColors}
+                  height="420px"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Top Warehouses */}
+          <div className="bg-white p-5 border w-full rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Top Warehouses</h3>
+              <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
+            </div>
+            <div className="w-full  flex flex-wrap h-[420px]">
+              {topWarehousesChartData.length === 0 ? (
+                <div className="flex items-center justify-center text-gray-500 text-sm">
+                  <AlertCircle size={16} className="mr-2" /> No data available
+                </div>
+              ) : (
+                <Column3DChart data={topWarehousesChartData} xAxisKey="name" yAxisKey="value" colors={warehouseColors} height="420px" width="100%" />
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
 
   // If API returned region-level data, render the region-specific 4-row layout (sales reports only)
   if (dataLevel === 'region' && reportType !== 'customer') {
@@ -3048,11 +3195,92 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Company-level layout for customer reports (new data structure)
   if (dataLevel === 'company' && reportType === 'customer') {
+    // Extract KPI data
+    const kpisData = dashboardData?.kpis || {};
+    const totalSales = kpisData.total_sales || 0;
+    const totalCustomers = kpisData.total_customers || 0;
+    const activeSalesCustomers = kpisData.active_sales_customers || 0;
+    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
+
+    const kpiCards = [
+      {
+        title: "Total Sales",
+        value: totalSales.toLocaleString(),
+        icon: "carbon:currency",
+        color: "#fceaef",
+      },
+      {
+        title: "Total Customers",
+        value: totalCustomers.toLocaleString(),
+        icon: "mdi:account-group",
+        color: "#fff0f2",
+      },
+      {
+        title: "Active Customers",
+        value: activeSalesCustomers.toLocaleString(),
+        icon: "mdi:account-check",
+        color: "#e0edeb",
+      },
+      {
+        title: "Inactive Customers",
+        value: inactiveSalesCustomers.toLocaleString(),
+        icon: "mdi:account-off",
+        color: "#d8e6ff",
+      },
+    ];
+
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
 
-        {/* Row 1: Channel Sales Pie Chart + Customer Category Sales Donut Chart */}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((card, index) => (
+            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
+              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
+                <Icon icon={card.icon} width="32" height="32" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
+                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 1: Sales Trend Line Graph (Full Width) */}
+        {salesTrendData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
+              <button 
+                onClick={() => setSelectedMaxView('trend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="companyTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#companyTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Channel Sales - Pie Chart */}
           {channelSalesData.length > 0 && (
@@ -3091,110 +3319,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           )}
         </div>
 
-        {/* Row 2: Sales Trend Line Graph (Full Width) */}
-        {salesTrendData.length > 0 && (
-          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
-              <button 
-                onClick={() => setSelectedMaxView('trend')}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-            <div className="w-full h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrendData}>
-                  <defs>
-                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="period"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: any) => `${value.toLocaleString()}`}
-                    labelFormatter={(label) => `${label}`}
-                  />
-                  <Area 
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    fill="url(#trendGradient)"
-                    dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }}
-                    activeDot={{ r: 5, fill: '#6d28d9' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Row 3: Top Channels + Top Customer Categories */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Channels Chart */}
-          {topChannelsData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topChannels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topChannelsData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={channelColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Customer Categories Chart */}
-          {topCustomerCategoriesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topCustomerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topCustomerCategoriesData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={customerCategoryColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 4: Top Items + Top Customers */}
+        {/* Row 3: Top Items + Top Customers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Items */}
           {topItemsChartData.length > 0 && (
@@ -3238,6 +3363,57 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   xAxisKey="name" 
                   yAxisKey="value" 
                   colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 4: Top Customer Categories + Top Channels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customer Categories Chart */}
+          {topCustomerCategoriesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topCustomerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topCustomerCategoriesData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={customerCategoryColors} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Channels Chart */}
+          {topChannelsData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topChannels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topChannelsData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={channelColors} 
                   height="420px" 
                 />
               </div>
@@ -3250,11 +3426,92 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Region-level layout for customer reports
   if (dataLevel === 'region' && reportType === 'customer') {
+    // Extract KPI data
+    const kpisData = dashboardData?.kpis || {};
+    const totalSales = kpisData.total_sales || 0;
+    const totalCustomers = kpisData.total_customers || 0;
+    const activeSalesCustomers = kpisData.active_sales_customers || 0;
+    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
+
+    const kpiCards = [
+      {
+        title: "Total Sales",
+        value: totalSales.toLocaleString(),
+        icon: "carbon:currency",
+        color: "#fceaef",
+      },
+      {
+        title: "Total Customers",
+        value: totalCustomers.toLocaleString(),
+        icon: "mdi:account-group",
+        color: "#fff0f2",
+      },
+      {
+        title: "Active Customers",
+        value: activeSalesCustomers.toLocaleString(),
+        icon: "mdi:account-check",
+        color: "#e0edeb",
+      },
+      {
+        title: "Inactive Customers",
+        value: inactiveSalesCustomers.toLocaleString(),
+        icon: "mdi:account-off",
+        color: "#d8e6ff",
+      },
+    ];
+
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
 
-        {/* Row 1: Channel Sales Pie Chart + Customer Category Sales Donut Chart */}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((card, index) => (
+            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
+              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
+                <Icon icon={card.icon} width="32" height="32" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
+                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 1: Sales Trend Line Graph (Full Width) */}
+        {salesTrendData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
+              <button 
+                onClick={() => setSelectedMaxView('trend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="regionTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#regionTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Channel Sales - Pie Chart */}
           {channelSalesData.length > 0 && (
@@ -3293,110 +3550,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           )}
         </div>
 
-        {/* Row 2: Sales Trend Line Graph (Full Width) */}
-        {salesTrendData.length > 0 && (
-          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
-              <button 
-                onClick={() => setSelectedMaxView('trend')}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-            <div className="w-full h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrendData}>
-                  <defs>
-                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="period"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: any) => `${value.toLocaleString()}`}
-                    labelFormatter={(label) => `${label}`}
-                  />
-                  <Area 
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    fill="url(#trendGradient)"
-                    dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }}
-                    activeDot={{ r: 5, fill: '#6d28d9' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Row 3: Top Channels + Top Customer Categories */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Channels Chart */}
-          {topChannelsData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topChannels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topChannelsData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={channelColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Customer Categories Chart */}
-          {topCustomerCategoriesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topCustomerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topCustomerCategoriesData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={customerCategoryColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 4: Top Items + Top Customers */}
+        {/* Row 3: Top Items + Top Customers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Items */}
           {topItemsChartData.length > 0 && (
@@ -3440,6 +3594,57 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   xAxisKey="name" 
                   yAxisKey="value" 
                   colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 4: Top Customer Categories + Top Channels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customer Categories Chart */}
+          {topCustomerCategoriesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topCustomerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topCustomerCategoriesData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={customerCategoryColors} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Channels Chart */}
+          {topChannelsData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topChannels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topChannelsData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={channelColors} 
                   height="420px" 
                 />
               </div>
@@ -3452,11 +3657,92 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Area-level layout for customer reports
   if (dataLevel === 'area' && reportType === 'customer') {
+    // Extract KPI data
+    const kpisData = dashboardData?.kpis || {};
+    const totalSales = kpisData.total_sales || 0;
+    const totalCustomers = kpisData.total_customers || 0;
+    const activeSalesCustomers = kpisData.active_sales_customers || 0;
+    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
+
+    const kpiCards = [
+      {
+        title: "Total Sales",
+        value: totalSales.toLocaleString(),
+        icon: "carbon:currency",
+        color: "#fceaef",
+      },
+      {
+        title: "Total Customers",
+        value: totalCustomers.toLocaleString(),
+        icon: "mdi:account-group",
+        color: "#fff0f2",
+      },
+      {
+        title: "Active Customers",
+        value: activeSalesCustomers.toLocaleString(),
+        icon: "mdi:account-check",
+        color: "#e0edeb",
+      },
+      {
+        title: "Inactive Customers",
+        value: inactiveSalesCustomers.toLocaleString(),
+        icon: "mdi:account-off",
+        color: "#d8e6ff",
+      },
+    ];
+
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
 
-        {/* Row 1: Channel Sales Pie Chart + Customer Category Sales Donut Chart */}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((card, index) => (
+            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
+              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
+                <Icon icon={card.icon} width="32" height="32" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
+                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 1: Sales Trend Line Graph (Full Width) */}
+        {salesTrendData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
+              <button 
+                onClick={() => setSelectedMaxView('trend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="areaTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#areaTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Channel Sales - Pie Chart */}
           {channelSalesData.length > 0 && (
@@ -3495,110 +3781,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           )}
         </div>
 
-        {/* Row 2: Sales Trend Line Graph (Full Width) */}
-        {salesTrendData.length > 0 && (
-          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
-              <button 
-                onClick={() => setSelectedMaxView('trend')}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-            <div className="w-full h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrendData}>
-                  <defs>
-                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="period"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: any) => `${value.toLocaleString()}`}
-                    labelFormatter={(label) => `${label}`}
-                  />
-                  <Area 
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    fill="url(#trendGradient)"
-                    dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }}
-                    activeDot={{ r: 5, fill: '#6d28d9' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Row 3: Top Channels + Top Customer Categories */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Channels Chart */}
-          {topChannelsData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topChannels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topChannelsData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={channelColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Customer Categories Chart */}
-          {topCustomerCategoriesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topCustomerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topCustomerCategoriesData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={customerCategoryColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 4: Top Items + Top Customers */}
+        {/* Row 3: Top Items + Top Customers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Items */}
           {topItemsChartData.length > 0 && (
@@ -3642,6 +3825,57 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   xAxisKey="name" 
                   yAxisKey="value" 
                   colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 4: Top Customer Categories + Top Channels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customer Categories Chart */}
+          {topCustomerCategoriesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topCustomerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topCustomerCategoriesData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={customerCategoryColors} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Channels Chart */}
+          {topChannelsData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topChannels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topChannelsData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={channelColors} 
                   height="420px" 
                 />
               </div>
@@ -3654,11 +3888,92 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Warehouse-level layout for customer reports
   if (dataLevel === 'warehouse' && reportType === 'customer') {
+    // Extract KPI data
+    const kpisData = dashboardData?.kpis || {};
+    const totalSales = kpisData.total_sales || 0;
+    const totalCustomers = kpisData.total_customers || 0;
+    const activeSalesCustomers = kpisData.active_sales_customers || 0;
+    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
+
+    const kpiCards = [
+      {
+        title: "Total Sales",
+        value: totalSales.toLocaleString(),
+        icon: "carbon:currency",
+        color: "#fceaef",
+      },
+      {
+        title: "Total Customers",
+        value: totalCustomers.toLocaleString(),
+        icon: "mdi:account-group",
+        color: "#fff0f2",
+      },
+      {
+        title: "Active Customers",
+        value: activeSalesCustomers.toLocaleString(),
+        icon: "mdi:account-check",
+        color: "#e0edeb",
+      },
+      {
+        title: "Inactive Customers",
+        value: inactiveSalesCustomers.toLocaleString(),
+        icon: "mdi:account-off",
+        color: "#d8e6ff",
+      },
+    ];
+
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
 
-        {/* Row 1: Channel Sales Pie Chart + Customer Category Sales Donut Chart */}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((card, index) => (
+            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
+              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
+                <Icon icon={card.icon} width="32" height="32" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
+                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 1: Sales Trend Line Graph (Full Width) */}
+        {salesTrendData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
+              <button 
+                onClick={() => setSelectedMaxView('trend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="warehouseTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#warehouseTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Channel Sales - Pie Chart */}
           {channelSalesData.length > 0 && (
@@ -3697,110 +4012,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           )}
         </div>
 
-        {/* Row 2: Sales Trend Line Graph (Full Width) */}
-        {salesTrendData.length > 0 && (
-          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
-              <button 
-                onClick={() => setSelectedMaxView('trend')}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-            <div className="w-full h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrendData}>
-                  <defs>
-                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5}/>
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="period"
-                    tick={{ fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis 
-                    tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value: any) => `${value.toLocaleString()}`}
-                    labelFormatter={(label) => `${label}`}
-                  />
-                  <Area 
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    fill="url(#trendGradient)"
-                    dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }}
-                    activeDot={{ r: 5, fill: '#6d28d9' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Row 3: Top Channels + Top Customer Categories */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Channels Chart */}
-          {topChannelsData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topChannels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topChannelsData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={channelColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Customer Categories Chart */}
-          {topCustomerCategoriesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
-                <button 
-                  onClick={() => setSelectedMaxView('topCustomerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart 
-                  data={topCustomerCategoriesData} 
-                  xAxisKey="name" 
-                  yAxisKey="value" 
-                  colors={customerCategoryColors} 
-                  height="420px" 
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 4: Top Items + Top Customers */}
+        {/* Row 3: Top Items + Top Customers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Items */}
           {topItemsChartData.length > 0 && (
@@ -3844,6 +4056,57 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   xAxisKey="name" 
                   yAxisKey="value" 
                   colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 4: Top Customer Categories + Top Channels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customer Categories Chart */}
+          {topCustomerCategoriesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topCustomerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topCustomerCategoriesData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={customerCategoryColors} 
+                  height="420px" 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Channels Chart */}
+          {topChannelsData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
+                <button 
+                  onClick={() => setSelectedMaxView('topChannels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart 
+                  data={topChannelsData} 
+                  xAxisKey="name" 
+                  yAxisKey="value" 
+                  colors={channelColors} 
                   height="420px" 
                 />
               </div>

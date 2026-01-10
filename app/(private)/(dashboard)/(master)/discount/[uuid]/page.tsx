@@ -463,7 +463,7 @@ export default function AddDiscount() {
               <Icon icon="lucide:arrow-left" width={24} />
             </button>
             <h1 className="text-xl font-semibold text-gray-900">
-              {isEditMode ? "Update Discount" : "Add New Discount"}
+              {isEditMode ? "Update Discount" : "Add Discount"}
             </h1>
           </div>
           <div className="flex justify-between items-center mb-6 pb-6">

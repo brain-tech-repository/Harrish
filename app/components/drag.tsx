@@ -4,6 +4,7 @@ import { Icon } from "@iconify-icon/react";
 import axios from 'axios';
 import SalesCharts from './SalesCharts';
 import ExportButtons from './ExportButtons';
+import CustomerExportButtons from './CustomerExportButtons';
 import { useSnackbar } from '@/app/services/snackbarContext';
 import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
@@ -49,8 +50,9 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [viewType, setViewType] = useState('');
   const [dateRange, setDateRange] = useState('dd-mm-yyyy - dd-mm-yyyy');
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const currentDate = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState(currentDate);
+  const [endDate, setEndDate] = useState(currentDate);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [searchbyopen, setSearchbyclose] = useState(false);
 
@@ -449,6 +451,63 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     }
   };
 
+  // Export function for customer reports with file_type and view_type
+  const handleCustomerExport = async (fileType: string, viewType: string) => {
+    if (!startDate || !endDate) {
+      showSnackbar('Please select a date range before exporting', 'warning');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Get only the lowest-level filter for export data
+      const lowestLevelFilters = getLowestLevelFilters();
+      
+      // Build the payload with file_type and view_type
+      const payload: any = {
+        from_date: startDate,
+        to_date: endDate,
+        search_type: searchType,
+        display_quantity: displayQuantity,
+        file_type: fileType,
+        view_type: viewType,
+        ...lowestLevelFilters
+      };
+
+      const response = await fetch(`${apiEndpoints.export}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        console.error('Export API Error:', errorData);
+        throw new Error(errorData.detail || `Export failed: ${response.statusText}`);
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const extension = fileType === 'csv' ? 'csv' : 'xlsx';
+      link.download = `customer-report-${startDate}-to-${endDate}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      showSnackbar(error instanceof Error ? error.message : 'Failed to export data', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Export XLSX function
   const handleExportXLSX = async (selectedSearchType: string, selectedDisplayQuantity: string, dataview: string) => {
     if (!startDate || !endDate) {
@@ -548,19 +607,22 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       }
     }
 
-    // Special handling for customer report type with route selection
-    if (reportType === 'customer' && lowestFilter === 'route') {
+    // Special handling for customer report type - show customer-centric columns
+    if (reportType === 'customer') {
+      // Base columns for customer reports - only show columns that exist in server data
+      const baseColumns = [
+        { label: 'Customer Name', field: 'customer_name' },
+        { label: 'Mobile Number', field: 'mobile_number' },
+        { label: 'Warehouse', field: 'warehouse' },
+        { label: 'Route', field: 'route' },
+        { label: 'Customer Channel', field: 'customer_channel' },
+        { label: 'Customer Category', field: 'customer_category' },
+        { label: 'Value', field: 'value' }
+      ];
+
       return {
-        type: 'customer-route',
-        columns: [
-          { label: 'Customer Name', field: 'customer_name' },
-          { label: 'Mobile Number', field: 'mobile_number' },
-          { label: 'Warehouse', field: 'warehouse' },
-          { label: 'Route', field: 'route' },
-          { label: 'Customer Channel', field: 'customer_channel' },
-          { label: 'Customer Category', field: 'customer_category' },
-          { label: 'Value', field: 'value' }
-        ]
+        type: 'customer-report',
+        columns: baseColumns
       };
     }
 
@@ -622,7 +684,39 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       'customer'
     ];
 
-    // Find the lowest (most granular) filter that has selections
+    // For customer reportType, send all selected filters
+    if (reportType === 'customer') {
+      const payload: any = {};
+      
+      if (selectedChildItems['company']?.length > 0) {
+        payload.company_ids = selectedChildItems['company'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['region']?.length > 0) {
+        payload.region_ids = selectedChildItems['region'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['area']?.length > 0) {
+        payload.area_ids = selectedChildItems['area'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['warehouse']?.length > 0) {
+        payload.warehouse_ids = selectedChildItems['warehouse'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['route']?.length > 0) {
+        payload.route_ids = selectedChildItems['route'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['channel-categories']?.length > 0) {
+        payload.customer_channel_ids = selectedChildItems['channel-categories'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['customer-category']?.length > 0) {
+        payload.customer_category_ids = selectedChildItems['customer-category'].map(id => parseInt(id));
+      }
+      if (selectedChildItems['customer']?.length > 0) {
+        payload.customer_ids = selectedChildItems['customer'].map(id => parseInt(id));
+      }
+      
+      return payload;
+    }
+
+    // Find the lowest (most granular) filter that has selections for sales reportType
     let lowestFilter = null;
     for (let i = hierarchyOrder.length - 1; i >= 0; i--) {
       const filterId = hierarchyOrder[i];
@@ -898,8 +992,14 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   };
 
   // Organize filters into groups
-  const visibleFilters = availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id));
-  const searchby = availableFilters.filter(f => ['salesman', 'route'].includes(f.id));
+  // For customer reportType, show route directly with other visible filters
+  const visibleFilters = reportType === 'customer'
+    ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
+    : availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id));
+  // For customer reportType, don't show searchby dropdown. For sales, show both salesman and route
+  const searchby = reportType === 'customer' 
+    ? []
+    : availableFilters.filter(f => ['salesman', 'route'].includes(f.id));
   // const searchtype = availableFilters.filter(f => ['display-quantity', 'amount'].includes(f.id));
   // Show all moreFilters, but mark 'customer' as disabled unless 'channel-categories' or 'customer-category' is dropped
   const isCustomerEnabled = droppedFilters.some(f => f.id === 'channel-categories' || f.id === 'customer-category');
@@ -1006,7 +1106,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
               <button 
                 onClick={handleDashboardClick}
                 disabled={isLoadingDashboard}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isLoadingDashboard ? (
                   <Icon icon="eos-icons:loading" width="18" height="18" />
@@ -1021,7 +1121,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   handleTableView();
                 }} 
                 disabled={isLoadingTable}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'table' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'table' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isLoadingTable ? (
                   <Icon icon="eos-icons:loading" width="18" height="18" />
@@ -1038,12 +1138,19 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 border-b border-[#E9EAEB] gap-3">
               <h2 className="font-semibold text-lg text-[#181D27]">{titleNearExport}</h2>
               {can("export") && (
-                <ExportButtons 
-                  onExportXLSX={handleExportXLSX}
-                  isLoading={isExporting}
-                  searchType={searchType}
-                  displayQuantity={displayQuantity}
-                />
+                reportType === 'customer' ? (
+                  <CustomerExportButtons 
+                    onExport={handleCustomerExport}
+                    isLoading={isExporting}
+                  />
+                ) : (
+                  <ExportButtons 
+                    onExportXLSX={handleExportXLSX}
+                    isLoading={isExporting}
+                    searchType={searchType}
+                    displayQuantity={displayQuantity}
+                  />
+                )
               )}
             </div>
 
@@ -1199,7 +1306,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                 </div>
 
                                 {openDropdown === filter.id && !isLoading && (
-                                  <div id={`filter-dropdown-${filter.id}`} className="filter-dropdown absolute top-full left-0 mt-1 w-full min-w-[200px] sm:w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                  <div id={`filter-dropdown-${filter.id}`} className="filter-dropdown absolute top-full left-0 mt-1 w-full min-w-[200px] sm:w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-[60]">
                                     <div className="p-3">
                                       <input type="text" placeholder="Search here..." value={searchTerms[filter.id] || ''} onChange={(e) => setSearchTerms(prev => ({ ...prev, [filter.id]: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     </div>
@@ -1266,11 +1373,11 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   searchType={searchType}
                   reportType={reportType}
                 />
-              ) : (
+              ) : viewType === 'table' ? (
                 <div className="mt-4">
                   {isLoadingTable ? (
                     <div className="flex flex-col justify-center items-center py-20 mt-5 h-80">
-                      <Loading />
+                      <Loading style={{ zIndex: 70 }} />
                     </div>
                   ) : tableData && (tableData.data || tableData.rows)?.length > 0 ? (
                     (() => {
@@ -1297,8 +1404,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                             <table className="w-full border-collapse">
                               <thead>
                                 <tr className="bg-gray-100 border-b border-gray-200">
-                                  {dynamicColumn.type === 'customer-route' ? (
-                                    // Customer report with route - show only customer columns
+                                  {dynamicColumn.type === 'customer-report' ? (
+                                    // Customer report - show only customer columns
                                     dynamicColumn.columns.map((col: any, idx: number) => (
                                       <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
                                     ))
@@ -1320,8 +1427,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                               <tbody>
                                 {rows.map((row: any, rowIdx: number) => (
                                   <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
-                                    {dynamicColumn.type === 'customer-route' ? (
-                                      // Customer report with route - show only customer data
+                                    {dynamicColumn.type === 'customer-report' ? (
+                                      // Customer report - show only customer data
                                       dynamicColumn.columns.map((col: any, idx: number) => (
                                         <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
                                       ))
@@ -1351,7 +1458,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                               <button 
                                 onClick={() => changePage(apiCurrentPage - 1)} 
                                 disabled={!tableData.previous_page || apiCurrentPage === 1} 
-                                className="px-3 py-1 bg-white border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Prev
                               </button>
@@ -1369,7 +1476,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <button 
                                         key={i} 
                                         onClick={() => changePage(i)} 
-                                        className={`px-3 py-1 border rounded ${apiCurrentPage === i ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                                        className={`px-3 py-1 border rounded cursor-pointer ${apiCurrentPage === i ? 'bg-gray-900 text-white' : 'bg-white'}`}
                                       >
                                         {i}
                                       </button>
@@ -1421,7 +1528,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                               <button 
                                 onClick={() => changePage(apiCurrentPage + 1)} 
                                 disabled={!tableData.next_page || apiCurrentPage === totalPages} 
-                                className="px-3 py-1 bg-white border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Next
                               </button>
@@ -1437,6 +1544,11 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                       <p className="text-sm mt-2">Select filters and date range, then click the Table button</p>
                     </div>
                   )}
+                </div>
+              ) : (
+                <div className="flex flex-col justify-center items-center py-12 text-gray-500">
+                  <p className="text-lg font-medium">Select a view</p>
+                  <p className="text-sm mt-2">Click Dashboard or Table button to view data</p>
                 </div>
               )}
             </div>

@@ -50,7 +50,7 @@ export default function Page() {
   const title = "Pricing Details";
   const backBtnUrl = "/pricing";
 
-  const tabs = ["Overview", "Key Value", "Distributers", "Items"];
+  const tabs = ["Overview", "Key Value", "Distributors", "Items"];
   useEffect(() => {
     if (!uuid) return;
     const fetchPricingDetails = async () => {

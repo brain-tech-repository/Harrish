@@ -18,6 +18,7 @@ import Table, { TableDataType } from "@/app/components/customTable";
 import { formatDate } from "@/app/(private)/(dashboard)/(master)/salesTeam/details/[uuid]/page";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { customer } from "@/app/(private)/data/customerDetails";
+import AddModelStock from "./addModelStock";
 
 export const tabs = [
   { name: "Overview" },
@@ -58,12 +59,20 @@ interface Shelf {
 }
 
 export default function Page() {
-  const { uuid }:any = useParams<{ uuid: string }>();
+  const { uuid }: any = useParams<{ uuid: string }>();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [shelfData, setShelfData] = useState<Shelf | null>(null);
+  const [selfName, setSelfName] = useState({
+    id: "",
+    shelf_name: "",
+  });
+  
+  const [showAddModelStock, setShowAddModelStock] = useState(false);
+  const [editingModelStockId, setEditingModelStockId] = useState<string | null>(null);
+  const [modelStockRefreshKey, setModelStockRefreshKey] = useState(0);
 
   const onTabClick = (index: number) => setActiveTab(index);
 
@@ -78,7 +87,10 @@ export default function Page() {
         setLoading(true);
         const res = await getShelfById(uuid.toString());
         const data = res?.data?.data || res?.data;
-
+        setSelfName({
+          id: data.id,
+          shelf_name: data.shelf_name,
+        });
         if (!data) {
           showSnackbar("Unable to fetch shelf details", "error");
           return;
@@ -317,6 +329,7 @@ export default function Page() {
       )}
       {activeTab === 2 && (
         <Table
+          refreshKey={modelStockRefreshKey}
           config={{
             api: {
               list: async (page: number = 1, pageSize: number = 50) => {
@@ -355,7 +368,9 @@ export default function Page() {
               actions: [
                 <SidebarBtn
                   key="name"
-                  href="/shelfDisplay/view/addUpdate/add"
+                  onClick={() => {
+                    setShowAddModelStock(true);
+                  }}
                   leadingIcon="lucide:plus"
                   label="Add"
                   labelTw="hidden lg:block"
@@ -387,7 +402,8 @@ export default function Page() {
                 icon: "lucide:edit-2",
                 onClick: (data: object) => {
                   const row = data as TableDataType;
-                  router.push(`/shelfDisplay/view/addUpdate/${row.uuid}`);
+                  setEditingModelStockId(row.uuid);
+                  setShowAddModelStock(true);
                 },
               },
               {
@@ -395,6 +411,7 @@ export default function Page() {
                 onClick: (data: object) => {
                   const row = data as TableDataType;
                   handleDeleteModelStock(row.uuid);
+                  setModelStockRefreshKey((prev) => prev + 1);
                 },
               }
             ],
@@ -547,7 +564,7 @@ export default function Page() {
                   merchandisher_name: item.merchandisher_name,
                   customer_code: item.customer_code,
                   customer_name: item.customer_name,
-                  shelf_id: item.shelf_id,
+                  shelf_name: item.shelf_name,
                   item_code: item.item_code,
                   item_name: item.item_name,
                   item_uom: item.item_uom,
@@ -578,12 +595,32 @@ export default function Page() {
               { key: "item_code", label: "Item Code" },
               { key: "item_name", label: "Item Name" },
               { key: "quantity", label: "Quantity" },
-              { key: "shelf_id", label: "Distribution Name" },
+              { key: "shelf_name", label: "Distribution Name" },
               { key: "expiry_date", label: "Expiry Date", render: (item: any) => formatDate(item.expiry_date) },
             ],
             pageSize: 50
           }}
         />
+      )}
+      
+      {/* Add Model Stock Modal */}
+      {showAddModelStock && (
+        <div className="fixed  inset-0 bg-black/40 z-50 overflow-auto flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-lg m-4 p-6 max-w-2xl w-full">
+            <AddModelStock 
+              selfName={selfName} 
+              isEditMode={editingModelStockId !== null}
+              editingId={editingModelStockId || undefined}
+              onClose={() => {
+                setShowAddModelStock(false);
+                setEditingModelStockId(null);
+              }}
+              onSuccess={() => {
+                setModelStockRefreshKey((prev) => prev + 1);
+              }}
+            />
+          </div>
+        </div>
       )}
     </>
   );

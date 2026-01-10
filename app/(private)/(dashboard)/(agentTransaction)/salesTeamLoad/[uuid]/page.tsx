@@ -41,7 +41,6 @@ export default function AddEditSalesmanLoad() {
     ensureSalesmanLoaded();
     ensureSalesmanTypeLoaded();
     ensureWarehouseLoaded();
-    console.log("dropdown data loaded", salesmanOptions);
   }, [ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded]);
 
   const router = useRouter();
@@ -162,7 +161,6 @@ export default function AddEditSalesmanLoad() {
             value: String(item.id),
             label: `${item.osa_code ? item.osa_code + ' - ' : ''}${item.name}`
           }));
-          console.log(options, "123");
           setSalesmanWarehouseRouteOptions(options);
         } catch (e) {
           setSalesmanWarehouseRouteOptions([]);

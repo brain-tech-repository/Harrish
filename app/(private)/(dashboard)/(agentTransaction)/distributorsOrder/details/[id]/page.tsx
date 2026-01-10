@@ -64,7 +64,7 @@ const columns = [
     key: "net_total",
     label: "Net",
     render: (value: TableDataType) => (
-      <>{toInternationalNumber(value.net_total) || "0.00"}</>
+      <>{toInternationalNumber(value.net_total, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>
     ),
   },
   {
@@ -81,7 +81,7 @@ const columns = [
     key: "total",
     label: "Total",
     render: (value: TableDataType) => (
-      <>{toInternationalNumber(value.total) || "0.00"}</>
+      <>{toInternationalNumber(value.total, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>
     ),
   },
 ];
@@ -188,14 +188,14 @@ export default function OrderDetailPage() {
   const keyValueData = [
     {
       key: "Net Total",
-      value: CURRENCY + " " + toInternationalNumber(Number(netAmount) || 0),
+      value: CURRENCY + " " + toInternationalNumber(Number(netAmount) || 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     },
     // { key: "Gross Total", value: "AED "+toInternationalNumber( grossTotal ?? 0 ) },
     // { key: "Discount", value: "AED "+toInternationalNumber( discount ?? 0 ) },
     // { key: "Excise", value: "AED 0.00" },
     {
       key: "Vat",
-      value: CURRENCY + " " + toInternationalNumber(Number(totalVat) || 0),
+      value: CURRENCY + " " + toInternationalNumber(Number(totalVat) || 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     },
     // { key: "Pre VAT", value: CURRENCY + " " + toInternationalNumber(preVat ?? 0) },
     // { key: "Delivery Charges", value: "AED 0.00" },

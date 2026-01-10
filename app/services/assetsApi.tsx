@@ -1066,7 +1066,6 @@ export const spareSubCategoryList = async (body: any) => {
 
   try {
     const res = await API.get(`api/settings/sparesubcategory/list?category=${body.category_id || ""}`, body);
-    //console.log(body)
     return res.data;
 
   } catch (error: unknown) {

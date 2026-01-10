@@ -107,7 +107,6 @@ export  default function SpareCategory(){
                 icon: "lucide:edit-2",
                 onClick: (data: TableDataType) => {
                 router.push(`/settings/manageAssets/spareCategory/${data.uuid}`);
-                console.log(data.uuid);
                 },
               },
             ],

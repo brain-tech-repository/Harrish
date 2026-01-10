@@ -3,8 +3,9 @@
 import KeyValueData from "@/app/components/keyValueData";
 import ContainerCard from "@/app/components/containerCard";
 import { useLoading } from "@/app/services/loadingContext";
-import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehicleInWarehouse, getSalesmanInWarehouse, getStockOfWarehouse, warehouseSales, downloadFile,returnByWarehouse ,exportReturnByWarehouse,allInvoiceExportInWarehouse} from "@/app/services/allApi";
+import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehicleInWarehouse, getSalesmanInWarehouse, getStockOfWarehouse, warehouseSales, downloadFile,returnByWarehouse ,exportReturnByWarehouse,allInvoiceExportInWarehouse, warhouseStocksByFilter } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import InputFields from "@/app/components/inputFields";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -22,6 +23,8 @@ import Skeleton from "@mui/material/Skeleton";
 import FilterComponent from "@/app/components/filterComponent";
 import {  exportReturneWithDetails } from "@/app/services/agentTransaction";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
+import { CustomTableSkelton } from "@/app/components/customSkeleton";
+
 interface Item {
     id: string;
     sap_id: string;
@@ -80,6 +83,7 @@ export default function ViewPage() {
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
     const [UUIDAgentCustomer, setUUIDAgentCustomer] = useState<string>("");
 
     const params = useParams();
@@ -93,9 +97,12 @@ export default function ViewPage() {
     }
 
     const { showSnackbar } = useSnackbar();
-    const { setLoading } = useLoading();
+    // const { setLoading } = useLoading();
+    // const [loading, setLoading] = useState(false);
     const [item, setItem] = useState<Item | null>(null);
     const [warehouseId, setWarehouseId] = useState("");
+    const [selectedFilter, setSelectedFilter] = useState("");
+    const [filteredStockData, setFilteredStockData] = useState<TableDataType[] | null>(null);
     const onTabClick = async (idx: number) => {
         // ensure index is within range and set the corresponding tab key
         if (typeof idx !== "number") return;
@@ -552,7 +559,7 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
         {
             key: "incoming",
@@ -563,7 +570,7 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
         {
             key: "usage",
@@ -574,20 +581,20 @@ export default function ViewPage() {
                 </span>
             ),
             showByDefault: true,
-            // isSortable: true,
+            isSortable: true,
         },
 
-        {
-            key: "ordersBy",
-            label: "Orders By",
-            render: (row: TableDataType) => (
-                <span className="text-[14px]">
-                    {getRandomDateFromLastMonth() ?? "-"}
-                </span>
-            ),
-            showByDefault: true,
-            // isSortable: true,
-        }
+        // {
+        //     key: "ordersBy",
+        //     label: "Orders By",
+        //     render: (row: TableDataType) => (
+        //         <span className="text-[14px]">
+        //             {getRandomDateFromLastMonth() ?? "-"}
+        //         </span>
+        //     ),
+        //     showByDefault: true,
+        //     // isSortable: true,
+        // }
     ];
 
     function getRandomDateFromLastMonth(): string {
@@ -1275,7 +1282,11 @@ export default function ViewPage() {
                     setLoading(false);
                 }
             };
-
+//  { loading && (
+//                    <div className="flex w-full h-full items-center justify-center">
+//                      <Loading />
+//                    </div>
+//                  )}
     return (
         <>
             <div className="flex items-center gap-4 mb-6">
@@ -1316,6 +1327,7 @@ export default function ViewPage() {
                     <StatusBtn isActive={item?.status === 1 || item?.status === '1'} />
                 </span>
             </ContainerCard>
+            
             <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
                 {tabList.map((tab, index) => (
                     <div key={index}>
@@ -1327,7 +1339,8 @@ export default function ViewPage() {
                     </div>
                 ))}
             </ContainerCard>
-
+                
+                 
             {activeTab === "overview" && (
                 <div className="m-auto">
                     <div className="flex flex-wrap gap-x-[20px]">
@@ -1523,22 +1536,89 @@ export default function ViewPage() {
                 // <ContainerCard >
 
                 <div className="flex flex-col h-full">
+                    {loading ? <CustomTableSkelton /> :
                     <Table
-                        config={{
-                            api: {
-                                search: searchStockByWarehouse,
-                                list: listStockByWarehouse
-                            },
-                            header: {
-                                searchBar: true
-                            },
-                            footer: { nextPrevBtn: true, pagination: true },
-                            columns: stockColumns,
-                            showNestedLoading: true,
-                            rowSelection: false,
-                            pageSize: 50,
-                        }}
-                    />
+                            data={filteredStockData || undefined}
+                            config={{
+                                api: {
+                                    search: searchStockByWarehouse,
+                                    list: listStockByWarehouse
+                                },
+                                header: {
+                                    searchBar: false
+                                },
+                                footer: { nextPrevBtn: true, pagination: true },
+                                columns: stockColumns,
+                                showNestedLoading: true,
+                                rowSelection: false,
+                                pageSize: 50,
+                            }}
+                            directFilterRenderer={
+                                <InputFields
+                                    name="filter"
+                                    placeholder="Select Filter"
+                                    value={selectedFilter}
+                                    options={[
+                                        { value: "yesterday", label: "Yesterday" },
+                                        { value: "today", label: "Today" },
+                                        { value: "last_3_days", label: "Last 3 Days" },
+                                        { value: "last_7_days", label: "Last 7 Days" },
+                                        { value: "last_month", label: "Last Month" },
+                                    ]}
+                                    onChange={async (e) => {
+                                        const filterValue = e.target.value;
+                                        setSelectedFilter(filterValue);
+                                        if (!filterValue) {
+                                            setFilteredStockData(null);
+                                            return;
+                                        }
+                                        if (filterValue && warehouseId) {
+                                            try {
+                                                setLoading(true);
+                                                const res = await warhouseStocksByFilter({
+                                                    warehouse_id: warehouseId,
+                                                    date_filter: filterValue,
+                                                });
+                                                console.log("Filter API response:", res);
+                                                // Accept either `stocks` or `data` array from the API; fallback to empty array
+                                                const apiStocks = Array.isArray(res?.stocks)
+                                                    ? res!.stocks
+                                                    : Array.isArray(res?.data)
+                                                        ? res!.data
+                                                        : [];
+
+                                                const transformedData = apiStocks.map((it: any) => ({
+                                                    // Map to the table's expected keys
+                                                    osa_code: it.erp_code ?? it.item_code ?? it.item?.erp_code ?? "",
+                                                    item: {
+                                                        name: it.item_name ?? it.item?.name ?? "",
+                                                        code: it.item_code ?? it.item?.code ?? "",
+                                                        uoms: it.uoms ?? it.item?.uoms ?? [],
+                                                    },
+                                                    // current quantity (used by `qty` column)
+                                                    qty: typeof it.stock_qty === "number" ? it.stock_qty : (it.stock_qty ? Number(it.stock_qty) : 0),
+                                                    // keep other useful fields
+                                                    total_sold_qty: it.total_sold_qty ?? 0,
+                                                    purchase: it.purchase ?? 0,
+                                                    incoming: it.incoming ?? 0,
+                                                    usage: it.usage ?? it.total_sold_qty ?? 0,
+                                                    // raw payload if needed later
+                                                    _raw: it,
+                                                }));
+
+                                                // Always set filtered data (empty array will clear the table)
+                                                setFilteredStockData(transformedData);
+                                            } catch (err) {
+                                                console.error("Filter API error", err);
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }
+                                    }}
+                                />
+                            }
+                        />
+}
                 </div>
 
                 // </ContainerCard>

@@ -9,7 +9,6 @@ import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, RefObject, Fragment } from "react";
 import { invoiceByUuid } from "@/app/services/agentTransaction";
-import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -19,7 +18,8 @@ import KeyValueData from "@/app/components/keyValueData";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 import { isValidDate } from "@/app/utils/formatDate";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
-import FrontendPdfDownloadButton from "@/app/components/FrontendPdfDownloadButton";
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
+import { generatePdfFromElement } from "@/app/utils/generateDeliveryPdf";
 // const CURRENCY = localStorage.getItem("country") || "";
 
 interface DeliveryDetail {
@@ -129,13 +129,13 @@ const columns = [
   { key: "itemName", label: "Item Name", render: (value: TableDataType) => <>{(value.erp_code ? value.erp_code : '') + (value.erp_code && value.itemName ? " - " : "") + (value.itemName ? value.itemName : "") || '-'}</> },
   { key: "UOM", label: "UOM" },
   { key: "Quantity", label: "Quantity" },
-  { key: "Price", label: "Price", render: (value: TableDataType) => <>{toInternationalNumber(value.Price) || '0.00'}</> },
-  { key: "Net", label: "Net", render: (value: TableDataType) => <>{toInternationalNumber(value.Net) || '0.00'}</> },
+  { key: "Price", label: "Price", render: (value: TableDataType) => <>{toInternationalNumber(value.Price, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</> },
+  { key: "Net", label: "Net", render: (value: TableDataType) => <>{toInternationalNumber(value.Net, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</> },
   { key: "vat", label: "VAT", render: (value: TableDataType) => <>{toInternationalNumber(value.Vat, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</> },
   // { key: "preVat", label: "Pre VAT", render: (value: TableDataType) => <>{toInternationalNumber(Number(value.preVat)) || '0.00'}</> },
   // { key: "discount", label: "Discount", render: (value: TableDataType) => <>{toInternationalNumber(value.discount) || '0.00'}</> },
   // { key: "total_gross", label: "Gross", render: (value: TableDataType) => <>{toInternationalNumber(value.total_gross) || '0.00'}</> },
-  { key: "Total", label: "Total", render: (value: TableDataType) => <>{toInternationalNumber(value.Total) || '0.00'}</> },
+  { key: "Total", label: "Total", render: (value: TableDataType) => <>{toInternationalNumber(value.Total, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</> },
 ];
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -210,13 +210,45 @@ export default function OrderDetailPage() {
   const keyValueData = [
     // { key: "Gross Total", value: `AED ${deliveryData?.gross_total || "0.00"}` },
     // { key: "Discount", value: `AED ${deliveryData?.discount || "0.00"}` },
-    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.net_total || 0)) || "0.00"}` },
+    { key: "Net Total", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.net_total || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}` },
     // { key: "Excise", value: `AED ${deliveryData?.excise || "0.00"}` },
-    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.vat || 0)) || "0.00"}` },
+    { key: "VAT", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.vat || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}` },
     // { key: "Pre VAT", value: `${CURRENCY} ${toInternationalNumber(Number(deliveryData?.pre_vat || 0)) || "0.00"}` },
     // { key: "Delivery Charges", value: `AED ${deliveryData?.delivery_charges || "0.00"}` },
   ];
   const targetRef = useRef<HTMLDivElement | null>(null);
+
+  const [loading, setLoadingState] = useState<boolean>(false);
+
+  const exportFile = async () => {
+    if (!targetRef.current) {
+      showSnackbar("Content not ready for PDF generation", "error");
+      return;
+    }
+
+    try {
+      setLoadingState(true);
+
+      await generatePdfFromElement(targetRef.current, {
+        fileName: `invoice-${deliveryData?.invoice_code || uuid}.pdf`,
+        orientation: 'landscape',
+        margin: 10,
+        scale: 2,
+        onSuccess: () => {
+          showSnackbar("PDF downloaded successfully", "success");
+        },
+        onError: (error: any) => {
+          console.error('PDF generation error:', error);
+          showSnackbar("Failed to generate PDF", "error");
+        },
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      showSnackbar("Failed to download PDF", "error");
+    } finally {
+      setLoadingState(false);
+    }
+  };
 
   return (
     <>
@@ -382,7 +414,7 @@ export default function OrderDetailPage() {
                 {/* <hr className="text-[#D5D7DA]" /> */}
                 <div className="font-semibold text-[#181D27] py-2 text-[18px] flex justify-between">
                   <span>Total</span>
-                  <span>{CURRENCY} {toInternationalNumber(deliveryData?.total_amount) || "0.00"}</span>
+                  <span>{CURRENCY} {toInternationalNumber(deliveryData?.total_amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>
                 </div>
               </div>
 
@@ -408,13 +440,12 @@ export default function OrderDetailPage() {
 
           {/* ---------- Footer Buttons ---------- */}
           <div className="flex flex-wrap justify-end gap-[20px] print:hidden">
-            <FrontendPdfDownloadButton
-              targetRef={targetRef as unknown as RefObject<HTMLElement>}
-              label="Download"
-              filename={`invoice-${deliveryData?.invoice_code || uuid}.pdf`}
-              onSuccess={() => showSnackbar("PDF downloaded successfully", "success")}
-              onError={() => showSnackbar("Failed to generate PDF", "error")}
-            />
+              <SidebarBtn
+                leadingIcon={loading ? "eos-icons:three-dots-loading" : "lucide:download"}
+                leadingIconSize={20}
+                label="Download"
+                onClick={exportFile}
+              />
             <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
           </div>
         </ContainerCard>
