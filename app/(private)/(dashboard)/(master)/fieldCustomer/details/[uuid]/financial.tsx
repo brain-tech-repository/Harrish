@@ -11,7 +11,7 @@ export default function Financial({ data }: { data: AgentCustomerDetails | null 
                 title="Finanacial Information"
                 data={[
                     {
-                        key: "Payment Type",
+                        key: "Payment Terms",
                         value: "Cash",
                     },
                     {

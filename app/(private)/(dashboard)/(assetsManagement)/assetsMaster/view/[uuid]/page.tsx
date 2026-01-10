@@ -80,14 +80,51 @@ export default function ViewPage() {
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
       </div>
 
+      <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
+        {/* profile details */}
+        <div className="flex flex-col sm:flex-row items-center gap-[20px]">
+          <div className="w-[80px] h-[80px] flex justify-center items-center rounded-full bg-[#E9EAEB]">
+            <Icon
+              icon="mdi:fridge-outline"
+              width={40}
+              className="text-[#535862] scale-[1.5]"
+            />
+          </div>
+          <div className="text-center sm:text-left">
+            <h2 className="text-[20px] font-semibold text-[#181D27] mb-[10px]">
+              {chiller?.osa_code || ""}
+            </h2>
+            <span className="flex items-center text-[#414651] text-[16px]">
+              <Icon
+                icon="mdi:location"
+                width={16}
+                className="text-[#EA0A2A] mr-[5px]"
+              />
+              <span>
+                {chiller?.country?.name}
+              </span>
+              {/* <span className="flex justify-center p-[10px] sm:p-0 sm:inline-block mt-[10px] sm:mt-0 sm:ml-[10px]">
+                                          <StatusBtn status="active" />
+                                      </span> */}
+            </span>
+          </div>
+        </div>
+        {/* action buttons */}
+        <div className="flex items-center gap-[10px]">
+          <StatusBtn
+            isActive={chiller?.status ? true : false}
+          />
+        </div>
+      </ContainerCard>
+
       <div className="flex flex-wrap lg:gap-[20px]">
 
         {/* ---------- Basic Information ---------- */}
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full lg:w-[450px]">
           <KeyValueData
             title="Assets Basic Information"
             data={[
-              { key: "OSA Code", value: chiller?.osa_code },
+              // { key: "OSA Code", value: chiller?.osa_code },
               { key: "SAP Code", value: chiller?.sap_code },
               { key: "Serial Number", value: chiller?.serial_number },
               { key: "Asset Category", value: chiller?.assets_category?.name },
@@ -98,20 +135,20 @@ export default function ViewPage() {
         </ContainerCard>
 
         {/* ---------- Acquisition & Vendor ---------- */}
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full lg:w-[450px]">
           <KeyValueData
             title="Acquisition and Vendor Information"
             data={[
               { key: "Acquisition", value: chiller?.acquisition },
               { key: "Vendor", value: chiller?.vendor?.name },
               { key: "Manufacturer", value: chiller?.manufacturer?.name },
-              { key: "Country", value: chiller?.country?.name },
+              // { key: "Country", value: chiller?.country?.name },
             ]}
           />
         </ContainerCard>
 
         {/* ---------- Other Info ---------- */}
-        <ContainerCard className="w-full lg:w-[350px]">
+        <ContainerCard className="w-full lg:w-[450px]">
           <KeyValueData
             title="Other Information"
             data={[
@@ -120,11 +157,6 @@ export default function ViewPage() {
               { key: "Capacity", value: chiller?.capacity },
               { key: "Manufacturing Year", value: chiller?.manufacturing_year },
               { key: "Remarks", value: chiller?.remarks },
-              {
-                key: "Status",
-                value: "",
-                component: <StatusBtn isActive={!!chiller?.status} />,
-              },
             ]}
           />
         </ContainerCard>

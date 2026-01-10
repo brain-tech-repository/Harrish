@@ -31,7 +31,7 @@ import {
     FormikTouched,
 } from "formik";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
 
 interface AgentCustomerFormValues {
@@ -74,10 +74,10 @@ export default function AddEditAgentCustomer() {
         warehouseAllOptions,
         customerTypeOptions,
         allCustomerTypeOptions,
-        
+
         channelOptions,
         // onlyCountryOptions
-        ensureChannelLoaded, ensureCustomerTypeLoaded, ensureWarehouseLoaded, ensureWarehouseAllLoaded,ensureAllCustomerTypesLoaded } = useAllDropdownListData();
+        ensureChannelLoaded, ensureCustomerTypeLoaded, ensureWarehouseLoaded, ensureWarehouseAllLoaded, ensureAllCustomerTypesLoaded } = useAllDropdownListData();
     const params = useParams();
     const agentCustomerId = params?.uuid as string | undefined;
     const isEditMode =
@@ -87,7 +87,7 @@ export default function AddEditAgentCustomer() {
         ensureCustomerTypeLoaded();
         ensureWarehouseLoaded();
         ensureWarehouseAllLoaded();
-        if(isEditMode){
+        if (isEditMode) {
             ensureAllCustomerTypesLoaded();
             ensureChannelLoaded();
         }
@@ -116,7 +116,7 @@ export default function AddEditAgentCustomer() {
             if (res && !res.error && Array.isArray(res.data)) {
                 setOutletChannelOptions(res.data.map((c: any) => ({
                     value: String(c.id),
-                    label: c.name 
+                    label: c.name
                 })));
             } else {
                 setOutletChannelOptions([]);
@@ -177,10 +177,10 @@ export default function AddEditAgentCustomer() {
         }
     );
 
-    useEffect(() => {
-        if (loading) setLoading(true);
-        else setLoading(false);
-    }, [loading, setLoading]);
+    // useEffect(() => {
+    //     if (loading) setLoading(true);
+    //     else setLoading(false);
+    // }, [loading, setLoading]);
 
     const fetchRoutes = async (value: string) => {
         setSkeleton({ ...skeleton, route: true });
@@ -247,7 +247,8 @@ export default function AddEditAgentCustomer() {
     // Prevent double call of genearateCode in add mode
     const codeGeneratedRef = useRef(false);
     useEffect(() => {
-        setLoading(true);
+        // setLoading(true);
+
         if (isEditMode && agentCustomerId) {
             (async () => {
                 const res = await agentCustomerById(String(agentCustomerId));
@@ -336,27 +337,27 @@ export default function AddEditAgentCustomer() {
                 }
                 setLoading(false);
             })();
-        } else if (!isEditMode && !codeGeneratedRef.current) {
-            codeGeneratedRef.current = true;
-            (async () => {
-                const res = await genearateCode({
-                    model_name: "agent_customers",
-                });
-                if (res?.code) {
-                    setInitialValues((prev) => ({
-                        ...prev,
-                        osa_code: res.code,
-                    }));
-                }
-                if (res?.prefix) {
-                    setPrefix(res.prefix);
-                } else if (res?.code) {
-                    // fallback: extract prefix from code if possible (e.g. ABC-00123 => ABC-)
-                    const match = res.prefix;
-                    if (match) setPrefix(prefix);
-                }
-                setLoading(false);
-            })();
+            // } else if (!isEditMode && !codeGeneratedRef.current) {
+            //     codeGeneratedRef.current = true;
+            //     (async () => {
+            //         const res = await genearateCode({
+            //             model_name: "agent_customers",
+            //         });
+            //         if (res?.code) {
+            //             setInitialValues((prev) => ({
+            //                 ...prev,
+            //                 osa_code: res.code,
+            //             }));
+            //         }
+            //         if (res?.prefix) {
+            //             setPrefix(res.prefix);
+            //         } else if (res?.code) {
+            //             // fallback: extract prefix from code if possible (e.g. ABC-00123 => ABC-)
+            //             const match = res.prefix;
+            //             if (match) setPrefix(prefix);
+            //         }
+            //         setLoading(false);
+            //     })();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isEditMode, agentCustomerId]);
@@ -538,6 +539,8 @@ export default function AddEditAgentCustomer() {
         }
     };
 
+
+
     const handleSubmit = async (
         values: AgentCustomerFormValues,
         actions?: Pick<
@@ -572,7 +575,7 @@ export default function AddEditAgentCustomer() {
                 try {
                     await saveFinalCode({
                         reserved_code: values.osa_code,
-                        model_name: "agent_customers",
+                        model_name: values.customer_type == "3" ? "agent_customers" : "OTC",
                     });
                 } catch (e) {
                     // Optionally handle error, but don't block success
@@ -637,6 +640,23 @@ export default function AddEditAgentCustomer() {
         }
     };
 
+    const generateCode = async (
+        customerType: string,
+        setFieldValue: (field: any, value: any) => void
+    ) => {
+        const res = await genearateCode({
+            model_name: customerType === "3" ? "agent_customers" : "OTC",
+        });
+
+        if (res?.code) {
+            setFieldValue("osa_code", res.code);
+        }
+
+        if (res?.prefix) {
+            setPrefix(res.prefix);
+        }
+    };
+
     const renderStepContent = (
         values: AgentCustomerFormValues,
         setFieldValue: (
@@ -657,6 +677,28 @@ export default function AddEditAgentCustomer() {
                                 Customer
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                <div>
+                                    <InputFields
+                                        required
+                                        label="Customer Type"
+                                        options={isEditMode ? allCustomerTypeOptions : customerTypeOptions}
+                                        name="customer_type"
+                                        value={customerTypeOptions.length === 0 ? "" : values.customer_type?.toString() ?? ""}
+                                        disabled={customerTypeOptions.length === 0}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setFieldValue("customer_type", val);
+                                            generateCode(val, setFieldValue);
+                                            setFieldError?.("customer_type", undefined);
+                                        }}
+                                        error={
+                                            touched.customer_type &&
+                                            errors.customer_type
+                                        }
+                                    />
+                                </div>
+
                                 <div>
                                     <InputFields
                                         label="OSA Code"
@@ -671,42 +713,7 @@ export default function AddEditAgentCustomer() {
                                         }}
                                         disabled={codeMode === "auto"}
                                     />
-                                    {!isEditMode && false && (
-                                        <>
-                                            <IconButton
-                                                bgClass="white"
-                                                className="mt-[45px] cursor-pointer text-[#252B37]"
-                                                icon="mi:settings"
-                                                onClick={() => setIsOpen(true)}
-                                            />
-                                            <SettingPopUp
-                                                isOpen={isOpen}
-                                                onClose={() => setIsOpen(false)}
-                                                title="OSA Code"
-                                                prefix={prefix}
-                                                setPrefix={setPrefix}
-                                                onSave={(mode, code) => {
-                                                    setCodeMode(mode);
-                                                    if (
-                                                        mode === "auto" &&
-                                                        code
-                                                    ) {
-                                                        setFieldValue(
-                                                            "osa_code",
-                                                            code
-                                                        );
-                                                    } else if (
-                                                        mode === "manual"
-                                                    ) {
-                                                        setFieldValue(
-                                                            "osa_code",
-                                                            ""
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                        </>
-                                    )}
+
                                 </div>
                                 <div>
                                     <InputFields
@@ -738,27 +745,6 @@ export default function AddEditAgentCustomer() {
                                             if (setFieldError) setFieldError("owner_name", undefined);
                                         }}
                                         error={touched.owner_name && errors.owner_name}
-                                    />
-                                </div>
-                                <div>
-                                    <InputFields
-                                        required
-                                        label="Customer Type"
-                                        options={isEditMode ? allCustomerTypeOptions : customerTypeOptions}
-                                        name="customer_type"
-                                        value={customerTypeOptions.length === 0 ? "" : values.customer_type?.toString() ?? ""}
-                                        disabled={customerTypeOptions.length === 0 }
-                                        onChange={(e) => {
-                                            setFieldValue(
-                                                "customer_type",
-                                                e.target.value
-                                            );
-                                            if (setFieldError) setFieldError("customer_type", undefined);
-                                        }}
-                                        error={
-                                            touched.customer_type &&
-                                            errors.customer_type
-                                        }
                                     />
                                 </div>
 
@@ -1059,7 +1045,7 @@ export default function AddEditAgentCustomer() {
                                 <div>
                                     <InputFields
                                         required
-                                        label="Payment Type"
+                                        label="Payment Terms"
                                         name="payment_type"
                                         value={values.payment_type?.toString() ?? ""}
                                         onChange={(e) => {
@@ -1073,8 +1059,7 @@ export default function AddEditAgentCustomer() {
                                         }
                                         options={[
                                             { value: "1", label: "Cash" },
-                                            { value: "2", label: "Cheque" },
-                                            { value: "3", label: "Transfer" },
+                                            { value: "2", label: "Credit" },
                                         ]}
                                     />
                                 </div>
@@ -1083,8 +1068,9 @@ export default function AddEditAgentCustomer() {
                                     <>
                                         <div>
                                             <InputFields
-                                            required
+                                                required
                                                 label="Credit Day"
+                                                type="number"
                                                 name="creditday"
                                                 value={values.creditday}
                                                 onChange={(e) => {
@@ -1097,8 +1083,9 @@ export default function AddEditAgentCustomer() {
 
                                         <div>
                                             <InputFields
-                                            required
+                                                required
                                                 label="Credit Limit"
+                                                type="number"
                                                 name="credit_limit"
                                                 value={values.credit_limit}
                                                 onChange={(e) => {
@@ -1231,18 +1218,21 @@ export default function AddEditAgentCustomer() {
                                     />
                                 </div>
 
-                                <div>
-                                    <InputFields
-                                        label="Add QR Code"
-                                        value={values.qr_code}
-                                        name="qr_code"
-                                        onChange={(e) => {
-                                            setFieldValue("qr_code", e.target.value);
-                                            if (setFieldError) setFieldError("qr_code", undefined);
-                                        }}
-                                        error={touched.qr_code && errors.qr_code}
-                                    />
-                                </div>
+                                {isEditMode && (
+                                    <div>
+                                        <InputFields
+                                            label="Add QR Code"
+                                            value={values.qr_code}
+                                            name="qr_code"
+                                            onChange={(e) => {
+                                                setFieldValue("qr_code", e.target.value);
+                                                if (setFieldError) setFieldError("qr_code", undefined);
+                                            }}
+                                            error={touched.qr_code && errors.qr_code}
+                                        />
+                                    </div>
+                                )}
+
 
                             </div>
                         </div>

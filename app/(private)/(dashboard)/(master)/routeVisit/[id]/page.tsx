@@ -226,18 +226,13 @@ export default function AddEditRouteVisit() {
     company: yup.array().min(1, "At least one company is required"),
     days: yup.array().min(1, "At least one day is required"),
     from_date: yup.string().required("From date is required"),
-    to_date: yup
-      .string()
-      .required("To date is required")
-      .test(
-        "is-after-or-equal",
-        "To Date must be after or equal to From Date",
-        function (value) {
-          const { from_date } = this.parent;
-          if (!from_date || !value) return true;
-          return new Date(value) >= new Date(from_date);
-        }
-      ),
+    to_date: yup.date()
+      .required("Valid To date is required")
+      .when("from_date", (from_date, schema) => {
+        return from_date
+          ? schema.min(from_date, "Valid To must be after Valid From")
+          : schema;
+      }),
     status: yup.string().required("Status is required"),
   });
 
@@ -712,7 +707,7 @@ export default function AddEditRouteVisit() {
         }
       }
 
-     
+
       // ✅ Convert your raw object to expected format - customerSchedules is already in Record format
       const formattedSchedules = convertRowStatesToSchedules(customerSchedules);
 
@@ -808,7 +803,7 @@ export default function AddEditRouteVisit() {
                     setForm((prev) => ({ ...prev, from_date: e.target.value }));
                     if (errors.from_date) setErrors((prev) => ({ ...prev, from_date: "" }));
                   }}
-                  error={errors.from_date} 
+                  error={errors.from_date}
                 />
               </div>
 
@@ -823,6 +818,7 @@ export default function AddEditRouteVisit() {
                     setForm((prev) => ({ ...prev, to_date: e.target.value }));
                     if (errors.to_date) setErrors((prev) => ({ ...prev, to_date: "" }));
                   }}
+                  min={form.from_date}
                   error={errors.to_date}
                 />
               </div>
@@ -975,7 +971,7 @@ export default function AddEditRouteVisit() {
                     }
                     showSkeleton={skeleton.route}
                     options={routeOptions}
-                    isSingle={false}
+                    // isSingle={false}
                     error={errors.route}
                   />
                 </div>
