@@ -415,7 +415,7 @@ export default function OrderAddEditPage() {
      
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
       const stockRes = await warehouseStockTopOrders(warehouseId);
-      const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
+      const stocksArray = stockRes.data?.stocks || stockRes.data?.items || stockRes.stocks || [];
 
       // Store warehouse stocks for validation
       setWarehouseStocks(prev => ({

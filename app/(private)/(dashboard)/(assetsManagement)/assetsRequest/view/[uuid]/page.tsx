@@ -137,31 +137,31 @@ export default function ViewPage() {
             data={[
               {
                 key: "National ID",
-                value: getFileView(chillerRequest?.national_id_file),
+                value: getFileView(chillerRequest?.national_id_file || "No Image"),
               },
               {
                 key: "Password Photo",
-                value: getFileView(chillerRequest?.password_photo_file),
+                value: getFileView(chillerRequest?.password_photo_file || "No Image"),
               },
               {
                 key: "Outlet Stamp",
-                value: getFileView(chillerRequest?.outlet_stamp_file),
+                value: getFileView(chillerRequest?.outlet_stamp_file || "No Image"),
               },
               {
                 key: "Trading Licence",
-                value: getFileView(chillerRequest?.trading_licence_file),
+                value: getFileView(chillerRequest?.trading_licence_file || "No Image"),
               },
               {
                 key: "LC Letter",
-                value: getFileView(chillerRequest?.lc_letter_file),
+                value: getFileView(chillerRequest?.lc_letter_file || "No Image"),
               },
               {
                 key: "Address Proof",
-                value: getFileView(chillerRequest?.outlet_address_proof_file),
+                value: getFileView(chillerRequest?.outlet_address_proof_file || "No Image"),
               },
               {
                 key: "Customer Signature",
-                value: getFileView(chillerRequest?.sign__customer_file),
+                value: getFileView(chillerRequest?.sign__customer_file || "No Image"),
               },
             ]}
           />

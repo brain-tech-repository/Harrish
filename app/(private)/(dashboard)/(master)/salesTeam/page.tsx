@@ -33,6 +33,7 @@ const SalesmanPage = () => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -92,7 +93,7 @@ const SalesmanPage = () => {
 const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportSalesmanData({ format });
+      const response = await exportSalesmanData({ format, search: searchFilterValue, filter:{ status: currentStatusFilter == false ? "0" : "1" }});
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
@@ -119,6 +120,7 @@ const exportFile = async (format: string) => {
         // setLoading(true);
         const res = await SalesmanListGlobalSearch({ query: query, per_page: pageSize.toString(), page: page.toString() });
         // setLoading(false);
+        setSearchFilterValue(query);
 
         return {
           data: res.data || [],

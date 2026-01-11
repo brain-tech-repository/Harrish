@@ -2130,7 +2130,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Customer Category Sales Distribution</h3>
-                  <MaximizedExplodedPieChart data={customerCategorySalesData} outerRadius={200} />
+                  <MaximizedExplodedPieChart data={customerCategorySalesData} innerRadius={100} outerRadius={200} />
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
                   <h3 className="text-xl font-semibold text-gray-800 mb-4">Customer Category Sales Table</h3>
@@ -3207,25 +3207,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         title: "Total Sales",
         value: totalSales.toLocaleString(),
         icon: "carbon:currency",
-        color: "#fceaef",
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)", // Rose to amber
       },
       {
         title: "Total Customers",
         value: totalCustomers.toLocaleString(),
         icon: "mdi:account-group",
-        color: "#fff0f2",
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)", // Indigo to cyan
       },
       {
         title: "Active Customers",
         value: activeSalesCustomers.toLocaleString(),
         icon: "mdi:account-check",
-        color: "#e0edeb",
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)", // Cyan to green
       },
       {
         title: "Inactive Customers",
         value: inactiveSalesCustomers.toLocaleString(),
         icon: "mdi:account-off",
-        color: "#d8e6ff",
+        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)", // Slate to gray
       },
     ];
 
@@ -3236,13 +3236,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map((card, index) => (
-            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
-              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
-                <Icon icon={card.icon} width="32" height="32" />
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
-                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
               </div>
             </div>
           ))}
@@ -3438,25 +3447,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         title: "Total Sales",
         value: totalSales.toLocaleString(),
         icon: "carbon:currency",
-        color: "#fceaef",
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: "Total Customers",
         value: totalCustomers.toLocaleString(),
         icon: "mdi:account-group",
-        color: "#fff0f2",
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: "Active Customers",
         value: activeSalesCustomers.toLocaleString(),
         icon: "mdi:account-check",
-        color: "#e0edeb",
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: "Inactive Customers",
         value: inactiveSalesCustomers.toLocaleString(),
         icon: "mdi:account-off",
-        color: "#d8e6ff",
+        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
     ];
 
@@ -3467,13 +3476,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map((card, index) => (
-            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
-              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
-                <Icon icon={card.icon} width="32" height="32" />
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
-                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
               </div>
             </div>
           ))}
@@ -3669,25 +3687,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         title: "Total Sales",
         value: totalSales.toLocaleString(),
         icon: "carbon:currency",
-        color: "#fceaef",
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: "Total Customers",
         value: totalCustomers.toLocaleString(),
         icon: "mdi:account-group",
-        color: "#fff0f2",
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: "Active Customers",
         value: activeSalesCustomers.toLocaleString(),
         icon: "mdi:account-check",
-        color: "#e0edeb",
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: "Inactive Customers",
         value: inactiveSalesCustomers.toLocaleString(),
         icon: "mdi:account-off",
-        color: "#d8e6ff",
+        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
     ];
 
@@ -3698,13 +3716,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map((card, index) => (
-            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
-              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
-                <Icon icon={card.icon} width="32" height="32" />
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
-                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
               </div>
             </div>
           ))}
@@ -3900,25 +3927,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         title: "Total Sales",
         value: totalSales.toLocaleString(),
         icon: "carbon:currency",
-        color: "#fceaef",
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: "Total Customers",
         value: totalCustomers.toLocaleString(),
         icon: "mdi:account-group",
-        color: "#fff0f2",
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: "Active Customers",
         value: activeSalesCustomers.toLocaleString(),
         icon: "mdi:account-check",
-        color: "#e0edeb",
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: "Inactive Customers",
         value: inactiveSalesCustomers.toLocaleString(),
         icon: "mdi:account-off",
-        color: "#d8e6ff",
+        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
     ];
 
@@ -3929,13 +3956,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map((card, index) => (
-            <div key={index} className="flex items-center rounded-lg bg-white text-gray-700 shadow-md border border-gray-200 p-3">
-              <div style={{ background: card.color }} className="p-3 rounded-lg flex-shrink-0">
-                <Icon icon={card.icon} width="32" height="32" />
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
               </div>
               <div className="ml-4 flex-1">
-                <p className="text-xs text-gray-600 font-medium">{card.title}</p>
-                <p className="mt-1 text-gray-900 font-bold text-xl">{card.value}</p>
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
               </div>
             </div>
           ))}

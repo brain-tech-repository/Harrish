@@ -7,6 +7,7 @@ type FilterComponentProps = FilterRendererProps & {
   onlyFilters?: string[]; // e.g. ['warehouse_id', 'company_id']
   currentDate?: boolean;
   api?: (payload: any) => Promise<any>; // Optional API function to call on filter submit
+  disabled?: boolean;
 };
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
@@ -50,6 +51,7 @@ type ApiResponse<T> = {
 };
 
 export default function FilterComponent(filterProps: FilterComponentProps) {
+    const { disabled = false } = filterProps;
   const {
     customerSubCategoryOptions,
     companyOptions,
@@ -273,8 +275,14 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           { value: "last_7_days", label: "Last 7 Days" },
           { value: "last_month", label: "Last Month" },
         ]}
-        value={payload.day_filter || ""}
-        disabled={!!payload.from_date || !!payload.to_date}
+        value={
+          Array.isArray(payload.day_filter)
+            ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
+            : typeof payload.day_filter === "number"
+            ? String(payload.day_filter)
+            : payload.day_filter || ""
+        }
+        disabled={disabled || !!payload.from_date || !!payload.to_date}
         onChange={(e) => {
           const raw = (e as any)?.target?.value ?? e;
           setPayload((prev) => ({ ...prev, day_filter: raw }));
@@ -291,7 +299,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? String(payload.from_date)
               : (payload.from_date as string | undefined) ?? ""
           }
-          disabled={!!payload.day_filter}
+          disabled={disabled || !!payload.day_filter}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             setPayload((prev) => ({ ...prev, from_date: raw }));
@@ -310,7 +318,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? String(payload.to_date)
               : (payload.to_date as string | undefined) ?? ""
           }
-          disabled={!!payload.day_filter || !payload.from_date}
+          disabled={disabled || !!payload.day_filter || !payload.from_date}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             setPayload((prev) => ({ ...prev, to_date: raw }));
@@ -329,6 +337,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           showSkeleton={skeleton.company}
           options={Array.isArray(companyOptions) ? companyOptions : []}
           value={companyVal as any}
+          disabled={disabled}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             const val = Array.isArray(raw)
@@ -355,7 +364,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.region}
-          disabled={companyVal.length === 0}
+          disabled={disabled || companyVal.length === 0}
           options={Array.isArray(regionOptions) ? regionOptions : []}
           value={regionVal as any}
           onChange={(e) => {
@@ -382,7 +391,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.area}
-          disabled={regionVal.length === 0}
+          disabled={disabled || regionVal.length === 0}
           options={Array.isArray(areaOptions) ? areaOptions : []}
           value={areaVal as any}
           onChange={(e) => {
@@ -408,7 +417,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.warehouse}
-          disabled={areaVal.length === 0 || areaOptions.length === 0}
+          disabled={disabled || areaVal.length === 0 || areaOptions.length === 0}
           options={Array.isArray(warehouseOptions) ? warehouseOptions : []}
           value={warehouseVal as any}
           onChange={(e) => {
@@ -433,7 +442,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.route}
-          disabled={warehouseVal.length === 0}
+          disabled={disabled || warehouseVal.length === 0}
           options={Array.isArray(routeOptions) ? routeOptions : []}
           value={routeVal as any}
           onChange={(e) => {
@@ -457,7 +466,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.salesteam}
-          disabled={routeVal.length === 0}
+          disabled={disabled || routeVal.length === 0}
           options={Array.isArray(salesmanOptions) ? salesmanOptions : []}
           value={salesVal as any}
           onChange={(e) => {
@@ -479,7 +488,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           onClick={() => clear()}
           label="Clear All"
           buttonTw="px-3 py-2 h-9"
-          disabled={isClearing || activeFilterCount === 0}
+          disabled={disabled || isClearing || activeFilterCount === 0}
         />
         <SidebarBtn
           isActive={true}
@@ -492,7 +501,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           }}
           label="Apply Filter"
           buttonTw="px-4 py-2 h-9"
-          disabled={isApplying || activeFilterCount === 0}
+          disabled={disabled || isApplying || activeFilterCount === 0}
         />
       </div>
     </div>

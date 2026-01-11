@@ -7,10 +7,47 @@ import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useFormik } from "formik";
 import TabBtn from "@/app/components/tabBtn";
-import { isVerify, updateAuthUser, countryList, roleList } from "@/app/services/allApi";
+import { isVerify, updateAuthUser, countryList, allRoleList } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import ResetPasswordSidebar from "@/app/components/ResetPasswordSidebar";
+import * as Yup from "yup";
+
+const ValidationSchema = Yup.object({
+  firstName: Yup.string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .required("Name is required"),
+
+  dob: Yup.string()
+    .required("Date of birth is required"),
+
+  role: Yup.string()
+    .required("Position is required"),
+
+  email: Yup.string()
+    .email("Enter a valid email address")
+    .required("Email is required"),
+
+  contact_number: Yup.string()
+    .matches(/^[0-9]{7,15}$/, "Enter a valid phone number")
+    .required("Phone number is required"),
+
+  street: Yup.string()
+    .min(3, "Street is too short")
+    .required("Street is required"),
+
+  city: Yup.string()
+    .min(2, "City name is too short")
+    .required("City is required"),
+
+  zip: Yup.string()
+    .matches(/^[0-9A-Za-z-]{3,10}$/, "Enter a valid zip code")
+    .required("Zip code is required"),
+
+  country_id: Yup.string()
+    .required("Country is required"),
+});
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -18,7 +55,6 @@ export default function ProfilePage() {
 
   // Form
   const formik = useFormik({
-    // roleOptions: roleList(),
     initialValues: {
       firstName: "",
       lastName: "",
@@ -30,15 +66,16 @@ export default function ProfilePage() {
       street: "",
       city: "",
       zip: "",
-      // Password fields for ResetPasswordSidebar
       oldPassword: "",
       newPassword: "",
       confirmPassword: "",
     },
+    validationSchema: ValidationSchema,
     onSubmit: async (values) => {
       await handleProfileUpdate(values);
     },
   });
+
 
   const { values, setFieldValue } = formik;
   const [showSidebar, setShowSidebar] = useState(false);
@@ -106,7 +143,7 @@ export default function ProfilePage() {
         formData.append('country_id', values.country_id ? String(values.country_id) : "");
         formData.append('profile_picture', profileImage);
 
-        
+
 
         payload = formData;
         type = "form-data";
@@ -169,7 +206,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await roleList();
+        const res = await allRoleList();
         if (res && res.data) {
           const roles = Array.isArray(res.data) ? res.data : [];
           const options = roles.map((role: any) => ({
@@ -488,13 +525,16 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         setFieldValue("firstName", e.target.value)
                       }
+                      error={formik.touched.firstName && formik.errors.firstName}
                     />
 
                     <InputFields
                       required
                       label="Date of Birth"
+                      type="date"
                       value={values.dob}
                       onChange={(e) => setFieldValue("dob", e.target.value)}
+                      error={formik.touched.dob && formik.errors.dob}
                     />
 
                     <InputFields
@@ -505,6 +545,7 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         setFieldValue("role", e.target.value)
                       }
+                      error={formik.touched.role && formik.errors.role}
                     />
                   </div>
                 </div>
@@ -518,6 +559,7 @@ export default function ProfilePage() {
                       label="Email"
                       value={values.email}
                       onChange={(e) => setFieldValue("email", e.target.value)}
+                      error={formik.touched.email && formik.errors.email}
                     />
 
                     <InputFields
@@ -525,6 +567,7 @@ export default function ProfilePage() {
                       label="Phone Number"
                       value={values.contact_number}
                       onChange={(e) => setFieldValue("contact_number", e.target.value)}
+                      error={formik.touched.contact_number && formik.errors.contact_number}
                     />
 
                     <InputFields
@@ -532,6 +575,7 @@ export default function ProfilePage() {
                       label="Street"
                       value={values.street}
                       onChange={(e) => setFieldValue("street", e.target.value)}
+                      error={formik.touched.street && formik.errors.street}
                     />
 
                     <InputFields
@@ -539,6 +583,7 @@ export default function ProfilePage() {
                       label="City"
                       value={values.city}
                       onChange={(e) => setFieldValue("city", e.target.value)}
+                      error={formik.touched.city && formik.errors.city}
                     />
 
                     <InputFields
@@ -546,6 +591,7 @@ export default function ProfilePage() {
                       label="Zip Code"
                       value={values.zip}
                       onChange={(e) => setFieldValue("zip", e.target.value)}
+                      error={formik.touched.zip && formik.errors.zip}
                     />
 
                     <InputFields
@@ -554,6 +600,7 @@ export default function ProfilePage() {
                       value={values.country_id}
                       options={countryOptions}
                       onChange={(e) => setFieldValue("country_id", e.target.value)}
+                      error={formik.touched.country_id && formik.errors.country_id}
                     />
                   </div>
                 </div>

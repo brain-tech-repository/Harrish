@@ -19,7 +19,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 export default function AgentCustomer() {
     const { can, permissions } = usePagePermissions();
     const { allCustomerTypeOptions,ensureAllCustomerTypesLoaded,customerSubCategoryOptions, itemCategoryOptions,customerCategoryOptions,ensureCustomerCategoryLoaded, channelOptions, warehouseAllOptions, routeOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
+    const [searchFilter,setSearchFilter]=useState<any>(null);
     // Load dropdown data
     useEffect(() => {
         ensureChannelLoaded();
@@ -31,11 +31,11 @@ export default function AgentCustomer() {
         ensureAllCustomerTypesLoaded();
     }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded,ensureAllCustomerTypesLoaded]);
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
-    const [warehouseId, setWarehouseId] = useState<string>("");
-    const [channelId, setChannelId] = useState<string>("");
-    const [customerCategoryId, setCustomerCategoryId] = useState<string>("");
-    const [routeId, setRouteId] = useState<string>("");
-    const [customerTypeId, setCustomerTypeId] = useState<string>("");
+    const [warehouseId, setWarehouseId] = useState<string>();
+    const [channelId, setChannelId] = useState<string>();
+    const [customerCategoryId, setCustomerCategoryId] = useState<string>();
+    const [routeId, setRouteId] = useState<string>();
+    const [customerTypeId, setCustomerTypeId] = useState<string>();
     const [refreshKey, setRefreshKey] = useState(0);
     const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
 
@@ -307,6 +307,14 @@ export default function AgentCustomer() {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }))
             const response = await exportAgentCustomerData({
+                format,search:searchFilter,filters:{
+                    warehouse_id:warehouseId,
+                    channel_id:channelId,
+                    category_id:customerCategoryId,
+                    route_id:routeId,
+                    customer_type:customerTypeId,
+                    status: currentStatusFilter !== null ? (currentStatusFilter ? "1" : "0") : undefined,
+                }
             });
             if (response && typeof response === 'object' && response.url) {
                 await downloadFile(response.url);
@@ -361,6 +369,7 @@ export default function AgentCustomer() {
                     page: page.toString(),
                 });
             }
+            setSearchFilter(searchQuery);
             // setLoading(false);
             if (result.error) throw new Error(result.data.message);
             return {
