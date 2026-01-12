@@ -1657,7 +1657,7 @@ export const deleteExpenseType = async (id: string) => {
   }
 };
 
-export const exportSalesmanData = async (params?: Params) => {
+export const exportSalesmanData = async (params?: object) => {
   try {
     const res = await API.get("api/master/salesmen/exportfile", {
       params,
@@ -2498,7 +2498,7 @@ export const itemGlobalSearch = async (params?: Params) => {
   }
 };
 
-export const itemExport = async (params?: Params) => {
+export const itemExport = async (params?: object) => {
   try {
     const res = await API.get("/api/master/items/export", { params: params });
     return res.data;
@@ -3337,9 +3337,9 @@ export const submenuGenerateCode = async (params?: Params) => {
   }
 };
 
-export const exportRoutes = async (params?: Params) => {
+export const exportRoutes = async (body?: object) => {
   try {
-    const res = await API.post(`/api/master/route/export`, { params });
+    const res = await API.post(`/api/master/route/export`, body);
     return res.data;
   } catch (error: unknown) {
     handleError(error);

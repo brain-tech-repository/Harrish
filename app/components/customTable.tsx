@@ -598,9 +598,13 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                 <div className="w-full">
                                     <SearchBar
                                         value={searchBarValue}
-                                        onChange={(
+                                        onChange={async (
                                             e: React.ChangeEvent<HTMLInputElement>
                                         ) => setSearchBarValue(e.target.value)}
+                                        onClear={async () => {
+                                            setSearchBarValue("");
+                                            handleSearch();
+                                        }}
                                         onEnterPress={handleSearch}
                                     />
                                 </div>

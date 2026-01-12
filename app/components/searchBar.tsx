@@ -6,6 +6,7 @@ export default function SearchBar({
     value,
     onChange,
     onEnterPress,
+    onClear,
     icon = "iconamoon:search",
     iconWidth = 20,
 }: {
@@ -13,6 +14,7 @@ export default function SearchBar({
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onEnterPress?: () => void;
+    onClear?: () => void;
     icon?: string;
     iconWidth?: number;
 }) {
@@ -27,8 +29,11 @@ export default function SearchBar({
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="border border-gray-300 mt-[2px] rounded-md p-2 w-full h-[36px] px-[12px] py-[8px] pl-[40px] placeholder:text-[#717680]"
+                className="border border-gray-300 mt-[2px] rounded-md p-2 w-full h-[36px] py-[8px] px-[40px] placeholder:text-[#717680]"
             />
+            {value !== "" && <div className="absolute top-0 right-0 flex items-center h-full pr-[12px] cursor-pointer" onClick={onClear}>
+                <Icon icon={"iconamoon:close-light"} width={iconWidth} className="cursor-pointer text-red-500" />
+            </div>}
         </div>
     );
 }

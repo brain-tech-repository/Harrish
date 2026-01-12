@@ -36,6 +36,7 @@ export default function Route() {
     const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
     const [selectedRowId, setSelectedRowId] = useState<number | undefined>();
     const [showDeletePopup, setShowDeletePopup] = useState(false);
+    const [searchFilterValue, setSearchFilterValue] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -196,6 +197,7 @@ export default function Route() {
                     page: page.toString(),
                 });
             }
+            setSearchFilterValue(searchQuery);
             // setLoading(false);
             if (result.error) throw new Error(result.data.message);
             const pagination = result?.pagination || result?.pagination?.pagination || {};
@@ -235,7 +237,7 @@ export default function Route() {
     const exportFile = async (format: string) => {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await exportRoutes({ format });
+            const response = await exportRoutes({ format, search: searchFilterValue, filter:{ status: currentStatusFilter == false ? "0" : "1", warehouse_id: warehouseId }});
             if (response && typeof response === 'object' && response.url) {
                 await downloadFile(response.url);
                 showSnackbar("File downloaded successfully ", "success");

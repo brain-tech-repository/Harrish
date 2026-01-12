@@ -9,6 +9,7 @@ import { useSnackbar } from '@/app/services/snackbarContext';
 import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
+import { routeType } from '../services/allApi';
 // Define TypeScript interfaces
 interface FilterChildItem {
   id: string;
@@ -48,11 +49,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const { can, permissions } = usePagePermissions();
   const { showSnackbar } = useSnackbar();
   const [viewType, setViewType] = useState('');
-  const [dateRange, setDateRange] = useState('dd-mm-yyyy - dd-mm-yyyy');
+  const currentDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+  const currentDateISO = new Date().toISOString().split('T')[0];
+  const [dateRange, setDateRange] = useState(`${currentDate} - ${currentDate}`);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const currentDate = new Date().toISOString().split('T')[0];
-  const [startDate, setStartDate] = useState(currentDate);
-  const [endDate, setEndDate] = useState(currentDate);
+  const [startDate, setStartDate] = useState(currentDateISO);
+  const [endDate, setEndDate] = useState(currentDateISO);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [searchbyopen, setSearchbyclose] = useState(false);
 
@@ -859,6 +861,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const handleDateSelect = () => {
     if (startDate && endDate) {
       const format = (date: string) => new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
+      // const format = (date: string) => new Date(date).toLocaleDateString();
       setDateRange(`${format(startDate)} - ${format(endDate)}`);
       setShowDatePicker(false);
     }
@@ -930,16 +933,19 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       // Create new state with updated filter
       let newState = { ...prev, [filterId]: newValue };
 
-      // Custom hierarchy reset for company, region, area
+      // Custom hierarchy reset for company, region, area, warehouse
       if (filterId === 'company') {
-        // Reset region, area, warehouse
-        ['region', 'area', 'warehouse'].forEach(dep => { if (newState[dep]) newState[dep] = []; });
+        // Reset region, area, warehouse, route
+        ['region', 'area', 'warehouse', 'route'].forEach(dep => { if (newState[dep]) newState[dep] = []; });
       } else if (filterId === 'region') {
-        // Reset area, warehouse
-        ['area', 'warehouse'].forEach(dep => { if (newState[dep]) newState[dep] = []; });
+        // Reset area, warehouse, route
+        ['area', 'warehouse', 'route'].forEach(dep => { if (newState[dep]) newState[dep] = []; });
       } else if (filterId === 'area') {
-        // Reset warehouse
-        if (newState['warehouse']) newState['warehouse'] = [];
+        // Reset warehouse, route
+        ['warehouse', 'route'].forEach(dep => { if (newState[dep]) newState[dep] = []; });
+      } else if (filterId === 'warehouse') {
+        // Reset route
+        if (newState['route']) newState['route'] = [];
       } else if (filterId === 'item-category') {
         // Reset items
         if (newState['items']) newState['items'] = [];
