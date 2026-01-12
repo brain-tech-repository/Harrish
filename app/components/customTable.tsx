@@ -1277,39 +1277,18 @@ function FilterTableHeader({
             }
             setShowFilterDropdown(false);
         } else {
-            setSelectedValues((prev) => {
-                let updated: string[];
-                if (prev.includes(value)) {
-                    updated = prev.filter((v) => v !== value);
-                } else {
-                    updated = [...prev, value];
-                }
-                // persist multi-select in global filter state
-                try {
-                    setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
-                } catch (err) { }
-                if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
-                // Call search API for multi-select
-                if(api?.list) {
-                    try {
-                        setNestedLoading(true);
-                        const res = api.list(1,defaultPageSize); // assuming API accepts comma-separated values for multi-select
-                        Promise.resolve(res).then(async (result) => {
-                            const resolvedResult = result instanceof Promise ? await result : result;
-                            const { data, total, currentPage } = resolvedResult;
-                            setTableDetails({
-                                ...tableDetails,
-                                data,
-                                currentPage: currentPage - 1,
-                                total,
-                                pageSize: defaultPageSize,
-                            });
-                            setNestedLoading(false);
-                        });
-                    } catch (err) { setNestedLoading(false); /* ignore */ }
-                }
-                return updated;
-            });
+            let updated: string[];
+            if (selectedValues.includes(value)) {
+                updated = selectedValues.filter((v) => v !== value);
+            } else {
+                updated = [...selectedValues, value];
+            }
+            // persist multi-select in global filter state
+            try {
+                setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
+            } catch (err) { }
+            if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
+            setSelectedValues(updated);
         }
     }
 // function handleSelect(value: string) {
