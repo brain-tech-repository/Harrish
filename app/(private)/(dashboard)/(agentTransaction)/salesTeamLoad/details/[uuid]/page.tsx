@@ -85,8 +85,8 @@ export default function ViewPage() {
   // ✅ Table config
   const columns: configType["columns"] = [
     { key: "item", label: "Item" },
+    { key: "uom", label: "UOM" },
     { key: "qty", label: "Quantity" },
-    { key: "price", label: "Price" },
   ];
 
   // ✅ Prepare table data
