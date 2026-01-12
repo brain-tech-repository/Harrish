@@ -115,7 +115,7 @@ const columns = [
         key: "created_date",
         label: "Date",
         render: (data: any) => (
-            formatDate(data.created_at)
+            formatDate(data.created_at) || "-"
         )
     },
     {

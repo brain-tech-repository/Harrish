@@ -309,16 +309,16 @@ export default function ServiceTerritoryListPage() {
                     rowSelection: true,
                     rowActions: [
                         {
-                            icon: "lucide:edit",
-                            onClick: (row: any) => {
-                                router.push(`/serviceTerritory/${row.uuid}`);
-                            },
-                        },
-                        {
                             icon: "lucide:eye",
                             onClick: (row: any) => {
                                 setSelectedUuid(row.uuid);
                                 setDrawerOpen(true);
+                            },
+                        },
+                        {
+                            icon: "lucide:edit-2",
+                            onClick: (row: any) => {
+                                router.push(`/serviceTerritory/${row.uuid}`);
                             },
                         },
                     ],

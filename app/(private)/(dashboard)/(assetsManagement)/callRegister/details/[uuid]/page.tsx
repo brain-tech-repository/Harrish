@@ -10,14 +10,21 @@ import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import TabBtn from "@/app/components/tabBtn";
 
 const title = "View Call Register";
 const backBtnUrl = "/assetsManagement/callRegister";
 
+export const tabs = [
+    { name: "Overview" },
+    { name: "Customer" },
+];
+
 export default function ViewPage() {
     const params = useParams();
     const uuid = Array.isArray(params?.uuid) ? params?.uuid[0] : params?.uuid;
-
+    const onTabClick = (index: number) => setActiveTab(index);
+    const [activeTab, setActiveTab] = useState(0);
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const [data, setData] = useState<any>(null);
@@ -48,119 +55,132 @@ export default function ViewPage() {
                 <h1 className="text-xl font-semibold">{title}</h1>
             </div>
 
-            {/* MAIN WRAPPER */}
-            <div className="flex flex-col gap-6">
-
-                {/* ================= CALL REGISTER BASIC DETAILS ================= */}
-                <h2 className="text-lg font-semibold mt-2">Call Register Details</h2>
-                <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Ticket Type", value: data?.ticket_type },
-                                { key: "Ticket Date", value: data?.ticket_date },
-                                { key: "Chiller Serial Number", value: data?.chiller_serial_number },
-                                { key: "Asset Number", value: data?.asset_number || "-" },
-                                { key: "Model Number", value: data?.model_number },
-                                { key: "Chiller Code", value: data?.chiller_code },
-                            ]}
+            <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
+                {/* profile details */}
+                <div className="flex flex-col sm:flex-row items-center gap-[20px]">
+                    <div className="w-[80px] h-[80px] flex justify-center items-center rounded-full bg-[#E9EAEB]">
+                        <Icon
+                            icon="mdi:fridge-outline"
+                            width={40}
+                            className="text-[#535862] scale-[1.5]"
                         />
-                    </ContainerCard>
-
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Branding", value: data?.branding || "-" },
-                                { key: "CTC Status", value: data?.ctc_status },
-                                {
-                                    key: "Status",
-                                    value: "",
-                                    component: <StatusBtn isActive={data?.status === "1"} />
-                                },
-                                { key: "Nature of Call", value: data?.nature_of_call },
-                                { key: "Follow-up Action", value: data?.follow_up_action },
-                            ]}
-                        />
-                    </ContainerCard>
+                    </div>
+                    <div className="text-center sm:text-left">
+                        <h2 className="text-[20px] font-semibold text-[#181D27] mb-[10px]">
+                            {data?.osa_code || ""}
+                        </h2>
+                    </div>
                 </div>
-
-                {/* ================= ASSIGN CUSTOMER DETAILS ================= */}
-                <h2 className="text-lg font-semibold">Assign Customer Details</h2>
-                <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Outlet Code", value: data?.outlet_code || "-" },
-                                { key: "Outlet Name", value: data?.outlet_name || "-" },
-                                { key: "Owner Name", value: data?.owner_name || "-" },
-                                { key: "Road/Street", value: data?.road_street || "-" },
-                                { key: "District", value: data?.district || "-" },
-                            ]}
-                        />
-                    </ContainerCard>
-
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Town", value: data?.town || "-" },
-                                { key: "Landmark", value: data?.landmark || "-" },
-                                { key: "Contact Number 1", value: data?.contact_no1 || "-" },
-                                { key: "Contact Number 2", value: data?.contact_no2 || "-" },
-                            ]}
-                        />
-                    </ContainerCard>
+                {/* action buttons */}
+                <div className="flex items-center gap-[10px]">
+                    <StatusBtn isActive={data?.status === "1"} />
                 </div>
+            </ContainerCard>
 
-                {/* ================= CURRENT CUSTOMER DETAILS ================= */}
-                <h2 className="text-lg font-semibold">Current Customer Details</h2>
-                <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Outlet Code", value: data?.current_outlet_code },
-                                { key: "Outlet Name", value: data?.current_outlet_name },
-                                { key: "Owner Name", value: data?.current_owner_name },
-                                { key: "Road/Street", value: data?.current_road_street || "-" },
-                                { key: "District", value: data?.current_district || "-" },
-                            ]}
-                        />
-                    </ContainerCard>
+            <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+                {tabs.map((tab, index) => (
+                    <TabBtn
+                        key={index}
+                        label={tab.name}
+                        isActive={activeTab === index}
+                        onClick={() => onTabClick(index)}
+                    />
+                ))}
+            </ContainerCard>
 
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Town", value: data?.current_town || "-" },
-                                { key: "Landmark", value: data?.current_landmark || "-" },
-                                { key: "Contact Number 1", value: data?.current_contact_no1 },
-                                { key: "Contact Number 2", value: data?.current_contact_no2 },
-                            ]}
-                        />
-                    </ContainerCard>
-                </div>
-                {/* <h2 className="text-lg font-semibold">Image Customer Details</h2>
-                <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                    <ContainerCard className="w-full lg:w-[680px]">
-                        <KeyValueData
-                            data={[
-                                { key: "Outlet Code", value: data?.current_outlet_code },
-                                { key: "Outlet Name", value: data?.current_outlet_name },
-                                { key: "Owner Name", value: data?.current_owner_name },
-                                { key: "Road/Street", value: data?.current_road_street || "-" },
-                                { key: "District", value: data?.current_district || "-" },
-                            ]}
-                        />
-                    </ContainerCard>
-                </div> */}
+            {activeTab === 0 && (
+                <>
+                    <h2 className="text-lg font-semibold mt-2">Call Register Details</h2>
 
-                {/* ================= REJECTION COMMENT ================= */}
-                {data?.reason_for_cancelled && (
-                    <ContainerCard className="w-full">
-                        <h3 className="font-semibold mb-2">Reason for Cancellation</h3>
-                        <p className="text-gray-700">{data.reason_for_cancelled}</p>
-                    </ContainerCard>
-                )}
+                    <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
+                        <ContainerCard className="w-full lg:w-[680px]">
+                            <KeyValueData
+                                data={[
+                                    { key: "Ticket Type", value: data?.ticket_type },
+                                    { key: "Ticket Date", value: data?.ticket_date },
+                                    { key: "Chiller Serial Number", value: data?.chiller_serial_number },
+                                    { key: "Asset Number", value: data?.asset_number || "-" },
+                                    { key: "Model Number", value: data?.model_number },
+                                    { key: "Chiller Code", value: data?.chiller_code },
+                                ]}
+                            />
+                        </ContainerCard>
 
-            </div>
+                        <ContainerCard className="w-full lg:w-[680px]">
+                            <KeyValueData
+                                data={[
+                                    { key: "Branding", value: data?.branding || "-" },
+                                    { key: "CTC Status", value: data?.ctc_status },
+                                    {
+                                        key: "Status",
+                                        value: "",
+                                        component: <StatusBtn isActive={data?.status === "1"} />,
+                                    },
+                                    { key: "Nature of Call", value: data?.nature_of_call },
+                                    { key: "Follow-up Action", value: data?.follow_up_action },
+                                ]}
+                            />
+                        </ContainerCard>
+                    </div>
+                </>
+            )}
+
+
+            {activeTab === 1 && (
+                <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-[20px] mt-4">
+
+                        {/* Assign Customer Details */}
+                        <div>
+                            <h2 className="text-lg font-semibold mb-2">
+                                Assign Customer Details
+                            </h2>
+
+                            <ContainerCard className="w-full">
+                                <KeyValueData
+                                    data={[
+                                        { key: "Outlet Code", value: data?.outlet_code || "-" },
+                                        { key: "Outlet Name", value: data?.outlet_name || "-" },
+                                        { key: "Owner Name", value: data?.owner_name || "-" },
+                                        { key: "Road/Street", value: data?.road_street || "-" },
+                                        { key: "District", value: data?.district || "-" },
+                                        { key: "Town", value: data?.town || "-" },
+                                        { key: "Landmark", value: data?.landmark || "-" },
+                                        { key: "Contact Number 1", value: data?.contact_no1 || "-" },
+                                        { key: "Contact Number 2", value: data?.contact_no2 || "-" },
+                                    ]}
+                                />
+                            </ContainerCard>
+                        </div>
+
+                        {/* Current Customer Details */}
+                        <div>
+                            <h2 className="text-lg font-semibold mb-2">
+                                Current Customer Details
+                            </h2>
+
+                            <ContainerCard className="w-full">
+                                <KeyValueData
+                                    data={[
+                                        { key: "Outlet Code", value: data?.current_outlet_code || "-" },
+                                        { key: "Outlet Name", value: data?.current_outlet_name || "-" },
+                                        { key: "Owner Name", value: data?.current_owner_name || "-" },
+                                        { key: "Road/Street", value: data?.current_road_street || "-" },
+                                        { key: "District", value: data?.current_district || "-" },
+                                        { key: "Town", value: data?.current_town || "-" },
+                                        { key: "Landmark", value: data?.current_landmark || "-" },
+                                        { key: "Contact Number 1", value: data?.current_contact_no1 || "-" },
+                                        { key: "Contact Number 2", value: data?.current_contact_no2 || "-" },
+                                    ]}
+                                />
+                            </ContainerCard>
+                        </div>
+
+                    </div>
+                </>
+            )}
+
+
         </>
     );
 }

@@ -25,6 +25,8 @@ export default function ShelfDisplay() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -106,7 +108,8 @@ export default function ShelfDisplay() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
       const res = await assetsMasterExport({ format: fileType });
 
@@ -145,7 +148,8 @@ export default function ShelfDisplay() {
       console.error("Export error:", error);
       showSnackbar("Failed to export Assets Master data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -170,14 +174,14 @@ export default function ShelfDisplay() {
               title: "Assets Master",
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv");
                   },
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx");
