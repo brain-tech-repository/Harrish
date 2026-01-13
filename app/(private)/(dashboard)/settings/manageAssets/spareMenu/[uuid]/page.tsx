@@ -161,7 +161,6 @@ export default function AddEditSpareName() {
             );
           }
         }
-<<<<<<< HEAD
 
         /* ---- ADD MODE CODE ---- */
         if (!isEditMode && !codeGeneratedRef.current) {
@@ -169,17 +168,6 @@ export default function AddEditSpareName() {
           const codeRes = await genearateCode({ model_name: "spa_cat" });
           if (codeRes?.code) {
             formik.setFieldValue("osa_code", codeRes.code);
-=======
-       
-      
-      } else if (!codeGeneratedRef.current) {
-        codeGeneratedRef.current = true;
-        try {
-          
-          const res = await genearateCode({ model_name: "spa_cat" });
-          if (res?.code) {  
-            formik.setFieldValue("osa_code", res.code);
->>>>>>> b86b1d8dfbc69d933d9ce1c192a6aec232c23bec
           }
         }
       } catch {
@@ -191,103 +179,6 @@ export default function AddEditSpareName() {
 
     loadData();
   }, [uuid]);
-<<<<<<< HEAD
-=======
-  //changes
-
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      // run only once
-      if (!codeGeneratedRef.current) {
-        codeGeneratedRef.current = true;
-
-        const res = await genearateCode({ model_name: "spa_cat" });
-        if (res?.code) {
-          setInitialValues((prev:any) => ({
-            ...prev,
-            spare_category_code: res.code,
-          }));
-        }
-
-        if (res?.prefix) {
-          setPrefix(res.prefix);
-        }
-      }
-    } catch (err) {
-      console.error("Error generating code", err);
-      showSnackbar("Failed to generate code", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [showSnackbar]);
-
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++
-
-// useEffect(() => {
-//   const loadData = async () => {
-//     try {
-//       setLocalLoading(true);
-
-//       // 🟡 EDIT MODE
-//       if (isEditMode) {
-//         const res = await subByID(uuid);
-//         const d = res?.data;
-
-//         if (d) {
-//           formik.setValues({
-//             osa_code: d.osa_code ?? "",
-//             spare_name: d.spare_menu ?? "",
-//             spare_categoryid: String(d.spare_category_id),
-//             spare_subcategoryid: String(d.spare_subcategory_id),
-//             plant: d.plant ?? "",
-//             status: d.status ?? 1,
-//           });
-
-//           await fetchSubCategories(String(d.spare_category_id));
-
-//           // ✅ EDIT MODE me bhi code generate
-//           // but ONLY if backend ne code nahi diya
-//           if (!d.osa_code) {
-//             const codeRes = await genearateCode({ model_name: "spa_cat" });
-//             if (codeRes?.code) {
-//               formik.setFieldValue("osa_code", codeRes.code);
-//             }
-//           }
-//         }
-//       }
-
-//       // 🟢 ADD MODE
-//       else {
-//         const res = await genearateCode({ model_name: "spa_cat" });
-//         if (res?.code) {
-//           formik.setFieldValue("osa_code", res.code);
-//         }
-//         if (res?.prefix) {
-//           setPrefix(res.prefix);
-//         }
-//       }
-//     } catch (err) {
-//       showSnackbar("Failed to load data / generate code", "error");
-//     } finally {
-//       setLocalLoading(false);
-//     }
-//   };
-
-//   loadData();
-// }, [uuid]);
-
-
-
-
-
->>>>>>> b86b1d8dfbc69d933d9ce1c192a6aec232c23bec
 
   /* -------------------- UI -------------------- */
   return (

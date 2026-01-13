@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import BorderIconButton from "@/app/components/borderIconButton";
@@ -13,6 +13,19 @@ import { useLoading } from "@/app/services/loadingContext";
 import { assetsMasterExport, chillerList, deleteChiller, deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import { assestMasterQR, downloadQR } from "@/app/services/allApi";
+import { ref, string } from "yup";
+import { format } from "date-fns/format";
+import { Params } from "next/dist/server/request/params";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import AssetLabel from "./details/page";
+
+
+
+
+
+
 
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
@@ -34,7 +47,24 @@ export default function ShelfDisplay() {
   }, [permissions]);
 
   const router = useRouter();
+  const PATH = `/assetsMaster/details/`;
   const { showSnackbar } = useSnackbar();
+   const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+  const paramsRoute = useParams();
+  
+  const [pdfData, setPdfData] = useState<any | null>(null);
+  // const pdfRef = useRef<HTMLDivElement | null>(null);
+  
+const labelRef = useRef<HTMLDivElement>(null);
+
+
+  
+
+const uuid = paramsRoute?.uuid as string;
+
 
   const fetchServiceTypes = useCallback(
     async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
@@ -154,17 +184,123 @@ export default function ShelfDisplay() {
   useEffect(() => {
     setLoading(true);
   }, [])
+  // ########################################################
+    const filterBy = useCallback(
+    async (
+      payload: Record<string, string | number | null>,
+      pageSize: number,
+    ): Promise<listReturnType> => {
+      let result;
+      // setLoading(true);
+      try {
+        const params: Record<string, string> = {
+          per_page: pageSize.toString(),
+        };
+        Object.keys(payload || {}).forEach((k) => {
+          const v = payload[k as keyof typeof payload];
+          if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+            params[k] = String(v);
+          }
+        });
+        result = await assestMasterQR( uuid, params);
+      } finally {
+        // setLoading(false);
+      }
+
+      if (result?.error)
+        throw new Error(result.data?.message || "Filter failed");
+      else {
+        const pagination =
+          result.pagination?.pagination || result.pagination || {};
+        return {
+          data: result.data || [],
+          total: pagination.totalPages || result.pagination?.totalPages || 1,
+          totalRecords:
+            pagination.totalRecords || result.pagination?.totalRecords || 0,
+          currentPage: pagination.page || result.pagination?.page || 1,
+          pageSize: pagination.limit || pageSize,
+        };
+      }
+    },
+    [],
+  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ################################################################################
+
+//  const generateQR = async (ref: HTMLDivElement, fileName: string) => {
+//   const canvas = await html2canvas(ref, { scale: 2 });
+//   const imgData = canvas.toDataURL("image/png");
+
+//   const pdf = new jsPDF("landscape", "px", [
+//     canvas.width,
+//     canvas.height,
+//   ]);
+
+//   pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+//   pdf.save(fileName);
+// };
+// const handleGeneratePdf = async (row: TableDataType) => {
+//   console.log("Generating PDF for row:", row);
+//   if (!labelRef.current) return;
+
+//   await generateQR(labelRef.current, `asset-${row.uuid}.pdf`);
+// };
+useEffect(() => {
+  if (!pdfData || !labelRef.current) return;
+
+  const generatePdf = async () => {
+    await new Promise((r) => setTimeout(r, 300));
+
+    const canvas = await html2canvas(labelRef.current!, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("landscape", "px", [
+      canvas.width,
+      canvas.height,
+    ]);
+
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.save(`asset-${pdfData.uuid}.pdf`);
+
+    setPdfData(null); // cleanup
+  };
+
+  generatePdf();
+}, [pdfData]);
+
+
+
+
 
   return (
     <>
       {/* Table */}
-      <div className="flex flex-col h-full">
+      <div  className="flex flex-col h-full">
         <Table
           refreshKey={refreshKey}
           config={{
             api: {
               list: fetchServiceTypes,
-              search: searchChiller
+            
+              search: searchChiller,
+              filterBy,
             },
             header: {
               title: "Assets Master",
@@ -195,7 +331,19 @@ export default function ShelfDisplay() {
                   labelTw="hidden lg:block"
                   isActive
                 />,
+                 <SidebarBtn
+                  key="name"
+                  href="/assetsMaster/details"
+                  leadingIcon="lucide:plus"
+                  label="barcode"
+                  labelTw="hidden lg:block"
+                  isActive
+                />,
               ] : [],
+               
+
+
+
             },
             localStorageKey: "assetsMasterTable",
             table: {
@@ -277,6 +425,14 @@ export default function ShelfDisplay() {
                   router.push(`/assetsMaster/view/${data.uuid}`);
                 },
               },
+              {
+                icon: "lucide:download",
+                onClick: (row: TableDataType) => setPdfData(row),
+                
+              },
+              
+  
+
               ...(can("edit") ? [{
                 icon: "lucide:edit-2",
                 onClick: (data: TableDataType) => {
@@ -287,7 +443,26 @@ export default function ShelfDisplay() {
             pageSize: 10,
           }}
         />
+      
+
       </div>
+{/* 
+      {pdfData && (
+  <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
+    <AssetLabel ref={pdfRef} data={pdfData} />
+  </div>
+)}  */}
+{pdfData && (
+  <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
+    <AssetLabel ref={labelRef} {...pdfData} />
+  </div>
+)}
+
+
+
+
+
+
     </>
   );
-}
+} 

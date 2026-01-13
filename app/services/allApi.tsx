@@ -4227,7 +4227,7 @@ export const itemAllReturnExport = async (params?: Params) => {
   }
 };
 
-export const allItemInvoiceExport = async (params?: Params) => {
+export const allItemInvoiceExport = async (uuid: string, params?: Params) => {
   try {
     const res = await API.get(`/api/master/items/item-exportInvoice`, {
       params: params,
@@ -4272,6 +4272,26 @@ export const warehouseFilter = async (params?: Params) => {
     const res = await API.get("api/assets/chiller/getupdatewarehouse_chiller", {params});
 
     return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const downloadQR = (fileurl: string, type?: string): void => {
+  const n = fileurl.lastIndexOf("/");
+  const final_url = fileurl.substring(n + 1);
+  const link = document.createElement("a");
+  link.setAttribute("target", "_blank");
+  link.setAttribute("href", fileurl);
+  link.setAttribute("download", final_url);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+export const assestMasterQR = async (uuid: string, params?:{ format?: string } ) => {
+  try {
+    const res = await API.get(`api/assets/chiller/${uuid}`, { params });
+    return res.data;
+     
   } catch (error: unknown) {
     return handleError(error);
   }

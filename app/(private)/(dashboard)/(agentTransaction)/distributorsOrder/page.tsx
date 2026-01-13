@@ -227,24 +227,31 @@ export default function CustomerInvoicePage() {
 
   // In-memory cache for filterBy API calls
   const agentOrderFilterCache = useRef<{ [key: string]: any }>({});
-
   const filterBy = useCallback(
     async (
       payload: Record<string, string | number | null>,
       pageSize: number,
     ): Promise<listReturnType> => {
-      const params: Record<string, string> = {
-        per_page: pageSize.toString(),
-      };
-      Object.keys(payload || {}).forEach((k) => {
-        const v = payload[k as keyof typeof payload];
-        if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-          params[k] = String(v);
-        }
-      });
-      const cacheKey = JSON.stringify(params);
-      if (agentOrderFilterCache.current[cacheKey]) {
-        const result = agentOrderFilterCache.current[cacheKey];
+      let result;
+      // setLoading(true);
+      try {
+        const params: Record<string, string> = {
+          per_page: pageSize.toString(),
+        };
+        Object.keys(payload || {}).forEach((k) => {
+          const v = payload[k as keyof typeof payload];
+          if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+            params[k] = String(v);
+          }
+        });
+        result = await agentOrderList(params);
+      } finally {
+        // setLoading(false);
+      }
+
+      if (result?.error)
+        throw new Error(result.data?.message || "Filter failed");
+      else {
         const pagination =
           result.pagination?.pagination || result.pagination || {};
         return {
@@ -256,43 +263,16 @@ export default function CustomerInvoicePage() {
           pageSize: pagination.limit || pageSize,
         };
       }
-      const result = await agentOrderList(params);
-      agentOrderFilterCache.current[cacheKey] = result;
-      const pagination =
-        result.pagination?.pagination || result.pagination || {};
-      return {
-        data: result.data || [],
-        total: pagination.totalPages || result.pagination?.totalPages || 1,
-        totalRecords:
-          pagination.totalRecords || result.pagination?.totalRecords || 0,
-        currentPage: pagination.page || result.pagination?.page || 1,
-        pageSize: pagination.limit || pageSize,
-      };
     },
     [],
   );
+
+  
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
       const response = await agentOrderExport({ format });
-      if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
-        showSnackbar("File downloaded successfully ", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-      }
-      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
-      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    } finally {
-    }
-  };
-  const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
-    try {
-      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await orderExportCollapse({ format });
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -332,6 +312,10 @@ export default function CustomerInvoicePage() {
     };
     res();
   }, []);
+
+  function exportCollapseFile(arg0: string): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <>
