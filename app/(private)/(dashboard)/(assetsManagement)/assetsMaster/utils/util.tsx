@@ -49,6 +49,17 @@ export const generateAssetLabelPdfDirect = async (
     // Create HTML content for PDF
   const htmlContent = `
 <div style="
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+">
+
+
+
+<div style="
   width: 600px;
   height: 380px;
   border: 6px solid #e30613;
@@ -58,6 +69,10 @@ export const generateAssetLabelPdfDirect = async (
   font-family: Arial, sans-serif;
   display: flex;
   box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  
+  
 ">
 
   <!-- LEFT SECTION -->
@@ -167,6 +182,7 @@ export const generateAssetLabelPdfDirect = async (
     // Create temporary element
     const element = document.createElement("div");
     element.innerHTML = htmlContent;
+   
 
     // PDF options
     const options = {
@@ -174,11 +190,14 @@ export const generateAssetLabelPdfDirect = async (
       filename: `asset-label-${assetCode || "export"}.pdf`,
       image: { type: "png" as const, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { orientation: "landscape" as const, unit: "px", format: [600, 380] as [number, number] },
-    };
+      jsPDF: { orientation: "landscape" as const, unit: "px", format: [1300, 1000] as [number, number] },
+ 
+};
+    // };
 
     // Generate and save PDF
     html2pdf().set(options).from(element).save();
+  
   } catch (error) {
     console.error("PDF generation error:", error);
     throw error;
