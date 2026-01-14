@@ -20,6 +20,10 @@ import { Params } from "next/dist/server/request/params";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import AssetLabel from "./details/page";
+//  import { generateAssetLabelPdfDirect } from "@/app/utils";
+// import { generateAssetLabelPdfDirect } from "@/app/utils/generateAssetQrPdfDirect";
+import { generateAssetLabelPdfDirect } from "./utils/util";
+
 
 
 
@@ -244,46 +248,41 @@ const uuid = paramsRoute?.uuid as string;
 
   // ################################################################################
 
-//  const generateQR = async (ref: HTMLDivElement, fileName: string) => {
-//   const canvas = await html2canvas(ref, { scale: 2 });
-//   const imgData = canvas.toDataURL("image/png");
+// useEffect(() => {
+//   if (!pdfData || !labelRef.current) return;
 
-//   const pdf = new jsPDF("landscape", "px", [
-//     canvas.width,
-//     canvas.height,
-//   ]);
+//   const generatePdf = async () => {
+//     await new Promise((r) => setTimeout(r, 300));
 
-//   pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-//   pdf.save(fileName);
-// };
-// const handleGeneratePdf = async (row: TableDataType) => {
-//   console.log("Generating PDF for row:", row);
-//   if (!labelRef.current) return;
+//     const canvas = await html2canvas(labelRef.current!, { scale: 2 });
+//     const imgData = canvas.toDataURL("image/png");
 
-//   await generateQR(labelRef.current, `asset-${row.uuid}.pdf`);
-// };
-useEffect(() => {
-  if (!pdfData || !labelRef.current) return;
+//     const pdf = new jsPDF("landscape", "px", [
+//       canvas.width,
+//       canvas.height,
+//     ]);
 
-  const generatePdf = async () => {
-    await new Promise((r) => setTimeout(r, 300));
+//     pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+//     pdf.save(`asset-${pdfData.uuid}.pdf`);
 
-    const canvas = await html2canvas(labelRef.current!, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+//     setPdfData(null); // cleanup
+//   };
 
-    const pdf = new jsPDF("landscape", "px", [
-      canvas.width,
-      canvas.height,
-    ]);
-
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-    pdf.save(`asset-${pdfData.uuid}.pdf`);
-
-    setPdfData(null); // cleanup
+//   generatePdf();
+// }, [pdfData]);
+const handleDownloadQR = async (row: TableDataType) => {
+    console.log("Downloading QR for row:", row);
+    try {
+      setLoading(true);
+      await generateAssetLabelPdfDirect(row, row.osa_code || row.uuid);
+      showSnackbar("Asset QR PDF downloaded successfully", "success");
+    } catch (error) {
+      console.error("Download QR error:", error);
+      showSnackbar("Failed to download QR code", "error");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  generatePdf();
-}, [pdfData]);
 
 
 
@@ -427,7 +426,7 @@ useEffect(() => {
               },
               {
                 icon: "lucide:download",
-                onClick: (row: TableDataType) => setPdfData(row),
+                onClick: (row: TableDataType) => handleDownloadQR(row),
                 
               },
               
@@ -452,11 +451,7 @@ useEffect(() => {
     <AssetLabel ref={pdfRef} data={pdfData} />
   </div>
 )}  */}
-{pdfData && (
-  <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
-    <AssetLabel ref={labelRef} {...pdfData} />
-  </div>
-)}
+
 
 
 
