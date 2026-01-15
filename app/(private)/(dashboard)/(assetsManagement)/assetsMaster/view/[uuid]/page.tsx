@@ -117,6 +117,7 @@ export default function ViewPage() {
         </div>
       </ContainerCard>
 
+
       <div className="flex flex-wrap lg:gap-[20px]">
 
         {/* ---------- Basic Information ---------- */}

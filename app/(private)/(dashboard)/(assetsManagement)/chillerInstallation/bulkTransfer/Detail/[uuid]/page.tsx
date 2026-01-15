@@ -88,11 +88,33 @@ export default function ViewPage() {
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">{title}</h1>
             </div>
-            <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                <ContainerCard className="w-full lg:w-[350px]">
+            <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
+                {/* profile details */}
+                <div className="flex flex-col sm:flex-row items-center gap-[20px]">
+                    <div className="w-[80px] h-[80px] flex justify-center items-center rounded-full bg-[#E9EAEB]">
+                        <Icon
+                            icon="mdi:fridge-outline"
+                            width={40}
+                            className="text-[#535862] scale-[1.5]"
+                        />
+                    </div>
+                    <div className="text-center sm:text-left">
+                        <h2 className="text-[20px] font-semibold text-[#181D27] mb-[10px]">
+                            {transferData?.osa_code || ""}
+                        </h2>
+                    </div>
+                </div>
+                {/* action buttons */}
+                <div className="flex items-center gap-[10px]">
+                    <StatusBtn
+                        isActive={transferData?.status === 1}
+                    />
+                </div>
+            </ContainerCard>
+            <div className="flex flex-wrap gap-x-[30px] gap-y-[30px]">
+                <ContainerCard className="w-full lg:w-[680px]">
                     <KeyValueData
                         data={[
-                            { value: transferData?.osa_code, key: "OSA Code" },
                             { value: transferData?.region?.name, key: "Region" },
                             { value: transferData?.area?.name, key: "Area" },
                             { value: transferData?.warehouse?.name, key: "Warehouse" },
@@ -101,7 +123,7 @@ export default function ViewPage() {
                         ]}
                     />
                 </ContainerCard>
-                <ContainerCard className="w-full lg:w-[350px]">
+                <ContainerCard className="w-full lg:w-[680px]">
                     <KeyValueData
                         data={[
 
@@ -109,11 +131,6 @@ export default function ViewPage() {
                             { value: transferData?.requestes_asset, key: "Requested Assets" },
                             { value: transferData?.approved_qty || "-", key: "Approved Quantity" },
                             { value: transferData?.allocate_asset || "-", key: "Allocated Assets" },
-                            {
-                                value: "",
-                                key: "Status",
-                                component: <StatusBtn isActive={transferData?.status === 1} />
-                            },
                         ]}
                     />
                 </ContainerCard>

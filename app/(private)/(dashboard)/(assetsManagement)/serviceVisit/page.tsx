@@ -80,6 +80,8 @@ export default function ServiceVisit() {
     const router = useRouter();
     const [showExportDropdown, setShowExportDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+
 
     // Refresh table when permissions load
     useEffect(() => {
@@ -199,7 +201,8 @@ export default function ServiceVisit() {
 
     const handleExport = async (fileType: "csv" | "xlsx") => {
         try {
-            setLoading(true);
+            // setLoading(true);
+            setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
             const res = await serviceVisitExport({ format: fileType });
 
@@ -238,7 +241,8 @@ export default function ServiceVisit() {
             console.error("Export error:", error);
             showSnackbar("Failed to export Assets Master data", "error");
         } finally {
-            setLoading(false);
+            // setLoading(false);
+            setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
             setShowExportDropdown(false);
         }
     };
@@ -262,14 +266,14 @@ export default function ServiceVisit() {
                         title: "Service Visit",
                         threeDot: [
                             {
-                                icon: "gala:file-document",
+                                icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                 label: "Export CSV",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     handleExport("csv");
                                 },
                             },
                             {
-                                icon: "gala:file-document",
+                                icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                 label: "Export Excel",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     handleExport("xlsx");

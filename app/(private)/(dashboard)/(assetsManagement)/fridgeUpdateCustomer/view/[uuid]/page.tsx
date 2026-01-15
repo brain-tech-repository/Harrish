@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 
 type fridgeUpdate = {
+    osa_code?: string | null;
     outlet_name?: string | null;
     owner_name?: string | null;
     contact_number?: string | null;
@@ -134,7 +135,7 @@ export default function ViewPage() {
 
 
     const getFileView = (file?: string | null) => {
-        if (!file) return "-";
+        if (!file) return "No Image";
 
         const fullUrl = getFullImageUrl(file);
         const index = allImageFiles.indexOf(fullUrl!);
@@ -157,6 +158,30 @@ export default function ViewPage() {
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">{title}</h1>
             </div>
+
+            <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
+                {/* profile details */}
+                <div className="flex flex-col sm:flex-row items-center gap-[20px]">
+                    <div className="w-[80px] h-[80px] flex justify-center items-center rounded-full bg-[#E9EAEB]">
+                        <Icon
+                            icon="mdi:fridge-outline"
+                            width={40}
+                            className="text-[#535862] scale-[1.5]"
+                        />
+                    </div>
+                    <div className="text-center sm:text-left">
+                        <h2 className="text-[20px] font-semibold text-[#181D27] mb-[10px]">
+                            {fridgeUpdate?.osa_code || ""}
+                        </h2>
+                    </div>
+                </div>
+                {/* action buttons */}
+                <div className="flex items-center gap-[10px]">
+                    <span className="text-sm text-[#027A48] bg-[#ECFDF3] font-[500] p-1 px-4 rounded-xl text-[12px]">
+                        {Status[fridgeUpdate?.status?.toString() || ""]}
+                    </span>
+                </div>
+            </ContainerCard>
 
             <div
                 className="
