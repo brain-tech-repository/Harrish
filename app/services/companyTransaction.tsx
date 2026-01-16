@@ -376,6 +376,17 @@ export const exportPurposeOrderViewPdf = async (params?: Params) => {
     return handleError(error);
   }
 };
+
+export const exportCustomerPurchaseOrder = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/po_orders/exportcollapse`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 export const exportDeliveryViewPdf = async (params?: Params) => {
   try {
     const res = await API.get(`/api/hariss_transaction/ht_delivery/export`, { params });

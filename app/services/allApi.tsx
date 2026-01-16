@@ -883,6 +883,18 @@ export const getCompanyCustomers = async (params?: Params) => {
   }
 };
 
+export const getCompanyCustomersPurchase = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/hariss_transaction/po_orders/cusbsdpuchorder", {
+      params: params,
+    });
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const companyCustomersGlobalSearch = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/companycustomer/global-search", {
