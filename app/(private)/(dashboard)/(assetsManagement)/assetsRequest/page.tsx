@@ -44,6 +44,7 @@ interface LocalTableDataType {
   asset_number?: string;
   model?: string;
   brand?: string;
+  approval_status?: string;
   status?: number | string;
 }
 
@@ -308,6 +309,11 @@ export default function Page() {
               {
                 key: "brand",
                 label: "Brand",
+              },
+
+              {
+                key: "approval_status",
+                label: "Approval Status",
               },
 
               // Status

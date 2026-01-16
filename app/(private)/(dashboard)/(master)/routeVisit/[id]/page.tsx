@@ -193,7 +193,7 @@ export default function AddEditRouteVisit() {
     region: [] as string[],
     area: [] as string[],
     warehouse: [] as string[],
-    route: [] as string[],
+    route: "",
     company: [] as string[],
     days: [] as string[],
     from_date: "",
@@ -324,10 +324,14 @@ export default function AddEditRouteVisit() {
     setLoading(true);
     try {
       const res = await getRouteVisitDetails(uuid);
+      console.log("Route Visit Data:", res.data);
 
       if (res?.data) {
         const d = Array.isArray(res.data) ? res.data[0] : res.data;
         setHeaderUuid(d.header?.uuid || "");
+
+        const routeId = res.data[0].route[0]?.id;
+        console.log("Route ID:", routeId);
 
         // Format dates from "2025-10-31T00:00:00.000000Z" to "2025-10-31"
         const formatDate = (dateString: string) => {
@@ -347,13 +351,14 @@ export default function AddEditRouteVisit() {
           region: toIdArray(d.region),
           area: toIdArray(d.area),
           warehouse: toIdArray(d.warehouse),
-          route: d.route,
+          route: routeId ? String(routeId) : "",
           company: toIdArray(d.companies),
           days: d.days || [],
           from_date: formatDate(d.from_date),
           to_date: formatDate(d.to_date),
           status: statusValue,
         });
+        console.log("Form data:", d.route.id);
 
         setSelectedCustomerType(d.customer_type || "1");
 
@@ -472,7 +477,7 @@ export default function AddEditRouteVisit() {
         region: [],
         area: [],
         warehouse: [],
-        route: [],
+        route: "",
       }));
       return;
     }
@@ -515,7 +520,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.region.length) {
       setAreaOptions([]);
-      setForm((prev) => ({ ...prev, area: [], warehouse: [], route: [] }));
+      setForm((prev) => ({ ...prev, area: [], warehouse: [], route: "" }));
       return;
     }
 
@@ -550,7 +555,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.area.length) {
       setWarehouseOptions([]);
-      setForm((prev) => ({ ...prev, warehouse: [], route: [] }));
+      setForm((prev) => ({ ...prev, warehouse: [], route: "" }));
       return;
     }
 
@@ -585,7 +590,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.warehouse.length) {
       setRouteOptions([]);
-      setForm((prev) => ({ ...prev, route: [] }));
+      setForm((prev) => ({ ...prev, route: "" }));
       return;
     }
 
@@ -641,11 +646,11 @@ export default function AddEditRouteVisit() {
           region: [],
           area: [],
           warehouse: [],
-          route: [],
+          route: "",
         }),
-        ...(field === "region" && { area: [], warehouse: [], route: [] }),
-        ...(field === "area" && { warehouse: [], route: [] }),
-        ...(field === "warehouse" && { route: [] }),
+        ...(field === "region" && { area: [], warehouse: [], route: "" }),
+        ...(field === "area" && { warehouse: [], route: "" }),
+        ...(field === "warehouse" && { route: "" }),
       }));
     }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -799,11 +804,11 @@ export default function AddEditRouteVisit() {
               region: [],
               area: [],
               warehouse: [],
-              route: [],
+              route: "",
             }),
-            ...(field === "region" && { area: [], warehouse: [], route: [] }),
-            ...(field === "area" && { warehouse: [], route: [] }),
-            ...(field === "warehouse" && { route: [] }),
+            ...(field === "region" && { area: [], warehouse: [], route: "" }),
+            ...(field === "area" && { warehouse: [], route: "" }),
+            ...(field === "warehouse" && { route: "" }),
           }));
           if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
         }
@@ -987,7 +992,7 @@ export default function AddEditRouteVisit() {
                     label="Route"
                     value={form.route}
                     onChange={(e) =>
-                       setFieldValue("route",e.target.value)
+                      setFieldValue("route", e.target.value)
                     }
                     showSkeleton={skeleton.route}
                     options={routeOptions}
@@ -1024,7 +1029,7 @@ export default function AddEditRouteVisit() {
                 <h3 className="text-lg font-medium text-gray-900">
                   Customer Schedule
                 </h3>
-               
+
               </div>
               <Table
                 customers={customers}

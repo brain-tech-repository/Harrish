@@ -19,6 +19,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
 // ✅ Validation Schema
 const validationSchema = Yup.object().shape({
@@ -34,14 +35,14 @@ export default function AddEditServiceTerritory() {
     const params = useParams();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
-    const { regionOptions, areaOptions, warehouseAllOptions , ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded, warehouseOptions, fetchAreaOptions, fetchWarehouseOptions } = useAllDropdownListData();
+    const { regionOptions, areaOptions, warehouseAllOptions, ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded, warehouseOptions, fetchAreaOptions, fetchWarehouseOptions } = useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureRegionLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
+    // Load dropdown data
+    useEffect(() => {
+        ensureAreaLoaded();
+        ensureRegionLoaded();
+        ensureWarehouseAllLoaded();
+    }, [ensureAreaLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
 
     // Get UUID safely
     let uuid = "";

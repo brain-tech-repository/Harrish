@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TabBtn from "@/app/components/tabBtn";
 import { formatWithPattern } from "@/app/utils/formatDate";
+import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
 const title = "View Call Register";
 const backBtnUrl = "/callRegister";
@@ -55,6 +56,13 @@ export default function ViewPage() {
                 </Link>
                 <h1 className="text-xl font-semibold">{title}</h1>
             </div>
+
+            <WorkflowApprovalActions
+                requestStepId={data?.request_step_id}
+                redirectPath="/callRegister"
+                model="Call_Register"
+                uuid={uuid}
+            />
 
             <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
                 {/* profile details */}
@@ -148,7 +156,7 @@ export default function ViewPage() {
                                         { key: "Town", value: data?.assigned_customer?.town || "-" },
                                         { key: "Landmark", value: data?.assigned_customer?.landmark || "-" },
                                         { key: "Contact Number 1", value: data?.assigned_customer?.contact_no_1 || "-" },
-                                        { key: "Contact Number 2", value: data?.assigned_customer?.contact_no_2 || "-"},
+                                        { key: "Contact Number 2", value: data?.assigned_customer?.contact_no_2 || "-" },
                                     ]}
                                 />
                             </ContainerCard>

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
+import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
 type fridgeUpdate = {
     osa_code?: string | null;
@@ -45,6 +46,7 @@ type fridgeUpdate = {
     salesman?: { name?: string };
     warehouse?: { name?: string };
     route?: { name?: string };
+    request_step_id?: number;
 };
 
 const title = "Fridge Update Customer Details";
@@ -158,6 +160,13 @@ export default function ViewPage() {
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">{title}</h1>
             </div>
+
+            <WorkflowApprovalActions
+                requestStepId={fridgeUpdate?.request_step_id}
+                redirectPath="/fridgeUpdateCustomer"
+                model="Frige_Customer_Update"
+                uuid={uuid}
+            />
 
             <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
                 {/* profile details */}

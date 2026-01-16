@@ -16,6 +16,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useEffect } from "react";
+import ApprovalStatus from "@/app/components/approvalStatus";
 
 // ✅ SERVICE VISIT ROW TYPE
 interface ServiceVisitRow {
@@ -150,6 +151,11 @@ export default function ServiceVisit() {
 
             { key: "comment", label: "Comment" },
             { key: "cts_comment", label: "CTS Comment" },
+            {
+                key: "approval_status",
+                label: "Approval Status",
+                render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+            },
         ],
         []
     );

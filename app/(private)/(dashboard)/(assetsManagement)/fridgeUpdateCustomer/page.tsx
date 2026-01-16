@@ -10,7 +10,7 @@ import Table, { listReturnType, TableDataType } from "@/app/components/customTab
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { fridgeUpdateCustomerList,exportFridgeCustomer,FridgeCustomerGlobalSearch } from "@/app/services/assetsApi";
+import { fridgeUpdateCustomerList, exportFridgeCustomer, FridgeCustomerGlobalSearch } from "@/app/services/assetsApi";
 import { downloadFile } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
@@ -27,10 +27,10 @@ export default function FridgeUpdateCustomer() {
     const [searchQuery, setSearchQuery] = useState("");
     const [refreshKey, setRefreshKey] = useState(0);
     const [showExportDropdown, setShowExportDropdown] = useState(false);
-     const [threeDotLoading, setThreeDotLoading] = useState({
-            csv: false,
-            xlsx: false,
-          });
+    const [threeDotLoading, setThreeDotLoading] = useState({
+        csv: false,
+        xlsx: false,
+    });
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -159,23 +159,23 @@ export default function FridgeUpdateCustomer() {
         setLoading(true);
     }, [])
 
-        const exportFile = async (format: "csv" | "xlsx" = "csv") => {
-            try {
-              setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-              const response = await exportFridgeCustomer({ format,search:searchQuery });
-              if (response && typeof response === "object" && response.download_url) {
+    const exportFile = async (format: "csv" | "xlsx" = "csv") => {
+        try {
+            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            const response = await exportFridgeCustomer({ format, search: searchQuery });
+            if (response && typeof response === "object" && response.download_url) {
                 await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully ", "success");
-              } else {
+            } else {
                 showSnackbar("Failed to get download URL", "error");
-              }
-              setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-            } catch (error) {
-              showSnackbar("Failed to download fridge customer data", "error");
-              setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-            } finally {
             }
-          };
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } catch (error) {
+            showSnackbar("Failed to download fridge customer data", "error");
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+        } finally {
+        }
+    };
 
     return (
         <>
@@ -191,23 +191,23 @@ export default function FridgeUpdateCustomer() {
                         header: {
                             title: "Fridge Update Customer",
                             threeDot: [
-                {
-                  icon: threeDotLoading.csv
-                    ? "eos-icons:three-dots-loading"
-                    : "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                },
-                {
-                  icon: threeDotLoading.xlsx
-                    ? "eos-icons:three-dots-loading"
-                    : "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                },
-              ],
+                                {
+                                    icon: threeDotLoading.csv
+                                        ? "eos-icons:three-dots-loading"
+                                        : "gala:file-document",
+                                    label: "Export CSV",
+                                    labelTw: "text-[12px] hidden sm:block",
+                                    onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                                },
+                                {
+                                    icon: threeDotLoading.xlsx
+                                        ? "eos-icons:three-dots-loading"
+                                        : "gala:file-document",
+                                    label: "Export Excel",
+                                    labelTw: "text-[12px] hidden sm:block",
+                                    onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                                },
+                            ],
                             searchBar: true,
                             columnFilter: true,
                         },
@@ -237,6 +237,7 @@ export default function FridgeUpdateCustomer() {
                             { key: "model", label: "Model Number" },
                             { key: "brand", label: "Branding" },
                             { key: "remark", label: "Remarks" },
+                            { key: "approval_status", label: "Approval Status" },
                             {
                                 key: "status",
                                 label: "Status",

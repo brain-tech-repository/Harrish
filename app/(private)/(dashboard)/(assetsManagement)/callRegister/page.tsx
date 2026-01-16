@@ -3,7 +3,7 @@
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { callRegisterList,callRegisterGlobalSearch ,exportCallRegister} from "@/app/services/assetsApi";
+import { callRegisterList, callRegisterGlobalSearch, exportCallRegister } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -21,10 +21,10 @@ export default function CallRegister() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [serarchQuery, setSearchQuery] = useState("");
-      const [threeDotLoading, setThreeDotLoading] = useState({
+    const [threeDotLoading, setThreeDotLoading] = useState({
         csv: false,
         xlsx: false,
-      });
+    });
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -61,11 +61,11 @@ export default function CallRegister() {
             setLoading(true);
             let res;
             setSearchQuery(query);
-                res = await callRegisterGlobalSearch({
-                    search: query,
-                    per_page: pageSize.toString(),
-                });
-        
+            res = await callRegisterGlobalSearch({
+                search: query,
+                per_page: pageSize.toString(),
+            });
+
             setLoading(false);
             if (res.error) {
                 showSnackbar(res.data.message || "failed to search the Chillers", "error");
@@ -85,23 +85,23 @@ export default function CallRegister() {
         setLoading(true);
     }, [])
 
-     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
+    const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
-          setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          const response = await exportCallRegister({ format,search:serarchQuery });
-          if (response && typeof response === "object" && response.download_url) {
-            await downloadFile(response.download_url);
-            showSnackbar("File downloaded successfully ", "success");
-          } else {
-            showSnackbar("Failed to get download URL", "error");
-          }
-          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            const response = await exportCallRegister({ format, search: serarchQuery });
+            if (response && typeof response === "object" && response.download_url) {
+                await downloadFile(response.download_url);
+                showSnackbar("File downloaded successfully ", "success");
+            } else {
+                showSnackbar("Failed to get download URL", "error");
+            }
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } catch (error) {
-          showSnackbar("Failed to download warehouse data", "error");
-          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            showSnackbar("Failed to download warehouse data", "error");
+            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } finally {
         }
-      };
+    };
 
     return (
         <>
@@ -116,24 +116,24 @@ export default function CallRegister() {
                         },
                         header: {
                             title: "Call Register",
-                             threeDot: [
-                {
-                  icon: threeDotLoading.csv
-                    ? "eos-icons:three-dots-loading"
-                    : "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                },
-                {
-                  icon: threeDotLoading.xlsx
-                    ? "eos-icons:three-dots-loading"
-                    : "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                },
-              ],
+                            threeDot: [
+                                {
+                                    icon: threeDotLoading.csv
+                                        ? "eos-icons:three-dots-loading"
+                                        : "gala:file-document",
+                                    label: "Export CSV",
+                                    labelTw: "text-[12px] hidden sm:block",
+                                    onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                                },
+                                {
+                                    icon: threeDotLoading.xlsx
+                                        ? "eos-icons:three-dots-loading"
+                                        : "gala:file-document",
+                                    label: "Export Excel",
+                                    labelTw: "text-[12px] hidden sm:block",
+                                    onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                                },
+                            ],
                             searchBar: true,
                             columnFilter: true,
                             actions: can("create") ? [
@@ -155,10 +155,10 @@ export default function CallRegister() {
                         columns: [
                             { key: "osa_code", label: "Ticket Number" },
                             { key: "technician_name", label: "Technician Name" },
-                            { key: "chiller_code", label: "Chiller Code" },
+                            // { key: "chiller_code", label: "Chiller Code", showByDefault: true },
                             { key: "asset_number", label: "Asset Number" },
-                            { key: "model_number", label: "Model Number" },
-                            { key: "branding", label: "Branding" },
+                            { key: "model_number", label: "Model Number", render: (row: TableDataType) => row.model_number?.name },
+                            { key: "branding", label: "Branding", render: (row: TableDataType) => row.branding?.name },
                             { key: "nature_of_call", label: "Nature of Call" },
 
                             // Assigned Outlet
@@ -181,6 +181,11 @@ export default function CallRegister() {
                                         {row.current_customer?.code} - {row.current_customer?.name}
                                     </span>
                                 )
+                            },
+
+                            {
+                                key: "approval_status",
+                                label: "Approval Status"
                             },
 
                             {

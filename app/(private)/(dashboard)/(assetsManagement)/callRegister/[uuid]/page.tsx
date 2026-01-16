@@ -5,8 +5,8 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import { listReturnType } from "@/app/components/customTable";
 import InputFields from "@/app/components/inputFields";
 import StepperForm, { StepperStep, useStepperForm } from "@/app/components/stepperForm";
-import { genearateCode,saveFinalCode } from "@/app/services/allApi";
-import { addCallRegister, callRegisterByUUID, updateCallRegister, getTechicianList,serialNumberData,getCurrentCustomer } from "@/app/services/assetsApi";
+import { genearateCode, saveFinalCode } from "@/app/services/allApi";
+import { addCallRegister, callRegisterByUUID, updateCallRegister, getTechicianList, serialNumberData, getCurrentCustomer } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
@@ -27,7 +27,7 @@ const validationSchema = Yup.object({
     chiller_serial_number: Yup.string().required("Chiller Serial Number is required"),
     assets_category: Yup.string().required("Assets Category is required"),
     model_number: Yup.string().required("Model Number is required"),
-    brand: Yup.string().required("Branding is required"),
+    branding: Yup.string().required("Branding is required"),
     current_outlet_name: Yup.string().required("Current Outlet Name is required"),
     current_owner_name: Yup.string().required("Current Owner Name is required"),
     current_warehouse: Yup.string().required("Current Warehouse is required"),
@@ -55,11 +55,11 @@ const stepSchemas = [
         chiller_serial_number: Yup.string().required("Chiller Serial Number is required"),
         assets_category: Yup.string().required("Assets Category is required"),
         model_number: Yup.string().required("Model Number is required"),
-        brand: Yup.string().required("Branding is required"),
+        branding: Yup.string().required("Branding is required"),
     }),
 
     Yup.object().shape({}),
-   
+
     Yup.object().shape({
         current_outlet_name: Yup.string().required("Current Outlet Name is required"),
         current_owner_name: Yup.string().required("Current Owner Name is required"),
@@ -88,7 +88,7 @@ interface CallRegister {
     chiller_serial_number: string;
     assets_category: string;
     model_number: string;
-    brand: string;
+    branding: string;
     outlet_name: string;
     owner_name: string;
     street: string;
@@ -121,18 +121,20 @@ interface CallRegister {
 export default function AddOrEditChiller() {
     const [technicianOptions, setTechnicianOptions] = useState<{ value: string; label: string }[]>([]);
     const [codeMode] = useState<"auto" | "manual">("auto");
-    const [assignCusId,setAssignCusId]=useState("");
-    const [assetNoId,setAssetNoId]=useState("");
-    const [modelNoId,setModelNoId]=useState("");
-    const [brandId,setBrandId]=useState("");
-    const [distributorid,setDistributorId]=useState("");
-    const [asmId,setAsmId]=useState("");
-    const [rsmId,setRsmId]=useState("");
+    const [assignCusId, setAssignCusId] = useState("");
+    const [assetNoId, setAssetNoId] = useState("");
+    const [modelNoId, setModelNoId] = useState("");
+    const [brandId, setBrandId] = useState("");
+    const [distributorid, setDistributorId] = useState("");
+    const [asmId, setAsmId] = useState("");
+    const [rsmId, setRsmId] = useState("");
 
-    const [skeleton,setSkeleton]=useState(false);
+    const [skeleton, setSkeleton] = useState(false);
     const {
         agentCustomerOptions,
         chillerOptions,
+        brandingOptions,
+        ensureBrandingLoaded,
         ensureChillerLoaded,
         ensureAgentCustomerLoaded,
     } = useAllDropdownListData();
@@ -162,7 +164,7 @@ export default function AddOrEditChiller() {
         assets_category: "",
         model_number: "",
         chiller_code: "",
-        brand: "",
+        branding: "",
         outlet_code: "",
         outlet_name: "",
         owner_name: "",
@@ -197,6 +199,7 @@ export default function AddOrEditChiller() {
     useEffect(() => {
         ensureChillerLoaded();
         ensureAgentCustomerLoaded();
+        ensureBrandingLoaded();
     }, []);
 
     useEffect(() => {
@@ -245,7 +248,7 @@ export default function AddOrEditChiller() {
                     assets_category: d.assets_category || "",
                     model_number: d.model_number || "",
                     chiller_code: d.chiller_code || "",
-                    brand: d.brand || "",
+                    branding: d.branding || "",
                     outlet_code: d.outlet_code || "",
                     outlet_name: d.outlet_name || "",
                     owner_name: d.owner_name || "",
@@ -275,17 +278,11 @@ export default function AddOrEditChiller() {
                     nature_of_call: d.nature_of_call || "",
                     follow_up_action: d.follow_up_action || "",
                 });
-
-            } else {
-                if (chiller.ticket_type) {
-                    const res = await genearateCode({ model_name: chiller.ticket_type });
-                    setChiller((prev) => ({ ...prev, osa_code: res?.code || "" }));
-                }
             }
         }
 
         fetchData();
-    }, [chiller.ticket_type]); // 👈 IMPORTANT DEPENDENCY
+    }, [isEditMode, chillerId]);
 
     // Define stepFields to match each step's fields for validation
     const stepFields = [
@@ -304,79 +301,95 @@ export default function AddOrEditChiller() {
     ];
 
 
-const fetchSerialNumber = async (
-    serial: string,
-    setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
-) => {
-    
+    const fetchSerialNumber = async (
+        serial: string,
+        setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
+    ) => {
+        try {
+            setSkeleton(true);
+            const res = await serialNumberData({ serial_number: serial });
 
-    try {
-        setSkeleton(true);
-        const res = await serialNumberData({ serial_number: serial });
-        setAssignCusId(res?.data?.customer.id);
-        setAssetNoId(res?.data?.assets_category.id);
-        setModelNoId(res?.data?.model_number.id);
-        setBrandId(res?.data?.brand.id);
-        const d = Array.isArray(res?.data) ? res.data[0] : res.data;
-        if (!d) {
-            showSnackbar("No data found for this serial number", "warning");
-            return;
+            const d = res?.data;
+            if (!d) {
+                showSnackbar("No data found for this serial number", "warning");
+                return;
+            }
+
+            // ✅ DO NOT touch chiller_serial_number here
+
+            // ✅ Store IDs in state
+            setAssignCusId(res?.data?.customer?.id);
+            if (d.assets_category?.id) setAssetNoId(String(d.assets_category.id));
+            if (d.model_number?.id) setModelNoId(String(d.model_number.id));
+            if (d.brand?.id) setBrandId(String(d.brand.id));
+
+            // ✅ Select fields → store IDs
+            setFieldValue("branding", String(d.brand?.id));
+
+            // ✅ Text fields
+            setFieldValue(
+                "assets_category",
+                `${d.assets_category?.osa_code} - ${d.assets_category?.name}`
+            );
+            setFieldValue(
+                "model_number",
+                `${d.model_number?.code} - ${d.model_number?.name}`
+            );
+
+            if (d.customer) {
+                setFieldValue(
+                    "outlet_name",
+                    `${d.customer?.osa_code} - ${d.customer?.name}`
+                );
+                setFieldValue("owner_name", d.customer?.owner_name || "");
+                setFieldValue("street", d.customer?.street || "");
+                setFieldValue("landmark", d.customer?.landmark || "");
+                setFieldValue("town", d.customer?.town || "");
+                setFieldValue("district", d.customer?.district || "");
+                setFieldValue("contact_no1", d.customer?.contact_no || "");
+                setFieldValue("contact_no2", d.customer?.contact_no2 || "");
+            }
+
+        } catch {
+            showSnackbar("Failed to fetch serial number details", "error");
+        } finally {
+            setSkeleton(false);
         }
+    };
 
-        // STEP 1: Asset Number, Model Number, Branding
-        // setFieldValue("chiller_serial_number", d.chiller_serial_number || serial);
-        setFieldValue("assets_category", `${d.assets_category?.osa_code || ''} - ${d.assets_category?.name || ''}`);
-        setFieldValue("model_number", `${d.model_number?.code || ''} - ${d.model_number?.name || ''}`);
-        setFieldValue("brand", `${d.brand?.osa_code || ''} - ${d.brand?.name || ''}`);
 
-        // STEP 2: All values
-        setFieldValue("outlet_name", `${d.customer?.osa_code || ''} - ${d.customer?.name || ''}`);
-        setFieldValue("owner_name", d.customer?.owner_name || "");
-        setFieldValue("street", d.customer?.street || "");
-        setFieldValue("landmark", d.customer?.landmark || "");
-        setFieldValue("town", d.customer?.town || "");
-        setFieldValue("district", d.customer?.district || "");
-        setFieldValue("contact_no1", d.customer?.contact_no || "");
-        setFieldValue("contact_no2", d.customer?.contact_no2 || "");
-        setSkeleton(false);
+    const fetchCurrentCustomer = async (
+        search: string,
+        setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
+    ) => {
+        // Set Asset Number (chiller_serial_number) input field
 
-    } catch (err) {
-        console.error(err);
-        showSnackbar("Failed to fetch serial number details", "error");
-    }
-};
-const fetchCurrentCustomer = async (
-    search: string,
-    setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
-) => {
-    // Set Asset Number (chiller_serial_number) input field
+        try {
+            setSkeleton(true);
+            const res = await getCurrentCustomer({ search: search });
+            setDistributorId(res?.data?.get_warehouse?.id);
+            setAsmId(res?.data?.get_warehouse?.area?.created_by?.id);
+            setRsmId(res?.data?.get_warehouse?.region?.created_by?.id);
+            const d = res
 
-    try {
-        setSkeleton(true);
-        const res = await getCurrentCustomer({ search: search });
-        setDistributorId(res?.data?.get_warehouse?.id);
-        setAsmId(res?.data?.get_warehouse?.area?.created_by?.id);
-        setRsmId(res?.data?.get_warehouse?.region?.created_by?.id);
-        const d = res
-        
 
-        setFieldValue("current_owner_name", d.data.owner_name);
-        setFieldValue("current_warehouse", `${d.data.get_warehouse?.warehouse_code || ""} - ${d.data.get_warehouse?.warehouse_name || ""}`);
-        setFieldValue("current_asm", d.data?.get_warehouse?.area.created_by.username || "");
-        setFieldValue("current_rm",d.data?.get_warehouse?.region.created_by.username || "");
-        setFieldValue("current_road_street", d.data?.street || "");
-        setFieldValue("current_landmark", d.data?.landmark || "");
-        setFieldValue("current_town", d.data?.town || "");
-        setFieldValue("current_district", d.data?.district || "");
-        setFieldValue("current_contact_no1", d.data?.contact_no || "");
-        setFieldValue("current_contact_no2", d.data?.contact_no2 || "");
-        setSkeleton(false);
+            setFieldValue("current_owner_name", d.data.owner_name);
+            setFieldValue("current_warehouse", `${d.data.get_warehouse?.warehouse_code || ""} - ${d.data.get_warehouse?.warehouse_name || ""}`);
+            setFieldValue("current_asm", d.data?.get_warehouse?.area.created_by.username || "");
+            setFieldValue("current_rm", d.data?.get_warehouse?.region.created_by.username || "");
+            setFieldValue("current_road_street", d.data?.street || "");
+            setFieldValue("current_landmark", d.data?.landmark || "");
+            setFieldValue("current_town", d.data?.town || "");
+            setFieldValue("current_district", d.data?.district || "");
+            setFieldValue("current_contact_no1", d.data?.contact_no || "");
+            setFieldValue("current_contact_no2", d.data?.contact_no2 || "");
+            setSkeleton(false);
 
-    } catch (err) {
-        console.error(err);
-        showSnackbar("Failed to fetch serial number details", "error");
-    }
-};
+        } catch (err) {
+            console.error(err);
+            showSnackbar("Failed to fetch serial number details", "error");
+        }
+    };
 
     const handleNext = async (
         values: CallRegister,
@@ -426,8 +439,19 @@ const fetchCurrentCustomer = async (
             assets_category: String(assetNoId),
             model_number: String(modelNoId),
             chiller_code: values.chiller_code,
-            brand: String(brandId),
+            branding: values.branding,
             assigned_customer_id: String(assignCusId),
+
+            outlet_code: values.outlet_code,
+            outlet_name: values.outlet_name,
+            owner_name: values.owner_name,
+            road_street: values.street, // FIXED
+            landmark: values.landmark,
+            town: values.town,
+            district: values.district,
+            contact_no1: values.contact_no1,
+            contact_no2: values.contact_no2,
+
             current_outlet_code: values.current_outlet_code,
             current_outlet_name: values.current_outlet_name,
             current_owner_name: values.current_owner_name,
@@ -499,10 +523,18 @@ const fetchCurrentCustomer = async (
                                     { value: "TR", label: "TR" }
                                 ]}
                                 value={values.ticket_type}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const type = e.target.value;
                                     setFieldValue("ticket_type", type);
                                     setChiller((prev) => ({ ...prev, ticket_type: type }));
+
+                                    // Generate code for new additions only
+                                    if (!isEditMode && type) {
+                                        const res = await genearateCode({ model_name: type });
+                                        const generatedCode = res?.code || "";
+                                        setFieldValue("osa_code", generatedCode);
+                                        setChiller((prev) => ({ ...prev, osa_code: generatedCode }));
+                                    }
                                 }}
                                 error={touched.ticket_type && errors.ticket_type}
                             />
@@ -535,15 +567,24 @@ const fetchCurrentCustomer = async (
                                 value={values.chiller_serial_number}
                                 options={chillerOptions}
                                 onChange={(e) => {
-                                    setFieldValue("chiller_serial_number", e.target.value);
-                                    const selectedOption = chillerOptions.find(opt => opt.value === e.target.value);
-                                    const valueToSend = selectedOption?.value1 || selectedOption?.label;
-                                    if (valueToSend) {
-                                        fetchSerialNumber(valueToSend,setFieldValue);
+                                    const selectedValue = e.target.value;
+
+                                    // ✅ store ONLY option.value
+                                    setFieldValue("chiller_serial_number", selectedValue);
+
+                                    const selectedOption = chillerOptions.find(
+                                        (opt) => opt.value === selectedValue
+                                    );
+
+                                    // ✅ use value1 ONLY for API
+                                    if (selectedOption?.value1) {
+                                        fetchSerialNumber(selectedOption.value1, setFieldValue);
                                     }
                                 }}
                                 error={touched.chiller_serial_number && errors.chiller_serial_number}
                             />
+
+
 
 
 
@@ -585,11 +626,11 @@ const fetchCurrentCustomer = async (
                                 disabled
                                 showSkeleton={skeleton}
                                 label="Branding"
-                                name="brand"
-                                value={values.brand}
-                                // options={brandingOptions}
-                                onChange={(e) => setFieldValue("brand", e.target.value)}
-                                error={touched.brand && errors.brand}
+                                name="branding"
+                                value={values.branding}
+                                options={brandingOptions}
+                                onChange={(e) => setFieldValue("branding", e.target.value)}
+                                error={touched.branding && errors.branding}
                             />
                         </div>
                     </ContainerCard>
@@ -681,14 +722,6 @@ const fetchCurrentCustomer = async (
                     <ContainerCard>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                            {/* <InputFields
-                                // required
-                                label="Outlet Code"
-                                name="current_outlet_code"
-                                value={values.current_outlet_code}
-                                onChange={(e) => setFieldValue("current_outlet_code", e.target.value)}
-                            // error={touched.branding && errors.branding}
-                            /> */}
 
                             <InputFields
                                 required
@@ -697,12 +730,12 @@ const fetchCurrentCustomer = async (
                                 name="current_outlet_name"
                                 value={values.current_outlet_name}
                                 options={agentCustomerOptions}
-                                onChange={(e) =>{
+                                onChange={(e) => {
                                     setFieldValue("current_outlet_name", e.target.value)
                                     const selectedOption = agentCustomerOptions.find(opt => opt.value === e.target.value);
                                     const valueToSend = selectedOption?.value1 || selectedOption?.label;
                                     if (valueToSend) {
-                                        fetchCurrentCustomer(valueToSend,setFieldValue);
+                                        fetchCurrentCustomer(valueToSend, setFieldValue);
                                     }
                                 }
                                 }
@@ -711,7 +744,6 @@ const fetchCurrentCustomer = async (
 
                             <InputFields
                                 required
-                                showSkeleton={skeleton}
                                 label="Owner Name"
                                 name="current_owner_name"
                                 value={values.current_owner_name}
@@ -804,13 +836,11 @@ const fetchCurrentCustomer = async (
                             />
 
                             <InputFields
-                                required
                                 showSkeleton={skeleton}
                                 label="Contact No2"
                                 name="current_contact_no2"
                                 value={values.current_contact_no2}
                                 onChange={(e) => setFieldValue("current_contact_no2", e.target.value)}
-                                error={touched.current_contact_no2 && errors.current_contact_no2}
                             />
 
                             <InputFields

@@ -68,21 +68,17 @@ export default function ShelfDisplay() {
       try {
         setLoading(true);
 
-        // 🔒 Guard clause
-        if (!columnName) {
-          return {
-            data: [],
-            currentPage: 0,
-            pageSize,
-            total: 0,
-          };
-        }
-
-        const res = await chillerList({
+        const payload: any = {
           query,
           per_page: pageSize.toString(),
-          [columnName]: query,
-        });
+        };
+
+        // 👇 only add column filter if it exists
+        if (columnName) {
+          payload[columnName] = query;
+        }
+
+        const res = await chillerList(payload);
 
         if (res?.error) {
           showSnackbar(
@@ -99,12 +95,12 @@ export default function ShelfDisplay() {
           total: res?.pagination?.totalPages || 0,
         };
       } finally {
-        // ✅ always runs (success or error)
         setLoading(false);
       }
     },
     []
   );
+
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
@@ -160,7 +156,7 @@ export default function ShelfDisplay() {
   }, [])
 
   return (
-   <>
+    <>
       {/* Table */}
       <div className="flex flex-col h-full">
         <Table
@@ -188,7 +184,7 @@ export default function ShelfDisplay() {
                   },
                 },
               ],
-              searchBar: true,
+              searchBar: false,
               columnFilter: true,
               actions: can("create") ? [
                 <SidebarBtn

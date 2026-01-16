@@ -10,7 +10,7 @@ export default function Overview({ data }: { data: AgentCustomerDetails | null }
                 title="Customer Info"
                 data={[
                     {
-                        key: <span className="font-bold">TIN No.</span>,
+                        key: <span>VAT No.</span>,
                         value: data?.vat_no || "-",
                     },
                     {

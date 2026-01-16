@@ -137,7 +137,7 @@ interface DropdownDataContextType {
   userOptions: { value: string; label: string }[];
   spareCategoryOptions: { value: string; label: string }[];
   spareSubCategoryOptions: { value: string; label: string }[];
-  chillerOptions: { value: string; value1?:string; label: string }[];
+  chillerOptions: { value: string; value1?: string; label: string }[];
   permissions: permissionsList[];
   refreshDropdowns: () => Promise<void>;
   refreshDropdown: (name: string, params?: any) => Promise<void>;
@@ -1297,7 +1297,7 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
   const ensureChillerLoaded = useCallback(() => {
     // if (fetchedRef.current.has('chiller') || fetchingRef.current.has('chiller')) return;
     // fetchingRef.current.add('chiller');
-    chillerList().then(res => {
+    chillerList({ dropdown: 'true' }).then(res => {
       setChillerList(Array.isArray(res?.data) ? res.data : []);
       fetchedRef.current.add('chiller');
       fetchingRef.current.delete('chiller');
@@ -1484,10 +1484,10 @@ export const AllDropdownListDataProvider = ({ children }: { children: ReactNode 
     label: c.osa_code && c.name ? `${c.name}` : (c.name ?? '')
   }))
 
-  const chillerOptions = (Array.isArray(chillerListState) ? chillerListState : []).map((c: ChillerItem) => ({
-    value: String(c.id ?? ''),
-    value1: String(c.serial_number),
-    label: c.serial_number ? `${c.serial_number}` : (c.serial_number ?? '')
+  const chillerOptions = (Array.isArray(chillerListState) ? chillerListState : []).map((c: any) => ({
+    value: c,
+    value1: c,
+    label: c
   }))
 
   const itemOptions = (Array.isArray(item) ? item : []).map((c: Item) => (
