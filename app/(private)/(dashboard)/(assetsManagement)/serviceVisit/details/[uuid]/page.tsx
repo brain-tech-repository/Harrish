@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import Map from "@/app/components/map";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import TabBtn from "@/app/components/tabBtn";
+import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 const title = "Service Visit View";
 const backBtnUrl = "/serviceVisit";
 
@@ -86,6 +87,12 @@ export default function ViewPage() {
                 </Link>
                 <h1 className="text-xl font-semibold">{title}</h1>
             </div>
+
+            <WorkflowApprovalActions
+                requestStepId={data?.request_step_id}
+                redirectPath={backBtnUrl}
+                model="Service_Visit"
+            />
 
             <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
                 {/* profile details */}

@@ -859,7 +859,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   };
 
   const handleDateSelect = () => {
-    if (startDate && endDate) {
+    if (startDate && endDate && startDate <= endDate) {
       const format = (date: string) => new Date(date).toLocaleDateString('en-GB').replace(/\//g, '-');
       // const format = (date: string) => new Date(date).toLocaleDateString();
       setDateRange(`${format(startDate)} - ${format(endDate)}`);
@@ -1071,7 +1071,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       </div>
                       <div className="flex gap-2">
                         <button onClick={handleDateSelect} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</button>
