@@ -162,7 +162,9 @@ export default function CustomerInvoicePage() {
     routeOptions,
     regionOptions,
     areaOptions,
-    ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, 
+    ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, 
+    ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -174,7 +176,9 @@ export default function CustomerInvoicePage() {
     ensureRouteLoaded();
     ensureSalesmanLoaded();
     ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded,
+     ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded,
+      ensureWarehouseAllLoaded]);
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -232,6 +236,7 @@ export default function CustomerInvoicePage() {
       payload: Record<string, string | number | null>,
       pageSize: number,
     ): Promise<listReturnType> => {
+      console.log("Filter payload:", payload);
       let result;
       // setLoading(true);
       try {

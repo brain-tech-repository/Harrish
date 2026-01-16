@@ -55,7 +55,8 @@ export default function Item() {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-const [categoryId, setcategoryId] = useState<string>("");
+  const [categoryId, setcategoryId] = useState<string>("");
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
   // const [showDropdown, setShowDropdown] = useState(false);
   // const [showDeletePopup, setShowDeletePopup] = useState(false);
   // const [selectedRow, setSelectedRow] = useState<LocalTableDataType | null>(null);
@@ -227,6 +228,7 @@ useEffect(() => {
         const data = res.data.map((item: LocalTableDataType) => ({
           ...item,
         }));
+        setSearchFilterValue(query);
 
         return {
           data: data || [],
@@ -272,7 +274,7 @@ useEffect(() => {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await itemExport({ format });
+      const response = await itemExport({ format, search: searchFilterValue, filter:{ status: currentStatusFilter == false ? "0" : "1", category_id: categoryId }});
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");

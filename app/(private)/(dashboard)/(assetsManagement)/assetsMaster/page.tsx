@@ -13,23 +13,11 @@ import { useLoading } from "@/app/services/loadingContext";
 import { assetsMasterExport, chillerList, deleteChiller, deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { assestMasterQR, downloadQR } from "@/app/services/allApi";
-import { ref, string } from "yup";
-import { format } from "date-fns/format";
-import { Params } from "next/dist/server/request/params";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import AssetLabel from "./details/page";
-//  import { generateAssetLabelPdfDirect } from "@/app/utils";
-// import { generateAssetLabelPdfDirect } from "@/app/utils/generateAssetQrPdfDirect";
+import { AssestMasterfilter, AssestMasterModel, assestMasterQR, downloadQR } from "@/app/services/allApi";
+
 import { generateAssetLabelPdfDirect } from "./utils/util";
-
-
-
-
-
-
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import filterAssest from "@/app/components/filterAssest";
 
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
@@ -42,6 +30,95 @@ export default function ShelfDisplay() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [warehouses, setWarehouses] = useState([0].map(() => ({ label: "", value: "" })));
+  const [modelNumberOptions, setModelNumberOptions] = useState<any[]>([]);
+const {
+    customerSubCategoryOptions,
+    companyOptions,
+    salesmanOptions,
+    channelOptions,
+    warehouseAllOptions,
+    routeOptions,
+    regionOptions,
+    areaOptions,
+    ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, 
+    ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, 
+    ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+
+  // Load dropdown data
+  useEffect(() => {
+    ensureAreaLoaded();
+    ensureChannelLoaded();
+    ensureCompanyLoaded();
+    ensureCustomerSubCategoryLoaded();
+    ensureRegionLoaded();
+    ensureRouteLoaded();
+    ensureSalesmanLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded,
+     ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded,
+      ensureWarehouseAllLoaded]);
+
+  const [filters, setFilters] = useState({
+   id: "",
+   code:"",
+   name:"",
+    
+   
+  });
+ 
+   const ASSET_STATUS_OPTIONS = [
+  { label: "Active", value: "1" },
+  { label: "Inactive", value: "2" },
+  { label: "WH Stock", value: "3" },
+  { label: "IN Transit", value: "4" },
+  { label: "DP Stock", value: "5" },
+  { label: "Workshop Stock", value: "6" },
+  { label: "Out of Uganda", value: "7" },
+  { label: "IN House", value: "8" },
+  { label: "Promotion Store", value: "9" },
+ 
+
+  ]
+  const Model=[
+    { label: "Model A", value: "1" },
+  { label: "Model B", value: "2" },
+  ]
+
+ 
+  const [isFiltered, setIsFiltered] = useState(false);
+
+const fetchWarehouses = async () => {
+  const res = await AssestMasterfilter();
+
+setWarehouses(
+  Array.isArray(res?.data)
+    ? res.data.map((w: any) => ({
+        label: w.warehouse_name,
+        value: w.id,
+      }))
+    : []
+);}
+const validateFilters = () => {
+    if (!filters.id && !filters.code && !filters.name) {
+      showSnackbar("Please select at least one filter", "warning");
+      return false;
+    }
+    return true;
+  };
+ const handleFilter = () => {
+    if (!validateFilters()) return;
+    setIsFiltered(true);
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  // ✅ Reset Filter
+  const handleReset = () => {
+    setFilters({ id: "", code: "", name: "" });
+    setIsFiltered(false);
+    setRefreshKey((prev) => prev + 1);
+  };
+
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -59,10 +136,16 @@ export default function ShelfDisplay() {
   });
   const paramsRoute = useParams();
   
-  const [pdfData, setPdfData] = useState<any | null>(null);
-  // const pdfRef = useRef<HTMLDivElement | null>(null);
+  
+  
   
 const labelRef = useRef<HTMLDivElement>(null);
+const [filterState, setFilterState] = useState<{
+  company?: any;
+  region?: any;
+  area?: any;
+  distributor?: any;
+}>({});
 
 
   
@@ -70,27 +153,10 @@ const labelRef = useRef<HTMLDivElement>(null);
 const uuid = paramsRoute?.uuid as string;
 
 
-  const fetchServiceTypes = useCallback(
-    async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
-      setLoading(true);
-      const res = await chillerList({
-        page: pageNo.toString(),
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (res.error) {
-        showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
-        throw new Error("Unable to fetch the Chillers");
-      } else {
-        return {
-          data: res.data || [],
-          currentPage: res?.pagination?.page || 0,
-          pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.totalPages || 0,
-        };
-      }
-    }, []
-  )
+
+
+
+  
   const searchChiller = useCallback(
     async (
       query: string,
@@ -136,7 +202,8 @@ const uuid = paramsRoute?.uuid as string;
       }
     },
     []
-  );
+  );   
+
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
@@ -189,87 +256,102 @@ const uuid = paramsRoute?.uuid as string;
     setLoading(true);
   }, [])
   // ########################################################
-    const filterBy = useCallback(
-    async (
-      payload: Record<string, string | number | null>,
-      pageSize: number,
-    ): Promise<listReturnType> => {
-      let result;
-      // setLoading(true);
-      try {
-        const params: Record<string, string> = {
-          per_page: pageSize.toString(),
-        };
-        Object.keys(payload || {}).forEach((k) => {
-          const v = payload[k as keyof typeof payload];
-          if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-            params[k] = String(v);
-          }
-        });
-        result = await assestMasterQR( uuid, params);
-      } finally {
-        // setLoading(false);
-      }
-
-      if (result?.error)
-        throw new Error(result.data?.message || "Filter failed");
-      else {
-        const pagination =
-          result.pagination?.pagination || result.pagination || {};
+   const fetchServiceTypes = useCallback(
+    async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+      setLoading(true);
+      const res = await chillerList({
+        page: pageNo.toString(),
+        per_page: pageSize.toString(),
+      });
+      setLoading(false);
+      if (res.error) {
+        showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
+        throw new Error("Unable to fetch the Chillers");
+      } else {
         return {
-          data: result.data || [],
-          total: pagination.totalPages || result.pagination?.totalPages || 1,
-          totalRecords:
-            pagination.totalRecords || result.pagination?.totalRecords || 0,
-          currentPage: pagination.page || result.pagination?.page || 1,
-          pageSize: pagination.limit || pageSize,
+          data: res.data || [],
+          currentPage: res?.pagination?.page || 0,
+          pageSize: res?.pagination?.limit || 10,
+          total: res?.pagination?.totalPages || 0,
         };
       }
-    },
-    [],
-  );
+    }, []
+  )
 
 
 
 
 
+const filterBy = useCallback(
+          async (
+              payload: Record<string, string | number | null>,
+              pageSize: number
+          ): Promise<listReturnType> => {
+              console.log("payload", payload);
+              let result;
+              try {
+                  const params: Record<string, string> = { per_page: pageSize.toString() };
+                  Object.keys(payload || {}).forEach((k) => {
+                      const v = payload[k as keyof typeof payload];
+                      if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                          params[k] = String(v);
+                      }
+                  });
+
+                  result = await chillerList(params);
+                   
+
+              } catch (error) {
+                  throw new Error(String(error));
+              }
+  
+              if (result?.error) throw new Error(result.data?.message || "Filter failed");
+              else {
+                  const pagination = result.pagination?.pagination || result.pagination || {};
+                  const rows = result?.data || [];
+                  return {
+                      data: rows.map((item: any) => ({
+        uuid: item.uuid,
+        from_warehouse: item.from_warehouse?.warehouse_name || "-",
+        to_warehouse: item.to_warehouse?.warehouse_name || "-",
+        transfer_date: item.transfer_date || item.created_at || null,
+      })),
+                      total: pagination.totalPages || result.pagination?.totalPages || 0,
+                      totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+                      currentPage: pagination.current_page || result.pagination?.currentPage || 0,
+                      pageSize: pagination.limit || pageSize,
+                  };
+              }
+          }, []);
+  
+ const fetchAssetsTransferList = useCallback(
+  async (page = 1, pageSize = 50): Promise<listReturnType> => {
+    const response = await chillerList({
+      ...filters,
+      // page,
+      // limit: pageSize,
+    });
+
+    const rows = response?.data || [];
+
+    return {
+      data: rows.map((item: any) => ({
+        uuid: item.uuid,
+        from_warehouse: item.from_warehouse?.warehouse_name || "-",
+        to_warehouse: item.to_warehouse?.warehouse_name || "-",
+        transfer_date: item.transfer_date || item.created_at || null,
+      })),
+      total: response?.pagination?.total || 0,
+      currentPage: response?.pagination?.page || page,
+      pageSize: response?.pagination?.limit || pageSize,
+    };
+  },
+  [filters]
+);
+    
+// ################################################################################
 
 
-
-
-
-
-
-
-
-
-
-
-
-  // ################################################################################
-
-// useEffect(() => {
-//   if (!pdfData || !labelRef.current) return;
-
-//   const generatePdf = async () => {
-//     await new Promise((r) => setTimeout(r, 300));
-
-//     const canvas = await html2canvas(labelRef.current!, { scale: 2 });
-//     const imgData = canvas.toDataURL("image/png");
-
-//     const pdf = new jsPDF("landscape", "px", [
-//       canvas.width,
-//       canvas.height,
-//     ]);
-
-//     pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-//     pdf.save(`asset-${pdfData.uuid}.pdf`);
-
-//     setPdfData(null); // cleanup
-//   };
-
-//   generatePdf();
-// }, [pdfData]);
 const handleDownloadQR = async (row: TableDataType) => {
     console.log("Downloading QR for row:", row);
     try {
@@ -319,8 +401,9 @@ const handleDownloadQR = async (row: TableDataType) => {
                   },
                 },
               ],
-              searchBar: true,
+              searchBar: false,
               columnFilter: true,
+                filterRenderer:filterAssest,
               actions: can("create") ? [
                 <SidebarBtn
                   key="name"
@@ -330,17 +413,67 @@ const handleDownloadQR = async (row: TableDataType) => {
                   labelTw="hidden lg:block"
                   isActive
                 />,
-                 <SidebarBtn
-                  key="name"
-                  href="/assetsMaster/details"
-                  leadingIcon="lucide:plus"
-                  label="barcode"
-                  labelTw="hidden lg:block"
-                  isActive
-                />,
+                
               ] : [],
                
+                            filterByFields: [
+                             {
+                                    key: "company_id",
+                                    label: "Company",
+                                     isSingle: true,
+                             options:
+                             Array.isArray(companyOptions)
+                                    ? companyOptions
+                                    : [],
+                             
 
+                                    
+                                },
+                                {
+                                    key: "region_id",
+                                    label: "Region",
+                                     isSingle: true,
+                             options:
+                             Array.isArray(regionOptions)
+                                    ? regionOptions
+                                    : [],
+                                },
+                            
+                            {
+                             key: "area_id",
+                             label: "Area",
+                             isSingle: true,
+                             options:
+                             Array.isArray(areaOptions)
+                                    ? areaOptions
+                                    : [],
+                           },
+                           {
+                        key: "warehouse_id",
+                        label: " Distributor",
+                       isSingle: true,
+                     options: 
+                     Array.isArray(warehouseAllOptions)
+                                    ? warehouseAllOptions
+                                    : [],
+                       },
+                          {
+                        key: "status",
+                        label: "Status",
+                       isSingle: true,
+                     options: ASSET_STATUS_OPTIONS,
+                       },
+                       
+                          {
+                        key: "model_id",
+                        label: "Model No",
+                       isSingle: true,
+                     options: Array.isArray(modelNumberOptions)
+                                    ? modelNumberOptions
+                                    : [],
+                       },
+                            
+                        ],
 
 
             },
@@ -445,12 +578,7 @@ const handleDownloadQR = async (row: TableDataType) => {
       
 
       </div>
-{/* 
-      {pdfData && (
-  <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
-    <AssetLabel ref={pdfRef} data={pdfData} />
-  </div>
-)}  */}
+
 
 
 

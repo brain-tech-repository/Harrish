@@ -17,17 +17,19 @@ import {
   getCustomerByMerchandiser,
   subRegionList,
   updateRouteVisitDetails,
-  warehouseList
+  warehouseList,
+  dummyImport,
+  downloadFile
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import * as yup from "yup";
 import Table from "./toggleTable";
-
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 
 // Types for API responses
 type Company = {
@@ -123,6 +125,26 @@ type RowStates = {
 type CustomerSchedules = Record<number, RowStates>;
 
 export default function AddEditRouteVisit() {
+  // Info popover state/hooks (must be top-level, not inside renderStepContent)
+  const [infoPopoverOpen, setInfoPopoverOpen] = useState(false);
+  const infoPopoverRef = useRef<HTMLDivElement>(null);
+  const infoButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!infoPopoverOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        infoPopoverRef.current &&
+        !infoPopoverRef.current.contains(e.target as Node) &&
+        infoButtonRef.current &&
+        !infoButtonRef.current.contains(e.target as Node)
+      ) {
+        setInfoPopoverOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [infoPopoverOpen]);
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const params = useParams();
@@ -204,18 +226,13 @@ export default function AddEditRouteVisit() {
     company: yup.array().min(1, "At least one company is required"),
     days: yup.array().min(1, "At least one day is required"),
     from_date: yup.string().required("From date is required"),
-    to_date: yup
-      .string()
-      .required("To date is required")
-      .test(
-        "is-after-or-equal",
-        "To Date must be after or equal to From Date",
-        function (value) {
-          const { from_date } = this.parent;
-          if (!from_date || !value) return true;
-          return new Date(value) >= new Date(from_date);
-        }
-      ),
+    to_date: yup.date()
+      .required("Valid To date is required")
+      .when("from_date", (from_date, schema) => {
+        return from_date
+          ? schema.min(from_date, "Valid To must be after Valid From")
+          : schema;
+      }),
     status: yup.string().required("Status is required"),
   });
 
@@ -690,7 +707,7 @@ export default function AddEditRouteVisit() {
         }
       }
 
-     
+
       // ✅ Convert your raw object to expected format - customerSchedules is already in Record format
       const formattedSchedules = convertRowStatesToSchedules(customerSchedules);
 
@@ -786,7 +803,7 @@ export default function AddEditRouteVisit() {
                     setForm((prev) => ({ ...prev, from_date: e.target.value }));
                     if (errors.from_date) setErrors((prev) => ({ ...prev, from_date: "" }));
                   }}
-                  error={errors.from_date} 
+                  error={errors.from_date}
                 />
               </div>
 
@@ -801,6 +818,7 @@ export default function AddEditRouteVisit() {
                     setForm((prev) => ({ ...prev, to_date: e.target.value }));
                     if (errors.to_date) setErrors((prev) => ({ ...prev, to_date: "" }));
                   }}
+                  min={form.from_date}
                   error={errors.to_date}
                 />
               </div>
@@ -953,7 +971,7 @@ export default function AddEditRouteVisit() {
                     }
                     showSkeleton={skeleton.route}
                     options={routeOptions}
-                    isSingle={false}
+                    // isSingle={false}
                     error={errors.route}
                   />
                 </div>
@@ -983,11 +1001,79 @@ export default function AddEditRouteVisit() {
         return (
           <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
             <div className="p-6">
-
-
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Customer Schedule
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Customer Schedule
+                </h3>
+                <div className="flex items-center gap-2">
+                  {/* Import Customer Button */}
+                  <SidebarBtn
+                    isActive={true}
+                    type="button"
+                    className="ml-2 cursor-pointer"
+                    buttonTw="px-4 py-2 min-h-10 bg-primary-600 text-white hover:bg-primary-700"
+                    label="Import Customer"
+                  />
+                  {/* Info Icon with Controlled Popover (fixed hooks) */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="p-2 cursor-pointer"
+                      title="Info"
+                      ref={infoButtonRef}
+                      onClick={() => setInfoPopoverOpen((v) => !v)}
+                    >
+                      <Icon icon="mdi:information-outline" width={22} className="text-gray-500" />
+                    </button>
+                    {infoPopoverOpen && (
+                      <div
+                        ref={infoPopoverRef}
+                        className="absolute right-0 mt-2 z-50 w-max max-w-lg px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded shadow-lg"
+                      >
+                        Download a{' '}
+                        <a
+                          className="text-blue-600 underline cursor-pointer"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          onClick={async (e) => {
+                            setInfoPopoverOpen(false);
+                            try {
+                              const res = await dummyImport({format: 'csv'});
+                              await downloadFile(res.download_url);
+                              showSnackbar("CSV file downloaded successfully", "success");
+                            } catch (err) {
+                              showSnackbar("Failed to download CSV file", "error");
+                            }
+                          }}
+                        >
+                          sample csv file
+                        </a>{' '}
+                        or{' '}
+                        <a
+                          className="text-blue-600 underline cursor-pointer"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          onClick={async (e) => {
+                            setInfoPopoverOpen(false);
+                            try {
+                              const res = await dummyImport({format: 'xlsx'});
+                              await downloadFile(res.download_url);
+                              showSnackbar("XLS file downloaded successfully", "success");
+                            } catch (err) {
+                              showSnackbar("Failed to download for file", "error");
+                            }
+                          }}
+                        >
+                          sample xls file
+                        </a>{' '}
+                        and compare it to your import file to ensure you have the file perfect for the import.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
               <Table
                 customers={customers}
                 setCustomerSchedules={setCustomerSchedules}

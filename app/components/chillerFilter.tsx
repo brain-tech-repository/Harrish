@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
+import {AssestMasterModel} from "@/app/services/allApi";
+
 
 // Extend props to allow specifying which filters to show
 type FilterComponentProps = FilterRendererProps & {
@@ -59,13 +61,31 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     salesmanOptions,
     ensureSalesmanLoaded,
     channelOptions,
+    assetsModelOptions,
+    ensureAssetsModelLoaded,
   } = useAllDropdownListData();
 
   useEffect(() => {
     ensureCompanyLoaded();
     ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
+     ensureAssetsModelLoaded();
+  }, [ensureCompanyLoaded,ensureAssetsModelLoaded, ensureSalesmanLoaded]);
+  console.log("assetsModelOptions", assetsModelOptions);
+
   const { onlyFilters, currentDate, api } = filterProps;
+  const [modelOptions, setModelOptions] = useState<any[]>([]);
+  // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+ 
+
+
+
+
+
+
+
+
+
+
 
   // Set default date for from_date and to_date to today if currentDate is true
   useEffect(() => {
@@ -124,6 +144,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -259,72 +280,28 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     if (!onlyFilters) return true;
     return onlyFilters.includes(key);
   };
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [
+        
+        
+        
+        
+        assetsModelOptions
+    ]);
+
+
+
+
 
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Day Filter Dropdown */}
-      <InputFields
-        label="Day Filter"
-        name="day_filter"
-        placeholder="Select Filter"
-        type="select"
-        options={[
-          { value: "yesterday", label: "Yesterday" },
-          { value: "today", label: "Today" },
-          { value: "last_3_days", label: "Last 3 Days" },
-          { value: "last_7_days", label: "Last 7 Days" },
-          { value: "last_month", label: "Last Month" },
-        ]}
-        value={
-          Array.isArray(payload.day_filter)
-            ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
-            : typeof payload.day_filter === "number"
-            ? String(payload.day_filter)
-            : payload.day_filter || ""
-        }
-        disabled={disabled || !!payload.from_date || !!payload.to_date}
-        onChange={(e) => {
-          const raw = (e as any)?.target?.value ?? e;
-          setPayload((prev) => ({ ...prev, day_filter: raw }));
-        }}
-      />
+      
       {/* Start Date */}
-      {showFilter("from_date") && (
-        <InputFields
-          label="Start Date"
-          name="from_date"
-          type="date"
-          value={
-            typeof payload.from_date === "number"
-              ? String(payload.from_date)
-              : (payload.from_date as string | undefined) ?? ""
-          }
-          disabled={disabled || !!payload.day_filter}
-          onChange={(e) => {
-            const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, from_date: raw }));
-          }}
-        />
-      )}
+     
       {/* End Date */}
-      {showFilter("to_date") && (
-        <InputFields
-          label="End Date"
-          name="to_date"
-          type="date"
-          min={typeof payload.from_date === "number" ? String(payload.from_date) : (payload.from_date as string | undefined) ?? ""}
-          value={
-            typeof payload.to_date === "number"
-              ? String(payload.to_date)
-              : (payload.to_date as string | undefined) ?? ""
-          }
-          disabled={disabled || !!payload.day_filter || !payload.from_date}
-          onChange={(e) => {
-            const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, to_date: raw }));
-          }}
-        />
-      )}
+     
       {/* Company */}
       {showFilter("company_id") && (
         <InputFields
@@ -433,9 +410,9 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         />
       )}
       {/* Route */}
-      {showFilter("route_id") && (
+      {/* {showFilter("route_id") && (
         <InputFields
-          label="Route"
+          label="Status"
           name="route_id"
           type="select"
           searchable={true}
@@ -455,19 +432,19 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("route_id", val);
           }}
         />
-      )}
+      )} */}
       {/* Sales Team */}
-      {showFilter("salesman_id") && (
+      {showFilter("model_id") && (
         <InputFields
-          label="Sales Team"
-          name="salesman_id"
+          label="Model No"
+          name="model_id"
           type="select"
           searchable={true}
           isSingle={false}
           multiSelectChips
           showSkeleton={skeleton.salesteam}
-          disabled={disabled || routeVal.length === 0}
-          options={Array.isArray(salesmanOptions) ? salesmanOptions : []}
+        //  disabled={disabled || routeVal.length === 0}
+          options={Array.isArray(assetsModelOptions) ? assetsModelOptions : []}
           value={salesVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;

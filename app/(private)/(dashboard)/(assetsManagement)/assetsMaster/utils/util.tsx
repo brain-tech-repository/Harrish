@@ -2,43 +2,51 @@ import html2pdf from "html2pdf.js";
 import QRCode from "qrcode";
 import Logo from "@/app/components/logo";
 import { renderToStaticMarkup } from "react-dom/server";
+// import  assestMasterQR from "@/app/services/allApi";
 
 interface AssetData {
-  qr_string?: string;
   osa_code?: string;
+  serial_number?: string;
+  model_number?: {
+    name?: string;
+  };
+  manufacturer?: {
+    name?: string;
+  };
+  capacity?: string;
   uuid?: string;
   [key: string]: any;
 }
 
-/**
- * Generates asset label PDF using html2pdf with HTML/CSS syntax
- * 
- */
 const logoHtml = renderToStaticMarkup(<Logo type="full" />);
 
+// 🔹 helper → har row ke liye QR string
+const generateQrString = (row: AssetData) => {
+  const manufacturer = row.manufacturer?.name || "-";
+  const model = row.model_number?.name || "-";
+  const capacity = row.capacity || "-";
+  const serial = row.serial_number || "-";
+  const assetCode = row.osa_code || "-";
+
+  // 👉 company format (aap change kar sakti ho)
+  return ` ${model};${capacity};${serial};${assetCode}`;
+};
 
 export const generateAssetLabelPdfDirect = async (
   rowData: AssetData,
-  assetCode: string
+  assetCode?: string
 ): Promise<void> => {
   try {
-    // Parse QR string
-    const qrRaw =
-      rowData.qr_string ??
-      "SRC 220UGBKLA;UG;BK;FUNFRUTI;31654151100003;NC/HIL/2016/220/0424";
-
+    // 🔹 1. Dynamic QR string (per row)
+    const qrRaw = generateQrString(rowData);
     const qrParts = qrRaw.split(";");
-    const rawModel = qrParts[0] || "";
-    const modelParts= rawModel.split(" ");
-    const model =
-      modelParts.length >= 2
-        ? `${modelParts[0]} ${modelParts[1].replace(/[A-Za-z]/g, "")}`
-        : "-";
 
-    const serialNumber = qrParts[4] || "-";
-    const assetCodeDisplay = qrParts[5] || "-";
+    // 🔹 2. UI values
+     const model = qrParts[0];            // LG AMN0293
+    const serialNumber = qrParts[2];     // SR000023
+    const assetCodeDisplay = qrParts[3]; // CHLR2026000005
 
-    // Generate QR code as data URL
+    // 🔹 3. QR image
     const qrDataUrl = await QRCode.toDataURL(qrRaw, {
       errorCorrectionLevel: "H",
       type: "image/png",
@@ -46,160 +54,67 @@ export const generateAssetLabelPdfDirect = async (
       width: 240,
     });
 
-    // Create HTML content for PDF
-  const htmlContent = `
-<div style="
-  width: 90vw;
-  height: 90vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff;
-">
-
-
-
-<div style="
-  width: 600px;
-  height: 380px;
-  border: 6px solid #e30613;
-  border-radius: 18px;
-  padding: 22px 26px;
-  background: #ffffff;
-  font-family: Arial, sans-serif;
-  display: flex;
-  box-sizing: border-box;
-  justify-content: center;
-  align-items: center;
-  
-  
-">
-
-  <!-- LEFT SECTION -->
-  <div style="
-    width: 52%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  ">
-    <div>
-      <!-- LOGO -->
-      <div style="margin-bottom: 18px;">
-        ${logoHtml}
-      </div>
-
-      <!-- Asset Code -->
-      <div style="margin-bottom: 14px;">
-        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">
-          Asset Code:
-        </div>
-        <div style="
-          border: 1.5px solid #000;
-          border-radius: 8px;
-          padding: 10px 14px;
-          font-size: 15px;
-          font-weight: 600;
-        ">
-          ${assetCodeDisplay}
-        </div>
-      </div>
-
-      <!-- Serial -->
-      <div style="margin-bottom: 14px;">
-        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">
-          Serial NO:
-        </div>
-        <div style="
-          border: 1.5px solid #000;
-          border-radius: 8px;
-          padding: 10px 14px;
-          font-size: 15px;
-          font-weight: 600;
-        ">
-          ${serialNumber}
-        </div>
-      </div>
-
-      <!-- Model -->
+    // 🔹 4. HTML
+    const htmlContent = `
+<div style="width:90vw;height:90vh;display:flex;justify-content:center;align-items:center;background:#fff;">
+  <div style="width:600px;height:380px;border:6px solid #e30613;border-radius:18px;
+    padding:22px 26px;font-family:Arial;display:flex;box-sizing:border-box;">
+    
+    <div style="width:52%;display:flex;flex-direction:column;justify-content:space-between;">
       <div>
-        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">
-          Model:
+        <div style="margin-bottom:18px;">${logoHtml}</div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:700;margin-bottom:6px;">Asset Code:</div>
+          <div style="border:1.5px solid #000;border-radius:8px;padding:10px 14px;font-weight:600;">
+            ${assetCodeDisplay}
+          </div>
         </div>
-        <div style="
-          border: 1.5px solid #000;
-          border-radius: 8px;
-          padding: 10px 14px;
-          font-size: 15px;
-          font-weight: 600;
-        ">
-          ${model}
+
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:700;margin-bottom:6px;">Serial NO:</div>
+          <div style="border:1.5px solid #000;border-radius:8px;padding:10px 14px;font-weight:600;">
+            ${serialNumber}
+          </div>
         </div>
+
+        <div>
+          <div style="font-weight:700;margin-bottom:6px;">Model:</div>
+          <div style="border:1.5px solid #000;border-radius:8px;padding:10px 14px;font-weight:600;">
+            ${model}
+          </div>
+        </div>
+      </div>
+
+      <div style="font-weight:700;text-align:center;">
+        Property Of Hariss International Ltd.
       </div>
     </div>
 
-    <!-- LEFT FOOTER -->
-    <div style="
-      font-size: 15px;
-      font-weight: 700;
-      margin-top: 10px;
-      text-align: center;
-    ">
-      Property Of Hariss International Ltd.
+    <div style="width:48%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;">
+      <img src="${qrDataUrl}" style="width:250px;height:250px;" />
+      <div style="font-size:18px;font-weight:800;color:#e30613;">
+        Call Free : 0800 299 008
+      </div>
     </div>
   </div>
+</div>`;
 
-  <!-- RIGHT SECTION -->
-  <div style="
-    width: 48%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-  ">
-    <img
-      src="${qrDataUrl}"
-      style="
-        width: 250px;
-        height: 250px;
-      "
-    />
-
-    <div style="
-      font-size: 18px;
-      font-weight: 800;
-      color: #e30613;
-      white-space: nowrap;
-    ">
-      Call Free : 0800 299 008
-    </div>
-  </div>
-
-</div>
-`;
-
-
-
-    // Create temporary element
     const element = document.createElement("div");
     element.innerHTML = htmlContent;
-   
 
-    // PDF options
-    const options = {
-      margin: 0,
-      filename: `asset-label-${assetCode || "export"}.pdf`,
-      image: { type: "png" as const, quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: "landscape" as const, unit: "px", format: [1300, 1000] as [number, number] },
- 
-};
-    // };
+    html2pdf()
+      .set({
+        margin: 0,
+        filename: `asset-label-${assetCodeDisplay}.pdf`,
+        image: { type: "png", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: "landscape", unit: "px", format: [1300, 1000] },
+      })
+      .from(element)
+      .save();
 
-    // Generate and save PDF
-    html2pdf().set(options).from(element).save();
-  
   } catch (error) {
     console.error("PDF generation error:", error);
-    throw error;
   }
 };

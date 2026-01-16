@@ -56,7 +56,7 @@ export default function VehiclePage() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
   useEffect(() => {
     ensureWarehouseAllLoaded()
   }, [ensureWarehouseAllLoaded]);
@@ -67,7 +67,7 @@ export default function VehiclePage() {
     }
   }, [permissions]);
 
-  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx:boolean }>({ csv: false, xlsx: false,xslx:false });
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
@@ -224,6 +224,7 @@ useEffect(() => {
         page: page.toString(),
       });
       // setLoading(false);
+      setSearchFilterValue(searchQuery);
       if (result.error) throw new Error(result.data.message);
       const pagination = result.pagination || result.pagination.pagination || {};
       return {
@@ -239,7 +240,7 @@ useEffect(() => {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportVehicleData({ format });
+      const response = await exportVehicleData({ format,search: searchFilterValue,filter:{status:currentStatusFilter == false ? "0" : "1",warehouse_id: warehouseId} });
       if (response && typeof response === 'object' && response.url) {
         await downloadFile(response.url);
         showSnackbar("File downloaded successfully", "success");
@@ -295,7 +296,7 @@ useEffect(() => {
                exportButton: {
                 threeDotLoading: threeDotLoading,
                 show: true,
-                onClick: () => exportFile("xlsx"), 
+                onClick: () => exportFile("xslx"), 
               },
               threeDot: [
                

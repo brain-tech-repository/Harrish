@@ -288,7 +288,7 @@ function SelectKeyCombination({ keyCombo, setKeyCombo }: SelectKeyProps) {
                 <CustomCheckbox
                   key={optionIndex}
                   id={option.label + index}
-                  label={option.label}
+                  label={option.label == "Warehouse" ? "Distributors" : option.label}
                   checked={option.isSelected}
                   onChange={() => onKeySelect(index, optionIndex)}
                 />
@@ -1171,11 +1171,11 @@ export default function AddPricing() {
                     <div className="font-semibold text-lg mb-4">Location</div>
                     {keyCombo.Location.map((locKey) => (
                       <div key={locKey} className="mb-4">
-                        <div className="mb-2 text-base font-medium">{locKey}</div>
+                        <div className="mb-2 text-base font-medium">{locKey == "Warehouse" ? "Distributors" : locKey}</div>
                         <AutoSuggestion
                           key={`autosuggest-location-${locKey}`}
                           name={locKey}
-                          placeholder={`Search ${locKey}`}
+                          placeholder={`Search ${locKey == "Warehouse" ? "Distributors" : locKey}`}
                           multiple={true}
                           initialSelected={(() => {
                             const sel = keyValue[locKey] || [];

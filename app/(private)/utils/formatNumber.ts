@@ -81,3 +81,18 @@ function roundOff(value: number, decimals = 12): number {
 }
 
 export default toInternationalNumber;
+
+/**
+ * Format a quantity as an internationalized number string with no decimal places.
+ * Example: toInternationalQty(11234.56) -> "11,235"
+ */
+export function toInternationalQty(
+  value: string | number | null | undefined,
+  options: Omit<FormatNumberOptions, 'maximumFractionDigits' | 'minimumFractionDigits'> = {}
+): string {
+  return toInternationalNumber(value, {
+    ...options,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  });
+}

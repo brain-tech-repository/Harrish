@@ -82,6 +82,7 @@ export const deleteServiceTypes = async (uuid: string) => {
 
 // Chiller
 export const chillerList = async (params?: Params) => {
+  console.log("Params in chillerList:", params);
   try {
     const res = await API.get("/api/assets/chiller/list_chillers", {
       params: params,

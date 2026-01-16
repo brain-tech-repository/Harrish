@@ -18,6 +18,7 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import InputFields from "@/app/components/inputFields";
 // import { Icon } from "lucide-react";
 import { Icon } from "@iconify-icon/react";
+import chillerFilter from "@/app/components/chillerFilter";
 
 // Type definitions for the ACF API response
 interface ChillerRequest {
@@ -375,6 +376,7 @@ export default function CustomerInvoicePage() {
                     api: { filterBy: filterBy },
                     header: {
                         title: "Approve Chiller Request",
+                         filterRenderer:chillerFilter,
                         columnFilter: true,
                         searchBar: false,
                         // threeDot: [

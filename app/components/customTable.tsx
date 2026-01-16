@@ -86,7 +86,7 @@ export type configType = {
         filterByFields?: FilterField[];
         filterRenderer?: (props: FilterRendererProps) => React.ReactNode;
         exportButton?: {
-            threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean };
+            threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean; xslx?:boolean}; 
             show: boolean;
             onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
         };
@@ -450,10 +450,10 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                                             {config.header?.exportButton &&
                                         <div className="flex gap-[12px] relative">
                                             <BorderIconButton
-                                                icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
+                                                icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
                                                 label="Export Excel"
                                                 onClick={async () => {
-                                                    if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xls) return;
+                                                    if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
                                                     if (!config.header?.exportButton?.onClick) return;
                                                     config.header.exportButton.onClick(config.api?.list as any, displayedData);
                                                 }}
@@ -563,9 +563,13 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                 <div className="w-full">
                                     <SearchBar
                                         value={searchBarValue}
-                                        onChange={(
+                                        onChange={async (
                                             e: React.ChangeEvent<HTMLInputElement>
                                         ) => setSearchBarValue(e.target.value)}
+                                        onClear={async () => {
+                                            setSearchBarValue("");
+                                            handleSearch();
+                                        }}
                                         onEnterPress={handleSearch}
                                     />
                                 </div>

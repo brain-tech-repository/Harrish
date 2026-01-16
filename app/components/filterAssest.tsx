@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
+import {AssestMasterModel,AssestMasterStatus} from "@/app/services/allApi";
+
+
 
 // Extend props to allow specifying which filters to show
 type FilterComponentProps = FilterRendererProps & {
@@ -12,6 +15,7 @@ type FilterComponentProps = FilterRendererProps & {
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
 import { regionList, subRegionList, warehouseList, routeList } from "@/app/services/allApi";
+import { stat } from "fs";
 
 type DropdownOption = {
   value: string;
@@ -59,13 +63,31 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     salesmanOptions,
     ensureSalesmanLoaded,
     channelOptions,
+    assetsModelOptions,
+    ensureAssetsModelLoaded,
   } = useAllDropdownListData();
 
   useEffect(() => {
     ensureCompanyLoaded();
     ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
+     ensureAssetsModelLoaded();
+  }, [ensureCompanyLoaded,ensureAssetsModelLoaded, ensureSalesmanLoaded]);
   const { onlyFilters, currentDate, api } = filterProps;
+  const [modelOptions, setModelOptions] = useState<any[]>([]);
+  const [statusOptions, setStatusOptions] = useState<any[]>([]);
+
+  // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+ 
+
+
+
+
+
+
+
+
+
+
 
   // Set default date for from_date and to_date to today if currentDate is true
   useEffect(() => {
@@ -90,7 +112,9 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     area: false,
     warehouse: false,
     route: false, 
-    salesteam: false,
+    modelname: false,
+    statusname: false,
+    
   });
   const [regionOptions, setRegionOptions] = useState<DropdownOption[]>([]);
   const [areaOptions, setAreaOptions] = useState<DropdownOption[]>([]);
@@ -106,6 +130,71 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     isApplying,
     isClearing,
   } = filterProps;
+
+useEffect(() => {
+  const fetchModelNumbers = async () => {
+    try {
+      setSkeleton((prev) => ({ ...prev, salesteam: true }));
+
+      const res = await AssestMasterModel({
+        dropdown: "true",
+      });
+
+      const list = res?.data || res || [];
+
+      setModelOptions(
+        list.map((m: any) => ({
+          value: String(m.id),
+          label: m.model_no || m.model_number || m.name,
+        }))
+      );
+    } catch (err) {
+      console.error("Model No list error:", err);
+      setModelOptions([]);
+    } finally {
+      setSkeleton((prev) => ({ ...prev, salesteam: false }));
+    }
+  };
+
+  fetchModelNumbers(); // 🔥 page load par call
+}, []); // ✅ empty dependency
+
+
+
+
+
+useEffect(() => {
+  const fetchStatusNumbers = async () => {
+    try {
+      setSkeleton((prev) => ({ ...prev, salesteam: true }));
+
+      const res = await AssestMasterStatus({
+        dropdown: "true",
+      });
+
+      const list = res?.data || res || [];
+
+      setStatusOptions(
+        list.map((m: any) => ({
+          value: String(m.id),
+          label: m.status_no || m.status_number || m.name,
+        }))
+      );
+    } catch (err) {
+      console.error("Status No list error:", err);
+      setStatusOptions([]);
+    } finally {
+      setSkeleton((prev) => ({ ...prev, statusname: false }));
+    }
+  };
+
+  fetchStatusNumbers(); // 🔥 page load par call
+}, []); // ✅ empty dependency
+
+
+
+
+
 
   const onChangeArray = (key: string, value: any) => {
     setPayload((prev) => ({ ...prev, [key]: value }));
@@ -123,7 +212,8 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const areaVal = toArray(payload.sub_region_id);
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
-  const salesVal = toArray(payload.salesman_id);
+  const modelVal = toArray(payload.model_number);
+  const statusVal = toArray(payload.status_id);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -263,68 +353,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Day Filter Dropdown */}
-      <InputFields
-        label="Day Filter"
-        name="day_filter"
-        placeholder="Select Filter"
-        type="select"
-        options={[
-          { value: "yesterday", label: "Yesterday" },
-          { value: "today", label: "Today" },
-          { value: "last_3_days", label: "Last 3 Days" },
-          { value: "last_7_days", label: "Last 7 Days" },
-          { value: "last_month", label: "Last Month" },
-        ]}
-        value={
-          Array.isArray(payload.day_filter)
-            ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
-            : typeof payload.day_filter === "number"
-            ? String(payload.day_filter)
-            : payload.day_filter || ""
-        }
-        disabled={disabled || !!payload.from_date || !!payload.to_date}
-        onChange={(e) => {
-          const raw = (e as any)?.target?.value ?? e;
-          setPayload((prev) => ({ ...prev, day_filter: raw }));
-        }}
-      />
+      
       {/* Start Date */}
-      {showFilter("from_date") && (
-        <InputFields
-          label="Start Date"
-          name="from_date"
-          type="date"
-          value={
-            typeof payload.from_date === "number"
-              ? String(payload.from_date)
-              : (payload.from_date as string | undefined) ?? ""
-          }
-          disabled={disabled || !!payload.day_filter}
-          onChange={(e) => {
-            const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, from_date: raw }));
-          }}
-        />
-      )}
+     
       {/* End Date */}
-      {showFilter("to_date") && (
-        <InputFields
-          label="End Date"
-          name="to_date"
-          type="date"
-          min={typeof payload.from_date === "number" ? String(payload.from_date) : (payload.from_date as string | undefined) ?? ""}
-          value={
-            typeof payload.to_date === "number"
-              ? String(payload.to_date)
-              : (payload.to_date as string | undefined) ?? ""
-          }
-          disabled={disabled || !!payload.day_filter || !payload.from_date}
-          onChange={(e) => {
-            const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, to_date: raw }));
-          }}
-        />
-      )}
+     
       {/* Company */}
       {showFilter("company_id") && (
         <InputFields
@@ -433,18 +466,18 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         />
       )}
       {/* Route */}
-      {showFilter("route_id") && (
+      {showFilter("status_id") && (
         <InputFields
-          label="Route"
-          name="route_id"
+          label="Status"
+          name="status_id"
           type="select"
           searchable={true}
           isSingle={false}
           multiSelectChips
-          showSkeleton={skeleton.route}
-          disabled={disabled || warehouseVal.length === 0}
-          options={Array.isArray(routeOptions) ? routeOptions : []}
-          value={routeVal as any}
+          showSkeleton={skeleton.statusname}
+          // disabled={disabled || warehouseVal.length === 0}
+          options={Array.isArray(statusOptions) ? statusOptions : []}
+          value={statusVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             const val = Array.isArray(raw)
@@ -452,23 +485,23 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("route_id", val);
+            onChangeArray("status_id", val);
           }}
         />
       )}
       {/* Sales Team */}
-      {showFilter("salesman_id") && (
+      {showFilter("model_number") && (
         <InputFields
-          label="Sales Team"
-          name="salesman_id"
+          label="Model No"
+          name="model_number"
           type="select"
           searchable={true}
           isSingle={false}
           multiSelectChips
-          showSkeleton={skeleton.salesteam}
-          disabled={disabled || routeVal.length === 0}
-          options={Array.isArray(salesmanOptions) ? salesmanOptions : []}
-          value={salesVal as any}
+          showSkeleton={skeleton.modelname}
+          // disabled={disabled || routeVal.length === 0}
+          options={Array.isArray(modelOptions) ? modelOptions : []}
+          value={modelVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             const val = Array.isArray(raw)
@@ -476,7 +509,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("salesman_id", val);
+            onChangeArray("model_number", val);
           }}
         />
       )}

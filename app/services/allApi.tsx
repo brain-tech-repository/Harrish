@@ -122,20 +122,20 @@ export async function downloadFileGlobal(
       if (response.ok) {
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
-        
+
         const link = document.createElement('a');
         link.href = blobUrl;
         link.download = finalFileName;
         link.style.display = 'none';
-        
+
         document.body.appendChild(link);
         link.click();
-        
+
         setTimeout(() => {
           document.body.removeChild(link);
           window.URL.revokeObjectURL(blobUrl);
         }, 100);
-        
+
         return true;
       }
     } catch (fetchError) {
@@ -148,11 +148,11 @@ export async function downloadFileGlobal(
       iframe.style.display = 'none';
       iframe.src = url;
       document.body.appendChild(iframe);
-      
+
       setTimeout(() => {
         document.body.removeChild(iframe);
       }, 3000);
-      
+
       return true;
     } catch (iframeError) {
       console.warn('Iframe download failed, trying direct link:', iframeError);
@@ -165,10 +165,10 @@ export async function downloadFileGlobal(
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.style.display = 'none';
-    
+
     document.body.appendChild(link);
     link.click();
-    
+
     setTimeout(() => {
       document.body.removeChild(link);
     }, 100);
@@ -1657,7 +1657,7 @@ export const deleteExpenseType = async (id: string) => {
   }
 };
 
-export const exportSalesmanData = async (params?: Params) => {
+export const exportSalesmanData = async (params?: object) => {
   try {
     const res = await API.get("api/master/salesmen/exportfile", {
       params,
@@ -2056,9 +2056,9 @@ export const getSalesmanById = async (uuid: string) => {
   }
 };
 
-export const getSalesmanBySalesId = async (uuid: string, params?:Params) => {
+export const getSalesmanBySalesId = async (uuid: string, params?: Params) => {
   try {
-    const res = await API.get(`/api/master/salesmen/salespersalesman/${uuid}`,{params});
+    const res = await API.get(`/api/master/salesmen/salespersalesman/${uuid}`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -2498,7 +2498,7 @@ export const itemGlobalSearch = async (params?: Params) => {
   }
 };
 
-export const itemExport = async (params?: Params) => {
+export const itemExport = async (params?: object) => {
   try {
     const res = await API.get("/api/master/items/export", { params: params });
     return res.data;
@@ -3337,9 +3337,9 @@ export const submenuGenerateCode = async (params?: Params) => {
   }
 };
 
-export const exportRoutes = async (params?: Params) => {
+export const exportRoutes = async (body?: object) => {
   try {
-    const res = await API.post(`/api/master/route/export`, { params });
+    const res = await API.post(`/api/master/route/export`, body);
     return res.data;
   } catch (error: unknown) {
     handleError(error);
@@ -4250,7 +4250,7 @@ export const applyPromotion = async (payload: Object) => {
 
 export const warhouseStocksByFilter = async (params?: Params) => {
   try {
-    const res = await API.get("/api/settings/warehouse-stocks/dayYesterdayMonthWisefilter", {params});
+    const res = await API.get("/api/settings/warehouse-stocks/dayYesterdayMonthWisefilter", { params });
 
     return res.data;
   } catch (error: unknown) {
@@ -4260,7 +4260,7 @@ export const warhouseStocksByFilter = async (params?: Params) => {
 
 export const statusFilter = async (params?: Params) => {
   try {
-    const res = await API.get("/api/master/master-data/list", {params});
+    const res = await API.get("/api/master/master-data/list", { params });
 
     return res.data;
   } catch (error: unknown) {
@@ -4296,3 +4296,37 @@ export const assestMasterQR = async (uuid: string, params?:{ format?: string } )
     return handleError(error);
   }
 };
+
+export const AssestMasterfilter = async (params?: Params) => {
+  try {
+    const res = await API.get("api/settings/fridge-status/list", {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const AssestMasterModel = async (params?: Params) => {
+  try {
+    const res = await API.get("api/settings/asset-model-number/list?dropdown=true",
+      { params }
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const AssestMasterStatus = async (params?: Params) => {
+  try {
+    const res = await API.get("api/settings/fridge-status/list",
+      { params }
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+

@@ -209,27 +209,7 @@ setWarehouses(
     <div className="h-[calc(100%-60px)] flex flex-col gap-3">
 
      
-{/* 
-      {isFilterOpen && (
-  <div className="grid grid-cols-2 gap-3 mt-2 w-96">
-    <input
-      type="date"
-      value={filters.from_date}
-      onChange={(e) =>
-        setFilters((p) => ({ ...p, from_date: e.target.value }))
-      }
-      className="border rounded px-3 py-2 text-sm"
-    />
-    <input
-      type="date"
-      value={filters.to_date}
-      onChange={(e) =>
-        setFilters((p) => ({ ...p, to_date: e.target.value }))
-      }
-      className="border rounded px-3 py-2 text-sm"
-    />
-  </div>
-)} */}
+
 
       {/* ===== TABLE ===== */}
       <Table

@@ -43,7 +43,8 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     channelOptions,
     itemCategoryOptions,
     customerSubCategoryOptions,
-    ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
+    ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, 
+    ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -53,7 +54,8 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     ensureRegionLoaded();
     ensureRouteLoaded();
     ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded,
+     ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
 
   const [isFiltered, setIsFiltered] = useState(false);
 
