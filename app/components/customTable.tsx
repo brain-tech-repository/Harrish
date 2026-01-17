@@ -14,6 +14,7 @@ import DismissibleDropdown from "./dismissibleDropdown";
 import { naturalSort } from "../(private)/utils/naturalSort";
 import { CustomTableSkelton } from "./customSkeleton";
 import Draggable from "react-draggable";
+import Skeleton from "@mui/material/Skeleton";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -1094,24 +1095,28 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                 <div className="flex items-center gap-[4px]">
                                                     {rowActions.map(
                                                         (action, index) => (
-                                                            <div 
-                                                                key={index} 
-                                                                onClick={() => {
-                                                                    if (action.onClick) {
-                                                                        action.onClick(row);
-                                                                    }
-                                                                }}
-                                                                className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
-                                                            >
-                                                            {action.icon 
-                                                                ? <Icon
-                                                                    key={index}
-                                                                    icon={action.icon}
-                                                                    width={20}
-                                                                /> 
-                                                                : <span>{action.label}</span>
-                                                            }
-                                                        </div>)
+                                                            <>
+                                                             <IconWithLoading action={action} index={index} row={row} />
+                                                             </>
+                                                        //     <div 
+                                                        //         key={index} 
+                                                        //         onClick={() => {
+                                                        //             if (action.onClick) {
+                                                        //                 action.onClick(row);
+                                                        //             }
+                                                        //         }}
+                                                        //         className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
+                                                        //     >
+                                                        //     {action.icon 
+                                                        //         ? <Icon
+                                                        //             key={index}
+                                                        //             icon={action.icon}
+                                                        //             width={20}
+                                                        //         /> 
+                                                        //         : <span>{action.label}</span>
+                                                        //     }
+                                                        // </div>
+                                                        )
                                                     )}
                                                 </div>
                                             </td>
@@ -1137,6 +1142,30 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     );
 }
 
+function IconWithLoading({ action, index, row }: { action: any; index: number; row: any }){
+    const [isLoading, setIsLoading] = useState(false);
+    return (<> {isLoading ? <div className="flex justify-center items-center"><Skeleton width={20}/></div> : <div 
+                                                                key={index} 
+                                                                onClick={async () => {
+                                                                    if (action.onClick) {
+                                                                        setIsLoading(true);
+                                                                        await action.onClick(row);
+                                                                        setIsLoading(false);
+                                                                    }
+                                                                }}
+                                                                className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
+                                                            >
+                                                            {action.icon  
+                                                                ? <Icon
+                                                                    key={index}
+                                                                    icon={action.icon}
+                                                                    width={20}
+                                                                /> 
+                                                                : <span>{action.label}</span>
+                                                            }
+                                                        </div>
+}</>)
+}
 function FilterTableHeader({
     column,
     dimensions,

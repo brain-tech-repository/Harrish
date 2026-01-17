@@ -200,20 +200,6 @@ export async function downloadPDFGlobal(
 }
 
 
-// / Utility to recursively lowercase all string values in an object/array
-function toLowerCaseDeep(data: any): any {
-  if (Array.isArray(data)) {
-    return data.map(toLowerCaseDeep);
-  } else if (data && typeof data === 'object' && !(data instanceof FormData)) {
-    return Object.fromEntries(
-      Object.entries(data).map(([k, v]) => [k, toLowerCaseDeep(v)])
-    );
-  } else if (typeof data === 'string') {
-    return data.toLowerCase();
-  }
-  return data;
-}
-
 export const login = async (credentials: {
   email?: string;
   username?: string;

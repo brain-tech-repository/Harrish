@@ -245,9 +245,9 @@ const [threeDotLoading, setThreeDotLoading] = useState({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="gap-3 mb-4">
-        <h1 className="text-bold-700 text-lg font-semibold">Salesman Unload</h1>
-      </div>
+      {/* <div className="gap-3 mb-4">
+        <h1 className="text-bold-700 text-lg font-semibold">Sales Team Unload</h1>
+      </div> */}
 
       {/* 📋 Table Section with Dynamic Filters */}
       <Table
@@ -255,6 +255,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         config={{
           api: { list: fetchSalesmanUnloadHeader, filterBy },
           header: {
+            title: "Sales Team Unload",
             searchBar: false,
             columnFilter: true,
             threeDot: [

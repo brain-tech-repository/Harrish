@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse } from "@/app/services/agentTransaction";
+import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse,salesmanLoadPdf } from "@/app/services/agentTransaction";
 import { useRef } from "react";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -20,7 +20,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
-
+import { downloadPDFGlobal } from "@/app/services/allApi";
 interface SalesmanLoadRow {
   osa_code?: string;
   warehouse?: { code?: string; name?: string };
@@ -125,6 +125,7 @@ export default function SalemanLoad() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const [threeDotLoading, setThreeDotLoading] = useState({
+    pdf: false,
     csv: false,
     xlsx: false,
   });
@@ -239,10 +240,13 @@ export default function SalemanLoad() {
 
   const downloadPdf = async (uuid: string) => {
     try {
-      setLoading(true);
-      const response = await exportSalesmanLoadDownload({ uuid: uuid, format: "excel" });
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
+      const response = await salesmanLoadPdf({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+         const fileName = `load-${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -250,7 +254,8 @@ export default function SalemanLoad() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
+      // setLoading(false);
     }
   };
 
@@ -344,7 +349,7 @@ export default function SalemanLoad() {
               },
             },
             {
-              icon: "lucide:download",
+              icon: "material-symbols:download",
               onClick: (row: TableDataType) => downloadPdf(row.uuid),
             },
           ],
