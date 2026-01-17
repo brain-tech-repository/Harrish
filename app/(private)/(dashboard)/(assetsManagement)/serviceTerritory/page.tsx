@@ -115,10 +115,10 @@ const getColumns = (
             render: (row: any) => <p>{row.technician?.name || "-"}</p>,
         },
         {
-                        key: "approval_status",
-                        label: "Approval Status",
-                        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-                    },
+            key: "approval_status",
+            label: "Approval Status",
+            render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+        },
         
         // {
         //     key: "created_at",

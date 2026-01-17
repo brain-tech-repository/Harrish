@@ -1758,12 +1758,14 @@ export default function InputFields({
   return (
     <div className={`flex flex-col gap-[6px] min-w-0 ${width} relative`}>
       {showSkeleton && (
-        <div className="absolute h-[90px] w-full rounded-[5px] bg-white z-40 flex flex-col gap-[5px]">
-          {label && <Skeleton variant="rounded" width={"50%"} height={"20%"} />}
-          <Skeleton variant="rounded" width={"100%"} height={"60%"} />
-          {error && (
-            <Skeleton variant="rounded" width={"100%"} height={"20%"} />
-          )}
+        <div className="absolute h-[90px] w-full rounded-[5px] z-40 flex flex-col gap-[5px]">
+          {label && <div style={{ width: "50%", height: "20%"}} />}
+          <div className="bg-white flex flex-col w-full gap-[5px] h-[68px]">
+            <Skeleton variant="rounded" width={"100%"} height={"70%"} />
+            {error && (
+              <Skeleton variant="rounded" width={"100%"} height={"20%"} />
+            )}
+          </div>
         </div>
       )}
       {/* Hide the default label if type is 'location' */}
