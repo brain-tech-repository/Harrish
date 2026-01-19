@@ -85,7 +85,7 @@ const nextConfig: NextConfig = {
         { source: '/survey/:path*', destination: '/survey/:path*' },
         { source: '/surveyquestion/:path*', destination: '/surveyQuestion/:path*' },
         { source: '/view/:path*', destination: '/view/:path*' },
-        // reports
+        // reports 
         { source: '/customerreport/:path*', destination: '/customerReport/:path*' },
         { source: '/salesreportdashboard/:path*', destination: '/salesReportDashboard/:path*' },
         // alert
