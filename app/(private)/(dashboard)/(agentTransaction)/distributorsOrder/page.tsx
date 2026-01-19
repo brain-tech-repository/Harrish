@@ -234,6 +234,7 @@ export default function CustomerInvoicePage() {
           pageSize: pagination.limit || pageSize,
         };
       }
+      // const result = await agentOrderList({ filter: Object.values(params) });
       const result = await agentOrderList(params);
       agentOrderFilterCache.current[cacheKey] = result;
       const pagination =

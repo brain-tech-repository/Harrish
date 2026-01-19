@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
         { source: '/distributorsexchange/:path*', destination: '/distributorsExchange/:path*' },
         { source: '/distributorsinvoice/:path*', destination: '/distributorsInvoice/:path*' },
         { source: '/distributorsorder/:path*', destination: '/distributorsOrder/:path*' },
+        { source: '/distributorsorder/', destination: '/distributorsOrder/' },
         { source: '/distributorsreturn/:path*', destination: '/distributorsReturn/:path*' },
         { source: '/newcustomer/:path*', destination: '/newCustomer/:path*' },
         { source: '/salesteamload/:path*', destination: '/salesTeamLoad/:path*' },
