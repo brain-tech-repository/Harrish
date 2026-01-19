@@ -92,7 +92,7 @@ const nextConfig: NextConfig = {
         { source: '/alert/:path*', destination: '/alert/:path*' },
         // harrisTransaction
         { source: '/customerorder/:path*', destination: '/customerOrder/:path*' },
-        // profile
+        // profile 
         { source: '/profile/:path*', destination: '/profile/:path*' },
         // settingProfile
         { source: '/settingprofile/:path*', destination: '/settingProfile/:path*' },
