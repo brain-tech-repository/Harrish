@@ -337,7 +337,13 @@ export default function AddEditServiceTerritory() {
 
                             <SidebarBtn
                                 type="submit"
-                                label={isEditMode ? "Update" : "Submit"}
+                                leadingIcon="mdi:check"
+                                disabled={formik.isSubmitting}
+                                label={formik.isSubmitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"}
                                 isActive
                             />
                         </div>

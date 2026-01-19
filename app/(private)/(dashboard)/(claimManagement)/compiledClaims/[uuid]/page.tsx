@@ -414,6 +414,7 @@ export default function AddEditRoute() {
                       return (
                         <SidebarBtn
                           isActive={!creating}
+                          leadingIcon="mdi:check"
                           label={creating ? "Processing..." : "Approved"}
                           onClick={() => handleCreateCompiledClaim(row)}
                           disabled={creating}

@@ -1170,7 +1170,8 @@ export default function OrderAddEditPage() {
             Cancel
           </button>
           <SidebarBtn
-            disabled={!hasValidItems}
+            disabled={!hasValidItems || isSubmitting}
+            leadingIcon="mdi:check"
             isActive={!isSubmitting}
             label={isSubmitting ? (isEditMode ? "Updating Return..." : "Creating Return...") : (isEditMode ? "Update Return" : "Create Return")}
             onClick={handleSubmit}

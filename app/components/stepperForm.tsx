@@ -136,10 +136,10 @@ export default function StepperForm({
   const handleSubmit = async () => {
     onNext && onNext();
     setIsSubmitting(true);
-    setLoading(true);
+    // setLoading(true);
     if (onSubmit) {
       await onSubmit();
-      setLoading(false);
+      // setLoading(false);
 
       setTimeout(() => {
         setIsSubmitting(false);

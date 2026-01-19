@@ -80,7 +80,6 @@ const validationSchema = Yup.object({
   outlet_weekly_sale_volume_current: Yup.string(),
   outlet_weekly_sale_volume: Yup.string(),
   display_location: Yup.string(),
-  chiller_size_requested: Yup.string(),
   chiller_safty_grill: Yup.string(),
   warehouse_id: Yup.string()
     .required("Warehouse is required")
@@ -149,13 +148,11 @@ type Chiller = {
   address: string;
   location: string;
   outlet_id: string;
-  specify_if_other_type: string;
   existing_coolers: string;
   stock_share_with_competitor: string;
-  outlet_weekly_sale_volume_current: string;
   outlet_weekly_sale_volume: string;
+  outlet_weekly_sale_volume_current: string;
   display_location: string;
-  chiller_size_requested: string;
   chiller_safty_grill: string;
   national_id: string;
   password_photo: string | File;
@@ -268,7 +265,7 @@ export default function AddCompanyWithStepper() {
   const [existingData, setExistingData] = useState<Chiller | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { agentCustomerOptions, channelOptions, ensureAgentCustomerLoaded, ensureChannelLoaded } = useAllDropdownListData();
-
+  const url = process.env.NEXT_PUBLIC_API_URL;
   const params = useParams();
   const uuid = params?.id;
 
@@ -324,6 +321,7 @@ export default function AddCompanyWithStepper() {
         const data = res.data;
 
         // Transform the API response to match our Chiller type
+        const fileBaseUrl = 'https://api.coreexl.com/osa_developmentV2/public';
         const transformedData: Chiller = {
           osa_code: data.osa_code || "",
           warehouse_id: String(data.warehouse?.id),
@@ -334,13 +332,11 @@ export default function AddCompanyWithStepper() {
           address: data.address || "",
           location: data.location || "",
           outlet_id: data.outlet?.id.toString() || 0,
-          specify_if_other_type: data.specify_if_other_type || "",
-          existing_coolers: data.existing_coolers || "",
+          existing_coolers: typeof data.existing_coolers === "string" && data.existing_coolers.length > 0 ? data.existing_coolers.split(",") : [],
           stock_share_with_competitor: data.stock_share_with_competitor || "",
-          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume || "",
+          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume_current || "",
           outlet_weekly_sale_volume: data.outlet_weekly_sale_volume || "",
           display_location: data.display_location || "",
-          chiller_size_requested: data.chiller_size_requested || "",
           chiller_safty_grill: data.chiller_safty_grill || "",
           national_id: data.national_id || "",
           password_photo: data.password_photo || "",
@@ -348,12 +344,12 @@ export default function AddCompanyWithStepper() {
           outlet_stamp: data.outlet_stamp || "",
           lc_letter: data.lc_letter || "",
           trading_licence: data.trading_licence || "",
-          national_id_file: data.national_id_file || "",
-          password_photo_file: data.password_photo_file || "",
-          outlet_address_proof_file: data.outlet_address_proof_file || "",
-          trading_licence_file: data.trading_licence_file || "",
-          lc_letter_file: data.lc_letter_file || "",
-          outlet_stamp_file: data.outlet_stamp_file || "",
+          national_id_file: data.national_id_file ? `${fileBaseUrl}${data.national_id_file}` : "",
+          password_photo_file: data.password_photo_file ? `${fileBaseUrl}${data.password_photo_file}` : "",
+          outlet_address_proof_file: data.outlet_address_proof_file ? `${fileBaseUrl}${data.outlet_address_proof_file}` : "",
+          trading_licence_file: data.trading_licence_file ? `${fileBaseUrl}${data.trading_licence_file}` : "",
+          lc_letter_file: data.lc_letter_file ? `${fileBaseUrl}${data.lc_letter_file}` : "",
+          outlet_stamp_file: data.outlet_stamp_file ? `${fileBaseUrl}${data.outlet_stamp_file}` : "",
         };
 
         setExistingData(transformedData);
@@ -505,17 +501,14 @@ export default function AddCompanyWithStepper() {
 
   const removeFile = (
     fieldName: keyof Chiller,
-    setFieldValue: (
-      field: keyof Chiller,
-      value: Chiller,
-      shouldValidate?: boolean
-    ) => void
+    setFieldValue: FormikHelpers<Chiller>["setFieldValue"]
   ) => {
     setUploadedFiles((prev) => {
       const newFiles = { ...prev };
       delete newFiles[fieldName];
       return newFiles;
     });
+    setFieldValue(fieldName, ""); // Clear the value in Formik as well
     showSnackbar(`File removed from ${fieldName}`, "info");
   };
 
@@ -594,7 +587,7 @@ export default function AddCompanyWithStepper() {
               onClick={() => removeFile(fieldName, setFieldValue)}
               className="text-red-600 hover:text-red-800"
             >
-              <Icon icon="lucide:trash-2" className="w-5 h-5" />
+              <Icon icon="lucide:trash-2" className="w-5 h-5 cursor-pointer" />
             </button>
           </div>
         )}
@@ -618,13 +611,11 @@ export default function AddCompanyWithStepper() {
     address: "",
     location: "",
     outlet_id: "",
-    specify_if_other_type: "",
     existing_coolers: "",
     stock_share_with_competitor: "",
     outlet_weekly_sale_volume_current: "",
     outlet_weekly_sale_volume: "",
     display_location: "",
-    chiller_size_requested: "",
     chiller_safty_grill: "",
     national_id: "",
     password_photo: "",
@@ -688,27 +679,41 @@ export default function AddCompanyWithStepper() {
       // Create FormData for file upload
       const formData = new FormData();
 
-      // Append all non-file fields
+      // Only append select fields (yes/no) as string
+      const selectFields = [
+        'outlet_stamp',
+        'lc_letter',
+        'trading_licence',
+        'password_photo',
+        'outlet_address_proof',
+      ];
       Object.keys(submitValues).forEach((key) => {
-        const value = submitValues[key as keyof Chiller];
-
-        // Skip file fields for now (they will be appended separately)
+        // If this is a select field, append as string
+        if (selectFields.includes(key)) {
+          const value = submitValues[key as keyof Chiller];
+          formData.append(key, value !== undefined && value !== null ? value.toString() : "");
+          return;
+        }
+        // If this is a file field for *_file, skip here (handled below)
         if (fileFields.some(f => f.fieldName === key)) {
           return;
         }
-
-        if (value !== null && value !== undefined && value !== "") {
-          formData.append(key, value.toString());
-        }
+        // All other fields
+        let value = submitValues[key as keyof Chiller];
+        formData.append(key, value !== undefined && value !== null ? value.toString() : "");
       });
 
-      // Always append file fields as binary if present
+      // Only append *_file fields as binary if present, otherwise empty string
       fileFields.forEach((fileField) => {
-        const fileValue = submitValues[fileField.fieldName];
-        if (fileValue instanceof File) {
-          formData.append(fileField.fieldName, fileValue);
+        // Only append *_file fields, not the select fields
+        if (fileField.fieldName.endsWith('_file')) {
+          const fileValue = submitValues[fileField.fieldName];
+          if (fileValue instanceof File) {
+            formData.append(fileField.fieldName, fileValue);
+          } else {
+            formData.append(fileField.fieldName, "");
+          }
         }
-        // If not a File (binary), do not append string path
       });
 
       let res;
@@ -736,7 +741,7 @@ export default function AddCompanyWithStepper() {
     } catch (error) {
       console.error("Submit error:", error);
       showSnackbar(
-        `${isEditMode ? "Update" : "Add"} Chiller failed ❌`,
+        (error as Error).message,
         "error"
       );
     } finally {
@@ -775,6 +780,7 @@ export default function AddCompanyWithStepper() {
               <div>
                 <InputFields
                   required
+                  searchable
                   label="Distributors"
                   name="warehouse_id"
                   value={values.warehouse_id.toString()}
@@ -793,6 +799,7 @@ export default function AddCompanyWithStepper() {
               <div>
                 <InputFields
                   required
+                  searchable
                   label="Customer"
                   name="customer_id"
                   value={values.customer_id.toString()}
@@ -900,20 +907,7 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-              <div>
-                <InputFields
-                  label="Specify If Other Type"
-                  name="specify_if_other_type"
-                  value={values.specify_if_other_type}
-                  onChange={(e) => setFieldValue("specify_if_other_type", e.target.value)}
-                // error={touched.owner_name && errors.owner_name}
-                />
-                <ErrorMessage
-                  name="specify_if_other_type"
-                  component="div"
-                  className="text-sm text-red-600 mb-1"
-                />
-              </div>
+            
 
             </div>
           </ContainerCard>
@@ -926,6 +920,7 @@ export default function AddCompanyWithStepper() {
 
               <div>
                 <InputFields
+                multiSelectChips
                   label="Existing Coolers"
                   name="existing_coolers"
                   isSingle={false}
@@ -966,8 +961,7 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-
-              <div>
+                  <div>
                 <InputFields
                 type="number"
                 integerOnly
@@ -988,6 +982,7 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
+             
 
               <div>
                 <InputFields
@@ -1015,6 +1010,10 @@ export default function AddCompanyWithStepper() {
                 <InputFields
                   label="Display Location"
                   name="display_location"
+                  options={[
+                    { value: "inside", label: "Inside" },
+                    { value: "outside", label: "Outside" },
+                  ]}
                   value={values.display_location}
                   onChange={(e) =>
                     setFieldValue("display_location", e.target.value)
@@ -1028,35 +1027,20 @@ export default function AddCompanyWithStepper() {
                 />
               </div>
 
+            
               <div>
                 <InputFields
-                type="number"
-                integerOnly
-                  label="Chiller Size Requested"
-                  name="chiller_size_requested"
-                  value={values.chiller_size_requested}
-                  onChange={(e) =>
-                    setFieldValue("chiller_size_requested", e.target.value)
-                  }
-                // error={touched.display_location && errors.display_location}
-                />
-                <ErrorMessage
-                  name="chiller_size_requested"
-                  component="div"
-                  className="text-sm text-red-600 mb-1"
-                />
-              </div>
-
-              <div>
-                <InputFields
-                type="number"
-                integerOnly
                   label="Chiller Safety Grill"
                   name="chiller_safty_grill"
                   value={values.chiller_safty_grill}
                   onChange={(e) =>
                     setFieldValue("chiller_safty_grill", e.target.value)
                   }
+                  options={[
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
+                    { value: "na", label: "N/A" },
+                  ]}
                 // error={
                 //   touched.chiller_safty_grill && errors.chiller_safty_grill
                 // }
@@ -1081,8 +1065,8 @@ export default function AddCompanyWithStepper() {
                   label="National ID"
                   name="national_id"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.national_id === "string" ? values.national_id : ""}
                   onChange={(e) => setFieldValue("national_id", e.target.value)}
@@ -1108,8 +1092,8 @@ export default function AddCompanyWithStepper() {
                   label="Password Photo"
                   name="password_photo"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.password_photo === "string" ? values.password_photo : ""}
                   onChange={(e) => setFieldValue("password_photo", e.target.value)}
@@ -1136,8 +1120,8 @@ export default function AddCompanyWithStepper() {
                   label="Outlet Address Proof"
                   name="outlet_address_proof"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.outlet_address_proof === "string" ? values.outlet_address_proof : ""}
                   onChange={(e) => setFieldValue("outlet_address_proof", e.target.value)}
@@ -1163,8 +1147,8 @@ export default function AddCompanyWithStepper() {
                   label="Outlet Stamp"
                   name="outlet_stamp"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.outlet_stamp === "string" ? values.outlet_stamp : ""}
                   onChange={(e) => setFieldValue("outlet_stamp", e.target.value)}
@@ -1191,8 +1175,8 @@ export default function AddCompanyWithStepper() {
                   label="LC Letter"
                   name="lc_letter"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.lc_letter === "string" ? values.lc_letter : ""}
                   onChange={(e) => setFieldValue("lc_letter", e.target.value)}
@@ -1218,8 +1202,8 @@ export default function AddCompanyWithStepper() {
                   label="Trading Licence"
                   name="trading_licence"
                   options={[
-                    { value: "Yes", label: "Yes" },
-                    { value: "No", label: "No" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ]}
                   value={typeof values.trading_licence === "string" ? values.trading_licence : ""}
                   onChange={(e) => setFieldValue("trading_licence", e.target.value)}
@@ -1232,8 +1216,8 @@ export default function AddCompanyWithStepper() {
               </div>
 
               {renderFileInput(
-                "trading_licence",
-                "Trading Licence",
+                "trading_licence_file",
+                "Trading Licence File",
                 values,
                 setFieldValue,
                 errors,

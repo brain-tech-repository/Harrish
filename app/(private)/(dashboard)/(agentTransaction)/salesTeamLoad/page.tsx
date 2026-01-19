@@ -35,8 +35,10 @@ interface SalesmanLoadRow {
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { regionOptions, warehouseAllOptions,warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const { regionOptions, warehouseAllOptions,salesmanOptions,ensureSalesmanLoaded,warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>();
+  const [routeId, setRouteId] = useState<string>();
+  const [salesmanId, setSalesmanId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Refresh table when permissions load
@@ -48,14 +50,10 @@ export default function SalemanLoad() {
 
   // Load dropdown data
   useEffect(() => {
-    ensureChannelLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureItemCategoryLoaded();
-    ensureRegionLoaded();
     ensureRouteLoaded();
-    ensureWarehouseLoaded();
     ensureWarehouseAllLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded, ensureWarehouseAllLoaded]);
+    ensureSalesmanLoaded();
+  }, [ ensureRouteLoaded, ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const columns: configType["columns"] = [
     {
@@ -93,6 +91,16 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return s.route?.code || "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(routeOptions) ? routeOptions : [],
+                onSelect: (selected) => {
+                    setRouteId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: routeId,
+            },
     },
     {
       key: "salesman",
@@ -101,6 +109,16 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return `${s.salesman?.code ?? ""} - ${s.salesman?.name ?? ""}`;
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                onSelect: (selected) => {
+                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: salesmanId,
+            },
     },
     {
       key: "salesman_type", label: "Sales Team Type",
@@ -143,6 +161,9 @@ export default function SalemanLoad() {
 
   // In-memory cache for salesmanLoadHeaderList API calls
   const salesmanLoadHeaderCache = useRef<{ [key: string]: any }>({});
+     useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [ warehouseId, routeId,salesmanId]);
 
   const fetchSalesmanLoadHeader = useCallback(
     async (
@@ -153,6 +174,16 @@ export default function SalemanLoad() {
         page: page.toString(),
         pageSize: pageSize.toString(),
       };
+     
+            if (warehouseId) {
+                params.warehouse_id = String(warehouseId);
+            }
+            if (routeId) {
+                params.route_id = String(routeId);
+            }
+            if (salesmanId) {
+                params.salesman_id = String(salesmanId);
+            }
       const cacheKey = JSON.stringify(params);
       if (salesmanLoadHeaderCache.current[cacheKey]) {
         const listRes = salesmanLoadHeaderCache.current[cacheKey];
@@ -165,7 +196,7 @@ export default function SalemanLoad() {
       }
       try {
         setLoading(true);
-        const listRes = await salesmanLoadHeaderList({});
+        const listRes = await salesmanLoadHeaderList(params);
         salesmanLoadHeaderCache.current[cacheKey] = listRes;
         setLoading(false);
         return {
@@ -185,7 +216,7 @@ export default function SalemanLoad() {
         };
       }
     },
-    [setLoading, showSnackbar]
+    [setLoading, showSnackbar, warehouseId, routeId,salesmanId]
   );
 
   // In-memory cache for filterBy API calls
@@ -334,7 +365,12 @@ export default function SalemanLoad() {
                 onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
               },
             ],
-            filterRenderer: FilterComponent,
+            filterRenderer: (props) => (
+                                                                                    <FilterComponent
+                                                                                    currentDate={true}
+                                                                                      {...props}
+                                                                                    />
+                                                                                  ),
             actions: can("create") ? [
               <SidebarBtn
                 key={0}

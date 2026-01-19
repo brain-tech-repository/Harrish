@@ -1488,7 +1488,7 @@ export default function OrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
+                  <SidebarBtn leadingIcon="mdi:check" type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );

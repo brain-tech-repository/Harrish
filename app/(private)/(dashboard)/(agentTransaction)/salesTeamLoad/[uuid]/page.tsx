@@ -961,6 +961,7 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
           </button>
           <SidebarBtn
             isActive={true}
+            leadingIcon="mdi:check"
             label={submitting ? "Creating Load..." : "Create Load"}
             onClick={handleSubmit}
             disabled={

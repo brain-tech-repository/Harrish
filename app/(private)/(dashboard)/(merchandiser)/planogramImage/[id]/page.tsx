@@ -146,7 +146,7 @@ export default function Page() {
         <Link href="/merchandiser/planogramImage">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold">{isEditMode ? "Update Planogram Image" : "Add New Planogram Image"}</h1>
+        <h1 className="text-xl font-semibold">{isEditMode ? "Update Planogram Image" : "Add Planogram Image"}</h1>
       </div>
       <Formik
         initialValues={initialValues}
@@ -257,8 +257,13 @@ export default function Page() {
                 Cancel
               </button>
               <SidebarBtn
-                label={isSubmitting ? "Submitting..." : "Submit"}
+                label={isSubmitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"}
                 isActive={!isSubmitting}
+                disabled={isSubmitting}
                 leadingIcon="mdi:check"
                 type="submit"
               />

@@ -1351,6 +1351,7 @@ export default function PurchaseOrderAddEditPage() {
                   </button>
                   <SidebarBtn
                     type="submit" isActive={true}
+                    leadingIcon="mdi:check"
                     label={isSubmitting ? "Creating Return..." : "Create Return"}
                     disabled={isSubmitting || !values.turnman || !values.truckNo || !values.contactNo || !itemData || itemData.some(it => !it.item_id || !it.uom_id)}
                     onClick={() => submitForm()}

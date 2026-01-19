@@ -1928,6 +1928,7 @@ export default function InvoiceddEditPage() {
                     <SidebarBtn
                         isActive={true}
                         disabled={isSubmitting}
+                        leadingIcon="mdi:check"
                         label={
                             isSubmitting
                                 ? (checkout == 1?"Checkout":isEditMode ? "Updating Invoice..." : "Creating Invoice...")

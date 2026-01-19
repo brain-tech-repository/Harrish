@@ -853,7 +853,8 @@ export default function AddSurveyTabs() {
                     <SidebarBtn
                       type="button"
                       leadingIcon="mdi:check"
-                      label="Create Survey"
+                      disabled={formik.isSubmitting}
+                      label={formik.isSubmitting ? "Creating Survey..." : "Create Survey"}
                       labelTw="hidden sm:block"
                       isActive
                       onClick={() => handleCreateSurvey(values, formik)}
