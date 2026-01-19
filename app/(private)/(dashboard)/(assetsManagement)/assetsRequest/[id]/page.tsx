@@ -46,6 +46,33 @@ const SUPPORTED_FORMATS = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
+
+// Helper to make file required if corresponding dropdown is 'yes'
+function requiredIfDropdownYes(dropdownField: keyof Chiller) {
+  return Yup.mixed()
+    .test("fileRequiredIfYes", "File is required", function (value) {
+      const { parent } = this;
+      if (parent && parent[dropdownField] === 'yes') {
+        return value instanceof File || (typeof value === 'string' && !!value);
+      }
+      return true;
+    })
+    .test("fileSize", "File too large (max 10MB)", (value) => {
+      if (!value) return true;
+      if (value instanceof File) {
+        return value.size <= FILE_SIZE;
+      }
+      return true;
+    })
+    .test("fileFormat", "Unsupported Format", (value) => {
+      if (!value) return true;
+      if (value instanceof File) {
+        return SUPPORTED_FORMATS.includes(value.type);
+      }
+      return true;
+    });
+}
+
 const fileValidation = Yup.mixed()
   .test("fileSize", "File too large (max 10MB)", (value) => {
     if (!value) return true; // No file is valid (optional field)
@@ -76,6 +103,7 @@ const validationSchema = Yup.object({
   landmark: Yup.string()
     .trim()
     .max(255, "Landmark cannot exceed 255 characters"),
+    chiller_size_requested: Yup.string().required("Model Number is required"),
   existing_coolers: Yup.string(),
   outlet_weekly_sale_volume_current: Yup.string(),
   outlet_weekly_sale_volume: Yup.string(),
@@ -98,12 +126,12 @@ const validationSchema = Yup.object({
   password_photo: fileValidation,
   outlet_address_proof: fileValidation,
   outlet_stamp: fileValidation,
-  national_id_file: fileValidation,
-  password_photo_file: fileValidation,
-  outlet_address_proof_file: fileValidation,
-  trading_licence_file: fileValidation,
-  lc_letter_file: fileValidation,
-  outlet_stamp_file: fileValidation,
+  national_id_file: requiredIfDropdownYes('national_id'),
+  password_photo_file: requiredIfDropdownYes('password_photo'),
+  outlet_address_proof_file: requiredIfDropdownYes('outlet_address_proof'),
+  trading_licence_file: requiredIfDropdownYes('trading_licence'),
+  lc_letter_file: requiredIfDropdownYes('lc_letter'),
+  outlet_stamp_file: requiredIfDropdownYes('outlet_stamp'),
 });
 
 const stepSchemas = [
@@ -115,6 +143,7 @@ const stepSchemas = [
     contact_number: validationSchema.fields.contact_number,
     landmark: validationSchema.fields.landmark,
     outlet_id: validationSchema.fields.outlet_id,
+    chiller_size_requested: validationSchema.fields.chiller_size_requested,
   }),
 
   // Step 2: Location and Personnel
@@ -142,6 +171,7 @@ type Chiller = {
   osa_code: string;
   warehouse_id: string;
   customer_id:  string;
+  chiller_size_requested:  string;
   owner_name: string;
   contact_number: string;
   landmark: string;
@@ -264,7 +294,7 @@ export default function AddCompanyWithStepper() {
   const [isLoading, setIsLoading] = useState(true);
   const [existingData, setExistingData] = useState<Chiller | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { agentCustomerOptions, channelOptions, ensureAgentCustomerLoaded, ensureChannelLoaded } = useAllDropdownListData();
+  const { agentCustomerOptions,assetsModelOptions, channelOptions, ensureAgentCustomerLoaded, ensureChannelLoaded,ensureAssetsModelLoaded } = useAllDropdownListData();
   const url = process.env.NEXT_PUBLIC_API_URL;
   const params = useParams();
   const uuid = params?.id;
@@ -288,6 +318,7 @@ export default function AddCompanyWithStepper() {
   const router = useRouter();
 
   useEffect(() => {
+    ensureAssetsModelLoaded();
     ensureAgentCustomerLoaded();
     ensureChannelLoaded();
   }, []);
@@ -324,6 +355,7 @@ export default function AddCompanyWithStepper() {
         const fileBaseUrl = 'https://api.coreexl.com/osa_developmentV2/public';
         const transformedData: Chiller = {
           osa_code: data.osa_code || "",
+          chiller_size_requested: String(data.chiller_size_requested?.id || ""),
           warehouse_id: String(data.warehouse?.id),
           customer_id: String(data.customer?.id),
           owner_name: data.owner_name || "",
@@ -334,7 +366,7 @@ export default function AddCompanyWithStepper() {
           outlet_id: data.outlet?.id.toString() || 0,
           existing_coolers: typeof data.existing_coolers === "string" && data.existing_coolers.length > 0 ? data.existing_coolers.split(",") : [],
           stock_share_with_competitor: data.stock_share_with_competitor || "",
-          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume_current || "",
+          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume_current,
           outlet_weekly_sale_volume: data.outlet_weekly_sale_volume || "",
           display_location: data.display_location || "",
           chiller_safty_grill: data.chiller_safty_grill || "",
@@ -611,6 +643,7 @@ export default function AddCompanyWithStepper() {
     address: "",
     location: "",
     outlet_id: "",
+    chiller_size_requested: "",
     existing_coolers: "",
     stock_share_with_competitor: "",
     outlet_weekly_sale_volume_current: "",
@@ -632,7 +665,7 @@ export default function AddCompanyWithStepper() {
   };
 
   const stepFields = [
-    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "display_location", "chiller_safty_grill"],
+    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "outlet_weekly_sale_volume_current","display_location", "chiller_safty_grill","chiller_size_requested"],
     ["warehouse_id", "salesman_id", "outlet_id", "manager_sales_marketing"],
     ["national_id", "outlet_stamp", "model", "hil", "ir_reference_no", "installation_done_by", "date_lnitial", "date_lnitial2", "contract_attached", "machine_number", "brand", "asset_number"],
     ["lc_letter", "trading_licence", "password_photo", "outlet_address_proof", "chiller_asset_care_manager", "national_id_file", "password_photo_file", "outlet_address_proof_file", "trading_licence_file", "lc_letter_file", "outlet_stamp_file", "sign__customer_file", "chiller_manager_id", "is_merchandiser", "status", "fridge_status", "iro_id", "remark"]
@@ -781,6 +814,7 @@ export default function AddCompanyWithStepper() {
                 <InputFields
                   required
                   searchable
+                  disabled
                   label="Distributors"
                   name="warehouse_id"
                   value={values.warehouse_id.toString()}
@@ -800,6 +834,7 @@ export default function AddCompanyWithStepper() {
                 <InputFields
                   required
                   searchable
+                  disabled
                   label="Customer"
                   name="customer_id"
                   value={values.customer_id.toString()}
@@ -907,7 +942,20 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-            
+                   <InputFields
+                                  required
+                                  label="Model Number"
+                                  name="chiller_size_requested"
+                                  value={values.chiller_size_requested}
+                                  options={assetsModelOptions}
+                                  onChange={(e) => setFieldValue("chiller_size_requested", e.target.value)}
+                                  // error={touched.chiller_size_requested && errors.chiller_size_requested}
+                                />
+                                <ErrorMessage
+                  name="chiller_size_requested"
+                  component="div"
+                  className="text-sm text-red-600 mb-1"
+                />
 
             </div>
           </ContainerCard>

@@ -1030,7 +1030,7 @@ export default function OrderAddEditPage() {
           // Optionally handle error, but don't block success
         }
         showSnackbar("Order created successfully", "success");
-        router.push("/distributorsOrder");
+        router.push("/distributorsorder");
       }
     }
    
@@ -1484,11 +1484,11 @@ export default function OrderAddEditPage() {
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-                    onClick={() => router.push("/distributorsOrder")}
+                    onClick={() => router.push("/distributorsorder")}
                   >
                     Cancel
                   </button>
-                  <SidebarBtn leadingIcon="mdi:check" type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
+                  <SidebarBtn  type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );
