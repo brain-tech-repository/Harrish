@@ -15,7 +15,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Logo from "@/app/components/logo";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
-const title = "CAPS Collection Details";
+const title = "CAPS Master Collection Details";
 const backBtnUrl = "/capsCollection";
 
 export default function ViewPage() {
@@ -60,7 +60,7 @@ export default function ViewPage() {
         }
       } catch (err) {
         console.error(err);
-        showSnackbar("Failed to fetch CAPS collection details", "error");
+        showSnackbar("Failed to fetch CAPS Master Collection details", "error");
       } finally {
         setLoading(false);
       }

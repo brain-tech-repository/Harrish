@@ -411,7 +411,7 @@ export default function AddEditCapsCollection() {
             setTableData(loadedRows);
           }
         } catch {
-          showSnackbar("Failed to fetch CAPS collection details", "error");
+          showSnackbar("Failed to fetch CAPS Master collection details", "error");
         } finally {
           setLoading(false);
         }
@@ -535,8 +535,8 @@ export default function AddEditCapsCollection() {
       } else {
         showSnackbar(
           isEditMode
-            ? "CAPS Collection updated successfully"
-            : "CAPS Collection added successfully",
+            ? "CAPS Master Collection updated successfully"
+            : "CAPS Master Collection added successfully",
           "success"
         );
         router.push("/capsCollection");
@@ -565,7 +565,7 @@ export default function AddEditCapsCollection() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Update CAPS Collection" : "Add Master Collection"}
+            {isEditMode ? "Update CAPS Master Collection" : "Add Master Collection"}
           </h1>
         </div>
       </div>
@@ -588,7 +588,7 @@ export default function AddEditCapsCollection() {
 
         {/* Form */}
         <h2 className="text-lg font-medium text-gray-800 mb-4">
-          CAPS Collection Details
+          CAPS Master Collection Details
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
@@ -849,7 +849,7 @@ export default function AddEditCapsCollection() {
           <SidebarBtn
             isActive={!submitting}
             leadingIcon="mdi:check"
-            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Collection" : "Create CAPS Collection")}
+            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Master Collection" : "Create CAPS Master Collection")}
             onClick={handleSubmit}
             disabled={submitting || !form.warehouse || !form.customer || tableData.some(row => !row.item || !row.uom)}
           />

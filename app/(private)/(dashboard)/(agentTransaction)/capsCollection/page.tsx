@@ -246,7 +246,7 @@ export default function SalemanLoad() {
   ) => {
     try {
       if (!dataOrIds || dataOrIds.length === 0) {
-        showSnackbar("No CAPS Collection selected", "error");
+        showSnackbar("No CAPS Master Collection selected", "error");
         return;
       }
 
@@ -259,7 +259,7 @@ export default function SalemanLoad() {
         const data = dataOrIds as TableRow[];
         const selectedRow = selectedRowOrStatus as number[] | undefined;
         if (!selectedRow || selectedRow.length === 0) {
-          showSnackbar("No CAPS Collection selected", "error");
+          showSnackbar("No CAPS MasterCollection selected", "error");
           return;
         }
         selectedRowsData = data
@@ -271,7 +271,7 @@ export default function SalemanLoad() {
         // otherwise treat dataOrIds as an array of UUIDs
         const ids = dataOrIds as (string | number)[];
         if (ids.length === 0) {
-          showSnackbar("No CAPS Collection selected", "error");
+          showSnackbar("No CAPS Master Collection selected", "error");
           return;
         }
         selectedRowsData = ids;
@@ -279,7 +279,7 @@ export default function SalemanLoad() {
       }
 
       if (selectedRowsData.length === 0) {
-        showSnackbar("No CAPS Collection selected", "error");
+        showSnackbar("No CAPS Master Collection selected", "error");
         return;
       }
 
@@ -287,15 +287,15 @@ export default function SalemanLoad() {
 
       // Check if response has error
       if (response?.error || response?.message?.includes("error") || response?.errors) {
-        const errorMessage = response?.message || response?.data?.message || "Failed to update CAPS Collection status";
+        const errorMessage = response?.message || response?.data?.message || "Failed to update CAPS Master Collection status";
         showSnackbar(errorMessage, "error");
         return;
       }
 
       setRefreshKey((k) => k + 1);
-      showSnackbar("CAPS Collection status updated successfully", "success");
+      showSnackbar("CAPS Master Collection status updated successfully", "success");
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || "Failed to update CAPS Collection status";
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to update CAPS Master Collection status";
       showSnackbar(errorMessage, "error");
     }
   };
@@ -362,7 +362,7 @@ export default function SalemanLoad() {
             filterBy: filterBy,
           },
           header: {
-            title: "CAPS Collection",
+            title: "CAPS Master Collection",
             threeDot: [
               {
                 icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
