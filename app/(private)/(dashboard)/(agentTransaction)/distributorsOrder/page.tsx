@@ -27,7 +27,37 @@ import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 // import { useLoading } from "@/app/services/loadingContext";
 
-const columns = [
+export default function CustomerInvoicePage() {
+  const { can, permissions } = usePagePermissions();
+  const { setLoading } = useLoading();
+
+  // const { setLoading } = useLoading();
+
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter();
+  const { warehouseOptions, ensureWarehouseLoaded, salesmanOptions, ensureSalesmanLoaded } = useAllDropdownListData();
+  useEffect(() => {
+    ensureWarehouseLoaded();
+    ensureSalesmanLoaded();
+  }, [ensureWarehouseLoaded, ensureSalesmanLoaded]);
+  
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
+  const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+
+  const [warehouseId, setWarehouseId] = useState<string>();
+  const [salesmanId, setSalesmanId] = useState<string>();
+  const columns = [
   {
     key: "created_at",
     label: "Order Date",
@@ -72,6 +102,17 @@ const columns = [
       if (!code && !name) return "-";
       return `${code}${code && name ? " - " : ""}${name}`;
     },
+    filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
   },
 
   {
@@ -94,6 +135,17 @@ const columns = [
       const name = row.salesman_name ?? "";
       if (!code && !name) return "-";
       return `${code}${code && name ? " - " : ""}${name}`;
+    },
+    filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
     },
   },
   {
@@ -147,28 +199,6 @@ const columns = [
   },
 ];
 
-export default function CustomerInvoicePage() {
-  const { can, permissions } = usePagePermissions();
-  const { setLoading } = useLoading();
-
-  // const { setLoading } = useLoading();
-
-  const { showSnackbar } = useSnackbar();
-  const router = useRouter();
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Refresh table when permissions load
-  useEffect(() => {
-    if (permissions.length > 0) {
-      setRefreshKey((prev) => prev + 1);
-    }
-  }, [permissions]);
-
-  const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
-
   // Memoize the fetchOrders API call so it only fetches once per session
   const fetchOrdersCache = useRef<{ [key: string]: listReturnType }>({});
   const fetchOrders = useCallback(
@@ -182,10 +212,17 @@ export default function CustomerInvoicePage() {
       }
       try {
         // setLoading(true);
-        const listRes = await agentOrderList({
+        let params: any = {
           limit: pageSize.toString(),
           page: page.toString(),
-        });
+        };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
+        if (salesmanId) {
+            params.salesman_id = salesmanId;
+        }
+        const listRes = await agentOrderList(params);
         const result = {
           data: listRes.data || [],
           total: listRes.pagination.totalPages,
@@ -200,7 +237,7 @@ export default function CustomerInvoicePage() {
         throw error;
       }
     },
-    []
+    [agentOrderList, warehouseId, salesmanId]
   );
 
   // In-memory cache for filterBy API calls
@@ -247,7 +284,7 @@ export default function CustomerInvoicePage() {
         pageSize: pagination.limit || pageSize,
       };
     },
-    [],
+    [agentOrderList, warehouseId, salesmanId],
   );
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
@@ -310,6 +347,10 @@ export default function CustomerInvoicePage() {
     };
     res();
   }, []);
+
+    useEffect(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, [warehouseId, salesmanId]);
 
   return (
     <>

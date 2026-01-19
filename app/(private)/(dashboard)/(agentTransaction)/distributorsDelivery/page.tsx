@@ -28,94 +28,6 @@ import { downloadPDFGlobal } from "@/app/services/allApi";
 //     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
 // ];
 
-// 🔹 Table Columns
-const columns = [
-    {
-        key: "delivery_date",
-        label: "Delivery Date",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            if (!row.delivery_date) return "-";
-            const date = new Date(row.delivery_date as string);
-            return formatWithPattern(new Date(row.delivery_date), "DD MMM YYYY", "en-GB").toLowerCase() || "-";
-        }
-    },
-    { key: "delivery_code", label: "Delivery Code", showByDefault: true },
-    // { key: "order_code", label: "Order Code",showByDefault: true },
-    {
-        key: "customer",
-        label: "Customer",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const customer = typeof row.customer === "string" ? { code: "", name: row.customer } : (row.customer ?? {});
-            const code = customer.code ?? "";
-            const name = customer.name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        }
-    },
-    {
-        key: "route",
-        label: "Route",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const route = typeof row.route === "string" ? { code: "", name: row.route } : (row.route ?? {});
-            const code = route.code ?? "";
-            const name = route.name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        }
-    },
-    {
-        key: "warehouse",
-        label: "Distributor",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const warehouse = typeof row.warehouse === "string" ? { code: "", name: row.warehouse } : (row.warehouse ?? {});
-            const code = warehouse.code ?? "";
-            const name = warehouse.name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        }
-    },
-    {
-        key: "salesman",
-        label: "Sales Team",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const salesman = typeof row.salesman === "string" ? { code: "", name: row.salesman } : (row.salesman ?? {});
-            const code = salesman.code ?? "";
-            const name = salesman.name ?? "";
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        },
-    },
-    // { key: "Invoice_type", label: "Invoice Type" },
-    // { key: "Invoice_no", label: "Invoice No" },
-    // { key: "sap_id", label: "SAP ID" },
-    // { key: "sap_status", label: "SAP Status" },
-    { key: "total", label: "Amount", showByDefault: true, render: (row: TableDataType) => toInternationalNumber(Number(row.total) || 0) },
-    {
-        key: "approval_status",
-        label: "Approval Status",
-        showByDefault: true,
-        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-    },
-    {
-        key: "status",
-        label: "Status",
-        render: (row: TableDataType) => {
-            // Treat status 1 or 'active' (case-insensitive) as active
-            const isActive =
-                String(row.status) === "1" ||
-                (typeof row.status === "string" &&
-                    row.status.toLowerCase() === "active");
-            return <StatusBtn isActive={isActive} />;
-        },
-        showByDefault: true,
-    },
-];
-
 export default function CustomerInvoicePage() {
     const { can, permissions } = usePagePermissions();
     const { showSnackbar } = useSnackbar();
@@ -134,7 +46,7 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const { customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions, ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const { warehouseOptions, customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions, ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
     // Load dropdown data
     useEffect(() => {
@@ -147,7 +59,15 @@ export default function CustomerInvoicePage() {
         ensureRouteLoaded();
         ensureSalesmanLoaded();
         ensureWarehouseAllLoaded();
-    }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+        ensureWarehouseLoaded();
+    }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureWarehouseLoaded]);
+
+     const [warehouseId, setWarehouseId] = useState<string>("");
+  const [salesmanId, setSalesmanId] = useState<string>("");
+
+  useEffect(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, [warehouseId, salesmanId]);
 
     // Memoize delivery data to avoid multiple API calls
     const [deliveryDataCache, setDeliveryDataCache] = useState<{ [key: string]: any }>({});
@@ -190,7 +110,14 @@ export default function CustomerInvoicePage() {
         page: number = 1,
         pageSize: number = 50
     ): Promise<listReturnType> => {
-        const params = { page: page.toString(), per_page: pageSize.toString() };
+        // Add warehouseId to params if set
+        const params: Record<string, string> = { page: page.toString(), per_page: pageSize.toString() };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
+        if (salesmanId) {
+            params.salesman_id = salesmanId;
+        }
         const result = await fetchDeliveryData(params);
         if (!result) {
             return {
@@ -206,7 +133,7 @@ export default function CustomerInvoicePage() {
             currentPage: result?.pagination?.current_page || 1,
             pageSize: result?.pagination?.per_page || pageSize,
         };
-    }, [fetchDeliveryData]);
+    }, [fetchDeliveryData, warehouseId, salesmanId]);
 
     // Fetch for filter
     const filterBy = useCallback(
@@ -240,7 +167,7 @@ export default function CustomerInvoicePage() {
                 pageSize: pagination?.per_page || pageSize,
             };
         },
-        [fetchDeliveryData]
+        [fetchDeliveryData, warehouseId, salesmanId]
     );
 
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
@@ -296,6 +223,115 @@ export default function CustomerInvoicePage() {
             setLoading(false);
         }
     };
+
+    const columns = [
+    {
+        key: "delivery_date",
+        label: "Delivery Date",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            if (!row.delivery_date) return "-";
+            const date = new Date(row.delivery_date as string);
+            return formatWithPattern(new Date(row.delivery_date), "DD MMM YYYY", "en-GB").toLowerCase() || "-";
+        }
+    },
+    { key: "delivery_code", label: "Delivery Code", showByDefault: true },
+    // { key: "order_code", label: "Order Code",showByDefault: true },
+    {
+        key: "customer",
+        label: "Customer",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const customer = typeof row.customer === "string" ? { code: "", name: row.customer } : (row.customer ?? {});
+            const code = customer.code ?? "";
+            const name = customer.name ?? "";
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        }
+    },
+    {
+        key: "route",
+        label: "Route",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const route = typeof row.route === "string" ? { code: "", name: row.route } : (row.route ?? {});
+            const code = route.code ?? "";
+            const name = route.name ?? "";
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        }
+    },
+    {
+        key: "warehouse",
+        label: "Distributor",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const warehouse = typeof row.warehouse === "string" ? { code: "", name: row.warehouse } : (row.warehouse ?? {});
+            const code = warehouse.code ?? "";
+            const name = warehouse.name ?? "";
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        },
+        filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
+    },
+    {
+        key: "salesman",
+        label: "Sales Team",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const salesman = typeof row.salesman === "string" ? { code: "", name: row.salesman } : (row.salesman ?? {});
+            const code = salesman.code ?? "";
+            const name = salesman.name ?? "";
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        },
+        filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "salesman_id",
+            options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: salesmanId,
+        },
+    },
+    // { key: "Invoice_type", label: "Invoice Type" },
+    // { key: "Invoice_no", label: "Invoice No" },
+    // { key: "sap_id", label: "SAP ID" },
+    // { key: "sap_status", label: "SAP Status" },
+    { key: "total", label: "Amount", showByDefault: true, render: (row: TableDataType) => toInternationalNumber(Number(row.total) || 0) },
+    {
+        key: "approval_status",
+        label: "Approval Status",
+        showByDefault: true,
+        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+    },
+    {
+        key: "status",
+        label: "Status",
+        render: (row: TableDataType) => {
+            // Treat status 1 or 'active' (case-insensitive) as active
+            const isActive =
+                String(row.status) === "1" ||
+                (typeof row.status === "string" &&
+                    row.status.toLowerCase() === "active");
+            return <StatusBtn isActive={isActive} />;
+        },
+        showByDefault: true,
+    },
+];
 
     return (
         <div className="flex flex-col h-full">
