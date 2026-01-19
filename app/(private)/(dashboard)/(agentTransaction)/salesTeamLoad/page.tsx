@@ -21,6 +21,7 @@ import FilterComponent from "@/app/components/filterComponent";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+// import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 interface SalesmanLoadRow {
   osa_code?: string;
   warehouse?: { code?: string; name?: string };
@@ -34,8 +35,8 @@ interface SalesmanLoadRow {
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { regionOptions, warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
-
+  const { regionOptions, warehouseAllOptions,warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Refresh table when permissions load
@@ -53,9 +54,8 @@ export default function SalemanLoad() {
     ensureRegionLoaded();
     ensureRouteLoaded();
     ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
-
-
+    ensureWarehouseAllLoaded();
+  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded, ensureWarehouseAllLoaded]);
 
   const columns: configType["columns"] = [
     {
@@ -75,6 +75,16 @@ export default function SalemanLoad() {
             : s.warehouse?.name || "-";
         return `${s.warehouse?.code ?? ""} - ${shortName}`;
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
     },
     {
       key: "route",
