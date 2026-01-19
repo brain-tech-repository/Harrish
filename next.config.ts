@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
         { source: '/distributorsdelivery/:path*', destination: '/distributorsDelivery/:path*' },
         { source: '/distributorsexchange/:path*', destination: '/distributorsExchange/:path*' },
         { source: '/distributorsinvoice/:path*', destination: '/distributorsInvoice/:path*' },
-        { source: '/distributorsorder/:path*', destination: '/distributorsOrder/:path*' },
+        { source: '/distributorsorder/:path*', destination: '/distributorsOrder/order/:path*' },
         { source: '/distributorsorder/', destination: '/distributorsOrder/' },
         { source: '/distributorsreturn/:path*', destination: '/distributorsReturn/:path*' },
         { source: '/newcustomer/:path*', destination: '/newCustomer/:path*' },
