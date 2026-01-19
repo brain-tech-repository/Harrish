@@ -85,14 +85,14 @@ const nextConfig: NextConfig = {
         { source: '/survey/:path*', destination: '/survey/:path*' },
         { source: '/surveyquestion/:path*', destination: '/surveyQuestion/:path*' },
         { source: '/view/:path*', destination: '/view/:path*' },
-        // reports
+        // reports 
         { source: '/customerreport/:path*', destination: '/customerReport/:path*' },
         { source: '/salesreportdashboard/:path*', destination: '/salesReportDashboard/:path*' },
         // alert
         { source: '/alert/:path*', destination: '/alert/:path*' },
         // harrisTransaction
         { source: '/customerorder/:path*', destination: '/customerOrder/:path*' },
-        // profile
+        // profile 
         { source: '/profile/:path*', destination: '/profile/:path*' },
         // settingProfile
         { source: '/settingprofile/:path*', destination: '/settingProfile/:path*' },
