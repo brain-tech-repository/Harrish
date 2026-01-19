@@ -386,7 +386,7 @@ export default function AddEditCapsCollection() {
                 uomOpts = selectedItem.uoms.map((uom) => {
                   const uu = uom as Record<string, unknown>;
                   return {
-                    value: String(uu['id'] ?? ""),
+                    value: String(uu['uom_id'] ?? ""),
                     label: String(uu['name'] ?? ""),
                     price: String(uu['price'] ?? "0"),
                   };
@@ -514,11 +514,14 @@ export default function AddEditCapsCollection() {
         code: code || form.code,
         warehouse_id: parseInt(form.warehouse),
         customer: form.customer,
+        Contact_no : Number(customerContactNo),
         status: parseInt(form.status),
         details: validRows.map((r) => ({
           item_id: parseInt(r.item),
           uom_id: parseInt(r.uom),
           collected_quantity: parseFloat(r.collectQty),
+          price: Number(r.price),
+          total: Number(r.total),
           status: 1,
         })),
       };
@@ -532,8 +535,8 @@ export default function AddEditCapsCollection() {
       } else {
         showSnackbar(
           isEditMode
-            ? "CAPS Master Collection updated successfully"
-            : "CAPS Master Collection added successfully",
+            ? "CAPS Collection updated successfully"
+            : "CAPS Collection added successfully",
           "success"
         );
         router.push("/capsCollection");
@@ -562,7 +565,7 @@ export default function AddEditCapsCollection() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit CAPS Master Collection" : "Add CAPS Master Collection"}
+            {isEditMode ? "Update CAPS Collection" : "Add Master Collection"}
           </h1>
         </div>
       </div>
@@ -585,7 +588,7 @@ export default function AddEditCapsCollection() {
 
         {/* Form */}
         <h2 className="text-lg font-medium text-gray-800 mb-4">
-          CAPS Master Collection Details
+          CAPS Collection Details
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
@@ -686,7 +689,7 @@ export default function AddEditCapsCollection() {
                       // Priority 1: Use itemUOMData from itemsWithUOM (populated by warehouseStockTopOrders)
                       if (itemUOMData?.uoms && itemUOMData.uoms.length > 0) {
                         const uomOpts = itemUOMData.uoms.map((uom: ItemUOM) => ({
-                          value: String(uom.id ?? ""),
+                          value: String(uom.uom_id ?? ""),
                           label: String(uom.name ?? ""),
                           price: String(uom.price ?? "0"),
                         }));
@@ -710,7 +713,7 @@ export default function AddEditCapsCollection() {
                             price = selectedOrder.pricing?.buom_ctn_price || "-";
                           }
                           return {
-                            value: String(uom.id ?? ""),
+                            value: String(uom.uom_id ?? ""),
                             label: String(uom.name ?? ""),
                             price: String(price ?? "0"),
                           };
@@ -785,14 +788,14 @@ export default function AddEditCapsCollection() {
                 key: "price",
                 label: "Price",
                 render: (row) => (
-                  <span>{toInternationalNumber(parseFloat(row.price || "0"))}</span>
+                  <span>{toInternationalNumber((row.price || "0"),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 ),
               },
               {
                 key: "total",
                 label: "Total",
                 render: (row) => (
-                  <span>{toInternationalNumber(parseFloat(row.total || "0"))}</span>
+                  <span>{toInternationalNumber((row.total || "0"),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 ),
               },
               {
@@ -845,6 +848,7 @@ export default function AddEditCapsCollection() {
           </button>
           <SidebarBtn
             isActive={!submitting}
+            leadingIcon="mdi:check"
             label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Collection" : "Create CAPS Collection")}
             onClick={handleSubmit}
             disabled={submitting || !form.warehouse || !form.customer || tableData.some(row => !row.item || !row.uom)}

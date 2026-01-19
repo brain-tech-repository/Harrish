@@ -60,7 +60,7 @@ export default function ViewPage() {
   // Image modal state
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imagesToShow, setImagesToShow] = useState<string[]>([]);
-  const [startIndex, setStartIndex] = useState(0);
+  const [startIndex, setStartIndex] = useState(1);
   // const url = process.env.NEXT_PUBLIC_API_URL;
   const url = "https://api.coreexl.com/osa_developmentV2/public/";
   useEffect(() => {

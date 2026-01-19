@@ -8,6 +8,7 @@ import InputFields from "@/app/components/inputFields";
 import { StockTransferTopOrders, addStockTransfer } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import { Rowdies } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -25,6 +26,8 @@ export default function StockTransfer() {
         }
     }, [warehouseOptions]);
     const router = useRouter();
+    const [showLoading,setShowLoading]=useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
 
@@ -72,6 +75,7 @@ export default function StockTransfer() {
             try {
                 // Clear current rows so the table can show its skeleton while fetching
                 setItemData([]);
+                setShowLoading(true);
                 const res = await StockTransferTopOrders(form.source_warehouse);
 
                 const stocks = (res?.data || res || []).filter(
@@ -93,6 +97,7 @@ export default function StockTransfer() {
                 // console.error(error);
                 showSnackbar("Failed to fetch items", "error");
             } finally {
+                setShowLoading(false);
                 // no global loader; table skeleton handles the fetch state
             }
         };
@@ -138,6 +143,7 @@ export default function StockTransfer() {
 
         try {
             setLoading(true);
+            setIsSubmitting(true);
             const res = await addStockTransfer(payload);
 
             if (res?.error) {
@@ -150,6 +156,7 @@ export default function StockTransfer() {
             showSnackbar("Something went wrong", "error");
         } finally {
             setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -207,7 +214,7 @@ export default function StockTransfer() {
                     idx: idx.toString(),
                 }))}
                 config={{
-
+                    // showNestedLoading: true,
                     table: { height: 450 },
                     columns: [
                         {
@@ -238,19 +245,26 @@ export default function StockTransfer() {
                         },
                     ],
                     pageSize: itemData.length || 10,
-                    showNestedLoading: false
+                    showNestedLoading: showLoading
                 }} 
 
             />
 
             {/* SUBMIT */}
             <div className="flex justify-end mt-6">
-                <button
+                <SidebarBtn
+                    isActive
+                    onClick={handleSubmit}
+                    leadingIcon="mdi:check"
+                    disabled={isSubmitting || !form.source_warehouse || !form.destination_warehouse }
+                    label={isSubmitting ? "Submitting..." : "Submit"}
+                />
+                {/* <button
                     onClick={handleSubmit}
                     className="bg-red-600 text-white px-8 py-2 rounded-md"
                 >
                     Submit
-                </button>
+                </button> */}
                 
             </div>
         </ContainerCard>

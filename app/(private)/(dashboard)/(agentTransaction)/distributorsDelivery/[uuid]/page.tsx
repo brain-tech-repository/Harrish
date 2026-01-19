@@ -1734,6 +1734,7 @@ export default function DeliveryAddEditPage() {
                     label={
                      checkout == 1?"Checkout": isSubmitting ? "Creating Delivery..." : "Create Delivery"
                     }
+                    leadingIcon="mdi:check"
                     disabled={
                       isSubmitting ||
                       !values.warehouse ||

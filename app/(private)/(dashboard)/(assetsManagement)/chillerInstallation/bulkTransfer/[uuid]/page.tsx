@@ -350,6 +350,8 @@ export default function AddRoute() {
         <SidebarBtn
           label={submitting ? "Submitting..." : "Submit"}
           onClick={handleSubmit}
+          leadingIcon="mdi:check"
+          disabled={submitting}
           isActive={!submitting}
         />
       </div>

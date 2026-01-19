@@ -33,7 +33,7 @@ export default function AddSalesmanLoadUI() {
     } = useAllDropdownListData();
 
     const [salesmanOptions, setSalesmanOptions] = useState<{ value: string; label: string }[]>([]);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
     /* -------- FETCH DATA -------- */
     useEffect(() => {
         ensureWarehouseLoaded();
@@ -178,6 +178,7 @@ export default function AddSalesmanLoadUI() {
 
     const submitData = async () => {
         try {
+            setIsSubmitting(true);
             const payload = {
                 warehouse_id: Number(form.warehouse),
                 salesman_id: Number(form.salesman),
@@ -222,6 +223,9 @@ export default function AddSalesmanLoadUI() {
             } else {
                 showSnackbar("An error occurred while submitting the data.", "error");
             }
+        }
+        finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -350,7 +354,9 @@ export default function AddSalesmanLoadUI() {
 
                     <SidebarBtn
                         isActive
-                        label="Create Order"
+                        disabled={isSubmitting}
+                        leadingIcon="mdi:check"
+                        label={isSubmitting ? "Submitting..." : "Submit"}
                         onClick={handleSubmit}
                     />
                 </div>

@@ -17,17 +17,33 @@ export default function ImagePreviewModal({
   onClose,
   startIndex = 1,
 }: ImagePreviewModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  // Ensure startIndex is 1-based for user, but 0-based for array
+  const [currentIndex, setCurrentIndex] = useState(
+    Math.max(0, Math.min((startIndex || 1) - 1, (images?.length || 1) - 1))
+  );
 
   useEffect(() => {
-    if (isOpen) setCurrentIndex(startIndex);
-  }, [isOpen, startIndex]);
+    if (isOpen) {
+      setCurrentIndex(Math.max(0, Math.min((startIndex || 1) - 1, (images?.length || 1) - 1)));
+    }
+  }, [isOpen, startIndex, images?.length]);
 
   const nextImage = () => setCurrentIndex((prev) => (prev + 1) % images.length);
   const prevImage = () =>
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
 
   if (!images?.length) return null;
+
+  // Compute image src safely
+  const currentImage = images[currentIndex];
+  let imageSrc: string | null = null;
+  if (typeof currentImage === "string" && currentImage.trim() !== "") {
+    if (currentImage.startsWith("https") || currentImage.startsWith("blob:")) {
+      imageSrc = currentImage;
+    } else {
+      imageSrc = `/uploads/${currentImage}`;
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -59,19 +75,21 @@ export default function ImagePreviewModal({
             </button>
 
             {/* Image */}
-            <motion.img
-              key={currentIndex}
-              src={
-                images[currentIndex].startsWith("https") || images[currentIndex].startsWith("blob:")
-                  ? images[currentIndex]
-                  : `/uploads/${images[currentIndex]}`
-              }
-              alt={`Preview ${currentIndex + 1}`}
-              className="max-h-[70vh] w-auto object-contain rounded-lg"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            />
+            {imageSrc ? (
+              <motion.img
+                key={currentIndex}
+                src={imageSrc}
+                alt={`Preview ${currentIndex + 1}`}
+                className="max-h-[70vh] w-auto object-contain rounded-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[70vh] text-gray-400">
+                No image available
+              </div>
+            )}
 
             {/* Navigation Buttons */}
             {images.length > 1 && (

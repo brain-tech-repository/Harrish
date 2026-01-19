@@ -21,15 +21,11 @@ import * as yup from "yup";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 
 export default function AddInstallationReportPage() {
-    const { regionOptions, ensureRegionLoaded } = useAllDropdownListData();
 
-    // Load dropdown data
-    useEffect(() => {
-        ensureRegionLoaded();
-    }, [ensureRegionLoaded]);
+  
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
-
+    const [submitting, setSubmitting] = useState(false);
     const [loadingBtr, setLoadingBtr] = useState(false);
     const [loadingIRO, setLoadingIRO] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -284,6 +280,7 @@ export default function AddInstallationReportPage() {
     // ✅ SUBMIT
     const handleSubmit = async () => {
         try {
+            setSubmitting(true);
             await validationSchema.validate(form, { abortEarly: false });
 
             if (selectedRows.length === 0) {
@@ -334,6 +331,8 @@ export default function AddInstallationReportPage() {
                 console.error("❌ Submission error:", err);
                 showSnackbar("Failed to add installation report", "error");
             }
+        }finally {
+            setSubmitting(false);
         }
     };
 
@@ -556,8 +555,10 @@ export default function AddInstallationReportPage() {
                 </button>
 
                 <SidebarBtn
-                    label="Submit"
+                leadingIcon="mdi:check"
+                    label={submitting ? "Submitting..." : "Submit"}
                     isActive
+                    disabled={submitting}
                     onClick={handleSubmit}
                 />
             </div>

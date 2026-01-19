@@ -18,7 +18,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import Drawer from "@mui/material/Drawer";
 import { Icon } from "@iconify-icon/react";
 import { formatDateFlexible } from "@/app/utils/formatDate";
-
+import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 export default function StockTransfer() {
     const { can } = usePagePermissions();
     const { setLoading } = useLoading();
@@ -72,6 +72,7 @@ export default function StockTransfer() {
     });
 
     // History State
+    const [submitting, setSubmitting] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -337,6 +338,7 @@ export default function StockTransfer() {
 
         try {
             setLoading(true);
+            setSubmitting(true);
             const res = await addRouteTransfer(payload);
             if (res?.error) {
                 if (res?.errors) {
@@ -357,6 +359,7 @@ export default function StockTransfer() {
             showSnackbar("Something went wrong", "error");
         } finally {
             setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -491,12 +494,23 @@ export default function StockTransfer() {
             {/* ACTION */}
             {can("create") && (
                 <div className="flex justify-end mt-6 gap-4">
-                    <button
+                     <SidebarBtn
+                              label={
+                                submitting ? "Submitting..." : "Submit Transfer"
+                              }
+                              isActive={!submitting}
+                              
+                              leadingIcon="mdi:check"
+                              onClick={handleSubmit}
+                              disabled={submitting || !source.route && !dest.route}
+                            />
+                    {/* <button
                         onClick={handleSubmit}
-                        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        disabled={!source.route || !dest.route}
+                        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors cursor-pointer"
                     >
                         Submit Transfer
-                    </button>
+                    </button> */}
                 </div>
 
             )}

@@ -362,7 +362,7 @@ export default function SalemanLoad() {
             filterBy: filterBy,
           },
           header: {
-            title: "CAPS Master Collection",
+            title: "CAPS Collection",
             threeDot: [
               {
                 icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",

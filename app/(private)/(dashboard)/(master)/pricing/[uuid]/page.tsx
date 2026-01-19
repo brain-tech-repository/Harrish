@@ -352,7 +352,7 @@ export default function AddPricing() {
   const [selectedCustomerCategoryDetails, setSelectedCustomerCategoryDetails] = useState<{ label: string; value: string }[]>([]);
   const [selectedCustomerDetails, setSelectedCustomerDetails] = useState<{ label: string; value: string }[]>([]);
   const [selectedItemCategoryDetails, setSelectedItemCategoryDetails] = useState<{ label: string; value: string }[]>([]);
-
+  const [submitting, setSubmitting] = useState(false);
   // No duplicate keyValue declaration
 
   useEffect(() => {
@@ -907,6 +907,7 @@ export default function AddPricing() {
     try {
       await pricingValidationSchema.validate(payload, { abortEarly: false });
       setLoading(true);
+      setSubmitting(true);
       const res = isEditMode && id ? await editPricingDetail(id, payload) : await addPricingDetail(payload);
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit pricing", "error");
@@ -919,9 +920,7 @@ export default function AddPricing() {
         );
         router.push("/pricing");
       }
-      setLoading(false);
     } catch (err) {
-      setLoading(false);
       if (
         err &&
         typeof err === "object" &&
@@ -941,6 +940,10 @@ export default function AddPricing() {
           "error"
         );
       }
+    }
+    finally {
+      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -1683,7 +1686,11 @@ export default function AddPricing() {
           showSubmitButton={isLastStep}
           showNextButton={!isLastStep}
           nextButtonText="Save & Next"
-          submitButtonText={isEditMode ? "Update" : "Submit"}
+          submitButtonText={submitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"}
         >
           {renderStepContent()}
         </StepperForm>

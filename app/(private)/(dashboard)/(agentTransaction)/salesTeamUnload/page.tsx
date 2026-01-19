@@ -35,25 +35,29 @@ const [threeDotLoading, setThreeDotLoading] = useState({
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+  const [warehouseId, setWarehouseId] = useState<string>();
+  const [routeId, setRouteId] = useState<string>();
+  const [salesmanId, setSalesmanId] = useState<string>();
   const {
     regionOptions,
     warehouseOptions,
+    warehouseAllOptions,
+    salesmanOptions,
     routeOptions,
     channelOptions,
     itemCategoryOptions,
     customerSubCategoryOptions,
+    ensureWarehouseAllLoaded,
+    ensureSalesmanLoaded,
     ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
-    ensureChannelLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureItemCategoryLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+   ensureWarehouseAllLoaded();
+   ensureRouteLoaded();
+   ensureSalesmanLoaded();
+   
+  }, [ensureRouteLoaded,ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const [isFiltered, setIsFiltered] = useState(false);
 
@@ -96,6 +100,9 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     setRefreshKey((prev) => prev + 1);
   };
 
+       useEffect(() => {
+          setRefreshKey((k) => k + 1);
+      }, [ warehouseId, routeId,salesmanId]);
   // ✅ Fetch Data API (used by Table)
   const fetchSalesmanUnloadHeader = useCallback(
     async (
@@ -108,7 +115,15 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           per_page: pageSize.toString(),
           submit: "Filter",
         };
-
+           if (warehouseId) {
+                params.warehouse_id = String(warehouseId);
+            }
+            if (routeId) {
+                params.route_id = String(routeId);
+            }
+            if (salesmanId) {
+                params.salesman_id = String(salesmanId);
+            }
         if (form.start_date) params.start_date = form.start_date;
         if (form.end_date) params.end_date = form.end_date;
         if (form.region_id) params.region_id = form.region_id;
@@ -127,7 +142,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         return { data: [], total: 0, currentPage: 1, pageSize: 50 };
       }
     },
-    [setLoading, isFiltered, form]
+    [setLoading, isFiltered, form, showSnackbar,warehouseId,routeId,salesmanId]
   );
 
   const filterBy = useCallback(
@@ -186,8 +201,18 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           typeof row.salesman === "string"
             ? JSON.parse(row.salesman)
             : row.salesman;
-        return obj?.name || "-";
+        return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                onSelect: (selected) => {
+                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: salesmanId,
+            },
     },
     {
       key: "warehouse",
@@ -199,6 +224,16 @@ const [threeDotLoading, setThreeDotLoading] = useState({
             : row.warehouse;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+       filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
     },
     {
       key: "route",
@@ -208,6 +243,16 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           typeof row.route === "string" ? JSON.parse(row.route) : row.route;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(routeOptions) ? routeOptions : [],
+                onSelect: (selected) => {
+                    setRouteId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: routeId,
+            },
     },
     { key: "Salesman_type", label: "Sales Team Role" },
     { key: "unload_no", label: "Unload No." },
