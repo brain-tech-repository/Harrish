@@ -3,7 +3,7 @@ import AutoSuggestion, { Option } from "@/app/components/autoSuggestion";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import Loading from "@/app/components/Loading";
-import {createBonus,getBonusDetails,updateBonus} from "@/app/services/settingsAPI";
+import { createBonus, getBonusDetails, updateBonus } from "@/app/services/settingsAPI";
 import { itemGlobalSearch } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -175,12 +175,13 @@ export default function AddEditTier() {
 
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
+        setSubmitting(false);
       } else {
+        router.push("/settings/bonusPoints");
         showSnackbar(
           isEditMode ? "Bonus Points updated successfully" : "Bonus Points added successfully",
           "success"
         );
-        router.push("/settings/bonusPoints");
       }
     } catch (err) {
       if (err instanceof yup.ValidationError) {
@@ -195,9 +196,10 @@ export default function AddEditTier() {
           isEditMode ? "Failed to update bonus points" : "Failed to add bonus points",
           "error"
         );
+        setSubmitting(false);
       }
     } finally {
-      setSubmitting(false);
+      router.push("/settings/bonusPoints");
     }
   };
 
@@ -230,7 +232,7 @@ export default function AddEditTier() {
             Bonus Points Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           
+
 
 
             {/* Route Name */}
@@ -278,7 +280,7 @@ export default function AddEditTier() {
             {/* Warehouse */}
             <div className="flex flex-col">
               <InputFields
-              min={1}
+                min={1}
                 required
                 type="number"
                 label="Threshold Value"
@@ -288,11 +290,11 @@ export default function AddEditTier() {
                 }}
                 error={(errors.thresholdValue)}
               />
-              
+
             </div>
             <div className="flex flex-col">
               <InputFields
-              min={1}
+                min={1}
                 required
                 type="number"
                 label="Reward Points"
@@ -310,15 +312,15 @@ export default function AddEditTier() {
         </div>
       </div>
 
-   
+
 
       {/* Buttons */}
       <div className="flex justify-end gap-4 mt-6 pr-0">
         <button
           type="button"
           className={`px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 ${submitting
-              ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
-              : "border-gray-300"
+            ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
+            : "border-gray-300"
             }`}
           onClick={() => router.push("/settings/bonusPoints")}
           disabled={submitting}

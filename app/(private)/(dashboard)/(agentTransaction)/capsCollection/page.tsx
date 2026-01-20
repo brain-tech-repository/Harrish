@@ -21,7 +21,7 @@ import FilterComponent from "@/app/components/filterComponent";
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { warehouseOptions, salesmanOptions, routeOptions, regionOptions, areaOptions, companyOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
+  const {  warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -31,16 +31,11 @@ export default function SalemanLoad() {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+  const [warehouseId, setWarehouseId] = useState<string>("");
   // Load dropdown data
   useEffect(() => {
-    ensureAreaLoaded();
-    ensureCompanyLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
+    ensureWarehouseAllLoaded();
+  }, [ ensureWarehouseAllLoaded]);
   const columns: configType["columns"] = [
     { key: "code", label: "Code" },
     // { key: "date", label: "Collection Date" },
@@ -49,7 +44,18 @@ export default function SalemanLoad() {
         const code = row.warehouse_code || "-";
         const name = row.warehouse_name || "-";
         return `${code}${code && name ? " - " : ""}${name}`;
-      }
+      },
+       filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
     },
     {
       key: "customer",
@@ -94,10 +100,17 @@ export default function SalemanLoad() {
   const [initialCapsData, setInitialCapsData] = useState<listReturnType | null>(null);
   const [initialCapsParams, setInitialCapsParams] = useState<{ page: number, pageSize: number }>({ page: 1, pageSize: 50 });
 
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId]);
   useEffect(() => {
     // Only fetch once per refreshKey
     const fetchInitial = async () => {
-      const params = { page: initialCapsParams.page.toString(), per_page: initialCapsParams.pageSize.toString() };
+      const params:any = { page: initialCapsParams.page.toString(), per_page: initialCapsParams.pageSize.toString() };
+      // Pass warehouseId in params if set
+      if (warehouseId) {
+        params.warehouse_id = warehouseId;
+      }
       const cacheKey = getCacheKey(params);
       if (capsCollectionCache.current[cacheKey]) {
         const listRes = capsCollectionCache.current[cacheKey];
@@ -131,7 +144,7 @@ export default function SalemanLoad() {
       }
     };
     fetchInitial();
-  }, [refreshKey, setLoading]);
+  }, [refreshKey, setLoading, warehouseId]);
 
   // Table expects a function, so wrap the memoized result
   const fetchSalesmanLoadHeader = useCallback(
@@ -347,10 +360,6 @@ export default function SalemanLoad() {
     },
     [setLoading]
   );
-
-  useEffect(() => {
-    setRefreshKey(k => k + 1);
-  }, [companyOptions, regionOptions, areaOptions, warehouseOptions, routeOptions, salesmanOptions]);
 
   return (
     <div className="flex flex-col h-full">

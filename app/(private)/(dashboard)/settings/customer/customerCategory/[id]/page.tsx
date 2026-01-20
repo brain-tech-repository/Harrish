@@ -37,6 +37,7 @@ export default function AddCustomerCategory() {
   const [code, setCode] = useState("");
   const codeGeneratedRef = useRef(false);
   const { showSnackbar } = useSnackbar();
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const params = useParams();
   const id = params?.id
@@ -61,7 +62,7 @@ export default function AddCustomerCategory() {
     fetchOutletChannels();
   }, []);
 
-  
+
 
   // Fetch existing category when in edit mode
   useEffect(() => {
@@ -103,6 +104,7 @@ export default function AddCustomerCategory() {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
+        setSubmitting(true);
         const payload = {
           outlet_channel_id: Number(values.outlet_channel_id),
           customer_category_name: values.customer_category_name,
@@ -112,10 +114,11 @@ export default function AddCustomerCategory() {
         if (isEditMode) {
           const res = await updateCustomerCategory(id, payload);
           if (!res?.error) {
-            showSnackbar("Customer category updated successfully ✅", "success");
             router.push("/settings/customer/customerCategory");
+            showSnackbar("Customer category updated successfully ✅", "success");
           } else {
             showSnackbar(res?.data?.message || "Failed to update customer category ❌", "error");
+            setSubmitting(false);
           }
         } else {
           const res = await addCustomerCategory(payload);
@@ -128,14 +131,18 @@ export default function AddCustomerCategory() {
             } catch (e) { }
             showSnackbar("Customer category added successfully ✅", "success");
             resetForm();
-            router.push("/settings/customer/customerCategory");
           } else {
             showSnackbar("Failed to add customer category ❌", "error");
+            setSubmitting(false);
           }
         }
       } catch (error) {
         console.error("❌ Add Customer Category failed", error);
         showSnackbar("Failed to add customer category ❌", "error");
+        setSubmitting(false);
+      } finally {
+        router.push("/settings/customer/customerCategory");
+        // setSubmitting(false);
       }
     },
   });
@@ -218,6 +225,7 @@ export default function AddCustomerCategory() {
             </div>
 
             <InputFields
+              required
               label="Outlet Channel"
               name="outlet_channel_id"
               value={formik.values.outlet_channel_id}
@@ -232,6 +240,7 @@ export default function AddCustomerCategory() {
             />
 
             <InputFields
+              required
               name="customer_category_name"
               label="Category Name"
               value={formik.values.customer_category_name}
@@ -261,18 +270,30 @@ export default function AddCustomerCategory() {
 
         <div className="flex justify-end gap-3 mt-6">
           <button
-            className="px-4 py-2 h-[40px] w-[80px] rounded-md font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100"
             type="button"
+            className={`px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 ${submitting
+              ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
+              : "border-gray-300"
+              }`}
             onClick={() => router.back()}
+            disabled={submitting}
           >
             Cancel
           </button>
           <SidebarBtn
-            label={isEditMode ? (formik.isSubmitting ? "Updating" : "Update") : (formik.isSubmitting ? "Submitting..." : "Submit")}
-            isActive={true}
+            label={
+              submitting
+                ? isEditMode
+                  ? "Updating..."
+                  : "Submitting..."
+                : isEditMode
+                  ? "Update"
+                  : "Submit"
+            }
+            isActive={!submitting}
             leadingIcon={"mdi:check"}
             type="submit"
-            disabled={formik.isSubmitting}
+            disabled={submitting}
           />
         </div>
       </form>

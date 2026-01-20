@@ -33,6 +33,7 @@ export default function AddEditOutletChannel() {
   const [prefix, setPrefix] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   // Prevent double call of genearateCode in add mode
   const codeGeneratedRef = useRef(false);
 
@@ -48,8 +49,9 @@ export default function AddEditOutletChannel() {
       outlet_channel: Yup.string().required("Outlet Channel Name is required."),
       status: Yup.string().required("Status is required."),
     }),
-    onSubmit: async (values, { setSubmitting }) => {
+    onSubmit: async (values) => {
       try {
+        setSubmitting(true)
         const payload = {
           outlet_channel_code: values.outlet_channel_code,
           outlet_channel: values.outlet_channel,
@@ -70,7 +72,9 @@ export default function AddEditOutletChannel() {
         }
         if (res.error) {
           showSnackbar(res.data?.message || "Failed to submit form", "error");
+          setSubmitting(false)
         } else {
+          router.push("/settings/outlet-channel");
           showSnackbar(
             res.message ||
             (isEditMode
@@ -78,7 +82,6 @@ export default function AddEditOutletChannel() {
               : "Channel Created Successfully"),
             "success"
           );
-          router.push("/settings/outlet-channel");
         }
       } catch (error) {
         showSnackbar("Something went wrong", "error");
@@ -202,11 +205,19 @@ export default function AddEditOutletChannel() {
             </button>
 
             <SidebarBtn
-              label={isEditMode ? (formik.isSubmitting ? "Updating..." : "Update") : (formik.isSubmitting ? "Submitting..." : "Submit")}
-              isActive={true}
-              leadingIcon="mdi:check"
+              label={
+                submitting
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Submitting..."
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"
+              }
+              isActive={!submitting}
+              leadingIcon={"mdi:check"}
               type="submit"
-              disabled={formik.isSubmitting}
+              disabled={submitting}
             />
           </div>
         </form>

@@ -93,6 +93,7 @@ export default function AddProject() {
         values: ProjectFormValues,
         { setSubmitting }: FormikHelpers<ProjectFormValues>
     ) => {
+        setSubmitting(true)
         const payload = {
             name: values.name.trim(),
             status: Number(values.status),
@@ -101,18 +102,20 @@ export default function AddProject() {
         try {
             if (isEditMode && projectId) {
                 await editProject(projectId, payload);
+                router.push("/settings/manageAssets/project");
                 showSnackbar("Project updated successfully ✅", "success");
             } else {
                 await addProject(payload);
+                router.push("/settings/manageAssets/project");
                 showSnackbar("Project added successfully ✅", "success");
             }
 
-            router.push("/settings/manageAssets/project");
         } catch (error) {
             console.error("Submit error:", error);
             showSnackbar("Something went wrong", "error");
-        } finally {
             setSubmitting(false);
+        } finally {
+            router.push("/settings/manageAssets/project");
         }
     };
 

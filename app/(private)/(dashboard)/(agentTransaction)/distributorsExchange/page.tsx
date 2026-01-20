@@ -16,7 +16,7 @@ import { downloadFile } from "@/app/services/allApi";
 import FilterComponent from "@/app/components/filterComponent";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 const dropdownDataList = [
     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
     // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
@@ -26,52 +26,19 @@ const dropdownDataList = [
 ];
 
 // 🔹 Table Columns
-const columns = [
-    {
-        key: "exchange_code",
-        label: "Code",
-        showByDefault: true,
-    },
-    {
-        key: "warehouse_code, warehouse_name",
-        label: "Distributors",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const code = row.warehouse_code || "";
-            const name = row.warehouse_name || "";
 
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        },
-    },
-
-    {
-        key: "customer_code, customer_name",
-        label: "Customer",
-        showByDefault: true,
-        render: (row: TableDataType) => {
-            const code = row.customer_code || "";
-            const name = row.customer_name || "";
-
-            if (!code && !name) return "-";
-            return `${code}${code && name ? " - " : ""}${name}`;
-        },
-    },
-    {
-        key: "approval_status",
-        label: "Approval Status",
-        showByDefault: true,
-        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-    },
-];
 
 export default function CustomerInvoicePage() {
+    const { warehouseAllOptions,ensureWarehouseAllLoaded} = useAllDropdownListData();
     const { can, permissions } = usePagePermissions();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const router = useRouter();
     const [refreshKey, setRefreshKey] = useState(0);
-
+    useEffect(() => {
+        ensureWarehouseAllLoaded();
+    }, [ensureWarehouseAllLoaded]);
+    const [warehouseId, setWarehouseId] = useState<string>("");
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -116,12 +83,18 @@ export default function CustomerInvoicePage() {
         }
     }, [exchangeDataCache, setLoading, showSnackbar]);
 
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId]);
     // Fetch for table (list)
     const fetchExchange = useCallback(async (
         page: number = 1,
         pageSize: number = 10
     ): Promise<listReturnType> => {
-        const params = { page: page.toString(), per_page: pageSize.toString() };
+        const params:any = { page: page.toString(), per_page: pageSize.toString() };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
         const result = await fetchExchangeData(params);
         if (!result) {
             return {
@@ -137,7 +110,7 @@ export default function CustomerInvoicePage() {
             currentPage: result?.pagination?.page || 1,
             pageSize: result?.pagination?.limit || pageSize,
         };
-    }, [fetchExchangeData]);
+    }, [fetchExchangeData, warehouseId]);
 
     // Fetch for filter
     const filterBy = useCallback(
@@ -246,6 +219,56 @@ export default function CustomerInvoicePage() {
             // setLoading(false);
         }
     };
+
+    const columns = [
+    {
+        key: "exchange_code",
+        label: "Code",
+        showByDefault: true,
+    },
+    {
+        key: "warehouse_code, warehouse_name",
+        label: "Distributors",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const code = row.warehouse_code || "";
+            const name = row.warehouse_name || "";
+
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        },
+         filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
+    },
+
+    {
+        key: "customer_code, customer_name",
+        label: "Customer",
+        showByDefault: true,
+        render: (row: TableDataType) => {
+            const code = row.customer_code || "";
+            const name = row.customer_name || "";
+
+            if (!code && !name) return "-";
+            return `${code}${code && name ? " - " : ""}${name}`;
+        },
+    },
+    {
+        key: "approval_status",
+        label: "Approval Status",
+        showByDefault: true,
+        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+    },
+];
 
     return (
         <div className="flex flex-col h-full">

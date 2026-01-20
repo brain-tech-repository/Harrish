@@ -38,6 +38,7 @@ export default function AddEditRegion() {
   const searchParams = useSearchParams();
   const { showSnackbar } = useSnackbar();
   const { companyOptions, ensureCompanyLoaded } = useAllDropdownListData();
+  const [submitting, setSubmitting] = useState(false);
 
   // Load dropdown data
   useEffect(() => {
@@ -107,9 +108,10 @@ export default function AddEditRegion() {
   // Submit handler
   const handleSubmit = async (
     values: RegionFormValues,
-    { setSubmitting }: FormikHelpers<RegionFormValues>
+    { }: FormikHelpers<RegionFormValues>
   ) => {
     try {
+      setSubmitting(true);
       const payload = {
         region_code: values.region_code,
         region_name: values.region_name.trim(),
@@ -118,19 +120,21 @@ export default function AddEditRegion() {
       };
       if (isEditMode) {
         await updateRegion(String(queryId), payload);
+        router.push("/settings/region");
         showSnackbar("Region updated successfully ✅", "success");
       } else {
         await addRegion(payload);
         try {
           await saveFinalCode({ reserved_code: values.region_code, model_name: "Region" });
         } catch (e) { }
+        router.push("/settings/region");
         showSnackbar("Region added successfully ✅", "success");
       }
-      router.push("/settings/region");
     } catch (error) {
       showSnackbar(isEditMode ? "Failed to update Region" : "Failed to add Region", "error");
-    } finally {
       setSubmitting(false);
+    } finally {
+      router.push("/settings/region");
     }
   };
 
@@ -258,10 +262,19 @@ export default function AddEditRegion() {
                 Cancel
               </button>
               <SidebarBtn
-                label={isEditMode ? (isSubmitting ? "Updating..." : "Update") : (isSubmitting ? "Submitting..." : "Submit")}
-                isActive={!isSubmitting}
-                leadingIcon="mdi:check"
+                label={
+                  submitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Submitting..."
+                    : isEditMode
+                      ? "Update"
+                      : "Submit"
+                }
+                isActive={!submitting}
+                leadingIcon={"mdi:check"}
                 type="submit"
+                disabled={submitting}
               />
             </div>
           </Form>
