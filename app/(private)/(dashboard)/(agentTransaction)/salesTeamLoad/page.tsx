@@ -21,6 +21,7 @@ import FilterComponent from "@/app/components/filterComponent";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+import OrderStatus from "@/app/components/orderStatus";
 // import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 interface SalesmanLoadRow {
   osa_code?: string;
@@ -140,11 +141,12 @@ export default function SalemanLoad() {
     //     render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
     // },
     {
-      key: "status",
+      key: "is_confirmed",
       label: "Status",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
-        return <StatusBtn isActive={!!s.status && Number(s.status) === 1} />;
+        return <OrderStatus order_flag={{ is_confirmed: row.is_confirmed }} />
+        // return row.is_confirmed == 1 ? 'Sales Team Accepted' : 'Waiting For Accept'
       },
     },
   ];
