@@ -1441,48 +1441,22 @@ export default function DeliveryAddEditPage() {
                           const err = itemErrors[idx]?.Quantity;
                           const currentItem = itemData[idx];
                           const availableStock = currentItem?.available_stock;
-                         
                           return (
                             <div className={`${availableStock ? "pt-5" : ""}`}>
                               <InputFields
                                 label=""
                                 type="number"
                                 name="Quantity"
-                                // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={currentItem?.is_promotional === true ||  !row.uom_id || !values.order_code || currentItem?.isPrmotion == true}
+                                disabled={currentItem?.is_promotional === true || !row.uom_id || !values.order_code || currentItem?.isPrmotion == true}
                                 onChange={(e) => {
-                                  const raw = (e.target as HTMLInputElement)
-                                    .value;
+                                  const raw = (e.target as HTMLInputElement).value;
                                   const intPart = raw.split(".")[0];
-                                  let sanitized =
-                                    intPart === ""
-                                      ? ""
-                                      : String(
-                                          Math.max(
-                                            0,
-                                            parseInt(intPart, 10) || 0
-                                          )
-                                        );
-                                 
-                                  // Enforce max stock limit
-                                  if (availableStock && sanitized) {
-                                    const maxStock = Math.floor(Number(availableStock));
-                                    const inputValue = parseInt(sanitized, 10);
-                                    if (inputValue > maxStock) {
-                                      sanitized = String(maxStock);
-                                    }
-                                  }
-                                 
-                                  recalculateItem(
-                                    Number(row.idx),
-                                    "Quantity",
-                                    sanitized
-                                  );
+                                  let sanitized = intPart === "" ? "" : String(Math.max(0, parseInt(intPart, 10) || 0));
+                                  recalculateItem(Number(row.idx), "Quantity", sanitized);
                                 }}
                                 min={1}
-                                max={availableStock ? Math.floor(Number(availableStock)) : undefined}
                                 integerOnly={true}
                                 error={err && err}
                               />

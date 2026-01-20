@@ -200,7 +200,7 @@ export default function InvoiceddEditPage() {
     const router = useRouter();
     const params = useParams();
     const CURRENCY = localStorage.getItem("country") || "";
-
+    const [rowAvailableStock, setRowAvailableStock] = useState<Record<number, string>>({});
     const uuid = params?.uuid as string | undefined;
     const isEditMode = uuid !== undefined && uuid !== "add";
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -216,13 +216,14 @@ export default function InvoiceddEditPage() {
     });
 
     // per-row validation errors for item rows (keyed by row index)
+    const [warehouseIdForCus,setWarehouseIdForCus] = useState("");
     const [itemErrors, setItemErrors] = useState<Record<number, Record<string, string>>>({});
     const [form, setForm] = useState({
         customerType: "2",
         warehouse: "",
         warehouse_name: "",
-        route: "",
-        route_name: "",
+        // route: "",
+        // route_name: "",
         customer: "",
         customer_name: "",
         invoice_type: "",
@@ -269,7 +270,7 @@ export default function InvoiceddEditPage() {
     const codeGeneratedRef = useRef(false);
     const [code, setCode] = useState("");
 
-    // Validation function for item rows
+    // Validation function for item rows with available stock check
     const validateRow = async (index: number, row?: InvoiceItemRow, options?: { skipUom?: boolean }) => {
         const rowData = row ?? itemData[index];
         if (!rowData) return;
@@ -284,8 +285,8 @@ export default function InvoiceddEditPage() {
         try {
             const validationErrors: Record<string, string> = {};
 
+            // Standard Yup validation
             if (options?.skipUom) {
-                // validate only item_id and Quantity to avoid showing UOM required immediately after selecting item
                 try {
                     await itemRowSchema.validateAt("item_id", toValidate);
                 } catch (e: any) {
@@ -300,8 +301,37 @@ export default function InvoiceddEditPage() {
                 await itemRowSchema.validate(toValidate, { abortEarly: false });
             }
 
+            // Additional stock validation - check total quantity in base units across all rows with same item
+            if (rowData.item_id && rowData.uom_id && rowData.Quantity) {
+                const itemUOMData = itemsWithUOM[rowData.item_id];
+                if (itemUOMData) {
+                    const totalStockQty = Number(itemUOMData.stock_qty);
+                    const uomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowData.uom_id));
+                    const upc = Number(uomInfo?.upc || "1");
+
+                    // Calculate total consumed stock in base units across all rows except current
+                    let totalConsumedInBaseUnits = 0;
+                    itemData.forEach((row, idx) => {
+                        if (idx === index || row.item_id !== rowData.item_id) return;
+                        const rowUomId = row.uom_id;
+                        if (!rowUomId) return;
+                        const rowUomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowUomId));
+                        if (!rowUomInfo) return;
+                        const rowUpc = Number(rowUomInfo.upc || "1");
+                        const rowQty = Number(row.Quantity) || 0;
+                        totalConsumedInBaseUnits += rowQty * rowUpc;
+                    });
+
+                    // Calculate remaining stock in base units
+                    const remainingBaseUnits = totalStockQty - totalConsumedInBaseUnits;
+                    const requestedQtyInBaseUnits = Number(rowData.Quantity) * upc;
+                    if (requestedQtyInBaseUnits > remainingBaseUnits) {
+                        validationErrors.Quantity = `Quantity exceeds available stock (${Math.floor(remainingBaseUnits / upc)} available)`;
+                    }
+                }
+            }
+
             if (Object.keys(validationErrors).length === 0) {
-                // clear errors for this row
                 setItemErrors((prev) => {
                     const copy = { ...prev };
                     delete copy[index];
@@ -320,10 +350,70 @@ export default function InvoiceddEditPage() {
                 validationErrors[err.path] = err.message;
             }
 
+            // Additional stock validation even when other validations fail
+            if (rowData.item_id && rowData.uom_id && rowData.Quantity) {
+                const itemUOMData = itemsWithUOM[rowData.item_id];
+                if (itemUOMData) {
+                    const totalStockQty = Number(itemUOMData.stock_qty);
+                    const uomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowData.uom_id));
+                    const upc = Number(uomInfo?.upc || "1");
+
+                    let totalConsumedInBaseUnits = 0;
+                    itemData.forEach((row, idx) => {
+                        if (idx === index || row.item_id !== rowData.item_id) return;
+                        const rowUomId = row.uom_id;
+                        if (!rowUomId) return;
+                        const rowUomInfo = itemUOMData.uoms.find(u => String(u.id) === String(rowUomId));
+                        if (!rowUomInfo) return;
+                        const rowUpc = Number(rowUomInfo.upc || "1");
+                        const rowQty = Number(row.Quantity) || 0;
+                        totalConsumedInBaseUnits += rowQty * rowUpc;
+                    });
+
+                    const remainingBaseUnits = totalStockQty - totalConsumedInBaseUnits;
+                    const requestedQtyInBaseUnits = Number(rowData.Quantity) * upc;
+                    if (requestedQtyInBaseUnits > remainingBaseUnits) {
+                        validationErrors.Quantity = `Quantity exceeds available stock (${Math.floor(remainingBaseUnits / upc)} available)`;
+                    }
+                }
+            }
+
             setItemErrors((prev) => ({ ...prev, [index]: validationErrors }));
         }
     };
 
+    // Delivery-style available stock calculation for invoice
+    function calculateAvailableStock(itemId: string, uomType: string, upc: number, currentRowIndex: number) {
+        const itemInfo = itemsWithUOM[itemId];
+        if (!itemInfo) return 0;
+        const totalStock = Number(itemInfo.stock_qty || 0);
+        let usedSecondaryQty = 0;
+        let usedPrimaryQty = 0;
+        itemData.forEach((row, idx) => {
+            if (idx !== currentRowIndex && row.item_id === itemId && row.uom_id) {
+                const rowUOM = itemInfo.uoms.find((u: any) => String(u.id) === String(row.uom_id));
+                if (rowUOM) {
+                    const qty = Number(row.Quantity || 0);
+                    if (rowUOM.uom_type === 'secondary') {
+                        usedSecondaryQty += qty;
+                    } else if (rowUOM.uom_type === 'primary') {
+                        usedPrimaryQty += qty;
+                    }
+                }
+            }
+        });
+        if (uomType === 'secondary') {
+            const remainingStock = totalStock - usedPrimaryQty;
+            const availableInSecondary = Math.floor(remainingStock / upc);
+            return Math.max(0, availableInSecondary - usedSecondaryQty);
+        } else if (uomType === 'primary') {
+            const secondaryUOM = itemInfo.uoms.find((u: any) => u.uom_type === 'secondary');
+            const secondaryUpc = secondaryUOM ? Number(secondaryUOM.upc || 1) : 1;
+            const stockUsedBySecondary = usedSecondaryQty * secondaryUpc;
+            return Math.max(0, totalStock - stockUsedBySecondary - usedPrimaryQty);
+        }
+        return 0;
+    }
     useEffect(() => {
         setLoading(true);
 
@@ -341,10 +431,10 @@ export default function InvoiceddEditPage() {
                             warehouse_name: data.warehouse_code && data.warehouse_name
                                 ? `${data.warehouse_code} - ${data.warehouse_name}`
                                 : (data.warehouse_name || ""),
-                            route: data.route_id ? String(data.route_id) : "",
-                            route_name: data.route_code && data.route_name
-                                ? `${data.route_code} - ${data.route_name}`
-                                : (data.route_name || ""),
+                            // route: data.route_id ? String(data.route_id) : "",
+                            // route_name: data.route_code && data.route_name
+                            //     ? `${data.route_code} - ${data.route_name}`
+                            //     : (data.route_name || ""),
                             customer: data.customer_id ? String(data.customer_id) : "",
                             customer_name: data.customer_name || "",
                             invoice_type: data.invoice_type !== undefined ? String(data.invoice_type) : "",
@@ -503,7 +593,7 @@ export default function InvoiceddEditPage() {
             // Create dropdown options
             const options = processedItems.map((item: any) => ({
                 value: String(item.id),
-                label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
+                label: `${item.erp_code || item.item_code || ''} - ${item.name || ''}`
             }));
 
             setItemsOptions(options);
@@ -555,48 +645,47 @@ export default function InvoiceddEditPage() {
         }
     }, [showSnackbar]);
 
-    const handleRouteSearch = useCallback(async (searchText: string) => {
-        if (!form.warehouse) {
-            return [];
-        }
-        try {
-            const response = await routeList({
-                warehouse_id: form.warehouse,
-                search: searchText,
-                per_page: "50"
-            });
-            const data: RouteItem[] = Array.isArray(response?.data) ? (response.data as RouteItem[]) : [];
-            const options: Option[] = data.map((route) => ({
-                value: String(route.id),
-                label: `${route.route_code || ''} - ${route.route_name || ''}`,
-                code: route.route_code,
-                name: route.route_name,
-            }));
-            return options;
-        } catch (error) {
-            console.error('Error fetching routes:', error);
-            showSnackbar('Failed to search routes', 'error');
-            return [];
-        }
-    }, [form.warehouse, showSnackbar]);
+    // const handleRouteSearch = useCallback(async (searchText: string) => {
+    //     if (!form.warehouse) {
+    //         return [];
+    //     }
+    //     try {
+    //         const response = await routeList({
+    //             warehouse_id: form.warehouse,
+    //             search: searchText,
+    //             per_page: "50"
+    //         });
+    //         const data: RouteItem[] = Array.isArray(response?.data) ? (response.data as RouteItem[]) : [];
+    //         const options: Option[] = data.map((route) => ({
+    //             value: String(route.id),
+    //             label: `${route.route_code || ''} - ${route.route_name || ''}`,
+    //             code: route.route_code,
+    //             name: route.route_name,
+    //         }));
+    //         return options;
+    //     } catch (error) {
+    //         console.error('Error fetching routes:', error);
+    //         showSnackbar('Failed to search routes', 'error');
+    //         return [];
+    //     }
+    // }, [form.warehouse, showSnackbar]);
 
-    const handleCustomerSearch = useCallback(async (searchText: string) => {
-        if (!form.route) {
-            return [];
-        }
+    const handleCustomerSearch = useCallback(async (searchText?: string) => {
+        console.log("Warehouse id",warehouseIdForCus)
+        
         try {
             let response;
             if (form.customerType === "2") {
                 // Company customer
-                response = await getCompanyCustomers({
-                    route_id: form.route,
-                    search: searchText,
-                    per_page: "50"
-                });
+                // response = await getCompanyCustomers({
+                //     route_id: form.route,
+                //     search: searchText,
+                //     per_page: "50"
+                // });
             } else {
                 // Agent customer (default)
                 response = await agentCustomerList({
-                    route_id: form.route,
+                    warehouse_id: warehouseIdForCus,
                     search: searchText,
                     per_page: "50"
                 });
@@ -625,7 +714,7 @@ export default function InvoiceddEditPage() {
             showSnackbar('Failed to search customers', 'error');
             return [];
         }
-    }, [form.route, form.customerType, showSnackbar]);
+    }, [ form.customerType, showSnackbar, warehouseIdForCus]);
 
     const handleItemSearch = useCallback(async (searchText: string) => {
         // If no warehouse selected, return empty
@@ -713,7 +802,6 @@ export default function InvoiceddEditPage() {
         return yup.object().shape({
             ...base,
             customerType: yup.string(),
-            route: yup.string().required("Route is required"),
             customer: yup.string().required("Customer is required"),
         });
     };
@@ -873,23 +961,23 @@ export default function InvoiceddEditPage() {
     // Create Payload for API
     const generatePayload = () => {
         // If Against Delivery (invoice_type === "0"), enrich from selected delivery
-        let routeId: number | undefined = undefined;
+        // let routeId: number | undefined = undefined;
         let salesmanId: number | undefined = undefined;
         let customerId: number | undefined = undefined;
         if (form.invoice_type === "0" && form.customer) {
             const selectedDelivery = deliveriesById[form.customer];
             if (selectedDelivery) {
-                const maybeRouteId = selectedDelivery.route_id ?? selectedDelivery.route?.id;
+                // const maybeRouteId = selectedDelivery.route_id ?? selectedDelivery.route?.id;
                 const maybeSalesmanId = selectedDelivery.salesman_id ?? selectedDelivery.salesman?.id;
                 const maybeCustomerId = selectedDelivery.customer_id ?? selectedDelivery.customer?.id;
 
-                routeId = maybeRouteId !== undefined ? Number(maybeRouteId) : undefined;
+                // routeId = maybeRouteId !== undefined ? Number(maybeRouteId) : undefined;
                 salesmanId = maybeSalesmanId !== undefined ? Number(maybeSalesmanId) : undefined;
                 customerId = maybeCustomerId !== undefined ? Number(maybeCustomerId) : (form.customer ? Number(form.customer) : undefined);
             }
         } else {
             customerId = form.customer ? Number(form.customer) : undefined;
-            routeId = form.route ? Number(form.route) : undefined;
+            // routeId = form.route ? Number(form.route) : undefined;
         }
 
         const now = new Date();
@@ -904,7 +992,7 @@ export default function InvoiceddEditPage() {
             delivery_id: deliveryId,
             // customer_type: form.customerType ? Number(form.customerType) : undefined,
             customer_type: 1,
-            route_id: routeId,
+            // route_id: routeId,
             salesman_id: salesmanId,
             invoice_date: form.invoice_date,
             invoice_time: invoiceTime,
@@ -1146,10 +1234,12 @@ export default function InvoiceddEditPage() {
         if (String(form.invoice_type) === "0") {
             return [form.warehouse, form.customer, form.invoice_type, form.invoice_date].every(Boolean);
         }
-        return [form.route, form.warehouse, form.customer, form.invoice_type, form.invoice_date].every(Boolean);
-        return [form.route, form.warehouse, form.customer, form.invoice_type, form.invoice_date].every(Boolean);
+        return [ form.warehouse, form.customer, form.invoice_type, form.invoice_date].every(Boolean);
     })();
 
+    useEffect(() => {
+        console.log("1209",warehouseIdForCus)
+    });
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-[20px]">
@@ -1194,21 +1284,12 @@ export default function InvoiceddEditPage() {
                             { label: "Direct Invoice", value: "1" },
                         ]}
                         onChange={(e) => {
-                            setForm(prev => ({ ...prev, customerType: "", warehouse: "", warehouse_name: "", route: "", route_name: "", customer: "", customer_name: "", invoice_type: "", invoice_date: new Date().toISOString().slice(0, 10), note: "", transactionType: "1", paymentTerms: "1", paymentTermsUnit: "1" }));
+                            setForm(prev => ({ ...prev, customerType: "", warehouse: "", warehouse_name: "", customer: "", customer_name: "", invoice_type: "", invoice_date: new Date().toISOString().slice(0, 10), note: "", transactionType: "1", paymentTerms: "1", paymentTermsUnit: "1" }));
                             handleChange(e);
                         }}
                         error={errors.invoice_type}
                     />
-                    <InputFields
-                        required
-                        label="Invoice Date"
-                        type="date"
-                        name="invoice_date"
-                        min={new Date().toISOString().split("T")[0]}
-                        value={form.invoice_date}
-                        onChange={handleChange}
-                        error={errors.invoice_date}
-                    />
+                   
                     {form.invoice_type === "0" && (
                         <>
                             <AutoSuggestion
@@ -1455,14 +1536,20 @@ export default function InvoiceddEditPage() {
                                         ...prev,
                                         warehouse: option.value,
                                         warehouse_name: option.label,
-                                        route: "",
-                                        route_name: "",
+                                        // route: "",
+                                        // route_name: "",
                                         customer: "",
                                         customer_name: "",
                                     }));
                                     if (errors.warehouse) {
                                         setErrors(prev => ({ ...prev, warehouse: "" }));
                                     }
+                                    const id = option.value
+                                    console.log("Selected warehouse:",id, option.value);
+                                    // Fetch agent customers for the selected warehouse
+                                    setWarehouseIdForCus(id);
+                                    console.log("1524",warehouseIdForCus)
+
                                     // Fetch items for the selected warehouse
                                     fetchWarehouseItems(option.value);
                                     setItemData([{item_id: "",
@@ -1485,8 +1572,8 @@ export default function InvoiceddEditPage() {
                                         ...prev,
                                         warehouse: "",
                                         warehouse_name: "",
-                                        route: "",
-                                        route_name: "",
+                                        // route: "",
+                                        // route_name: "",
                                         customer: "",
                                         customer_name: "",
                                     }));
@@ -1498,7 +1585,7 @@ export default function InvoiceddEditPage() {
                                 }}
                                 error={errors.warehouse}
                             />
-                            <AutoSuggestion
+                            {/* <AutoSuggestion
                                 required
                                 label="Route"
                                 name="route"
@@ -1529,16 +1616,15 @@ export default function InvoiceddEditPage() {
                                 error={errors.route}
                                 disabled={!form.warehouse}
                                 noOptionsMessage={!form.warehouse ? "Please select a warehouse first" : "No routes found"}
-                            />
+                            /> */}
                             <AutoSuggestion
                                 required
                                 label="Customer"
                                 name="customer"
                                 placeholder="Search customer..."
                                 initialValue={form.customer_name}
-                                onSearch={handleCustomerSearch}
+                                onSearch={(searchText) => handleCustomerSearch(searchText)}
                                 onSelect={(option) => {
-
                                     setForm(prev => ({
                                         ...prev,
                                         customer: option.value,
@@ -1556,12 +1642,22 @@ export default function InvoiceddEditPage() {
                                     }));
                                 }}
                                 error={errors.customer}
-                                disabled={!form.route}
-                                noOptionsMessage={!form.route ? "Please select a route first" : "No customers found"}
+                                disabled={!form.warehouse}
+                                noOptionsMessage={!form.warehouse ? "Please select a distributor first" : "No customers found"}
                             />
 
                         </>
                     )}
+                     <InputFields
+                        required
+                        label="Invoice Date"
+                        type="date"
+                        name="invoice_date"
+                        min={new Date().toISOString().split("T")[0]}
+                        value={form.invoice_date}
+                        onChange={handleChange}
+                        error={errors.invoice_date}
+                    />
                 </div>
 
                 <Table
@@ -1728,7 +1824,8 @@ export default function InvoiceddEditPage() {
                                                         newData[index].Price = selectedUom.price;
                                                     }
                                                     setItemData(newData);
-                                                    recalculateItem(index, "UOM", selectedUomId);
+                                                    // Also recalculate stock and validation when UOM changes
+                                                    recalculateItem(index, "uom_id", selectedUomId);
                                                 }}
                                                 error={err}
                                             />
@@ -1739,34 +1836,79 @@ export default function InvoiceddEditPage() {
                             {
                                 key: "Quantity",
                                 label: "Qty",
-                                width: 100,
+                                width: 120,
                                 render: (row) => {
                                     const idx = Number(row.idx);
-                                    const err = itemErrors[idx]?.Quantity;
-
+                                    let err = itemErrors[idx]?.Quantity;
+                                    const uomOptions = rowUomOptions[row.idx] || [];
+                                    const selectedUom = uomOptions.find(uom => uom.value === row.uom_id);
+                                    // Calculate available stock for this row (primary/secondary logic)
+                                    let availableStock = "";
+                                    if (row.item_id && row.uom_id && itemsWithUOM[row.item_id]) {
+                                        const itemUOMData = itemsWithUOM[row.item_id];
+                                        const uomInfo = itemUOMData.uoms.find(u => String(u.id) === String(row.uom_id));
+                                        const upc = Number(uomInfo?.upc || "1");
+                                        const uomType = uomInfo?.uom_type || "primary";
+                                        const availableStockNum = calculateAvailableStock(row.item_id, uomType, upc, idx);
+                                        availableStock = `${availableStockNum}`;
+                                    }
+                                    // Track if user entered more than available
+                                    // let overStock = false;
+                                    // let enteredQty = Number(row.Quantity) || 0;
+                                    // if (row.item_id && row.uom_id && itemsWithUOM[row.item_id]) {
+                                    //     if (isSecondary) {
+                                    //         overStock = enteredQty > availableStockNum;
+                                    //     } else {
+                                    //         overStock = enteredQty > availableStockNum;
+                                    //     }
+                                    //     // Do not auto-reset, just set error for validation on submit
+                                    //     if (overStock) {
+                                    //         err = `Cannot exceed available stock (${availableStockNum})`;
+                                    //     }
+                                    // }
                                     return (
-                                        <div style={{ minWidth: '100px', maxWidth: '100px' }}>
+                                        <div style={{ minWidth: '120px', maxWidth: '120px' }}>
                                             <InputFields
                                                 label=""
                                                 type="number"
                                                 name="Quantity"
                                                 value={row.Quantity}
-                                                // disabled={row.isPrmotion}
                                                 onChange={(e) => {
                                                     const value = e.target.value;
                                                     const numValue = parseFloat(value);
+                                                    // Allow any value, validation will be handled on submit
                                                     if (value === "") {
-                                                        recalculateItem(Number(row.idx), "Quantity", value);
+                                                        recalculateItem(idx, "Quantity", value);
                                                     } else if (numValue <= 0) {
-                                                        recalculateItem(Number(row.idx), "Quantity", "1");
+                                                        recalculateItem(idx, "Quantity", "1");
                                                     } else {
-                                                        recalculateItem(Number(row.idx), "Quantity", value);
+                                                        recalculateItem(idx, "Quantity", value);
                                                     }
                                                 }}
                                                 disabled={form.invoice_type === "0" || row.isPrmotion === true}
-                               
                                                 error={err}
                                             />
+                                            {/* Show available stock below input */}
+                                            {availableStock && (
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    Stock: {Math.floor(Number(availableStock))}
+                                                    {selectedUom && itemsWithUOM[row.item_id] && (() => {
+                                                        const uomInfo = itemsWithUOM[row.item_id].uoms.find(u => String(u.id) === String(row.uom_id));
+                                                        return uomInfo && uomInfo.uom_type === 'secondary';
+                                                    })() && (
+                                                        <span>
+                                                            {' '}({itemsWithUOM[row.item_id].stock_qty} / {(() => {
+                                                                const uomInfo = itemsWithUOM[row.item_id].uoms.find(u => String(u.id) === String(row.uom_id));
+                                                                return uomInfo?.upc;
+                                                            })()})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {/* Show validation error if overstock (should not appear now) */}
+                                            {/* {row.item_id && row.uom_id && err && err.includes('Cannot exceed') && (
+                                                <div className="text-xs text-red-500 mt-1">{err}</div>
+                                            )} */}
                                         </div>
                                     );
                                 },

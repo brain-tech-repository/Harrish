@@ -18,11 +18,11 @@ import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { downloadFile } from "@/app/services/allApi";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import FilterComponent from "@/app/components/filterComponent";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 const dropdownDataList = [
     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
     // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
@@ -32,7 +32,35 @@ const dropdownDataList = [
 ];
 
 // 🔹 Table Columns
-const columns = [
+
+
+export default function CustomerInvoicePage() {
+    const { can, permissions } = usePagePermissions();
+    const { showSnackbar } = useSnackbar();
+    const { setLoading } = useLoading();
+    const router = useRouter();
+    const { warehouseAllOptions, salesmanOptions,ensureWarehouseAllLoaded,ensureSalesmanLoaded } = useAllDropdownListData();
+    const [warehouseId, setWarehouseId] = useState("");
+    const [salesmanId, setSalesmanId] = useState("");
+    const [isExporting, setIsExporting] = useState(false);
+    const [returnCode, setReturnCode] = useState("");
+    const [filters, setFilters] = useState({
+        fromDate: new Date().toISOString().split("T")[0],
+        toDate: new Date().toISOString().split("T")[0],
+        region: "",
+        routeCode: "",
+    });
+     const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+
+    useEffect(() => {
+    ensureSalesmanLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+
+  const columns = [
     { key: "osa_code", label: "Code", showByDefault: true },
     { key: "order_code", label: "Order Code", showByDefault: true },
     // { key: "delivery_code", label: "Delivery Code", showByDefault: true },
@@ -41,7 +69,18 @@ const columns = [
             const code = row.warehouse_code || "";
             const name = row.warehouse_name || "";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
     },
     {
         key: "route_code", label: "Route", showByDefault: true, render: (row: TableDataType) => {
@@ -62,7 +101,18 @@ const columns = [
             const code = row.salesman_code || "";
             const name = row.salesman_name || "";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
     },
     {
         key: "total", label: "Amount", showByDefault: true, render: (row: TableDataType) => {
@@ -95,24 +145,6 @@ const columns = [
     // },
 ];
 
-export default function CustomerInvoicePage() {
-    const { can, permissions } = usePagePermissions();
-    const { showSnackbar } = useSnackbar();
-    const { setLoading } = useLoading();
-    const router = useRouter();
-    const [isExporting, setIsExporting] = useState(false);
-    const [returnCode, setReturnCode] = useState("");
-    const [filters, setFilters] = useState({
-        fromDate: new Date().toISOString().split("T")[0],
-        toDate: new Date().toISOString().split("T")[0],
-        region: "",
-        routeCode: "",
-    });
-     const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
-
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -122,30 +154,33 @@ export default function CustomerInvoicePage() {
         }
     }, [permissions]);
     const [showDropdown, setShowDropdown] = useState(false);
-    const { warehouseOptions, salesmanOptions, routeOptions, agentCustomerOptions , ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
 
   // Load dropdown data
-  useEffect(() => {
-    ensureAgentCustomerLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
+
     const handleChange = (name: string, value: string) => {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId, salesmanId]);
     // 🔹 Fetch Invoices
     const fetchInvoices = useCallback(async (
         page: number = 1,
-        pageSize: number = 10
+        pageSize: number = 50
     ): Promise<listReturnType> => {
         try {
             setLoading(true);
-            const result = await returnList({}
-                // page: page.toString(),
-                // per_page: pageSize.toString(),
-            );
+             let params: any = {
+          limit: pageSize.toString(),
+          page: page.toString(),
+        };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
+        if (salesmanId) {
+            params.salesman_id = salesmanId;
+        }
+            const result = await returnList(params);
             setReturnCode(result.data.osa_code);
             return {
                 data: Array.isArray(result.data) ? result.data : [],
@@ -165,7 +200,7 @@ export default function CustomerInvoicePage() {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, showSnackbar]);
+    }, [setLoading, showSnackbar, warehouseId, salesmanId]);
 
     // 🔹 Search Invoices (Mock)
     const searchInvoices = useCallback(async (): Promise<searchReturnType> => {

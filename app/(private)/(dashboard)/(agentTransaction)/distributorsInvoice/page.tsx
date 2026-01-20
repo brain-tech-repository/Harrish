@@ -42,6 +42,8 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
+    const [warehouseId, setWarehouseId] = useState<string>("");
+    const [salesmanId, setSalesmanId] = useState<string>("");
     const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
     const columns = [
     {
@@ -89,14 +91,36 @@ export default function CustomerInvoicePage() {
             const code = row.warehouse_code || "-";
             const name = row.warehouse_name || "-";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
     },
     {
         key: "salesman_code", label: "Slaes Team", showByDefault: true, render: (row: TableDataType) => {
             const code = row.salesman_code || "-";
             const name = row.salesman_name || "-";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+         filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
     },
     {
         key: "total_amount",
@@ -119,13 +143,13 @@ export default function CustomerInvoicePage() {
 ];
     // Load dropdown data
     useEffect(() => {
-        ensureAreaLoaded();
-        ensureCompanyLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
+        // ensureAreaLoaded();
+        // ensureCompanyLoaded();
+        // ensureRegionLoaded();
+        // ensureRouteLoaded();
         ensureSalesmanLoaded();
         ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+    }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const [filters, setFilters] = useState({
         fromDate: new Date().toISOString().split("T")[0],
         toDate: new Date().toISOString().split("T")[0],
@@ -298,18 +322,29 @@ export default function CustomerInvoicePage() {
             showSnackbar(String(message), "error");
         }
     };
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId, salesmanId]);
     // 🔹 Fetch Invoices
+
     const fetchInvoices = useCallback(async (
         page: number = 1,
         pageSize: number = 10
     ): Promise<listReturnType> => {
         try {
+            const params: any = {
+        page: page.toString(),
+        per_page: pageSize.toString(),
+      };
+              if (warehouseId) {
+                    params.warehouse_id = warehouseId;
+                }
+                if (salesmanId) {
+                    params.salesman_id = salesmanId;
+                }
             setLoading(true);
-            const result = await invoiceList({
-                page: page.toString(),
-                per_page: pageSize.toString(),
-            });
+            console.log("Fetching invoices with params:", params);
+            const result = await invoiceList(params);
 
             return {
                 data: Array.isArray(result.data) ? result.data : [],
@@ -329,8 +364,10 @@ export default function CustomerInvoicePage() {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, showSnackbar]);
+    }, [setLoading, showSnackbar, warehouseId, salesmanId]);
 
+    // setRefreshKey((prev) => prev + 1);
+     
     const filterBy = useCallback(
         async (
             payload: Record<string, string | number | null>,
@@ -346,6 +383,7 @@ export default function CustomerInvoicePage() {
                         params[k] = String(v);
                     }
                 });
+              
                 result = await invoiceList(params);
             } finally {
                 setLoading(false);
