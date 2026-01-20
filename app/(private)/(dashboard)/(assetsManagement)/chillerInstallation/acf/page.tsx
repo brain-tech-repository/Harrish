@@ -371,9 +371,12 @@ export default function CustomerInvoicePage() {
         <div className="flex flex-col h-full">
             {/* 🔹 Table Section */}
             <Table
+             
                 refreshKey={refreshKey}
+                 
                 config={{
                     api: { filterBy: filterBy },
+                 
                     header: {
                         title: "Approve Chiller Request",
                          filterRenderer:chillerFilter,

@@ -87,6 +87,7 @@ const {
 
  
   const [isFiltered, setIsFiltered] = useState(false);
+  const [tableFilters, setTableFilters] = useState<any>({});
 
 const fetchWarehouses = async () => {
   const res = await AssestMasterfilter();
@@ -203,6 +204,12 @@ const uuid = paramsRoute?.uuid as string;
     },
     []
   );   
+ 
+
+
+ 
+
+
 
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
@@ -278,51 +285,69 @@ const uuid = paramsRoute?.uuid as string;
     }, []
   )
 
+ const filterBy = useCallback(
+    async (payload: Record<string, string | number | null>, pageSize = 10) => {
+      const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
+
+      const res = await chillerList(finalPayload);
+
+      return {
+        data: res?.data || [],
+        total: res?.pagination?.totalPages || 0,
+        currentPage: res?.pagination?.page || 0,
+        pageSize: res?.pagination?.limit || pageSize,
+      };
+    },
+    [tableFilters]  // dependency array
+  );
 
 
 
 
-const filterBy = useCallback(
-          async (
-              payload: Record<string, string | number | null>,
-              pageSize: number
-          ): Promise<listReturnType> => {
-              console.log("payload", payload);
-              let result;
-              try {
-                  const params: Record<string, string> = { per_page: pageSize.toString() };
-                  Object.keys(payload || {}).forEach((k) => {
-                      const v = payload[k as keyof typeof payload];
-                      if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-                          params[k] = String(v);
-                      }
-                  });
 
-                  result = await chillerList(params);
+
+
+// const filterBy = useCallback(
+//           async (
+//               payload: Record<string, string | number | null>,
+//               pageSize: number
+//           ): Promise<listReturnType> => {
+//               console.log("payload", payload);
+//               let result;
+//               try {
+//                   const params: Record<string, string> = { per_page: pageSize.toString() };
+//                   Object.keys(payload || {}).forEach((k) => {
+//                       const v = payload[k as keyof typeof payload];
+//                       if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+//                           params[k] = String(v);
+//                       }
+//                   });
+
+//                   result = await chillerList(params);
                    
 
-              } catch (error) {
-                  throw new Error(String(error));
-              }
+//               } catch (error) {
+//                   throw new Error(String(error));
+//               }
   
-              if (result?.error) throw new Error(result.data?.message || "Filter failed");
-              else {
-                  const pagination = result.pagination?.pagination || result.pagination || {};
-                  const rows = result?.data || [];
-                  return {
-                      data: rows.map((item: any) => ({
-        uuid: item.uuid,
-        from_warehouse: item.from_warehouse?.warehouse_name || "-",
-        to_warehouse: item.to_warehouse?.warehouse_name || "-",
-        transfer_date: item.transfer_date || item.created_at || null,
-      })),
-                      total: pagination.totalPages || result.pagination?.totalPages || 0,
-                      totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
-                      currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-                      pageSize: pagination.limit || pageSize,
-                  };
-              }
-          }, []);
+//               if (result?.error) throw new Error(result.data?.message || "Filter failed");
+//               else {
+//                   const pagination = result.pagination?.pagination || result.pagination || {};
+//                   const rows = result?.data || [];
+//                   return {
+//                       data: rows.map((item: any) => ({
+//         uuid: item.uuid,
+//         from_warehouse: item.from_warehouse?.warehouse_name || "-",
+//         to_warehouse: item.to_warehouse?.warehouse_name || "-",
+//         transfer_date: item.transfer_date || item.created_at || null,
+//       })),
+//                       total: pagination.totalPages || result.pagination?.totalPages || 0,
+//                       totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+//                       currentPage: pagination.current_page || result.pagination?.currentPage || 0,
+//                       pageSize: pagination.limit || pageSize,
+//                   };
+//               }
+//           }, []);
   
  const fetchAssetsTransferList = useCallback(
   async (page = 1, pageSize = 50): Promise<listReturnType> => {
@@ -499,6 +524,23 @@ const handleDownloadQR = async (row: TableDataType) => {
                   </span>
                 ),
               },
+              
+                  {
+    key: "warehouse_name",
+    label: "Distributor Name",
+    // showByDefault: true,
+    render: (row: TableDataType) => {
+      const code = row.warehouse_code ?? "";
+      const name = row.warehouse_name ?? "";
+      if (!code && !name) return "-";
+      return `${code}${code && name ? " - " : ""}${name}`;
+      
+    },
+  },
+
+               
+
+
               { key: "serial_number", label: "Serial Number" },
               {
                 key: "assets_category", label: "Assests Category Name", render: (data: TableDataType) =>

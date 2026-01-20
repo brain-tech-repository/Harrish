@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { p } from "framer-motion/client";
 
 
+
 export const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
@@ -4320,7 +4321,28 @@ export const AssestMasterModel = async (params?: Params) => {
 
 export const AssestMasterStatus = async (params?: Params) => {
   try {
-    const res = await API.get("api/settings/fridge-status/list",
+    const res = await API.get("api/assets/chiller/filterData",
+      { params }
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+export const AssestRequestFilter = async (params?: Params) => {
+  try {
+    const res = await API.get("api/assets/chiller-request/list",
+      { params }
+    );
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const FridgeUpdate = async (params?: Params) => {
+  try {
+    const res = await API.get("api/assets/fridge-customer-update/list",
       { params }
     );
     return res.data;

@@ -14,6 +14,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
+import filterRequest from "@/app/components/filterRequest";
 import {
   assetsRequestExport,
   chillerRequestGlobalSearch,
@@ -100,12 +101,14 @@ export default function Page() {
   const fetchTableData = useCallback(
     async (
       pageNo: number = 1,
-      pageSize: number = 10
+      pageSize: number = 10,
+      filters?: any
     ): Promise<listReturnType> => {
       setLoading(true);
       const res = await chillerRequestList({
         page: pageNo.toString(),
         per_page: pageSize.toString(),
+        ...filters
       });
       setLoading(false);
       if (res.error) {
@@ -119,7 +122,7 @@ export default function Page() {
           data: res.data || [],
           currentPage: res?.pagination?.page || 0,
           pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.totalPages || 0,
+          total: res?.pagination?.lastpage || 0,
         };
       }
     },
@@ -237,8 +240,9 @@ export default function Page() {
                   labelTw: "text-[12px] hidden sm:block",
                   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 },],
-              searchBar: true,
+              searchBar: false,
               columnFilter: true,
+              filterRenderer:filterRequest,
               // actions: can("create") ? [
               //   <SidebarBtn
               //     key="name"

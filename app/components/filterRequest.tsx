@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
-import {AssestMasterModel,AssestMasterStatus,AssestMasterfilter} from "@/app/services/allApi";
+import {AssestRequestFilter,AssestMasterStatus,AssestMasterModel,AssestMasterfilter} from "@/app/services/allApi";
 
 
 
@@ -79,8 +79,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
  
 
-
-
+ 
 
 
 
@@ -196,6 +195,7 @@ useEffect(() => {
 
 
 
+
   const onChangeArray = (key: string, value: any) => {
     setPayload((prev) => ({ ...prev, [key]: value }));
   };
@@ -225,50 +225,35 @@ const isDistributorMissing =
 
 
 
-
-
 const applyFilterApi = async () => {
   try {
     const finalPayload = {
+      company_id: companyVal[1],
+      region_id: regionVal[2],
+      area_id: areaVal[25],
+      warehouse_id: warehouseVal[109],
+      model_id: modelVal,
+      status: statusVal,
       
-      company_id: companyVal.join(","),
-      region_id: regionVal.join(","),
-      area_id: areaVal.join(","),
-      warehouse_id: warehouseVal.join(","),
-      // route_id: routeVal.join(","),
-      model_id: modelVal.join(","),
-      status: statusVal.join(","),
-
     };
-
-const filterPayload: any = Object.fromEntries(
-  Object.entries(payload).filter(
-    ([_, value]) =>
-      value !== "" &&
-      value !== null &&
-      value !== undefined &&
-      !(Array.isArray(value) && value.length === 0)
-  )
-);
-
-// API call
-// AssestMasterStatus(filterPayload);
-
-
 
     console.log("Filter Payload 👉", finalPayload);
 
-     const res = await AssestMasterStatus(finalPayload);
+    // 🔥 API CALL
+    const res = await AssestRequestFilter(finalPayload);
 
-    console.log("Filter API Response 👉", res?.data);
+     console.log("Filter API Response 👉", res);
 
-    // agar parent table ko data chahiye
-    submit(finalPayload);
+    // ✅ Table / parent ko data dena ho
+     setPayload(finalPayload);
+    await submit(finalPayload);
 
   } catch (error) {
     console.error("Filter API Error ❌", error);
   }
 };
+
+
 
 
 
@@ -410,12 +395,6 @@ const filterPayload: any = Object.fromEntries(
 
     fetchRoutes();
   }, [warehouseVal.join(",")]);
-
-
-;
-
-
-
 
 
   // Helper to check if a filter should be shown
@@ -617,8 +596,10 @@ const filterPayload: any = Object.fromEntries(
   
   label="Apply Filter"
   buttonTw="px-4 py-2 h-9"
-  disabled={disabled || isApplying || activeFilterCount === 0}
+  // disabled={disabled || isApplying || activeFilterCount === 0}
+  
 />
+
 
       </div>
     </div>

@@ -10,10 +10,12 @@ import Table, { listReturnType, TableDataType } from "@/app/components/customTab
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { fridgeUpdateCustomerList } from "@/app/services/assetsApi";
+import { fridgeUpdateCustomerList,   } from "@/app/services/assetsApi";
+import { FridgeUpdate } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
+import filterFridge from "@/app/components/filterFridge";
 const dropdownDataList = [
     { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
     { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
@@ -25,6 +27,7 @@ export default function FridgeUpdateCustomer() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const [payload, setPayload] = useState({});
 
     // Refresh table when permissions load
     useEffect(() => {
@@ -46,23 +49,95 @@ export default function FridgeUpdateCustomer() {
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
 
+const filterBy = useCallback(
+  async (
+    payload: Record<string, string | number | string[] | null>,
+    pageSize: number
+  ): Promise<listReturnType> => {
+    let result;
+
+    try {
+      const params: Record<string, string> = {
+        per_page: pageSize.toString(),
+      };
+
+      Object.keys(payload || {}).forEach((key) => {
+        const value = payload[key];
+        if (
+          value !== null &&
+          value !== undefined &&
+          value !== "" &&
+          !(Array.isArray(value) && value.length === 0)
+        ) {
+          params[key] = Array.isArray(value)
+            ? value.join(",")
+            : String(value);
+        }
+      });
+
+      result = await FridgeUpdate(params);
+    } catch (err) {
+      throw new Error(String(err));
+    }
+
+    if (result?.error) {
+      throw new Error(result?.data?.message || "Filter failed");
+    }
+
+    const rows = Array.isArray(result?.data)
+      ? result.data
+      : result?.data
+      ? [result.data]
+      : [];
+
+    return {
+      data: rows,
+      total: result?.pagination?.totalPages || rows.length,
+      currentPage: result?.pagination?.page || 1,
+      pageSize: result?.pagination?.limit || pageSize,
+    };
+  },
+  []
+);
+
+
+
+
+
+
+
     const fetchServiceTypes = useCallback(
-        async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+        async (pageNo: number = 1, pageSize: number = 10, filters: Record<string, any> = {})
+         
+        : Promise<listReturnType> => {
             setLoading(true);
             const res = await fridgeUpdateCustomerList({
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
+                 ...filters,
             });
             setLoading(false);
             if (res.error) {
                 showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
                 throw new Error("Unable to fetch the Chillers");
             } else {
+
+
+           
+  const tableData = Array.isArray(res.data)
+    ? res.data
+    : res.data
+      ? [res.data]
+      : [];
+
+
+
                 return {
-                    data: res.data || [],
+                    data: tableData || [],
                     currentPage: res?.pagination?.page || 0,
                     pageSize: res?.pagination?.limit || 10,
-                    total: res?.pagination?.totalPages || 0,
+                    // total: res?.pagination?.totalPages || 0,
+                    total: res?.pagination?.totalPages || tableData.length,
                 };
             }
         }, []
@@ -174,6 +249,8 @@ export default function FridgeUpdateCustomer() {
                     config={{
                         api: {
                             list: fetchServiceTypes,
+                            filterBy: filterBy,
+                             
                             // search: searchChiller
                         },
                         header: {
@@ -194,8 +271,9 @@ export default function FridgeUpdateCustomer() {
                             //         },
                             //     },
                             // ],
-                            searchBar: true,
+                            searchBar: false,
                             columnFilter: true,
+                            filterRenderer:filterFridge,
                         },
                         localStorageKey: "fridgeUpdateCustomerTable",
                         table: {
