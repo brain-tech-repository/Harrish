@@ -391,7 +391,7 @@ export default function InvoiceddEditPage() {
         let usedPrimaryQty = 0;
         itemData.forEach((row, idx) => {
             if (idx !== currentRowIndex && row.item_id === itemId && row.uom_id) {
-                const rowUOM = itemInfo.uoms.find((u: any) => String(u.id) === String(row.uom_id));
+                const rowUOM = itemInfo.uoms.find((u: any) => String(u.uom_id) === String(row.uom_id));
                 if (rowUOM) {
                     const qty = Number(row.Quantity || 0);
                     if (rowUOM.uom_type === 'secondary') {
@@ -1240,6 +1240,17 @@ export default function InvoiceddEditPage() {
     useEffect(() => {
         console.log("1209",warehouseIdForCus)
     });
+    // Check if any item row has quantity greater than available stock
+    const isAnyQtyOverStock = itemData.some((row, idx) => {
+        if (!row.item_id || !row.uom_id || !itemsWithUOM[row.item_id]) return false;
+        const itemUOMData = itemsWithUOM[row.item_id];
+        const uomInfo = itemUOMData.uoms.find(u => String(u.uom_id) === String(row.uom_id));
+        if (!uomInfo) return false;
+        const upc = Number(uomInfo.upc || "1");
+        const uomType = uomInfo.uom_type || "primary";
+        const availableStockNum = calculateAvailableStock(row.item_id, uomType, upc, idx);
+        return Number(row.Quantity) > Number(availableStockNum);
+    });
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-[20px]">
@@ -1846,7 +1857,7 @@ export default function InvoiceddEditPage() {
                                     let availableStock = "";
                                     if (row.item_id && row.uom_id && itemsWithUOM[row.item_id]) {
                                         const itemUOMData = itemsWithUOM[row.item_id];
-                                        const uomInfo = itemUOMData.uoms.find(u => String(u.id) === String(row.uom_id));
+                                        const uomInfo = itemUOMData.uoms.find(u => String(u.uom_id) === String(row.uom_id));
                                         const upc = Number(uomInfo?.upc || "1");
                                         const uomType = uomInfo?.uom_type || "primary";
                                         const availableStockNum = calculateAvailableStock(row.item_id, uomType, upc, idx);
@@ -1875,15 +1886,7 @@ export default function InvoiceddEditPage() {
                                                 value={row.Quantity}
                                                 onChange={(e) => {
                                                     const value = e.target.value;
-                                                    const numValue = parseFloat(value);
-                                                    // Allow any value, validation will be handled on submit
-                                                    if (value === "") {
-                                                        recalculateItem(idx, "Quantity", value);
-                                                    } else if (numValue <= 0) {
-                                                        recalculateItem(idx, "Quantity", "1");
-                                                    } else {
-                                                        recalculateItem(idx, "Quantity", value);
-                                                    }
+                                                    recalculateItem(idx, "Quantity", value);
                                                 }}
                                                 disabled={form.invoice_type === "0" || row.isPrmotion === true}
                                                 error={err}
@@ -1892,23 +1895,14 @@ export default function InvoiceddEditPage() {
                                             {availableStock && (
                                                 <div className="text-xs text-gray-500 mt-1">
                                                     Stock: {Math.floor(Number(availableStock))}
-                                                    {selectedUom && itemsWithUOM[row.item_id] && (() => {
-                                                        const uomInfo = itemsWithUOM[row.item_id].uoms.find(u => String(u.id) === String(row.uom_id));
-                                                        return uomInfo && uomInfo.uom_type === 'secondary';
-                                                    })() && (
-                                                        <span>
-                                                            {' '}({itemsWithUOM[row.item_id].stock_qty} / {(() => {
-                                                                const uomInfo = itemsWithUOM[row.item_id].uoms.find(u => String(u.id) === String(row.uom_id));
-                                                                return uomInfo?.upc;
-                                                            })()})
-                                                        </span>
-                                                    )}
                                                 </div>
                                             )}
-                                            {/* Show validation error if overstock (should not appear now) */}
-                                            {/* {row.item_id && row.uom_id && err && err.includes('Cannot exceed') && (
-                                                <div className="text-xs text-red-500 mt-1">{err}</div>
-                                            )} */}
+                                            {/* Show validation error if entered quantity exceeds available stock */}
+                                            {row.item_id && row.uom_id && Number(row.Quantity) > Number(availableStock) && (
+                                                <div className="text-xs text-red-500 mt-1">
+                                                    Entered quantity exceeds available stock ({availableStock})
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 },
@@ -2069,7 +2063,7 @@ export default function InvoiceddEditPage() {
                     </button>
                     <SidebarBtn
                         isActive={true}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isAnyQtyOverStock}
                         leadingIcon="mdi:check"
                         label={
                             isSubmitting
