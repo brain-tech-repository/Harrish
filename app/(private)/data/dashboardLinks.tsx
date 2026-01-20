@@ -210,7 +210,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
         children: [
           {
             isActive: false,
-            href: "/distributorsorder",
+            href: "/distributorsOrder",
             label: "Distributor's Order",
             leadingIcon: "carbon:delivery-parcel",
             iconColor: "text-cyan-500"

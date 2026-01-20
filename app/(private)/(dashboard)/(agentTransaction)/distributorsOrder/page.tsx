@@ -345,7 +345,7 @@ export default function CustomerInvoicePage() {
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}
-                  href="/distributorsorder/add"
+                  href="/distributorsOrder/add"
                   isActive
                   leadingIcon="mdi:plus"
                   label="Add"
@@ -360,7 +360,7 @@ export default function CustomerInvoicePage() {
               {
                 icon: "lucide:eye",
                 onClick: (row: TableDataType) =>
-                  router.push(`/distributorsorder/details/${row.uuid}`),
+                  router.push(`/distributorsOrder/details/${row.uuid}`),
               },
               {
                 icon: "lucide:download",
