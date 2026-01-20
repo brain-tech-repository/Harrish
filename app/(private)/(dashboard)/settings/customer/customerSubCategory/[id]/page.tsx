@@ -56,7 +56,7 @@ export default function AddEditCustomerSubCategory() {
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const params = useParams<{ id?: string }>();
-
+  const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -135,8 +135,9 @@ export default function AddEditCustomerSubCategory() {
   // ✅ Handle form submission
   const handleSubmit = async (
     values: CustomerSubCategoryFormValues,
-    { setSubmitting }: FormikHelpers<CustomerSubCategoryFormValues>
+    { }: FormikHelpers<CustomerSubCategoryFormValues>
   ) => {
+    setSubmitting(true);
     const payload = {
       customer_category_id: Number(values.customer_category_id),
       customer_sub_category_name: values.customer_sub_category_name,
@@ -162,20 +163,22 @@ export default function AddEditCustomerSubCategory() {
 
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
+        setSubmitting(false);
       } else {
+        router.push("/settings/customer/customerSubCategory");
         showSnackbar(
           isEditMode
             ? "Customer Sub Category Updated Successfully ✅"
             : "Customer Sub Category Added Successfully ✅",
           "success"
         );
-        router.push("/settings/customer/customerSubCategory");
       }
     } catch (error) {
       console.error("Form submission error:", error);
       showSnackbar("Something went wrong while submitting", "error");
-    } finally {
       setSubmitting(false);
+    } finally {
+      router.push("/settings/customer/customerSubCategory");
     }
   };
 
@@ -326,11 +329,19 @@ export default function AddEditCustomerSubCategory() {
                 Cancel
               </button>
               <SidebarBtn
-                label={isEditMode ? (isSubmitting ? "Updating..." : "Update") : (isSubmitting ? "Submiting..." : "Submit")}
-                isActive={true}
-                leadingIcon="mdi:check"
+                label={
+                  submitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Submitting..."
+                    : isEditMode
+                      ? "Update"
+                      : "Submit"
+                }
+                isActive={!submitting}
+                leadingIcon={"mdi:check"}
                 type="submit"
-                disabled={isSubmitting}
+                disabled={submitting}
               />
             </div>
           </Form>

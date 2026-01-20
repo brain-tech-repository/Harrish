@@ -105,7 +105,9 @@ export default function AddEditVendor() {
 
         if (res?.error) {
           showSnackbar(res?.data?.message || "Failed to save Vendor", "error");
+          setSubmitting(false)
         } else {
+          router.push("/settings/manageAssets/vendor");
           showSnackbar(
             res?.message ||
             (isEditMode
@@ -131,9 +133,11 @@ export default function AddEditVendor() {
         }
       } catch (error) {
         showSnackbar("Something went wrong", "error");
-      } finally {
         setSubmitting(false);
+      } finally {
+        router.push("/settings/manageAssets/vendor");
         setLoading(false);
+
       }
     },
   });
@@ -218,7 +222,7 @@ export default function AddEditVendor() {
 
                 {/* Vendor Name */}
                 <InputFields
-                required
+                  required
                   label="Vendor Name"
                   type="text"
                   name="name"
@@ -234,7 +238,7 @@ export default function AddEditVendor() {
 
                 {/* Address */}
                 <InputFields
-                required
+                  required
                   label="Address"
                   type="text"
                   name="address"
@@ -250,7 +254,7 @@ export default function AddEditVendor() {
 
                 {/* Contact */}
                 <InputFields
-                required
+                  required
                   label="Contact Number"
                   type="contact"
                   name="contact"
@@ -266,7 +270,7 @@ export default function AddEditVendor() {
 
                 {/* Email */}
                 <InputFields
-                required
+                  required
                   label="Email Address"
                   type="text"
                   name="email"

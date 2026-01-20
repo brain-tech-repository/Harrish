@@ -331,8 +331,8 @@ export default function AddEditCompany() {
       if (res.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
       } else {
-        showSnackbar(isEditMode ? "Company Updated Successfully" : "Company Created Successfully", "success");
         router.push("/settings/manageCompany/company");
+        showSnackbar(isEditMode ? "Company Updated Successfully" : "Company Created Successfully", "success");
         try {
           await saveFinalCode({
             reserved_code: values.company_code,

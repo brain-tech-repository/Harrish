@@ -262,7 +262,7 @@ export const companyById = async (id: string) => {
 
 export const updateCompany = async (id: string, data: object) => {
   try {
-    const res = await APIFormData.put(`/api/master/company/company/${id}`, data);
+    const res = await APIFormData.post(`/api/master/company/company/${id}`, data);
 
     return res.data;
   } catch (error: unknown) {
