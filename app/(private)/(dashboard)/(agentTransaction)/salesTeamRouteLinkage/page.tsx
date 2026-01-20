@@ -24,111 +24,6 @@ import { linkageList } from "@/app/services/agentTransaction";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { formatWithPattern } from "@/app/utils/formatDate";
 
-const columns = [
-  {
-    key: "salesman",
-    label: "Code",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.salesman === "object" &&
-        row.salesman !== null &&
-        "code" in row.salesman
-        ? (row.salesman as { code?: string }).code || "-"
-        : "-",
-  },
-  {
-    key: "salesman",
-    label: "Name",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.salesman === "object" &&
-        row.salesman !== null &&
-        "name" in row.salesman
-        ? (row.salesman as { name?: string }).name || "-"
-        : "-",
-  },
-  {
-    key: "salesman",
-    label: "Role",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.salesman === "object" &&
-        row.salesman !== null &&
-        "role_name" in row.salesman
-        ? (row.salesman as { role_name?: string }).role_name || "-"
-        : "-",
-  },
-
-  {
-    key: "warehouse",
-    label: "Distributor",
-    showByDefault: true,
-    render: (row: TableDataType) => {
-      if (typeof row.warehouse === "object" && row.warehouse !== null) {
-        const code = 'code' in row.warehouse ? row.warehouse.code : '';
-        const name = 'name' in row.warehouse ? row.warehouse.name : '';
-        if (!code && !name) return "-";
-        return `${code}${code && name ? " - " : ""}${name}`;
-      }
-      return "-";
-    },
-  },
-
-  {
-    key: "manager",
-    label: "SalesTeam Code",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.manager === "object" &&
-        row.manager !== null &&
-        "code" in row.manager
-        ? (row.manager as { code?: string }).code || "-"
-        : "-",
-  },
-
-  {
-    key: "manager",
-    label: "Worked With",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.manager === "object" &&
-        row.manager !== null &&
-        "name" in row.manager
-        ? (row.manager as { name?: string }).name || "-"
-        : "-",
-  },
-  {
-    key: "route",
-    label: "Route",
-    showByDefault: true,
-    render: (row: TableDataType) =>
-      typeof row.route === "object" &&
-        row.route !== null &&
-        "name" in row.route
-        ? (row.route as { name?: string }).name || "-"
-        : "-",
-  },
-  {
-    key: "requested_date",
-    label: "Visit Date",
-    render: (row: TableDataType) => {
-      if (row.requested_date) {
-       return formatWithPattern(
-          new Date(row.requested_date),
-          "DD MMM YYYY",
-          "en-GB",
-        );
-      }
-      return "-";
-    },
-    showByDefault: true,
-  },
-  {
-    key: "requested_time",
-    label: "Visit Time",
-    showByDefault: true,
-  },
-];
 
 
 export default function CustomerInvoicePage() {
@@ -137,19 +32,21 @@ export default function CustomerInvoicePage() {
   // const { setLoading } = useLoading();
 
   const {
-    customerSubCategoryOptions,
-    companyOptions,
+   
     salesmanOptions,
-    channelOptions,
     warehouseAllOptions,
-    routeOptions,
-    regionOptions,
-    areaOptions,
+    ensureWarehouseAllLoaded,
+    ensureSalesmanLoaded,
   } = useAllDropdownListData();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [salesmanId, setSalesmanId] = useState<string>("");
+  const [warehouseId, setWarehouseId] = useState<string>("");
+  useEffect(() => {
+    ensureWarehouseAllLoaded();
+    ensureSalesmanLoaded();
+  }, [ensureWarehouseAllLoaded, ensureSalesmanLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -161,12 +58,21 @@ export default function CustomerInvoicePage() {
     xlsx: false,
   });
 
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [salesmanId, warehouseId]);
   const fetchOrders = useCallback(
     async (page: number = 1, pageSize: number = 5): Promise<listReturnType> => {
       const params: Record<string, string> = {
         page: page.toString(),
         pageSize: pageSize.toString(),
       };
+      if (salesmanId) {
+        params.salesman_id = salesmanId;
+      }
+      if (warehouseId) {
+        params.warehouse_id = warehouseId;
+      }
 
       const listRes = await linkageList(params);
 
@@ -192,7 +98,7 @@ export default function CustomerInvoicePage() {
         pageSize: listRes?.pagination?.limit || pageSize,
       };
     },
-    []
+    [warehouseId, salesmanId]
   );
 
 
@@ -274,18 +180,114 @@ export default function CustomerInvoicePage() {
   //   res();
   // }, []);
 
-  useEffect(() => {
-    setRefreshKey((k) => k + 1);
-  }, [
-    companyOptions,
-    customerSubCategoryOptions,
-    routeOptions,
-    warehouseAllOptions,
-    channelOptions,
-    salesmanOptions,
-    areaOptions,
-    regionOptions,
-  ]);
+
+
+  const columns = [
+  {
+    key: "salesman",
+    label: "Sales Team",
+    showByDefault: true,
+    render: (row: TableDataType) =>
+      typeof row.salesman === "object" &&
+        row.salesman !== null &&
+        "code" in row.salesman ||  "name" in row.salesman
+        ? `${(row.salesman as { code?: string }).code} - ${(row.salesman as { name?: string }).name}` || "-"
+        : "-",
+         filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
+  },
+
+  {
+    key: "salesman",
+    label: "Role",
+    showByDefault: true,
+    render: (row: TableDataType) =>
+      typeof row.salesman === "object" &&
+        row.salesman !== null &&
+        "role_name" in row.salesman
+        ? (row.salesman as { role_name?: string }).role_name || "-"
+        : "-",
+  },
+
+  {
+    key: "warehouse",
+    label: "Distributor",
+    showByDefault: true,
+    render: (row: TableDataType) => {
+      if (typeof row.warehouse === "object" && row.warehouse !== null) {
+        const code = 'code' in row.warehouse ? row.warehouse.code : '';
+        const name = 'name' in row.warehouse ? row.warehouse.name : '';
+        if (!code && !name) return "-";
+        return `${code}${code && name ? " - " : ""}${name}`;
+      }
+      return "-";
+    },
+     filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
+  },
+
+  {
+    key: "manager",
+    label: "Worked With",
+    showByDefault: true,
+    render: (row: TableDataType) =>
+      typeof row.manager === "object" &&
+        row.manager !== null &&
+        "code" in row.manager || "name" in row.manager
+        ? `${(row.manager as { code?: string }).code} - ${(row.manager as { name?: string }).name}`
+        : "-",
+  },
+
+  {
+    key: "route",
+    label: "Route",
+    showByDefault: true,
+    render: (row: TableDataType) =>
+      typeof row.route === "object" &&
+        row.route !== null &&
+        "name" in row.route
+        ? (row.route as { name?: string }).name || "-"
+        : "-",
+  },
+  {
+    key: "requested_date",
+    label: "Visit Date",
+    render: (row: TableDataType) => {
+      if (row.requested_date) {
+       return formatWithPattern(
+          new Date(row.requested_date),
+          "DD MMM YYYY",
+          "en-GB",
+        );
+      }
+      return "-";
+    },
+    showByDefault: true,
+  },
+  {
+    key: "requested_time",
+    label: "Visit Time",
+    showByDefault: true,
+  },
+];
 
   return (
     <>
@@ -297,7 +299,7 @@ export default function CustomerInvoicePage() {
           config={{
             api: { list: fetchOrders, filterBy: filterBy },
             header: {
-              title: "SalesTeam Route Linkage",
+              title: "Sales Team Route Linkage",
               searchBar: false,
               columnFilter: true,
               filterRenderer: FilterComponent,

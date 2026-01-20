@@ -283,9 +283,18 @@ const nextConfig: NextConfig = {
         { source: '/callregister/:uuid', destination: '/callRegister/:uuid' },
         { source: '/callregister', destination: '/callRegister' },
 
+        
         { source: '/chillerinstallation/add', destination: '/chillerInstallation/add' },
         { source: '/chillerinstallation/:uuid', destination: '/chillerInstallation/:uuid' },
         { source: '/chillerinstallation', destination: '/chillerInstallation' },
+        
+        { source: '/chillerinstallation/installationreport/add', destination: '/chillerInstallation/installationReport/add' },
+        { source: '/chillerinstallation/installationreport/:uuid', destination: '/chillerInstallation/installationReport/:uuid' },
+        { source: '/chillerinstallation/installationreport', destination: '/chillerInstallation/installationReport' },
+       
+        { source: '/chillerinstallation/bulktransfer/add', destination: '/chillerInstallation/bulkTransfer/add' },
+        { source: '/chillerinstallation/bulktransfer/:uuid', destination: '/chillerInstallation/bulkTransfer/:uuid' },
+        { source: '/chillerinstallation/bulktransfer', destination: '/chillerInstallation/bulkTransfer' },
 
         { source: '/fridgeupdatecustomer/add', destination: '/fridgeUpdateCustomer/add' },
         { source: '/fridgeupdatecustomer/:uuid', destination: '/fridgeUpdateCustomer/:uuid' },
@@ -521,6 +530,14 @@ const nextConfig: NextConfig = {
         { source: '/settings/customer/:uuid', destination: '/settings/customer/:uuid' },
         { source: '/settings/customer', destination: '/settings/customer' },
 
+        { source: '/settings/customer/customercategory/add', destination: '/settings/customer/customerCategory/add' },
+        { source: '/settings/customer/customercategory/:uuid', destination: '/settings/customer/customerCategory/:uuid' },
+        { source: '/settings/customer/customercategory', destination: '/settings/customer/customerCategory' },
+
+        { source: '/settings/customer/customersubcategory/add', destination: '/settings/customer/customerSubCategory/add' },
+        { source: '/settings/customer/customersubcategory/:uuid', destination: '/settings/customer/customerSubCategory/:uuid' },
+        { source: '/settings/customer/customersubcategory', destination: '/settings/customer/customerSubCategory' },
+
         { source: '/settings/distributorsstock/add', destination: '/settings/distributorsstock/add' },
         { source: '/settings/distributorsstock/:uuid', destination: '/settings/distributorsstock/:uuid' },
         { source: '/settings/distributorsstock', destination: '/settings/distributorsstock' },
@@ -532,6 +549,10 @@ const nextConfig: NextConfig = {
         { source: '/settings/item/add', destination: '/settings/item/add' },
         { source: '/settings/item/:uuid', destination: '/settings/item/:uuid' },
         { source: '/settings/item', destination: '/settings/item' },
+
+        { source: '/settings/item/subcategory/add', destination: '/settings/item/subCategory/add' },
+        { source: '/settings/item/subcategory/:uuid', destination: '/settings/item/subCategory/:uuid' },
+        { source: '/settings/item/subcategory', destination: '/settings/item/subCategory' },
 
         { source: '/settings/location/add', destination: '/settings/location/add' },
         { source: '/settings/location/:uuid', destination: '/settings/location/:uuid' },
@@ -561,9 +582,9 @@ const nextConfig: NextConfig = {
         { source: '/settings/permission/:uuid', destination: '/settings/permission/:uuid' },
         { source: '/settings/permission', destination: '/settings/permission' },
 
-        { source: '/settings/processflow/add', destination: '/settings/processflow/add' },
-        { source: '/settings/processflow/:uuid', destination: '/settings/processflow/:uuid' },
-        { source: '/settings/processflow', destination: '/settings/processflow' },
+        { source: '/settings/processflow/add', destination: '/settings/processFlow/add' },
+        { source: '/settings/processflow/:uuid', destination: '/settings/processFlow/:uuid' },
+        { source: '/settings/processflow', destination: '/settings/processFlow' },
 
         { source: '/settings/promotiontypes/add', destination: '/settings/promotiontypes/add' },
         { source: '/settings/promotiontypes/:uuid', destination: '/settings/promotiontypes/:uuid' },

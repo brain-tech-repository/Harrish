@@ -18,8 +18,9 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 export default function SalemanLoad() {
     const { can, permissions } = usePagePermissions();
-    const { warehouseOptions, salesmanOptions, routeOptions, agentCustomerOptions , ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
-
+    const { routeOptions,agentCustomerOptions,ensureRouteLoaded,ensureAgentCustomerLoaded,warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
+    const [salesmanId, setSalesmanId] = useState<string>("");
+    const [warehouseId, setWarehouseId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -31,11 +32,11 @@ export default function SalemanLoad() {
 
   // Load dropdown data
   useEffect(() => {
-    ensureAgentCustomerLoaded();
-    ensureRouteLoaded();
     ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
+    ensureWarehouseAllLoaded();
+    ensureRouteLoaded();
+    ensureAgentCustomerLoaded();
+  }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureRouteLoaded, ensureAgentCustomerLoaded]);
     const columns: configType["columns"] = [
         { key: "code", label: "Invoice Code" },
         { key: "collection_no", label: "Collection No." },
@@ -51,11 +52,22 @@ export default function SalemanLoad() {
         { key: "outstanding", label: "Outstanding" },
         // { key: "date", label: "Collection Date" },
         {
-            key: "warehouse_code", label: "Warehouse Code", render: (row: TableDataType) => {
+            key: "warehouse_code", label: "Distributor", render: (row: TableDataType) => {
                 const code = row.warehouse_code || "-";
                 const name = row.warehouse_name || "-";
                 return `${code}${code && name ? " - " : ""}${name}`;
-            }
+            },
+             filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
         },
         {
             key: "route_code", label: "Route Code", render: (row: TableDataType) => {
@@ -72,11 +84,22 @@ export default function SalemanLoad() {
             }
         },
         {
-            key: "salesman_code", label: "Salesman", render: (row: TableDataType) => {
+            key: "salesman_code", label: "Sales Team", render: (row: TableDataType) => {
                 const code = row.salesman_code || "-";
                 const name = row.salesman_name || "-";
                 return `${code}${code && name ? " - " : ""}${name}`;
-            }
+            },
+             filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
         },
         {
             key: "status",
@@ -92,6 +115,9 @@ export default function SalemanLoad() {
     const { showSnackbar } = useSnackbar();
     type TableRow = TableDataType & { id?: string };
 
+    useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [salesmanId, warehouseId]);
     const fetchSalesmanLoadHeader = useCallback(
         async (
             page: number = 1,
@@ -99,10 +125,17 @@ export default function SalemanLoad() {
         ): Promise<listReturnType> => {
             try {
                 setLoading(true);
-                const listRes = await collectionList({
+                const params : any = {
                     page: page.toString(),
                     per_page: pageSize.toString(),
-                });
+                }
+                if (salesmanId) {
+                    params.salesman_id = salesmanId;
+                }
+                if (warehouseId) {
+                    params.warehouse_id = warehouseId;
+                }
+                const listRes = await collectionList(params);
                 setLoading(false);
                 return {
                     data: Array.isArray(listRes.data) ? listRes.data : [],
@@ -119,7 +152,7 @@ export default function SalemanLoad() {
                     pageSize: 5,
                 };
             }
-        }, [setLoading]);
+        }, [setLoading, salesmanId, warehouseId]);
 
     useEffect(() => {
         setLoading(true);
@@ -147,7 +180,7 @@ export default function SalemanLoad() {
                                     label: "Warehouse",
                                     isSingle: false,
                                     multiSelectChips: true,
-                                    options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+                                    options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
                                 },
                                 {
                                     key: "salesman",
