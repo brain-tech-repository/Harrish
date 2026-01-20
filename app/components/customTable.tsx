@@ -1095,9 +1095,9 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                 <div className="flex items-center gap-[4px]">
                                                     {rowActions.map(
                                                         (action, index) => (
-                                                            <>
+                                                            <div key={index}>
                                                              <IconWithLoading action={action} index={index} row={row} />
-                                                             </>
+                                                             </div>
                                                         //     <div 
                                                         //         key={index} 
                                                         //         onClick={() => {

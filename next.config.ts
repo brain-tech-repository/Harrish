@@ -541,9 +541,9 @@ const nextConfig: NextConfig = {
         { source: '/settings/manageassets/:uuid', destination: '/settings/manageassets/:uuid' },
         { source: '/settings/manageassets', destination: '/settings/manageassets' },
 
-        { source: '/settings/managecompany/add', destination: '/settings/managecompany/add' },
-        { source: '/settings/managecompany/:uuid', destination: '/settings/managecompany/:uuid' },
-        { source: '/settings/managecompany', destination: '/settings/managecompany' },
+        { source: '/settings/managecompany/company/add', destination: '/settings/manageCompany/company/add' },
+        { source: '/settings/managecompany/company/:id', destination: '/settings/manageCompany/company/:id' },
+        { source: '/settings/managecompany/company', destination: '/settings/manageCompany/company' },
 
         { source: '/settings/map/add', destination: '/settings/map/add' },
         { source: '/settings/map/:uuid', destination: '/settings/map/:uuid' },

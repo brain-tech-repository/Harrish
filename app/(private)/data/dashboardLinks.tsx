@@ -62,7 +62,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
           },
           {
             isActive: false,
-            href: "/routeVisit",
+            href: "/routevisit",
             label: "Route Visit Plan",
             leadingIcon: "icon-park-solid:plan",
             iconColor: "text-yellow-400",
