@@ -298,13 +298,13 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
         leadingIcon: "wpf:approval",
         iconColor: "text-green-500",
       },
-      // {
-      //   isActive: false,
-      //   href: "/settings/processFlow",
-      //   label: "Process Flow",
-      //   leadingIcon: "uil:process",
-      //   iconColor: "text-green-500",
-      // },
+      {
+        isActive: false,
+        href: "/settings/processFlow",
+        label: "Process Flow",
+        leadingIcon: "uil:process",
+        iconColor: "text-green-500",
+      },
       {
         isActive: false,
         href: "#",
@@ -362,7 +362,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
-           {
+          {
             isActive: false,
             href: "/settings/manageAssets/spareMenu",
             label: "Spare Menu",
@@ -385,7 +385,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
         leadingIcon: "pepicons-pop:map",
         // trailingIcon: "mdi-light:chevron-right",
         iconColor: "text-yellow-400",
-       
+
       }
     ],
   },
