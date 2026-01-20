@@ -189,141 +189,141 @@ export default function AddEditRole() {
 
 
   const handleSubmit = async (
-  values: RoleFormValues,
-  { setSubmitting }: FormikHelpers<RoleFormValues>
-) => {
-  setLoading(true);
+    values: RoleFormValues,
+    { setSubmitting }: FormikHelpers<RoleFormValues>
+  ) => {
+    setLoading(true);
 
-  try {
-    const payload = {
-      ...values,
-      labels: values.labels?.map(Number) || [],
-    };
+    try {
+      const payload = {
+        ...values,
+        labels: values.labels?.map(Number) || [],
+      };
 
-    const permsMap = new Map<number, Set<string>>();
+      const permsMap = new Map<number, Set<string>>();
 
-    const resolveMenuId = (m: any): number | null => {
-      const raw =
-        m?.id ??
-        m?.menu?.id ??
-        m?.menus?.[0]?.menu?.id ??
-        m?.menus?.[0]?.id ??
-        null;
-      const num = Number(raw);
-      return Number.isFinite(num) ? num : null;
-    };
+      const resolveMenuId = (m: any): number | null => {
+        const raw =
+          m?.id ??
+          m?.menu?.id ??
+          m?.menus?.[0]?.menu?.id ??
+          m?.menus?.[0]?.id ??
+          null;
+        const num = Number(raw);
+        return Number.isFinite(num) ? num : null;
+      };
 
-    roleTableData.forEach((menu) => {
-      const menuId = resolveMenuId(menu);
-      if (menuId === null) return;
+      roleTableData.forEach((menu) => {
+        const menuId = resolveMenuId(menu);
+        if (menuId === null) return;
 
-      const subs = Array.isArray(menu.submenu)
-        ? menu.submenu
-        : Array.isArray(menu.menus?.[0]?.menu?.submenu)
-        ? menu.menus[0].menu.submenu
-        : [];
+        const subs = Array.isArray(menu.submenu)
+          ? menu.submenu
+          : Array.isArray(menu.menus?.[0]?.menu?.submenu)
+            ? menu.menus[0].menu.submenu
+            : [];
 
-      subs.forEach((sub: any) => {
-        const submenuId = Number(sub?.id ?? sub?.submenu_id ?? sub?.uuid);
-        if (!Number.isFinite(submenuId)) return;
+        subs.forEach((sub: any) => {
+          const submenuId = Number(sub?.id ?? sub?.submenu_id ?? sub?.uuid);
+          if (!Number.isFinite(submenuId)) return;
 
-        const perms = Array.isArray(sub.permissions) ? sub.permissions : [];
-        perms.forEach((p: any) => {
-          const pid = Number(p.permission_id ?? p.id);
-          if (!Number.isFinite(pid)) return;
-          if (!permsMap.has(pid)) permsMap.set(pid, new Set());
-          permsMap.get(pid)!.add(`${menuId}:${submenuId}`);
+          const perms = Array.isArray(sub.permissions) ? sub.permissions : [];
+          perms.forEach((p: any) => {
+            const pid = Number(p.permission_id ?? p.id);
+            if (!Number.isFinite(pid)) return;
+            if (!permsMap.has(pid)) permsMap.set(pid, new Set());
+            permsMap.get(pid)!.add(`${menuId}:${submenuId}`);
+          });
         });
       });
-    });
 
-    const permissionsPayload = Array.from(permsMap.entries()).map(
-      ([permission_id, set]) => ({
-        permission_id,
-        menus: Array.from(set).map((k) => {
-          const [mId, sId] = k.split(":");
-          return { menu_id: Number(mId), submenu_id: Number(sId) };
-        }),
-      })
-    );
-
-    let res;
-    let permissionRes;
-
-    // 🔄 ADD or EDIT MODE
-    if (isEditMode && params?.uuid !== "add") {
-      // ✏️ EDIT MODE
-      res = await editRoles(String(params?.uuid), payload);
-
-      if (res?.error)
-        throw new Error(res?.data?.message || "Failed to update role");
-
-      permissionRes = await assignPermissionsToRole(String(params?.uuid), {
-        permissions: permissionsPayload,
-      });
-
-      if (permissionRes?.error)
-        throw new Error(
-          permissionRes?.data?.message || "Failed to assign permissions"
-        );
-    } else {
-      // ➕ ADD MODE
-      res = await addRoles(payload);
-
-      // ✅ FIX: Accept id or uuid if either exists
-      const newRoleUuid = String(
-        res?.data?.uuid || res?.data?.id || res?.uuid || res?.id || ""
+      const permissionsPayload = Array.from(permsMap.entries()).map(
+        ([permission_id, set]) => ({
+          permission_id,
+          menus: Array.from(set).map((k) => {
+            const [mId, sId] = k.split(":");
+            return { menu_id: Number(mId), submenu_id: Number(sId) };
+          }),
+        })
       );
 
-      if (res?.error || !newRoleUuid) {
-        console.error("addRoles response:", res);
-        throw new Error(res?.data?.message || "Failed to create role");
+      let res;
+      let permissionRes;
+
+      // 🔄 ADD or EDIT MODE
+      if (isEditMode && params?.uuid !== "add") {
+        // ✏️ EDIT MODE
+        res = await editRoles(String(params?.uuid), payload);
+
+        if (res?.error)
+          throw new Error(res?.data?.message || "Failed to update role");
+
+        permissionRes = await assignPermissionsToRole(String(params?.uuid), {
+          permissions: permissionsPayload,
+        });
+
+        if (permissionRes?.error)
+          throw new Error(
+            permissionRes?.data?.message || "Failed to assign permissions"
+          );
+      } else {
+        // ➕ ADD MODE
+        res = await addRoles(payload);
+
+        // ✅ FIX: Accept id or uuid if either exists
+        const newRoleUuid = String(
+          res?.data?.uuid || res?.data?.id || res?.uuid || res?.id || ""
+        );
+
+        if (res?.error || !newRoleUuid) {
+          console.error("addRoles response:", res);
+          throw new Error(res?.data?.message || "Failed to create role");
+        }
+
+        permissionRes = await assignPermissionsToRole(newRoleUuid, {
+          permissions: permissionsPayload,
+        });
+
+        if (permissionRes?.error)
+          throw new Error(
+            permissionRes?.data?.message ||
+            "Failed to assign permissions to newly created role"
+          );
       }
 
-      permissionRes = await assignPermissionsToRole(newRoleUuid, {
-        permissions: permissionsPayload,
-      });
+      // ✅ Handle success message
+      const successMessage =
+        res?.data?.message ||
+        res?.message ||
+        (isEditMode ? "Role updated successfully" : "Role created successfully");
 
-      if (permissionRes?.error)
-        throw new Error(
-          permissionRes?.data?.message ||
-            "Failed to assign permissions to newly created role"
-        );
+      router.push("/settings/role");
+      showSnackbar(successMessage, "success");
+
+      // 🔁 Refresh permission cache
+      try {
+        if (refresh) {
+          await refresh({ force: true });
+        } else {
+          await preload();
+        }
+      } catch (cacheErr) {
+        console.error("Failed to refresh permissions after role change:", cacheErr);
+      }
+
+      // 🔀 Navigate to roles list
+    } catch (error: any) {
+      console.error("Error in handleSubmit:", error);
+      const errMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong while saving role";
+      showSnackbar(errMsg, "error");
+    } finally {
+      setLoading(false);
+      setSubmitting(false);
     }
-
-    // ✅ Handle success message
-    const successMessage =
-      res?.data?.message ||
-      res?.message ||
-      (isEditMode ? "Role updated successfully" : "Role created successfully");
-
-    showSnackbar(successMessage, "success");
-
-    // 🔁 Refresh permission cache
-    try {
-      if (refresh) {
-        await refresh({ force: true });
-      } else {
-        await preload();
-      } 
-    } catch (cacheErr) {
-      console.error("Failed to refresh permissions after role change:", cacheErr);
-    }
-
-    // 🔀 Navigate to roles list
-    router.push("/settings/role");
-  } catch (error: any) {
-    console.error("Error in handleSubmit:", error);
-    const errMsg =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Something went wrong while saving role";
-    showSnackbar(errMsg, "error");
-  } finally {
-    setLoading(false);
-    setSubmitting(false);
-  }
-};
+  };
 
 
 

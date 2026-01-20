@@ -46,7 +46,7 @@ export default function AddEditCustomerSubCategory() {
   const params = useParams<{ id?: string }>();
 
   const [loading, setLoading] = useState(false);
-  const { assetsTypeOptions, manufacturerOptions , ensureAssetsTypeLoaded, ensureManufacturerLoaded} = useAllDropdownListData();
+  const { assetsTypeOptions, manufacturerOptions, ensureAssetsTypeLoaded, ensureManufacturerLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -67,82 +67,86 @@ export default function AddEditCustomerSubCategory() {
   });
 
   // ✅ Fetch Customer Categories
-  
+
 
   // ✅ Fetch data if editing or generate code if adding
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-      // Run this only once
-      if (!codeGeneratedRef.current) {
-        codeGeneratedRef.current = true;
+        // Run this only once
+        if (!codeGeneratedRef.current) {
+          codeGeneratedRef.current = true;
 
-        const res = await genearateCode({ model_name: "ast_mod_code" });
+          const res = await genearateCode({ model_name: "ast_mod_code" });
 
-        if (res?.code) {
-          setInitialValues((prev) => ({ ...prev, code: res.code }));
+          if (res?.code) {
+            setInitialValues((prev) => ({ ...prev, code: res.code }));
+          }
+
+          if (res?.prefix) {
+            setPrefix(res.prefix);
+          }
         }
-
-        if (res?.prefix) {
-          setPrefix(res.prefix);
-        }
+      } catch (err) {
+        console.error("Error generating code", err);
+        showSnackbar("Failed to generate code", "error");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error generating code", err);
-      showSnackbar("Failed to generate code", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchData();
-}, [showSnackbar]);
+    fetchData();
+  }, [showSnackbar]);
 
 
   const handleSubmit = async (
-  values: ManufacturerFormValues,
-  { setSubmitting }: FormikHelpers<ManufacturerFormValues>
-) => {
-  const payload = {
-    name: values.name,
-    status: Number(values.status),
-    code: values.code,
-    asset_type: values.asset_type,
-    manu_type: values.manu_type,
-  };
+    values: ManufacturerFormValues,
+    { setSubmitting }: FormikHelpers<ManufacturerFormValues>
+  ) => {
+    setSubmitting(true);
+    const payload = {
+      name: values.name,
+      status: Number(values.status),
+      code: values.code,
+      asset_type: values.asset_type,
+      manu_type: values.manu_type,
+    };
 
-  let res: any;
+    let res: any;
 
-  try {
-    // ---- ADD FLOW ----
-    res = await addAssetsModel(payload);
-
-    // Save code
     try {
-      await saveFinalCode({
-        reserved_code: values.code,
-        model_name: "ast_mod_code",
-      });
-    } catch (e) {
-      console.error("Code reservation failed", e);
-    }
+      // ---- ADD FLOW ----
+      res = await addAssetsModel(payload);
 
-    // Handle response
-    if (res?.error) {
-      showSnackbar(res?.data?.message || "Failed to submit form", "error");
-    } else {
-      showSnackbar("Asset Type Added Successfully ✅", "success");
+      // Save code
+      try {
+        await saveFinalCode({
+          reserved_code: values.code,
+          model_name: "ast_mod_code",
+        });
+      } catch (e) {
+        console.error("Code reservation failed", e);
+      }
+
+      // Handle response
+      if (res?.error) {
+        showSnackbar(res?.data?.message || "Failed to submit form", "error");
+        setSubmitting(false);
+      } else {
+        router.push("/settings/manageAssets/assetsModel");
+        showSnackbar("Asset Type Added Successfully ✅", "success");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      showSnackbar("Something went wrong while submitting", "error");
+      setSubmitting(false);
+    } finally {
       router.push("/settings/manageAssets/assetsModel");
+      // setSubmitting(false);
     }
-  } catch (error) {
-    console.error("Form submission error:", error);
-    showSnackbar("Something went wrong while submitting", "error");
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
 
 
@@ -175,11 +179,11 @@ export default function AddEditCustomerSubCategory() {
         validationSchema={ManufacturerSchema}
         onSubmit={handleSubmit}
       >
-        {({ handleSubmit, values, setFieldValue, errors, touched ,isSubmitting}) => (
+        {({ handleSubmit, values, setFieldValue, errors, touched, isSubmitting }) => (
           <Form onSubmit={handleSubmit}>
             <ContainerCard>
               <h2 className="text-lg font-medium text-gray-800 mb-4">
-                Assets Model Details 
+                Assets Model Details
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -220,7 +224,7 @@ export default function AddEditCustomerSubCategory() {
                       errors.name
                     }
                   />
-              
+
                 </div>
 
                 <div>
@@ -237,7 +241,7 @@ export default function AddEditCustomerSubCategory() {
                       errors.asset_type
                     }
                   />
-              
+
                 </div>
 
                 <div>
@@ -254,7 +258,7 @@ export default function AddEditCustomerSubCategory() {
                       errors.manu_type
                     }
                   />
-              
+
                 </div>
 
                 {/* Status */}
@@ -280,15 +284,15 @@ export default function AddEditCustomerSubCategory() {
               <button
                 type="button"
                 // onClick={() => router.back()}
-              onClick={() => router.push("/settings/manageAssets/assetsModel")}
+                onClick={() => router.push("/settings/manageAssets/assetsModel")}
 
                 className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
               >
                 Cancel
               </button>
               <SidebarBtn
-                label={ (isSubmitting?"Submiting...":"Submit")}
-                isActive={true}
+                label={(isSubmitting ? "Submiting..." : "Submit")}
+                isActive={!isSubmitting}
                 leadingIcon="mdi:check"
                 type="submit"
                 disabled={isSubmitting}

@@ -94,6 +94,7 @@ export default function AddAssetsCategory() {
     values: AssetsTypeFormValues,
     { setSubmitting }: FormikHelpers<AssetsTypeFormValues>
   ) => {
+    setSubmitting(true);
     const payload = {
       name: values.name,
       status: Number(values.status),
@@ -119,15 +120,17 @@ export default function AddAssetsCategory() {
       // Handle response
       if (res?.error) {
         showSnackbar(res?.data?.message || "Failed to submit form", "error");
+        setSubmitting(false)
       } else {
+        router.push("settings/manageAssete/assetsCategory");
         showSnackbar("Asset Type Added Successfully ✅", "success");
-        router.push("../assetsCategory");
       }
     } catch (error) {
       console.error("Form submission error:", error);
       showSnackbar("Something went wrong while submitting", "error");
-    } finally {
       setSubmitting(false);
+    } finally {
+      router.push("settings/manageAssets/assetsCategory");
     }
   };
 
@@ -241,7 +244,7 @@ export default function AddAssetsCategory() {
               </button>
               <SidebarBtn
                 label={(isSubmitting ? "Submiting..." : "Submit")}
-                isActive={true}
+                isActive={!isSubmitting}
                 leadingIcon="mdi:check"
                 type="submit"
                 disabled={isSubmitting}
