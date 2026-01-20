@@ -380,6 +380,8 @@ export default function AddEditVehicleWithStepper() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
     const valid = await validateCurrentStep(currentStep);
     if (!valid) {
@@ -390,6 +392,7 @@ export default function AddEditVehicleWithStepper() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const finalWarehouseId =
         form.ownerType === "company" ? "" : form.warehouseId;
@@ -443,6 +446,8 @@ export default function AddEditVehicleWithStepper() {
         isEditMode ? "Update vehicle failed" : "Add vehicle failed",
         "error"
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -678,6 +683,7 @@ export default function AddEditVehicleWithStepper() {
         </h1>
       </div>
       <div className="flex mb-6 justify-between items-center">
+        
         <StepperForm
           steps={steps.map((step) => ({
             ...step,
@@ -691,7 +697,13 @@ export default function AddEditVehicleWithStepper() {
           showSubmitButton={isLastStep}
           showNextButton={!isLastStep}
           nextButtonText="Save & Next"
-          submitButtonText={isEditMode ? "Update" : "Submit"}
+          submitButtonText={isSubmitting
+              ? isEditMode
+                ? "Updating..."
+                : "Submitting..."
+              : isEditMode
+                ? "Update"
+                : "Submit"}
         >
           {renderStepContent()}
         </StepperForm>

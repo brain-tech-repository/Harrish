@@ -107,7 +107,7 @@ export default function AddPricing() {
     ensureCustomerSubCategoryLoaded();
   }, [fetchRegionOptions, fetchAreaOptions, fetchWarehouseOptions, fetchRouteOptions, fetchCustomerCategoryOptions, ensureCustomerSubCategoryLoaded])
 
-
+  const [submitting, setSubmitting] = useState(false);
   // Item Category -> Items
   useEffect(() => {
     async function fetchItemsCategory(itemCategories: string[]) {
@@ -380,6 +380,7 @@ export default function AddPricing() {
     };
 
     try {
+      setSubmitting(true);
       const missingErrors: Record<string, string> = {};
       if (keyCombo.Item) {
         if (!keyValue[keyCombo.Item] || keyValue[keyCombo.Item].length === 0) {
@@ -431,6 +432,9 @@ export default function AddPricing() {
         console.error("Submit error:", err);
         showSnackbar(isEditMode ? "Failed to update promotion" : "Failed to add promotion", "error");
       }
+    }
+    finally{
+      setSubmitting(false);
     }
   };
   const renderStepContent = () => {
@@ -514,7 +518,11 @@ export default function AddPricing() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={isEditMode ? "Update" : "Submit"}
+              submitButtonText={submitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"}
             >
               {renderStepContent()}
             </StepperForm>

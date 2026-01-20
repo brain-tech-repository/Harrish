@@ -1083,7 +1083,13 @@ export default function AddEditRouteVisit() {
         showSubmitButton={isLastStep}
         showNextButton={!isLastStep}
         nextButtonText="Save & Next"
-        submitButtonText={submitting ? "Submitting..." : "Submit"}
+        submitButtonText={submitting
+              ? isEditMode
+                ? "Updating..."
+                : "Submitting..."
+              : isEditMode
+                ? "Update"
+                : "Submit"}
       >
         {renderStepContent()}
       </StepperForm>

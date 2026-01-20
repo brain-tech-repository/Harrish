@@ -449,7 +449,12 @@ export default function AddEditSalesmanUnload() {
           <SidebarBtn
             isActive={!submitting}
             disabled={submitting}
-            label={isEditMode ? "Update Unload" : "Create Unload"}
+            leadingIcon="mdi:check"
+            label={submitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update Load"
+                    : "Create Load"}
             onClick={handleSubmit}
           />
         </div>

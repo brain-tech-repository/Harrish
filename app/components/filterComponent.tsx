@@ -120,7 +120,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
   const companyVal = toArray(payload.company_id);
   const regionVal = toArray(payload.region_id);
-  const areaVal = toArray(payload.sub_region_id);
+  const areaVal = toArray(payload.area_id);
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
@@ -354,7 +354,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("company_id", val);
             // reset downstream when parent changes
             onChangeArray("region_id", []);
-            onChangeArray("sub_region_id", []);
+            onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
           }}
@@ -381,17 +381,17 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("region_id", val);
-            onChangeArray("sub_region_id", []);
+            onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
           }}
         />
       )}
       {/* Area */}
-      {showFilter("sub_region_id") && (
+      {showFilter("area_id") && (
         <InputFields
           label="Area"
-          name="sub_region_id"
+          name="area_id"
           type="select"
           searchable={true}
           isSingle={false}
@@ -407,7 +407,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("sub_region_id", val);
+            onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
           }}

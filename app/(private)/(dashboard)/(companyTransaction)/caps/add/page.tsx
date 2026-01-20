@@ -1214,6 +1214,7 @@ export default function CapsAddPage() {
           </button>
           <SidebarBtn
             isActive={!submitting}
+            leadingIcon="mdi:check"
             label={submitting ? "Creating CAPS Deposit..." : "Create CAPS Deposit"}
             // label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Collection" : "Create CAPS Collection")}
             onClick={handleSubmit}

@@ -271,6 +271,7 @@ export default function CustomerInvoicePage() {
           pageSize: pagination.limit || pageSize,
         };
       }
+      // const result = await agentOrderList({ filter: Object.values(params) });
       const result = await agentOrderList(params);
       agentOrderFilterCache.current[cacheKey] = result;
       const pagination =
@@ -385,7 +386,7 @@ export default function CustomerInvoicePage() {
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}
-                  href="/distributorsOrder/add"
+                  href="/distributorsorder/add"
                   isActive
                   leadingIcon="mdi:plus"
                   label="Add"
@@ -400,7 +401,7 @@ export default function CustomerInvoicePage() {
               {
                 icon: "lucide:eye",
                 onClick: (row: TableDataType) =>
-                  router.push(`/distributorsOrder/details/${row.uuid}`),
+                  router.push(`/distributorsorder/details/${row.uuid}`),
               },
               {
                 icon: "lucide:download",

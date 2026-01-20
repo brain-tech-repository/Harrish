@@ -48,7 +48,7 @@ export default function AddRoute() {
   const [warehouseName, setWarehouseName] = useState("");
   const [selectedRowIndices, setSelectedRowIndices] = useState<number[]>([]);
   const [chillerData, setChillerData] = useState<any[]>([]);
-
+  const [submitting, setSubmitting] = useState(false);
   // ✅ VALIDATION
   const validationSchema = yup.object().shape({
     region_id: yup.string().required("Region is required"),
@@ -140,6 +140,7 @@ export default function AddRoute() {
   // ✅ SUBMIT
   const handleSubmit = async () => {
     try {
+      setSubmitting(true);
       await validationSchema.validate(form, { abortEarly: false });
       setErrors({});
 
@@ -168,6 +169,9 @@ export default function AddRoute() {
       } else {
         showSnackbar("Failed to add bulk transfer", "error");
       }
+    }
+    finally {
+      setSubmitting(false);
     }
   };
 
@@ -320,7 +324,7 @@ export default function AddRoute() {
           Cancel
         </button>
 
-        <SidebarBtn label="Submit" isActive onClick={handleSubmit} />
+        <SidebarBtn label={submitting ? "Submitting..." : "Submit"} isActive onClick={handleSubmit} disabled={submitting} />
       </div>
     </>
   );

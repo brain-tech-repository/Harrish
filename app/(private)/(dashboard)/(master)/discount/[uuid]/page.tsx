@@ -47,7 +47,7 @@ export default function AddDiscount() {
   const [itemOptions, setItemOptions] = useState<any[]>([]);
   const [itemLoading, setItemLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-
+  const [submitting, setSubmitting] = useState(false);
     const { loading: dataLoading } = useDiscountData({
 
       isEditMode, id, setDiscount, setKeyCombo, setKeyValue, setItemLoading, fetchItemsCategoryWise, router, showSnackbar, setExtraCustomerOptions
@@ -295,6 +295,7 @@ export default function AddDiscount() {
     setSubmitLoading(true);
 
     try {
+    setSubmitting(true);
 
       const payload = {
 
@@ -404,7 +405,7 @@ export default function AddDiscount() {
     } finally {
 
       setSubmitLoading(false);
-
+      setSubmitting(false);
     }
 
   };
@@ -477,7 +478,11 @@ export default function AddDiscount() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText={isEditMode ? "Update" : "Submit"}
+              submitButtonText={ submitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"}
             >
               {renderStepContent()}
             </StepperForm>

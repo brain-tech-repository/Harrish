@@ -15,7 +15,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Logo from "@/app/components/logo";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
-const title = "CAPS Collection Details";
+const title = "CAPS Master Collection Details";
 const backBtnUrl = "/capsCollection";
 
 export default function ViewPage() {
@@ -49,9 +49,10 @@ export default function ViewPage() {
         if (data?.details && Array.isArray(data.details)) {
           const mapped = data.details.map((detail: any, index: number) => ({
             id: String(index + 1),
-            itemCode: detail.item_code ?? "-",
-            itemName: detail.item_name ?? "-",
+            item: `${detail.erp_code ?? ""} - ${detail.item_name ?? ""}` || "-",
             UOM: detail.uom_name ?? "-",
+            price: detail.price ?? "-",
+            total: detail.total ?? "-",
             Quantity: detail.collected_quantity ?? 0,
           }));
 
@@ -59,7 +60,7 @@ export default function ViewPage() {
         }
       } catch (err) {
         console.error(err);
-        showSnackbar("Failed to fetch CAPS collection details", "error");
+        showSnackbar("Failed to fetch CAPS Master Collection details", "error");
       } finally {
         setLoading(false);
       }
@@ -72,10 +73,11 @@ export default function ViewPage() {
    * Table Columns
    * ------------------------------------------------------ */
   const columns = [
-    { label: "Item Code", key: "itemCode" },
-    { label: "Item Name", key: "itemName" },
+    { label: "Item", key: "item" },
+    { label: "Price", key: "price" },
     { label: "UOM", key: "UOM" },
     { label: "Collected Qty", key: "Quantity" },
+    { label: "Total", key: "total" },
   ];
 
   return (
@@ -115,12 +117,12 @@ export default function ViewPage() {
               <hr className="text-[#D5D7DA]" />
 
               {/* Info Section */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-x-8 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 md:gap-x-8 items-start ">
 
                 {/* Warehouse */}
                 <div>
                   <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
-                    <span>Buyer</span>
+                    <span>Distributor</span>
                     <span className="font-semibold">
                       {deliveryData?.warehouse_code
                         ? `${deliveryData?.warehouse_code} - ${deliveryData?.warehouse_name}`
@@ -132,9 +134,9 @@ export default function ViewPage() {
                 {/* Customer */}
                 <div>
                   <div className="flex flex-col space-y-[12px] text-primary-bold text-[14px]">
-                    <span>Seller</span>
+                    <span>Customer</span>
                     <span className="font-semibold">
-                      {deliveryData?.customer || "-"}
+                      {deliveryData?.customer_code || "-"} - {deliveryData?.customer_name || "-"}
                     </span>
                   </div>
                 </div>

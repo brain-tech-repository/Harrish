@@ -13,6 +13,66 @@ const nextConfig: NextConfig = {
     },
     async rewrites() {
       return [
+        // Unified list/add/edit rewrites for all major resources
+        { source: '/advancepayment/add', destination: '/advancePayment/add' },
+        { source: '/advancepayment/:uuid', destination: '/advancePayment/:uuid' },
+        { source: '/advancepayment', destination: '/advancePayment' },
+
+        { source: '/capscollection/add', destination: '/capsCollection/add' },
+        { source: '/capscollection/:uuid', destination: '/capsCollection/:uuid' },
+        { source: '/capscollection', destination: '/capsCollection' },
+
+        { source: '/collection/add', destination: '/collection/add' },
+        { source: '/collection/:uuid', destination: '/collection/:uuid' },
+        { source: '/collection', destination: '/collection' },
+
+        { source: '/distributorsdelivery/add', destination: '/distributorsDelivery/add' },
+        { source: '/distributorsdelivery/:uuid', destination: '/distributorsDelivery/:uuid' },
+        { source: '/distributorsdelivery', destination: '/distributorsDelivery' },
+
+        { source: '/distributorsexchange/add', destination: '/distributorsExchange/add' },
+        { source: '/distributorsexchange/:uuid', destination: '/distributorsExchange/:uuid' },
+        { source: '/distributorsexchange', destination: '/distributorsExchange' },
+
+        { source: '/distributorsinvoice/add', destination: '/distributorsInvoice/add' },
+        { source: '/distributorsinvoice/:uuid', destination: '/distributorsInvoice/:uuid' },
+        { source: '/distributorsinvoice', destination: '/distributorsInvoice' },
+
+        { source: '/distributorsorder/add', destination: '/distributorsOrder/add' },
+        { source: '/distributorsorder/:uuid', destination: '/distributorsOrder/:uuid' },
+        { source: '/distributorsorder', destination: '/distributorsOrder' },
+
+        { source: '/distributorsreturn/add', destination: '/distributorsReturn/add' },
+        { source: '/distributorsreturn/:uuid', destination: '/distributorsReturn/:uuid' },
+        { source: '/distributorsreturn', destination: '/distributorsReturn' },
+
+        { source: '/newcustomer/add', destination: '/newCustomer/add' },
+        { source: '/newcustomer/:uuid', destination: '/newCustomer/:uuid' },
+        { source: '/newcustomer', destination: '/newCustomer' },
+
+        { source: '/salesteamload/add', destination: '/salesTeamLoad/add' },
+        { source: '/salesteamload/:uuid', destination: '/salesTeamLoad/:uuid' },
+        { source: '/salesteamload', destination: '/salesTeamLoad' },
+
+        { source: '/salesteamreconcile/add', destination: '/salesTeamReconcile/add' },
+        { source: '/salesteamreconcile/:uuid', destination: '/salesTeamReconcile/:uuid' },
+        { source: '/salesteamreconcile', destination: '/salesTeamReconcile' },
+
+        { source: '/salesteamroutelinkage/add', destination: '/salesTeamRouteLinkage/add' },
+        { source: '/salesteamroutelinkage/:uuid', destination: '/salesTeamRouteLinkage/:uuid' },
+        { source: '/salesteamroutelinkage', destination: '/salesTeamRouteLinkage' },
+
+        { source: '/salesteamtracking/add', destination: '/salesTeamTracking/add' },
+        { source: '/salesteamtracking/:uuid', destination: '/salesTeamTracking/:uuid' },
+        { source: '/salesteamtracking', destination: '/salesTeamTracking' },
+
+        { source: '/salesteamunload/add', destination: '/salesTeamUnload/add' },
+        { source: '/salesteamunload/:uuid', destination: '/salesTeamUnload/:uuid' },
+        { source: '/salesteamunload', destination: '/salesTeamUnload' },
+
+        { source: '/stocktransfer/add', destination: '/stocktransfer/add' },
+        { source: '/stocktransfer/:uuid', destination: '/stocktransfer/:uuid' },
+        { source: '/stocktransfer', destination: '/stocktransfer' },
         // agentTransaction
         { source: '/advancepayment', destination: '/advancePayment' },
         { source: '/advancepayment/:path+', destination: '/advancePayment/:path*' },

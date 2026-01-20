@@ -58,7 +58,7 @@ export default function StockInStoreAddPage() {
     const router = useRouter();
     const { id } = useParams<{ id?: string }>();
     const isEditMode = Boolean(id && id !== "add");
-
+    const [isSubmitting, setSubmitting] = useState(false);
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
 
@@ -243,7 +243,7 @@ export default function StockInStoreAddPage() {
             await Yup.array().of(itemRowSchema).validate(itemData, {
                 abortEarly: false,
             });
-
+            setSubmitting(true);
             setLoading(true);
 
             const basePayload = {
@@ -289,6 +289,7 @@ export default function StockInStoreAddPage() {
             showSnackbar("Something went wrong", "error");
         } finally {
             setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -348,6 +349,7 @@ export default function StockInStoreAddPage() {
                                     type="date"
                                     label="To"
                                     name="to"
+                                    min={values.from}
                                     value={values.to}
                                     onChange={handleChange}
                                 />
@@ -457,8 +459,9 @@ export default function StockInStoreAddPage() {
 
                             <div className="flex justify-end mt-6">
                                 <SidebarBtn
-                                    label="Submit"
+                                    label={isSubmitting ? "Submitting" :"Submit"}
                                     isActive
+                                    disabled={isSubmitting}
                                     onClick={submitForm}
                                 />
                             </div>
