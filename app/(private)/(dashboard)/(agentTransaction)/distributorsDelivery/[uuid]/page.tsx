@@ -1702,11 +1702,12 @@ export default function DeliveryAddEditPage() {
                   >
                     Cancel
                   </button>
+                  {/* Disable submit if any item qty > available stock */}
                   <SidebarBtn
                     type="submit"
                     isActive={true}
                     label={
-                     checkout == 1?"Checkout": isSubmitting ? "Creating Delivery..." : "Create Delivery"
+                      checkout == 1 ? "Checkout" : isSubmitting ? "Creating Delivery..." : "Create Delivery"
                     }
                     leadingIcon="mdi:check"
                     disabled={
@@ -1716,7 +1717,16 @@ export default function DeliveryAddEditPage() {
                       !values.order_code ||
                       !values.salesman_id ||
                       !itemData ||
-                      itemData.some((item) => !item.item_id)
+                      itemData.some((item, idx) => {
+                        if (!item.item_id || !item.uom_id || !itemsWithUOM[item.item_id]) return false;
+                        const itemUOMData = itemsWithUOM[item.item_id];
+                        const uomInfo = itemUOMData.uoms.find(u => String(u.uom_id) === String(item.uom_id));
+                        if (!uomInfo) return false;
+                        const upc = Number(uomInfo.upc || "1");
+                        const uomType = uomInfo.uom_type || "primary";
+                        const availableStockNum = calculateAvailableStock(item.item_id, uomType, upc, idx);
+                        return Number(item.Quantity) > Number(availableStockNum);
+                      })
                     }
                     onClick={() => submitForm()}
                   />
