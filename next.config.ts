@@ -276,7 +276,7 @@ const nextConfig: NextConfig = {
       { source: '/assetsmaster', destination: '/assetsMaster' },
 
       { source: '/assetsrequest/add', destination: '/assetsRequest/add' },
-      { source: '/assetsrequest/:uuid', destination: '/assetsRequest/:uuid' },
+      { source: '/assetsrequest/view/:uuid', destination: '/assetsRequest/view/:uuid' },
       { source: '/assetsrequest', destination: '/assetsRequest' },
 
       { source: '/callregister/add', destination: '/callRegister/add' },

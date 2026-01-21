@@ -17,7 +17,7 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { downloadFile } from "@/app/services/allApi";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 const columns = [
     { key: "sap_id", label: "SAP", showByDefault: true, render: (row: TableDataType) => <span>{row.sap_id}</span> },
     { key: "order_code", label: "Order Number", showByDefault: true, },
@@ -63,20 +63,6 @@ const columns = [
 export default function CustomerInvoicePage() {
     const { can, permissions } = usePagePermissions();
     const { setLoading } = useLoading();
-    const { customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions, ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
-    // Load dropdown data
-    useEffect(() => {
-        ensureAgentCustomerLoaded();
-        ensureAreaLoaded();
-        ensureChannelLoaded();
-        ensureCompanyLoaded();
-        ensureCustomerSubCategoryLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
-        ensureSalesmanLoaded();
-        ensureWarehouseAllLoaded();
-    }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const { showSnackbar } = useSnackbar();
     const router = useRouter();
     const [refreshKey, setRefreshKey] = useState(0);
@@ -158,10 +144,6 @@ export default function CustomerInvoicePage() {
         }
     };
 
-    useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [companyOptions, customerSubCategoryOptions, routeOptions, warehouseAllOptions, channelOptions, salesmanOptions, areaOptions, regionOptions]);
-
     return (
         <>
             <div className="flex flex-col h-full">
@@ -173,6 +155,12 @@ export default function CustomerInvoicePage() {
                             title: "Purchase Orders",
                             searchBar: false,
                             columnFilter: true,
+                            filterRenderer: (props) => (
+                                                                                                                              <FilterComponent
+                                                                                                                              currentDate={true}
+                                                                                                                                {...props}
+                                                                                                                              />
+                                                                                                                            ),
                             threeDot: [
                                 {
                                     icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
@@ -187,62 +175,7 @@ export default function CustomerInvoicePage() {
                                     onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                                 },
                             ],
-                            filterByFields: [
-                                {
-                                    key: "start_date",
-                                    label: "Start Date",
-                                    type: "date",
-                                    applyWhen: (filters) => !!filters.start_date && !!filters.end_date,
-                                },
-                                {
-                                    key: "end_date",
-                                    label: "End Date",
-                                    type: "date",
-                                    applyWhen: (filters) => !!filters.start_date && !!filters.end_date,
-                                },
-                                // {
-                                //     key: "company_id",
-                                //     label: "Company",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(companyOptions) ? companyOptions : [],
-                                // },
-                                // {
-                                //     key: "warehouse_id",
-                                //     label: "Warehouse",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                                // },
-                                // {
-                                //     key: "region_id",
-                                //     label: "Region",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(regionOptions) ? regionOptions : [],
-                                // },
-                                // {
-                                //     key: "sub_region_id",
-                                //     label: "Sub Region",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(areaOptions) ? areaOptions : [],
-                                // },
-                                // {
-                                //     key: "route_id",
-                                //     label: "Route",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(routeOptions) ? routeOptions : [],
-                                // },
-                                // {
-                                //     key: "salesman_id",
-                                //     label: "Salesman",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                                // }
-                            ],
+                           
                             actions: can("create") ? [
                                 <SidebarBtn
                                     key={1}

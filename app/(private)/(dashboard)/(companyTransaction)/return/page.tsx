@@ -20,7 +20,7 @@ import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { reasonObj } from "./add/page";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 const columns = [
   { key: "return_code", label: "Return Code", showByDefault: true },
   // {
@@ -65,29 +65,7 @@ const columns = [
 
 export default function CustomerInvoicePage() {
   const { can, permissions } = usePagePermissions();
-  const {
-    customerSubCategoryOptions,
-    companyOptions,
-    salesmanOptions,
-    channelOptions,
-    warehouseAllOptions,
-    routeOptions,
-    regionOptions,
-    areaOptions,
-   ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
-
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureChannelLoaded();
-    ensureCompanyLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
-  const { showSnackbar } = useSnackbar();
+   const { showSnackbar } = useSnackbar();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -224,18 +202,12 @@ export default function CustomerInvoicePage() {
                   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 },
               ],
-              filterByFields: [
-                {
-                  key: "start_date",
-                  label: "Start Date",
-                  type: "date",
-                },
-                {
-                  key: "end_date",
-                  label: "End Date",
-                  type: "date",
-                },
-              ],
+ filterRenderer: (props) => (
+                                                                                                   <FilterComponent
+                                                                                                   currentDate={true}
+                                                                                                     {...props}
+                                                                                                   />
+                                                                                                 ),
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}
