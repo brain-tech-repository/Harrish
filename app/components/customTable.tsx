@@ -121,6 +121,7 @@ export type configType = {
     };
     rowActions?: {
         icon?: string;
+        showLoading?: boolean;
         label?: string;
         onClick?: (data: TableDataType) => void;
     }[];
@@ -1096,26 +1097,8 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                     {rowActions.map(
                                                         (action, index) => (
                                                             <div key={index}>
-                                                             <IconWithLoading action={action} index={index} row={row} />
-                                                             </div>
-                                                        //     <div 
-                                                        //         key={index} 
-                                                        //         onClick={() => {
-                                                        //             if (action.onClick) {
-                                                        //                 action.onClick(row);
-                                                        //             }
-                                                        //         }}
-                                                        //         className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
-                                                        //     >
-                                                        //     {action.icon 
-                                                        //         ? <Icon
-                                                        //             key={index}
-                                                        //             icon={action.icon}
-                                                        //             width={20}
-                                                        //         /> 
-                                                        //         : <span>{action.label}</span>
-                                                        //     }
-                                                        // </div>
+                                                                <IconWithLoading action={action} index={index} row={row} showLoading={action.showLoading} />
+                                                            </div>
                                                         )
                                                     )}
                                                 </div>
@@ -1142,9 +1125,9 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     );
 }
 
-function IconWithLoading({ action, index, row }: { action: any; index: number; row: any }){
+function IconWithLoading({ action, index, row ,showLoading}: { action: any; index: number; row: any; showLoading?: boolean }){
     const [isLoading, setIsLoading] = useState(false);
-    return (<> {isLoading ? <div className="flex justify-center items-center"><Skeleton width={20}/></div> : <div 
+    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={20}/></div> : <div 
                                                                 key={index} 
                                                                 onClick={async () => {
                                                                     if (action.onClick) {

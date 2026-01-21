@@ -15,14 +15,14 @@ import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 export default function SalemanLoad() {
     const { can, permissions } = usePagePermissions();
     const { routeOptions,agentCustomerOptions,ensureRouteLoaded,ensureAgentCustomerLoaded,warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
     const [salesmanId, setSalesmanId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
-
+    
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -169,42 +169,12 @@ export default function SalemanLoad() {
                             // filterBy: filterBy,
                         },
                         header: {
-                            filterByFields: [
-                                {
-                                    key: "date_change",
-                                    label: "Date Range",
-                                    type: "dateChange"
-                                },
-                                {
-                                    key: "warehouse",
-                                    label: "Warehouse",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                                },
-                                {
-                                    key: "salesman",
-                                    label: "Sales Team",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                                },
-                                {
-                                    key: "route_id",
-                                    label: "Route",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(routeOptions) ? routeOptions : [],
-                                },
-                                {
-                                    key: "customer",
-                                    label: "Customer",
-                                    isSingle: false,
-                                    multiSelectChips: true,
-                                    options: Array.isArray(agentCustomerOptions) ? agentCustomerOptions : [],
-                                },
-
-                            ],
+                             filterRenderer: (props) => (
+                                                                                                                              <FilterComponent
+                                                                                                                              currentDate={true}
+                                                                                                                                {...props}
+                                                                                                                              />
+                                                                                                                            ),
                             title: "Collection",
                             searchBar: false,
                             columnFilter: true,

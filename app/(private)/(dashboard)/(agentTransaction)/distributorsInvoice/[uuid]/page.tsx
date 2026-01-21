@@ -1274,7 +1274,7 @@ export default function InvoiceddEditPage() {
 
                     <div className="flex flex-col items-end">
                         <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-                            Invoices
+                            Invoice
                         </span>
                         <span className="text-primary text-[14px] tracking-[10px]">
                             #{code}
@@ -1889,7 +1889,7 @@ export default function InvoiceddEditPage() {
                                                     recalculateItem(idx, "Quantity", value);
                                                 }}
                                                 disabled={form.invoice_type === "0" || row.isPrmotion === true}
-                                                error={err}
+                                                // error={err}
                                             />
                                             {/* Show available stock below input */}
                                             {availableStock && (
