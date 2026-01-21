@@ -61,7 +61,7 @@ export default function ViewPage() {
 
   const tabList = [
         { key: "overview", label: "Overview" },
-        { key: "items", label: "Items" },
+        { key: "items", label: "Load Items" },
     ];
   useEffect(() => {
     const fetchData = async () => {
