@@ -163,23 +163,23 @@ const nextConfig: NextConfig = {
       { source: '/collection', destination: '/collection' },
 
       { source: '/distributorsdelivery/add', destination: '/distributorsDelivery/add' },
-      { source: '/distributorsdelivery/:uuid', destination: '/distributorsDelivery/:uuid' },
+      { source: '/distributorsdelivery/details/:uuid', destination: '/distributorsDelivery/details/:uuid' },
       { source: '/distributorsdelivery', destination: '/distributorsDelivery' },
 
       { source: '/distributorsexchange/add', destination: '/distributorsExchange/add' },
-      { source: '/distributorsexchange/:uuid', destination: '/distributorsExchange/:uuid' },
+      { source: '/distributorsexchange/details/:uuid', destination: '/distributorsExchange/details/:uuid' },
       { source: '/distributorsexchange', destination: '/distributorsExchange' },
 
       { source: '/distributorsinvoice/add', destination: '/distributorsInvoice/add' },
-      { source: '/distributorsinvoice/:uuid', destination: '/distributorsInvoice/:uuid' },
+      { source: '/distributorsinvoice/details/:uuid', destination: '/distributorsInvoice/details/:uuid' },
       { source: '/distributorsinvoice', destination: '/distributorsInvoice' },
 
       { source: '/distributorsorder/add', destination: '/distributorsOrder/add' },
-      { source: '/distributorsorder/:uuid', destination: '/distributorsOrder/:uuid' },
+      { source: '/distributorsorder/details/:uuid', destination: '/distributorsOrder/details/:uuid' },
       { source: '/distributorsorder', destination: '/distributorsOrder' },
 
       { source: '/distributorsreturn/add', destination: '/distributorsReturn/add' },
-      { source: '/distributorsreturn/:uuid', destination: '/distributorsReturn/:uuid' },
+      { source: '/distributorsreturn/details/:uuid', destination: '/distributorsReturn/details/:uuid' },
       { source: '/distributorsreturn', destination: '/distributorsReturn' },
 
       { source: '/newcustomer/add', destination: '/newCustomer/add' },
@@ -203,7 +203,7 @@ const nextConfig: NextConfig = {
       { source: '/salesteamtracking', destination: '/salesTeamTracking' },
 
       { source: '/salesteamunload/add', destination: '/salesTeamUnload/add' },
-      { source: '/salesteamunload/:uuid', destination: '/salesTeamUnload/:uuid' },
+      { source: '/salesteamunload/details/:uuid', destination: '/salesTeamUnload/details/:uuid' },
       { source: '/salesteamunload', destination: '/salesTeamUnload' },
 
       { source: '/stocktransfer/add', destination: '/stocktransfer/add' },
@@ -216,7 +216,7 @@ const nextConfig: NextConfig = {
       { source: '/advancepayment', destination: '/advancePayment' },
 
       { source: '/capscollection/add', destination: '/capsCollection/add' },
-      { source: '/capscollection/:uuid', destination: '/capsCollection/:uuid' },
+      { source: '/capscollection/details/:uuid', destination: '/capsCollection/details/:uuid' },
       { source: '/capscollection', destination: '/capsCollection' },
 
       { source: '/collection/add', destination: '/collection/add' },
@@ -248,7 +248,7 @@ const nextConfig: NextConfig = {
       { source: '/newcustomer', destination: '/newCustomer' },
 
       { source: '/salesteamload/add', destination: '/salesTeamLoad/add' },
-      { source: '/salesteamload/:uuid', destination: '/salesTeamLoad/:uuid' },
+      { source: '/salesteamload/details/:uuid', destination: '/salesTeamLoad/details/:uuid' },
       { source: '/salesteamload', destination: '/salesTeamLoad' },
 
       { source: '/salesteamreconcile/add', destination: '/salesTeamReconcile/add' },

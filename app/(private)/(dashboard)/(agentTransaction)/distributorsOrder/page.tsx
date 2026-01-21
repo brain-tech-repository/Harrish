@@ -413,6 +413,7 @@ export default function CustomerInvoicePage() {
               },
               {
                 icon: "lucide:download",
+                showLoading:true,
                 onClick: (row: TableDataType) => downloadPdf(row.uuid),
               },
               {
