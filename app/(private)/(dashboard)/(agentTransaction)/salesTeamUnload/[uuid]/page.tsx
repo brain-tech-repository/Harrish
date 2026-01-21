@@ -453,8 +453,8 @@ export default function AddEditSalesmanUnload() {
             label={submitting
                   ? (isEditMode ? "Updating..." : "Submitting...")
                   : isEditMode
-                    ? "Update Load"
-                    : "Create Load"}
+                    ? "Update Unload"
+                    : "Create Unload"}
             onClick={handleSubmit}
           />
         </div>

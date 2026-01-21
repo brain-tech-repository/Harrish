@@ -191,7 +191,7 @@ const nextConfig: NextConfig = {
       { source: '/salesteamload', destination: '/salesTeamLoad' },
 
       { source: '/salesteamreconcile/add', destination: '/salesTeamReconcile/add' },
-      { source: '/salesteamreconcile/:uuid', destination: '/salesTeamReconcile/:uuid' },
+      { source: '/salesteamreconcile/details/:uuid', destination: '/salesTeamReconcile/details/:uuid' },
       { source: '/salesteamreconcile', destination: '/salesTeamReconcile' },
 
       { source: '/salesteamroutelinkage/add', destination: '/salesTeamRouteLinkage/add' },
@@ -251,9 +251,7 @@ const nextConfig: NextConfig = {
       { source: '/salesteamload/details/:uuid', destination: '/salesTeamLoad/details/:uuid' },
       { source: '/salesteamload', destination: '/salesTeamLoad' },
 
-      { source: '/salesteamreconcile/add', destination: '/salesTeamReconcile/add' },
-      { source: '/salesteamreconcile/:uuid', destination: '/salesTeamReconcile/:uuid' },
-      { source: '/salesteamreconcile', destination: '/salesTeamReconcile' },
+ 
 
       { source: '/salesteamroutelinkage/add', destination: '/salesTeamRouteLinkage/add' },
       { source: '/salesteamroutelinkage/:uuid', destination: '/salesTeamRouteLinkage/:uuid' },
