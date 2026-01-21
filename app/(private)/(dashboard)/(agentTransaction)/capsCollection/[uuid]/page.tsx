@@ -565,7 +565,7 @@ export default function AddEditCapsCollection() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Update CAPS Master Collection" : "Add Master Collection"}
+            {isEditMode ? "Update CAPS Master Collection" : "Add CAPS Master Collection"}
           </h1>
         </div>
       </div>
@@ -849,7 +849,7 @@ export default function AddEditCapsCollection() {
           <SidebarBtn
             isActive={!submitting}
             leadingIcon="mdi:check"
-            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Master Collection" : "Create CAPS Master Collection")}
+            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Collection" : "Create Collection")}
             onClick={handleSubmit}
             disabled={submitting || !form.warehouse || !form.customer || tableData.some(row => !row.item || !row.uom)}
           />
