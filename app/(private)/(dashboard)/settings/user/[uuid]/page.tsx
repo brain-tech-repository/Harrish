@@ -292,7 +292,7 @@ export default function UserAddEdit() {
             if (areaIds.length > 0) {
               setSkeleton((s) => ({ ...s, warehouse: true }));
               try {
-                const resp = await warehouseList({ area_id: areaIds.join(",") });
+                const resp = await warehouseList({ area_id: areaIds.join(","), dropdown: "true" });
                 const whs = resp?.data ?? [];
                 newOptions.warehouse = mapToOptions(whs, (w: any) => ({ value: String(w.id), label: (w.warehouse_code || "") + (w.warehouse_code && w.warehouse_name ? " - " : "") + (w.warehouse_name || "") }));
               } catch (e) {
