@@ -54,6 +54,25 @@ type ApiResponse<T> = {
   message?: string;
 };
 
+// 🔥 Helper function (keep ABOVE the component)
+const buildCleanPayload = (obj: Record<string, any>) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => {
+      if (value === "" || value === null || value === undefined) return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    })
+  );
+};
+
+
+
+
+
+
+
+
+
 export default function FilterComponent(filterProps: FilterComponentProps) {
     const { disabled = false } = filterProps;
   const {
@@ -227,49 +246,78 @@ const isDistributorMissing =
 
 
 
+// const applyFilterApi = async () => {
+//   try {
+//     const finalPayload = {
+      
+//       company_id: companyVal.join(","),
+//       region_id: regionVal.join(","),
+//       area_id: areaVal.join(","),
+//       warehouse_id: warehouseVal.join(","),
+//       // route_id: routeVal.join(","),
+//       model_id: modelVal.join(","),
+//       status: statusVal.join(","),
+
+//     };
+
+// const filterPayload: any = Object.fromEntries(
+//   Object.entries(payload).filter(
+//     ([_, value]) =>
+//       value !== "" &&
+//       value !== null &&
+//       value !== undefined &&
+//       !(Array.isArray(value) && value.length === 0)
+//   )
+// );
+
+// // API call
+// // AssestMasterStatus(filterPayload);
+
+
+
+//      console.log("Filter Payload 👉", finalPayload);
+
+//       const res = await AssestMasterStatus(finalPayload);
+
+//     console.log("Filter API Response 👉", res?.data);
+
+//     // agar parent table ko data chahiye
+//      submit(finalPayload);
+
+//   } catch (error) {
+//     console.error("Filter API Error ❌", error);
+//   }
+// };
+
 const applyFilterApi = async () => {
   try {
-    const finalPayload = {
-      
+    // Step 1: raw payload banao
+    const rawPayload = {
       company_id: companyVal.join(","),
       region_id: regionVal.join(","),
       area_id: areaVal.join(","),
       warehouse_id: warehouseVal.join(","),
-      // route_id: routeVal.join(","),
-      model_id: modelVal.join(","),
-      status: statusVal.join(","),
-
+      model_id: modelVal.join(","),   // empty ho sakta hai
+      status: statusVal.join(","),    // empty ho sakta hai
     };
 
-const filterPayload: any = Object.fromEntries(
-  Object.entries(payload).filter(
-    ([_, value]) =>
-      value !== "" &&
-      value !== null &&
-      value !== undefined &&
-      !(Array.isArray(value) && value.length === 0)
-  )
-);
+    // Step 2: empty keys hatao (🔥 MAIN FIX)
+    const finalPayload = buildCleanPayload(rawPayload);
 
-// API call
-// AssestMasterStatus(filterPayload);
+    console.log("✅ FINAL FILTER PAYLOAD", finalPayload);
 
+    // Step 3: API call
+    const res = await AssestMasterStatus(finalPayload);
 
+    console.log("✅ FILTER API RESPONSE", res?.data);
 
-    console.log("Filter Payload 👉", finalPayload);
-
-     const res = await AssestMasterStatus(finalPayload);
-
-    console.log("Filter API Response 👉", res?.data);
-
-    // agar parent table ko data chahiye
+    // Step 4: table ko payload bhejo
     submit(finalPayload);
 
   } catch (error) {
-    console.error("Filter API Error ❌", error);
+    console.error("❌ Filter API Error", error);
   }
 };
-
 
 
 

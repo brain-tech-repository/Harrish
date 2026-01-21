@@ -66,30 +66,9 @@ const {
     
    
   });
- 
-   const ASSET_STATUS_OPTIONS = [
-  { label: "Active", value: "1" },
-  { label: "Inactive", value: "2" },
-  { label: "WH Stock", value: "3" },
-  { label: "IN Transit", value: "4" },
-  { label: "DP Stock", value: "5" },
-  { label: "Workshop Stock", value: "6" },
-  { label: "Out of Uganda", value: "7" },
-  { label: "IN House", value: "8" },
-  { label: "Promotion Store", value: "9" },
- 
-
-  ]
-  const Model=[
-    { label: "Model A", value: "1" },
-  { label: "Model B", value: "2" },
-  ]
-
- 
-  const [isFiltered, setIsFiltered] = useState(false);
+ const [isFiltered, setIsFiltered] = useState(false);
   const [tableFilters, setTableFilters] = useState<any>({});
-
-const fetchWarehouses = async () => {
+  const fetchWarehouses = async () => {
   const res = await AssestMasterfilter();
 
 setWarehouses(
@@ -147,18 +126,8 @@ const [filterState, setFilterState] = useState<{
   area?: any;
   distributor?: any;
 }>({});
-
-
-  
-
 const uuid = paramsRoute?.uuid as string;
-
-
-
-
-
-  
-  const searchChiller = useCallback(
+const searchChiller = useCallback(
     async (
       query: string,
       pageSize: number = 10,
@@ -203,16 +172,9 @@ const uuid = paramsRoute?.uuid as string;
       }
     },
     []
-  );   
- 
+  );
 
-
- 
-
-
-
-
-  const handleExport = async (fileType: "csv" | "xlsx") => {
+ const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
       setLoading(true);
 
@@ -259,47 +221,125 @@ const uuid = paramsRoute?.uuid as string;
   };
 
 
-  useEffect(() => {
-    setLoading(true);
-  }, [])
+  // useEffect(() => {
+  //   setLoading(true);
+  // }, [])
   // ########################################################
-   const fetchServiceTypes = useCallback(
-    async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
-      setLoading(true);
-      const res = await chillerList({
-        page: pageNo.toString(),
-        per_page: pageSize.toString(),
-      });
-      setLoading(false);
-      if (res.error) {
-        showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
-        throw new Error("Unable to fetch the Chillers");
-      } else {
-        return {
-          data: res.data || [],
-          currentPage: res?.pagination?.page || 0,
-          pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.totalPages || 0,
-        };
-      }
-    }, []
-  )
+  //  const fetchServiceTypes = useCallback(
+  //   async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+  //     setLoading(true);
+  //     const res = await chillerList({
+  //       page: pageNo.toString(),
+  //       per_page: pageSize.toString(),
+  //     });
+  //     setLoading(false);
+  //     if (res.error) {
+  //       showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
+  //       throw new Error("Unable to fetch the Chillers");
+  //     } else {
+  //       return {
+  //         data: res.data || [],
+  //         currentPage: res?.pagination?.page || 0,
+  //         pageSize: res?.pagination?.limit || 10,
+  //         total: res?.pagination?.totalPages || 0,
+  //       };
+  //     }
+  //   }, []
+  // )
 
- const filterBy = useCallback(
-    async (payload: Record<string, string | number | null>, pageSize = 10) => {
-      const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
+const fetchServiceTypes = useCallback(
+  async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+    setLoading(true);
 
-      const res = await chillerList(finalPayload);
+    const res = await chillerList({
+      page: pageNo.toString(),
+      per_page: pageSize.toString(),
+      ...tableFilters,   // ✅ filters yahin se aayenge
+    });
 
-      return {
-        data: res?.data || [],
-        total: res?.pagination?.totalPages || 0,
-        currentPage: res?.pagination?.page || 0,
-        pageSize: res?.pagination?.limit || pageSize,
-      };
-    },
-    [tableFilters]  // dependency array
-  );
+    setLoading(false);
+
+    if (res.error) {
+      showSnackbar(res.data.message || "failed to fetch", "error");
+      throw new Error("fetch failed");
+    }
+
+    return {
+      data: res.data || [],
+      currentPage: res?.pagination?.page || 0,
+      pageSize: res?.pagination?.limit || 10,
+      total: res?.pagination?.totalPages || 0,
+    };
+  },
+  [tableFilters]   // 🔥 important
+);
+
+
+
+
+
+
+
+
+
+
+
+//  const filterBy = useCallback(
+//     async (payload: Record<string, string | number | null>, pageSize = 10) => {
+//       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
+
+//       const res = await chillerList(finalPayload);
+
+//       return {
+//         data: res?.data || [],
+//         total: res?.pagination?.totalPages || 0,
+//         currentPage: res?.pagination?.page || 0,
+//         pageSize: res?.pagination?.limit || pageSize,
+//       };
+//     },
+//     [tableFilters]  // dependency array
+//   );
+
+// const filterBy = useCallback(
+//   async (payload: Record<string, any>, pageSize = 10) => {
+//     setTableFilters(payload);  // ✅ bas state set
+
+//     return {
+//       data: [],
+//       total: 0,
+//       currentPage: 0,
+//       pageSize,
+//     };
+//   },
+//   []
+// );
+
+const filterBy = useCallback(
+  async (payload: Record<string, any>, pageSize = 10) => {
+
+    // ✅ CLEAN EMPTY VALUES HERE
+    const cleanedPayload = Object.fromEntries(
+      Object.entries(payload).filter(
+        ([_, v]) =>
+          v !== "" &&
+          v !== null &&
+          v !== undefined &&
+          !(Array.isArray(v) && v.length === 0)
+      )
+    );
+
+    setTableFilters(cleanedPayload); // ✅ only valid filters stored
+
+    return {
+      data: [],
+      total: 0,
+      currentPage: 0,
+      pageSize,
+    };
+  },
+  []
+);
+
 
 
 
@@ -403,10 +443,10 @@ const handleDownloadQR = async (row: TableDataType) => {
           refreshKey={refreshKey}
           config={{
             api: {
+              
               list: fetchServiceTypes,
-            
               search: searchChiller,
-              filterBy,
+              filterBy: filterBy,
             },
             header: {
               title: "Assets Master",
@@ -441,64 +481,6 @@ const handleDownloadQR = async (row: TableDataType) => {
                 
               ] : [],
                
-                            filterByFields: [
-                             {
-                                    key: "company_id",
-                                    label: "Company",
-                                     isSingle: true,
-                             options:
-                             Array.isArray(companyOptions)
-                                    ? companyOptions
-                                    : [],
-                             
-
-                                    
-                                },
-                                {
-                                    key: "region_id",
-                                    label: "Region",
-                                     isSingle: true,
-                             options:
-                             Array.isArray(regionOptions)
-                                    ? regionOptions
-                                    : [],
-                                },
-                            
-                            {
-                             key: "area_id",
-                             label: "Area",
-                             isSingle: true,
-                             options:
-                             Array.isArray(areaOptions)
-                                    ? areaOptions
-                                    : [],
-                           },
-                           {
-                        key: "warehouse_id",
-                        label: " Distributor",
-                       isSingle: true,
-                     options: 
-                     Array.isArray(warehouseAllOptions)
-                                    ? warehouseAllOptions
-                                    : [],
-                       },
-                          {
-                        key: "status",
-                        label: "Status",
-                       isSingle: true,
-                     options: ASSET_STATUS_OPTIONS,
-                       },
-                       
-                          {
-                        key: "model_id",
-                        label: "Model No",
-                       isSingle: true,
-                     options: Array.isArray(modelNumberOptions)
-                                    ? modelNumberOptions
-                                    : [],
-                       },
-                            
-                        ],
 
 
             },
@@ -525,20 +507,37 @@ const handleDownloadQR = async (row: TableDataType) => {
                 ),
               },
               
-                  {
-    key: "warehouse_name",
-    label: "Distributor Name",
-    // showByDefault: true,
-    render: (row: TableDataType) => {
-      const code = row.warehouse_code ?? "";
-      const name = row.warehouse_name ?? "";
-      if (!code && !name) return "-";
-      return `${code}${code && name ? " - " : ""}${name}`;
+  //                 {
+  //   key: "warehouse_name",
+  //   label: "Distributor Name",
+  //   // showByDefault: true,
+  //   render: (row: TableDataType) => {
+  //     const code = row.warehouse_code ?? "";
+  //     const name = row.warehouse_name ?? "";
+  //     if (!code && !name) return "-";
+  //     return `${code}${code && name ? " - " : ""}${name}`;
       
-    },
-  },
+  //   },
+  // },
 
                
+                             {
+  key: "warehouse",
+  label: "Distributor",
+  render: (row: TableDataType) => {
+    return row?.warehouse?.name || "-";
+  },
+}  ,  
+
+// {
+//   key: "vendor",
+//   label: "Distributor",
+//   render: (row) => row?.vendor?.name || "-",
+// }
+// ,
+
+
+
 
 
               { key: "serial_number", label: "Serial Number" },
@@ -620,14 +619,6 @@ const handleDownloadQR = async (row: TableDataType) => {
       
 
       </div>
-
-
-
-
-
-
-
-
-    </>
+</>
   );
 } 

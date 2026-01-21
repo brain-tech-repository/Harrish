@@ -4331,8 +4331,28 @@ export const AssestMasterStatus = async (params?: Params) => {
 };
 export const AssestRequestFilter = async (params?: Params) => {
   try {
-    const res = await API.get("api/assets/chiller-request/list",
-      { params }
+   const paramsData = {
+  // "filter": {
+  //   "company_id": params?.company_id,
+  //   "region_id": params?.region_id,
+  //   "area_id": params?.area_id,
+  //   "warehouse_id": params?.warehouse_id
+  // }
+  
+  "filter": {
+    "company_id": [1, 2],
+    "region_id": [2],
+    "area_id": [25],
+    "warehouse_id": [109]
+  }
+
+
+}
+// console.log("AssestRequestFilter paramsData", paramsData);
+  
+
+    const res = await API.post("api/assets/chiller-request/list",
+       paramsData 
     );
     return res.data;
   } catch (error: unknown) {
@@ -4340,15 +4360,59 @@ export const AssestRequestFilter = async (params?: Params) => {
   }
 };
 
+// export const FridgeUpdate = async (params?: Params) => {
+//   console.log("FridgeUpdate params", params);
+  
+//   const paramsData = {  
+//   "filter": {
+//     "company_id": [1, 2],
+//     "region_id": [2],
+//     "area_id": [25],
+//     "warehouse_id": [109]
+//   }
+// }
+//   try {
+//     const res = await API.post("api/assets/fridge-customer-update/list",
+//       { params }
+//     );
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+  const toNumberArray = (value?:  any) =>
+  value ? value.split(",").map(Number) : [];
+
+
 export const FridgeUpdate = async (params?: Params) => {
+  console.log("FridgeUpdate params", params);
+
+  const paramsData = {
+    per_page: Number(params?.per_page) || 10,
+    filter: {
+
+      company_id: toNumberArray(params?.company_id),
+      region_id: toNumberArray(params?.region_id),
+      area_id: toNumberArray(params?.area_id),
+      warehouse_id: toNumberArray(params?.warehouse_id),
+    },
+  };
+
+  console.log("Converted paramsData", paramsData);
+
   try {
-    const res = await API.get("api/assets/fridge-customer-update/list",
-      { params }
+    const res = await API.post(
+
+
+
+      "api/assets/fridge-customer-update/list",
+      paramsData
     );
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
 
 

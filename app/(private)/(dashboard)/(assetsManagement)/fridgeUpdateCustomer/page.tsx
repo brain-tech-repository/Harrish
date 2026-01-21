@@ -289,7 +289,17 @@ const filterBy = useCallback(
                                     </span>
                                 ),
                             },
-                            { key: "created_at", label: "Date", render: (row: TableDataType) => formatDate(row.created_at) },
+                            { key: "created_at", label: "Date", render: (row: TableDataType) =>
+                                 formatDate(row.created_at) },
+
+                             {
+  key: "warehouse",
+  label: "Distributor",
+  render: (row: TableDataType) => {
+    return row?.warehouse?.name || "-";
+  },
+}  ,  
+                                 
                             { key: "agent", label: "Agent" },
                             { key: "area_manager", label: "Area Manager" },
                             { key: "outlet_name", label: "Outlet Name" },
@@ -301,6 +311,8 @@ const filterBy = useCallback(
                             { key: "model", label: "Model Number" },
                             { key: "brand", label: "Branding" },
                             { key: "remark", label: "Remarks" },
+                            
+                             
                             {
                                 key: "status",
                                 label: "Status",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
 import {AssestRequestFilter,AssestMasterStatus,AssestMasterModel,AssestMasterfilter} from "@/app/services/allApi";
@@ -111,14 +111,16 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     area: false,
     warehouse: false,
     route: false, 
-    modelname: false,
-    statusname: false,
+    // modelname: false,
+    // statusname: false,
     
   });
   const [regionOptions, setRegionOptions] = useState<DropdownOption[]>([]);
   const [areaOptions, setAreaOptions] = useState<DropdownOption[]>([]);
   const [warehouseOptions, setWarehouseOptions] = useState<DropdownOption[]>([]);
   const [routeOptions, setRouteOptions] = useState<DropdownOption[]>([]);
+  const [tableFilters, setTableFilters] = useState<any>({});
+
 
   const {
     payload,
@@ -130,65 +132,65 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     isClearing,
   } = filterProps;
 
-useEffect(() => {
-  const fetchModelNumbers = async () => {
-    try {
-      setSkeleton((prev) => ({ ...prev, salesteam: true }));
+// useEffect(() => {
+//   const fetchModelNumbers = async () => {
+//     try {
+//       setSkeleton((prev) => ({ ...prev, salesteam: true }));
 
-      const res = await AssestMasterModel({
-        dropdown: "true",
-      });
+//       const res = await AssestMasterModel({
+//         dropdown: "true",
+//       });
 
-      const list = res?.data || res || [];
+//       const list = res?.data || res || [];
 
-      setModelOptions(
-        list.map((m: any) => ({
-          value: String(m.id),
-          label: m.model_no || m.model_number || m.name,
-        }))
-      );
-    } catch (err) {
-      console.error("Model No list error:", err);
-      setModelOptions([]);
-    } finally {
-      setSkeleton((prev) => ({ ...prev, salesteam: false }));
-    }
-  };
+//       setModelOptions(
+//         list.map((m: any) => ({
+//           value: String(m.id),
+//           label: m.model_no || m.model_number || m.name,
+//         }))
+//       );
+//     } catch (err) {
+//       console.error("Model No list error:", err);
+//       setModelOptions([]);
+//     } finally {
+//       setSkeleton((prev) => ({ ...prev, salesteam: false }));
+//     }
+//   };
 
-  fetchModelNumbers(); // 🔥 page load par call
-}, []); // ✅ empty dependency
-
-
+//   fetchModelNumbers(); // 🔥 page load par call
+// }, []); // ✅ empty dependency
 
 
 
-useEffect(() => {
-  const fetchStatusNumbers = async () => {
-    try {
-      setSkeleton((prev) => ({ ...prev, salesteam: true }));
 
-      const res = await AssestMasterfilter({
-        dropdown: "true",
-      });
 
-      const list = res?.data || res || [];
+// useEffect(() => {
+//   const fetchStatusNumbers = async () => {
+//     try {
+//       setSkeleton((prev) => ({ ...prev, salesteam: true }));
 
-      setStatusOptions(
-        list.map((m: any) => ({
-          value: String(m.id),
-          label: m.status_no || m.status_number || m.name,
-        }))
-      );
-    } catch (err) {
-      console.error("Status No list error:", err);
-      setStatusOptions([]);
-    } finally {
-      setSkeleton((prev) => ({ ...prev, statusname: false }));
-    }
-  };
+//       const res = await AssestMasterfilter({
+//         dropdown: "true",
+//       });
 
-  fetchStatusNumbers(); // 🔥 page load par call
-}, []); // ✅ empty dependency
+//       const list = res?.data || res || [];
+
+//       setStatusOptions(
+//         list.map((m: any) => ({
+//           value: String(m.id),
+//           label: m.status_no || m.status_number || m.name,
+//         }))
+//       );
+//     } catch (err) {
+//       console.error("Status No list error:", err);
+//       setStatusOptions([]);
+//     } finally {
+//       setSkeleton((prev) => ({ ...prev, statusname: false }));
+//     }
+//   };
+
+//   fetchStatusNumbers(); // 🔥 page load par call
+// }, []); // ✅ empty dependency
 
 
 
@@ -212,41 +214,54 @@ useEffect(() => {
   const areaVal = toArray(payload.area_id);
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
-  const modelVal = toArray(payload.model_id);
-  const statusVal = toArray(payload.status);
+  // const modelVal = toArray(payload.model_id);
+  // const statusVal = toArray(payload.status);
 // 🔴 Distributor mandatory condition
-const isDistributorRequired =
-  companyVal.length > 0 ||
-  regionVal.length > 0 ||
-  areaVal.length > 0;
+// const isDistributorRequired =
+//   companyVal.length > 0 ||
+//   regionVal.length > 0 ||
+//   areaVal.length > 0;
 
-const isDistributorMissing =
-  isDistributorRequired && warehouseVal.length === 0;
+// const isDistributorMissing =
+//   isDistributorRequired && warehouseVal.length === 0;
+
+ 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 const applyFilterApi = async () => {
   try {
     const finalPayload = {
-      company_id: companyVal[1],
-      region_id: regionVal[2],
-      area_id: areaVal[25],
-      warehouse_id: warehouseVal[109],
-      model_id: modelVal,
-      status: statusVal,
+      company_id: companyVal,
+      region_id: regionVal,
+      area_id: areaVal,
+      warehouse_id: warehouseVal,
+      route_id: routeVal,
+      // model_id: modelVal,
+      // status: statusVal,
       
     };
 
     console.log("Filter Payload 👉", finalPayload);
 
     // 🔥 API CALL
-    const res = await AssestRequestFilter(finalPayload);
+     const res = await AssestRequestFilter(finalPayload);
 
      console.log("Filter API Response 👉", res);
 
-    // ✅ Table / parent ko data dena ho
-     setPayload(finalPayload);
-    await submit(finalPayload);
+   
+     await submit(finalPayload);
 
   } catch (error) {
     console.error("Filter API Error ❌", error);
@@ -436,7 +451,7 @@ const applyFilterApi = async () => {
             onChangeArray("region_id", []);
             onChangeArray("sub_region_id", []);
             onChangeArray("warehouse_id", []);
-            // onChangeArray("route_id", []);
+            onChangeArray("route_id", []);
           }}
         />
       )}
@@ -515,18 +530,18 @@ const applyFilterApi = async () => {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("warehouse_id", val);
-            // onChangeArray("route_id", []);
+            onChangeArray("route_id", []);
           }}
           />
-          {isDistributorMissing && (
+          {/* {isDistributorMissing && (
       <p className="text-red-500 text-xs mt-1">
         Distributor selection is mandatory
       </p>
-    )}
+    )} */}
           </div>
 )}
       {/* Route */}
-      {showFilter("status") && (
+      {/* {showFilter("status") && (
         <InputFields
           label="Status"
           name="status"
@@ -548,9 +563,9 @@ const applyFilterApi = async () => {
             onChangeArray("status", val);
           }}
         />
-      )}
+      )} */}
       {/* Sales Team */}
-      {showFilter("model_id") && (
+      {/* {showFilter("model_id") && (
         <InputFields
           label="Model No"
           name="model_id"
@@ -572,7 +587,36 @@ const applyFilterApi = async () => {
             onChangeArray("model_id", val);
           }}
         />
+      )} */}
+
+ {showFilter("route_id") && (
+        <InputFields
+          label="Route"
+          name="route_id"
+          type="select"
+          searchable={true}
+          isSingle={false}
+          multiSelectChips
+          showSkeleton={skeleton.route}
+          disabled={disabled || warehouseVal.length === 0}
+          options={Array.isArray(routeOptions) ? routeOptions : []}
+          value={routeVal as any}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            const val = Array.isArray(raw)
+              ? raw
+              : typeof raw === "string"
+              ? raw.split(",").filter(Boolean)
+              : [];
+            onChangeArray("route_id", val);
+          }}
+        />
       )}
+
+
+
+
+
       {/* Buttons */}
       <div className="col-span-2 flex justify-end gap-2 mt-2">
         <SidebarBtn
@@ -596,7 +640,7 @@ const applyFilterApi = async () => {
   
   label="Apply Filter"
   buttonTw="px-4 py-2 h-9"
-  // disabled={disabled || isApplying || activeFilterCount === 0}
+   disabled={disabled || isApplying || activeFilterCount === 0}
   
 />
 

@@ -352,7 +352,7 @@ export const addChillerRequest = async (formData: FormData) => {
 
 export const fridgeUpdateCustomerList = async (params: any) => {
   try {
-    const res = await API.get(`/api/assets/fridge-customer-update/list`, {
+    const res = await API.post(`/api/assets/fridge-customer-update/list`, {
       params: params,
     });
     return res.data;

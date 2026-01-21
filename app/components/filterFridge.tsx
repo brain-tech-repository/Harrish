@@ -207,16 +207,16 @@ useEffect(() => {
   const areaVal = toArray(payload.area_id);
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
-  const modelVal = toArray(payload.model_id);
-  const statusVal = toArray(payload.status);
+  // const modelVal = toArray(payload.model_id);
+  // const statusVal = toArray(payload.status);
 // 🔴 Distributor mandatory condition
-const isDistributorRequired =
-  companyVal.length > 0 ||
-  regionVal.length > 0 ||
-  areaVal.length > 0;
+// const isDistributorRequired =
+//   companyVal.length > 0 ||
+//   regionVal.length > 0 ||
+//   areaVal.length > 0;
 
-const isDistributorMissing =
-  isDistributorRequired && warehouseVal.length === 0;
+// const isDistributorMissing =
+//   isDistributorRequired && warehouseVal.length === 0;
 
 
 
@@ -231,8 +231,8 @@ const applyFilterApi = async () => {
     if (regionVal.length) filterPayload.region_id = regionVal;
     if (areaVal.length) filterPayload.area_id = areaVal;
     if (warehouseVal.length) filterPayload.warehouse_id = warehouseVal;
-    if (modelVal.length) filterPayload.model_id = modelVal;
-    if (statusVal.length) filterPayload.status = statusVal;
+    // if (modelVal.length) filterPayload.model_id = modelVal;
+    // if (statusVal.length) filterPayload.status = statusVal;
 
     console.log("✅ FINAL FILTER PAYLOAD", filterPayload);
 
@@ -509,15 +509,15 @@ const applyFilterApi = async () => {
             // onChangeArray("route_id", []);
           }}
           />
-          {isDistributorMissing && (
+          {/* {isDistributorMissing && (
       <p className="text-red-500 text-xs mt-1">
         Distributor selection is mandatory
       </p>
-    )}
+    )} */}
           </div>
 )}
       {/* Route */}
-      {showFilter("status") && (
+      {/* {showFilter("status") && (
         <InputFields
           label="Status"
           name="status"
@@ -539,9 +539,9 @@ const applyFilterApi = async () => {
             onChangeArray("status", val);
           }}
         />
-      )}
+      )} */}
       {/* Sales Team */}
-      {showFilter("model_id") && (
+      {/* {showFilter("model_id") && (
         <InputFields
           label="Model No"
           name="model_id"
@@ -563,7 +563,7 @@ const applyFilterApi = async () => {
             onChangeArray("model_id", val);
           }}
         />
-      )}
+      )} */}
       {/* Buttons */}
       <div className="col-span-2 flex justify-end gap-2 mt-2">
         <SidebarBtn
@@ -587,7 +587,7 @@ const applyFilterApi = async () => {
   
   label="Apply Filter"
   buttonTw="px-4 py-2 h-9"
-  // disabled={disabled || isApplying || activeFilterCount === 0}
+   disabled={disabled || isApplying || activeFilterCount === 0}
   
 />
 
