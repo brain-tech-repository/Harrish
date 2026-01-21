@@ -455,13 +455,10 @@ const nextConfig: NextConfig = {
       { source: '/view/:uuid', destination: '/view/:uuid' },
       { source: '/view', destination: '/view' },
       // reports 
-      { source: '/customerreport/add', destination: '/customerReport/add' },
-      { source: '/customerreport/:uuid', destination: '/customerReport/:uuid' },
       { source: '/customerreport', destination: '/customerReport' },
-
-      { source: '/salesreportdashboard/add', destination: '/salesReportDashboard/add' },
-      { source: '/salesreportdashboard/:uuid', destination: '/salesReportDashboard/:uuid' },
       { source: '/salesreportdashboard', destination: '/salesReportDashboard' },
+      { source: '/itemreport', destination: '/itemReport' },
+      
       // alert
       { source: '/alert/add', destination: '/alert/add' },
       { source: '/alert/:uuid', destination: '/alert/:uuid' },
