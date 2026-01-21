@@ -302,7 +302,12 @@ export default function CustomerInvoicePage() {
               title: "Sales Team Route Linkage",
               searchBar: false,
               columnFilter: true,
-              filterRenderer: FilterComponent,
+              filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
               actions: [],
             },
             footer: { nextPrevBtn: true, pagination: true },

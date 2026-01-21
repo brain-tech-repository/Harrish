@@ -317,7 +317,12 @@ const [threeDotLoading, setThreeDotLoading] = useState({
                onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
              },
            ],
-            filterRenderer: FilterComponent,
+            filterRenderer: (props) => (
+                                                                                                <FilterComponent
+                                                                                                currentDate={true}
+                                                                                                  {...props}
+                                                                                                />
+                                                                                              ),
 
             actions: can("create") ? [
               <SidebarBtn

@@ -345,7 +345,12 @@ useEffect(() => {
                                 }
                             },
                         ],
-                            filterRenderer: FilterComponent,
+                           filterRenderer: (props) => (
+                                                                                                               <FilterComponent
+                                                                                                               currentDate={true}
+                                                                                                                 {...props}
+                                                                                                               />
+                                                                                                             ),
                             wholeTableActions: [
                             <div key={0} className="flex gap-[12px] relative">
                                 <DismissibleDropdown
