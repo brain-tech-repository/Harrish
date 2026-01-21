@@ -10,7 +10,7 @@ import Table, {
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice ,invoiceExportCollapse} from "@/app/services/agentTransaction";
+import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice ,invoiceExportCollapse,invoiceGlobalFilter} from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
@@ -45,6 +45,7 @@ export default function CustomerInvoicePage() {
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [salesmanId, setSalesmanId] = useState<string>("");
     const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+        const [colFilter, setColFilter] = useState<boolean>(false);
     const columns = [
     {
         key: "invoice_date",
@@ -375,6 +376,7 @@ useEffect(() => {
         ): Promise<listReturnType> => {
             let result;
             setLoading(true);
+            setColFilter(true);
             try {
                 const params: Record<string, string> = {};
                 Object.keys(payload || {}).forEach((k) => {
@@ -387,6 +389,8 @@ useEffect(() => {
                 result = await invoiceList(params);
             } finally {
                 setLoading(false);
+                setColFilter(false);
+
             }
 
             if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -404,13 +408,66 @@ useEffect(() => {
         [setLoading]
     );
 
+      const fetchInvoiceAccordingToGlobalFilter = useCallback(
+        async (
+          payload: Record<string, any>,
+          pageSize: number = 50,
+          pageNo: number = 1
+        ): Promise<listReturnType> => {
+    
+          try {
+            setLoading(true);
+           
+            const body = {
+               per_page: pageSize.toString(),
+          current_page: pageNo.toString(),
+              filter: payload
+            }
+            const listRes = await invoiceGlobalFilter(body);
+           const pagination =
+            listRes.pagination?.pagination || listRes.pagination || {};
+          return {
+           data: listRes.data || [],
+        total: pagination.last_page || listRes.pagination?.last_page || 1,
+        totalRecords:
+          pagination.total || listRes.pagination?.total || 0,
+        currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+        pageSize: pagination.per_page || pageSize,
+          };
+            // fetchOrdersCache.current[cacheKey] = result;
+            // return listRes;
+          } catch (error: unknown) {
+            console.error("API Error:", error);
+            setLoading(false);
+            throw error;
+          }
+          finally{
+            setLoading(false);
+          }
+        },
+        [invoiceGlobalFilter, warehouseId, salesmanId]
+      );
+
     return (
         <div className="flex flex-col h-full">
             {/* 🔹 Table Section */}
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchInvoices, filterBy: filterBy },
+                    api: { list: fetchInvoices ,filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchInvoiceAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              }, },
                     header: {
                         title: "Distributor's Invoices",
                         threeDot: [

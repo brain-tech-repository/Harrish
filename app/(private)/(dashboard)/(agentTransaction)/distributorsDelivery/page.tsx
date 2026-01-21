@@ -47,21 +47,13 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const { warehouseOptions, customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions, ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
-
+    const {  salesmanOptions, warehouseAllOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const [colFilter, setColFilter] = useState<boolean>(false);
     // Load dropdown data
     useEffect(() => {
-        ensureAgentCustomerLoaded();
-        ensureAreaLoaded();
-        ensureChannelLoaded();
-        ensureCompanyLoaded();
-        ensureCustomerSubCategoryLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
         ensureSalesmanLoaded();
         ensureWarehouseAllLoaded();
-        ensureWarehouseLoaded();
-    }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureWarehouseLoaded]);
+    }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
 
      const [warehouseId, setWarehouseId] = useState<string>("");
   const [salesmanId, setSalesmanId] = useState<string>("");
@@ -72,7 +64,6 @@ export default function CustomerInvoicePage() {
 
     // Memoize delivery data to avoid multiple API calls
     const [deliveryDataCache, setDeliveryDataCache] = useState<{ [key: string]: any }>({});
-    const [deliveryCacheKey, setDeliveryCacheKey] = useState(0);
 
     // Helper to build cache key from params
     const getCacheKey = (params: Record<string, string | number>) => {
@@ -142,6 +133,7 @@ export default function CustomerInvoicePage() {
             payload: Record<string, string | number | null>,
             pageSize: number
         ): Promise<listReturnType> => {
+            setColFilter(true);
             const params: Record<string, string> = { per_page: pageSize.toString() };
             Object.keys(payload || {}).forEach((k) => {
                 const v = payload[k as keyof typeof payload];
@@ -160,6 +152,7 @@ export default function CustomerInvoicePage() {
             }
             if (result?.error) throw new Error(result.data?.message || "Filter failed");
             const pagination = result.pagination || {};
+            setColFilter(false);
             return {
                 data: result.data || [],
                 total: pagination?.last_page || 1,
@@ -171,34 +164,44 @@ export default function CustomerInvoicePage() {
         [fetchDeliveryData, warehouseId, salesmanId]
     );
 
-        const fetchOrdersAccordingToGlobalFilter = useCallback(
-            async (
-                payload: Record<string, any>,
-                page: number = 1,
-                pageSize: number = 50
-            ): Promise<listReturnType> => {
-                try {
-                    // FilterComponent now always passes correct array format for filter values
-                    const body = {
-                        limit: pageSize.toString(),
-                        page: page.toString(),
-                        filter: payload,
-                    };
-                    const listRes = await deliveryGlobalFilter(body);
-                    return {
-                        data: listRes.data || [],
-                        total: listRes.pagination.totalPages,
-                        currentPage: listRes.pagination.page,
-                        pageSize: listRes.pagination.limit,
-                    };
-                } catch (error: unknown) {
-                    console.error("API Error:", error);
-                    setLoading(false);
-                    throw error;
-                }
-            },
-            [deliveryGlobalFilter, warehouseId, salesmanId]
-        );
+  const fetchDeliveriesAccordingToGlobalFilter = useCallback(
+    async (
+      payload: Record<string, any>,
+      pageSize: number = 50,
+      pageNo: number = 1
+    ): Promise<listReturnType> => {
+
+      try {
+        setLoading(true);
+        const body = {
+          per_page: pageSize.toString(),
+          current_page: pageNo.toString(),
+          filter: payload
+        }
+        const listRes = await deliveryGlobalFilter(body);
+       const pagination =
+        listRes.pagination?.pagination || listRes.pagination || {};
+      return {
+        data: listRes.data || [],
+        total: pagination.last_page || listRes.pagination?.last_page || 1,
+        totalRecords:
+          pagination.total || listRes.pagination?.total || 0,
+        currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+        pageSize: pagination.per_page || pageSize,
+      };
+        // fetchOrdersCache.current[cacheKey] = result;
+        // return listRes;
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+      finally{
+          setLoading(false);
+      }
+    },
+    [deliveryGlobalFilter, warehouseId, salesmanId]
+  );
 
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
@@ -306,7 +309,7 @@ export default function CustomerInvoicePage() {
             isFilterable: true,
             width: 320,
             filterkey: "warehouse_id",
-            options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
             onSelect: (selected: string | string[]) => {
                 setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
             },
@@ -364,7 +367,20 @@ export default function CustomerInvoicePage() {
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchDelivery, filterBy: filterBy },
+                    api: { list: fetchDelivery, filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchDeliveriesAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              }, },
                     header: {
                         title: "Distributor's Delivery",
                         columnFilter: true,
@@ -397,7 +413,7 @@ export default function CustomerInvoicePage() {
                                                                                                             <FilterComponent
                                                                                                             currentDate={true}
                                                                                                               {...props}
-                                                                                                              api={fetchOrdersAccordingToGlobalFilter}
+                                                                                                              api={fetchDeliveriesAccordingToGlobalFilter}
                                                                                                             />
                                                                                                           ),
                     },

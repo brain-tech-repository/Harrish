@@ -120,6 +120,7 @@ interface ItemUOM {
   item_id: number;
   uom_type: string;
   name: string;
+  uom_name: string;
   price: string;
   is_stock_keeping?: boolean;
   upc?: string;
@@ -247,19 +248,17 @@ export default function AddEditCapsCollection() {
 
     try {
       setSkeleton(prev => ({ ...prev, item: true }));
-      
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
-      const stockRes = await itemsForCaps({warehouse_id:warehouseId});
+      const stockRes = await itemsForCaps(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
-      console.log("Fetched warehouse stocks for CAPS Collection:", stocksArray,stockRes);
       // Filter items with stock availability
       const filteredStocks = stocksArray.filter((stock: any) => {
-        return Number(stock.stock_qty) > 0;
+        return Number(stock.stock_qty ?? 1) > 0;
       });
 
       // Create items with UOM data map for easy access
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty?: string }> = {};
-      
+
       const processedItems = filteredStocks.map((stockItem: any) => {
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
@@ -269,8 +268,11 @@ export default function AddEditCapsCollection() {
           } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || uom.price;
           }
-          return { 
-            ...uom, 
+          // Use uom.uom_name if uom.name is null
+          const label = uom.name ?? uom.uom_name ?? "";
+          return {
+            ...uom,
+            name: label,
             price,
             id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
             item_id: stockItem.item_id
@@ -283,7 +285,7 @@ export default function AddEditCapsCollection() {
           stock_qty: stockItem.stock_qty
         };
 
-        return { 
+        return {
           id: stockItem.item_id,
           name: stockItem.item_name,
           item_code: stockItem.item_code,
@@ -303,12 +305,11 @@ export default function AddEditCapsCollection() {
       // Create dropdown options
       const options = processedItems.map((item: any) => ({
         value: String(item.id),
-        label: `${item.erp_code || item.item_code || ''} - ${item.name || ''}`
+        label: `${item.erp_code || ''} - ${item.name || ''}`
       }));
 
       setItemsOptions(options);
       setSkeleton(prev => ({ ...prev, item: false }));
-      
       return options;
     } catch (error) {
       console.error("Error fetching warehouse items:", error);
@@ -673,7 +674,7 @@ export default function AddEditCapsCollection() {
                       if (itemUOMData?.uoms && itemUOMData.uoms.length > 0) {
                         const uomOpts = itemUOMData.uoms.map((uom: ItemUOM) => ({
                           value: String(uom.uom_id ?? ""),
-                          label: String(uom.name ?? ""),
+                          label: String(uom.name ?? uom.uom_name ?? ""),
                           price: String(uom.price ?? "0"),
                         }));
                         setRowUomOptions((prev) => ({ ...prev, [row.id]: uomOpts }));

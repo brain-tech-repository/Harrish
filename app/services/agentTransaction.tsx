@@ -992,9 +992,27 @@ export const deliveryGlobalFilter = async ( body?: Object) => {
   }
 };
 
-export const itemsForCaps = async ( params?: Params) => {
+export const invoiceGlobalFilter = async ( body?: Object) => {
   try {
-    const res = await API.get(`/api/settings/warehouse-stocks/itemsbywarehouse`,{params});
+    const res = await API.post(`/api/agent_transaction/invoices/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const loadGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/load/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemsForCaps = async (id:string, params?: Params) => {
+  try {
+    const res = await API.get(`api/settings/warehouse-stocks/itemsbasedwarehouse/${id}`,{params});
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

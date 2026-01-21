@@ -32,7 +32,7 @@ import { li } from "framer-motion/client";
 export default function CustomerInvoicePage() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
-
+  
   // const { setLoading } = useLoading();
 
   const { showSnackbar } = useSnackbar();
@@ -42,7 +42,7 @@ export default function CustomerInvoicePage() {
     ensureWarehouseLoaded();
     ensureSalesmanLoaded();
   }, [ensureWarehouseLoaded, ensureSalesmanLoaded]);
-
+  const [colFilter,setColFilter] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Refresh table when permissions load
@@ -241,36 +241,38 @@ export default function CustomerInvoicePage() {
   const fetchOrdersAccordingToGlobalFilter = useCallback(
     async (
       payload: Record<string, any>,
-      page: number = 1,
-      pageSize: number = 50
+      pageSize: number = 50,
+      pageNo: number = 1
     ): Promise<listReturnType> => {
 
       try {
-        // setLoading(true);
-        // Object.keys(payload || {}).forEach((k) => {
-        //   const v = payload[k as keyof typeof payload];
-        //   if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-        //     payload[k] = String(v);
-        //   }
-        // });
+        setLoading(true);
+       
         const body = {
           limit: pageSize.toString(),
-          page: page.toString(),
+          page: pageNo.toString(),
           filter: payload
         }
         const listRes = await orderGlobalFilter(body);
-        const result = {
-          data: listRes.data || [],
-          total: listRes.pagination.totalPages,
-          currentPage: listRes.pagination.page,
-          pageSize: listRes.pagination.limit,
-        };
+       const pagination =
+        listRes.pagination?.pagination || listRes.pagination || {};
+      return {
+        data: listRes.data || [],
+        total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+        totalRecords:
+          pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+        currentPage: pagination.page || listRes.pagination?.page || 1,
+        pageSize: pagination.limit || pageSize,
+      };
         // fetchOrdersCache.current[cacheKey] = result;
-        return result;
+        // return listRes;
       } catch (error: unknown) {
         console.error("API Error:", error);
         setLoading(false);
         throw error;
+      }
+      finally{
+        setLoading(false);
       }
     },
     [orderGlobalFilter, warehouseId, salesmanId]
@@ -284,6 +286,7 @@ export default function CustomerInvoicePage() {
       payload: Record<string, string | number | null>,
       pageSize: number,
     ): Promise<listReturnType> => {
+      setColFilter(true);
       const params: Record<string, string> = {
         per_page: pageSize.toString(),
       };
@@ -318,6 +321,7 @@ export default function CustomerInvoicePage() {
       agentOrderFilterCache.current[cacheKey] = result;
       const pagination =
         result.pagination?.pagination || result.pagination || {};
+        setColFilter(false);
       return {
         data: result.data || [],
         total: pagination.totalPages || result.pagination?.totalPages || 1,
@@ -327,7 +331,7 @@ export default function CustomerInvoicePage() {
         pageSize: pagination.limit || pageSize,
       };
     },
-    [agentOrderList, warehouseId, salesmanId],
+    [agentOrderList, warehouseId, salesmanId,colFilter],
   );
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
@@ -401,7 +405,23 @@ export default function CustomerInvoicePage() {
         <Table
           refreshKey={refreshKey}
           config={{
-            api: { list: fetchOrders, filterBy: filterBy },
+            api: {
+              list: fetchOrders,
+              filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchOrdersAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              },
+            },
             header: {
               title: "Distributor's Orders",
               searchBar: false,
