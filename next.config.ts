@@ -251,7 +251,7 @@ const nextConfig: NextConfig = {
       { source: '/salesteamload/details/:uuid', destination: '/salesTeamLoad/details/:uuid' },
       { source: '/salesteamload', destination: '/salesTeamLoad' },
 
- 
+
 
       { source: '/salesteamroutelinkage/add', destination: '/salesTeamRouteLinkage/add' },
       { source: '/salesteamroutelinkage/:uuid', destination: '/salesTeamRouteLinkage/:uuid' },
@@ -274,6 +274,7 @@ const nextConfig: NextConfig = {
       { source: '/assetsmaster', destination: '/assetsMaster' },
 
       { source: '/assetsrequest/add', destination: '/assetsRequest/add' },
+      { source: '/assetsrequest/:id', destination: '/assetsRequest/:id' },
       { source: '/assetsrequest/view/:uuid', destination: '/assetsRequest/view/:uuid' },
       { source: '/assetsrequest', destination: '/assetsRequest' },
 

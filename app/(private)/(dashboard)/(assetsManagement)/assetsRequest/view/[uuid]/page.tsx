@@ -18,12 +18,13 @@ type ChillerRequest = {
   customer?: { id?: number; name?: string; code?: string };
   owner_name?: string | null;
   contact_number?: string | null;
+  warehouse?: { id?: number; name?: string; code?: string };
   outlet?: { id?: number; name?: string; code?: string };
   landmark?: string | null;
   location?: string | null;
   machine_number?: string | null;
   asset_number?: string | null;
-  model?: string | null;
+  model?: { id?: number; name?: string; code?: string };
   brand?: string | null;
   status?: number;
   fridge_status?: number;
@@ -38,10 +39,20 @@ type ChillerRequest = {
   sign__customer_file?: string | null;
   agent?: { name?: string };
   salesman?: { name?: string };
-  warehouse?: { name?: string };
   route?: { name?: string };
   request_step_id?: number;
 };
+
+const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
+  1: "Salesman Requested",
+  2: "Area Sales Manager Accepted",
+  3: "Area Sales Manager Rejected",
+  4: "Chiller Officer Accepted",
+  5: "Chiller Officer Rejected",
+  6: "Completed",
+  7: "Chiller Manager Rejected",
+};
+
 
 const title = "Assets Request Details";
 
@@ -164,9 +175,13 @@ export default function ViewPage() {
         </div>
         {/* action buttons */}
         <div className="flex items-center gap-[10px]">
-          <StatusBtn
-            isActive={chillerRequest?.status ? true : false}
-          />
+          <div className="flex items-center gap-[10px] text-[14px] font-medium text-[#181D27]">
+            {chillerRequest?.status
+              ? CHILLER_REQUEST_STATUS_MAP[chillerRequest.status] || "-"
+              : "-"}
+          </div>
+
+
         </div>
       </ContainerCard>
 
@@ -223,6 +238,10 @@ export default function ViewPage() {
             title="Outlet & Owner Information"
             data={[
               {
+                key: "Distributor",
+                value: chillerRequest?.warehouse ? `${chillerRequest.warehouse.code} - ${chillerRequest.warehouse.name}` : "-",
+              },
+              {
                 key: "Outlet Name",
                 value: chillerRequest?.customer
                   ? `${chillerRequest.customer.code} - ${chillerRequest.customer.name}`
@@ -235,48 +254,10 @@ export default function ViewPage() {
               },
               { key: "Outlet Type", value: chillerRequest?.outlet?.name || "-" },
               { key: "Landmark", value: chillerRequest?.landmark || "-" },
-            ]}
-          />
-        </ContainerCard>
-
-        {/* 3️⃣ Machine Details — Bottom-Left */}
-        <ContainerCard className="h-full">
-          <KeyValueData
-            title="Machine Details"
-            data={[
               {
                 key: "Model",
-                value: chillerRequest?.model || "-",
+                value: chillerRequest?.model?.name || "-",
               },
-              {
-                key: "Machine Number",
-                value: chillerRequest?.machine_number || "-",
-              },
-              {
-                key: "Asset Number",
-                value: chillerRequest?.asset_number || "-",
-              },
-              { key: "Brand", value: chillerRequest?.brand || "-" },
-            ]}
-          />
-        </ContainerCard>
-
-        {/* 4️⃣ Status & Remarks — Bottom-Right */}
-        <ContainerCard className="h-full">
-          <KeyValueData
-            title="Status & Remarks"
-            data={[
-              {
-                key: "Request Status",
-                value: "",
-                component: <StatusBtn isActive={!!chillerRequest?.status} />,
-              },
-              {
-                key: "Fridge Status",
-                value: chillerRequest?.fridge_status ? "Active" : "Inactive",
-              },
-              { key: "IRO ID", value: chillerRequest?.iro_id || "-" },
-              { key: "Remarks", value: chillerRequest?.remark || "-" },
             ]}
           />
         </ContainerCard>
