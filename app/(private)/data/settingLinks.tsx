@@ -108,6 +108,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "lucide:user",
             iconColor: "text-green-500",
           },
+          ...(process.env.NODE_ENV === "development" ? [
           {
             isActive: false,
             href: "/settings/manageCompany/salesman-type",
@@ -129,6 +130,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "mdi:theme-light-dark",
             iconColor: "text-green-500",
           },
+        ] : []),
         ],
       },
       {
@@ -191,6 +193,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "tabler:building-warehouse",
             iconColor: "text-violet-500",
           },
+          ...(process.env.NODE_ENV === "development" ? [
           {
             isActive: false,
             href: "/settings/location",
@@ -198,6 +201,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "mdi:earth",
             iconColor: "text-green-500",
           },
+        ] : []),
         ],
       },
       {
@@ -263,6 +267,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
 
         ],
       },
+      ...(process.env.NODE_ENV === "development" ? [
       {
         isActive: false,
         href: "/settings/bank",
@@ -277,6 +282,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
         leadingIcon: "tabler:building-warehouse",
         iconColor: "text-green-500",
       },
+
       {
         isActive: false,
         href: "/settings/promotionTypes",
@@ -284,6 +290,7 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
         leadingIcon: "hugeicons:promotion",
         iconColor: "text-green-500",
       },
+      ] : []),
       {
         isActive: false,
         href: "/settings/globalSetting",
