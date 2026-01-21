@@ -470,7 +470,12 @@ useEffect(() => {
                             },
                         ],
                         columnFilter: true,
-                        filterRenderer: FilterComponent,
+                       filterRenderer: (props) => (
+                                                                                                           <FilterComponent
+                                                                                                           currentDate={true}
+                                                                                                             {...props}
+                                                                                                           />
+                                                                                                         ),
                         searchBar: false,
                         actions: can("create") ? [
                             <SidebarBtn

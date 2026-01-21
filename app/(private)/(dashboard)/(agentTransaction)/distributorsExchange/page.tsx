@@ -305,7 +305,12 @@ useEffect(() => {
                                 labelTw="hidden lg:block"
                             />
                         ] : [],
-                        filterRenderer: FilterComponent,
+                       filterRenderer: (props) => (
+                                                                                                           <FilterComponent
+                                                                                                           currentDate={true}
+                                                                                                             {...props}
+                                                                                                           />
+                                                                                                         ),
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,

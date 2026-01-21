@@ -385,7 +385,12 @@ export default function CustomerInvoicePage() {
                   onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
                 },
               ],
-              filterRenderer: FilterComponent,
+              filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}
