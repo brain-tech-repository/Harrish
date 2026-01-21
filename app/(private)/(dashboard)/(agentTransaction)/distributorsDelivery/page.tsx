@@ -10,7 +10,7 @@ import Table, {
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { agentDeliveryExport, agentOrderExport, deliveryList,deliveryExportCollapse } from "@/app/services/agentTransaction";
+import { agentDeliveryExport, deliveryGlobalFilter, deliveryList,deliveryExportCollapse } from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { downloadFile } from "@/app/services/allApi";
@@ -20,6 +20,7 @@ import FilterComponent from "@/app/components/filterComponent";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+import OrderStatus from "@/app/components/orderStatus";
 // const dropdownDataList = [
 //     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
 //     // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
@@ -169,6 +170,35 @@ export default function CustomerInvoicePage() {
         },
         [fetchDeliveryData, warehouseId, salesmanId]
     );
+
+        const fetchOrdersAccordingToGlobalFilter = useCallback(
+            async (
+                payload: Record<string, any>,
+                page: number = 1,
+                pageSize: number = 50
+            ): Promise<listReturnType> => {
+                try {
+                    // FilterComponent now always passes correct array format for filter values
+                    const body = {
+                        limit: pageSize.toString(),
+                        page: page.toString(),
+                        filter: payload,
+                    };
+                    const listRes = await deliveryGlobalFilter(body);
+                    return {
+                        data: listRes.data || [],
+                        total: listRes.pagination.totalPages,
+                        currentPage: listRes.pagination.page,
+                        pageSize: listRes.pagination.limit,
+                    };
+                } catch (error: unknown) {
+                    console.error("API Error:", error);
+                    setLoading(false);
+                    throw error;
+                }
+            },
+            [deliveryGlobalFilter, warehouseId, salesmanId]
+        );
 
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
@@ -322,12 +352,7 @@ export default function CustomerInvoicePage() {
         key: "status",
         label: "Status",
         render: (row: TableDataType) => {
-            // Treat status 1 or 'active' (case-insensitive) as active
-            const isActive =
-                String(row.status) === "1" ||
-                (typeof row.status === "string" &&
-                    row.status.toLowerCase() === "active");
-            return <StatusBtn isActive={isActive} />;
+            return <OrderStatus order_flag={row.status} />;
         },
         showByDefault: true,
     },
@@ -372,6 +397,7 @@ export default function CustomerInvoicePage() {
                                                                                                             <FilterComponent
                                                                                                             currentDate={true}
                                                                                                               {...props}
+                                                                                                              api={fetchOrdersAccordingToGlobalFilter}
                                                                                                             />
                                                                                                           ),
                     },

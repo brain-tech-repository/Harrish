@@ -1188,7 +1188,7 @@ export default function ExchangeAddEditPage() {
                         {
                           key: "Total",
                           label: "Total",
-                          render: (row) => <span>{toInternationalNumber(row.Total) || "0.00"}</span>,
+                          render: (row) => <span>{toInternationalNumber(row.Total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>,
                         },
                         {
                           key: "action",
@@ -1252,8 +1252,8 @@ export default function ExchangeAddEditPage() {
                         },
                         { key: "uom", label: "UOM", align: "center", render: (r) => <span>{r.uom}</span> },
                         { key: "quantity", label: "Quantity", align: "center", render: (r) => <span>{r.quantity}</span> },
-                        { key: "price", label: "Price", align: "right", render: (r) => <span>{toInternationalNumber(r.price) || "-"}</span> },
-                        { key: "total", label: "Total", align: "right", render: (r) => <span>{toInternationalNumber(r.total) || "-"}</span> },
+                        { key: "price", label: "Price", align: "right", render: (r) => <span>{toInternationalNumber(r.price,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}</span> },
+                        { key: "total", label: "Total", align: "right", render: (r) => <span>{toInternationalNumber(r.total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}</span> },
                       ],
                     }}
                   />

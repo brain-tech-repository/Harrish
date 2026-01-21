@@ -12,8 +12,9 @@ import {
   capsCollectionByUuid,
   createCapsCollection,
   updateCapsCollection,
+  itemsForCaps
 } from "@/app/services/agentTransaction";
-import { agentCustomerList, genearateCode, getCompanyCustomers, itemGlobalSearch, itemList, warehouseListGlobalSearch, warehouseStockTopOrders } from "@/app/services/allApi";
+import { agentCustomerList, genearateCode, warehouseListGlobalSearch } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -200,7 +201,7 @@ export default function AddEditCapsCollection() {
     try {
       let response;
       if (customerType === "1") {
-        response = await getCompanyCustomers({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
+        // response = await getCompanyCustomers({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
       } else {
         response = await agentCustomerList({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
       }
@@ -236,7 +237,6 @@ export default function AddEditCapsCollection() {
     }
   };
 
-  // Fetch warehouse items using warehouseStockTopOrders API (same as order page)
   const fetchWarehouseItems = useCallback(async (warehouseId: string) => {
     if (!warehouseId) {
       setItemsOptions([]);
@@ -249,9 +249,9 @@ export default function AddEditCapsCollection() {
       setSkeleton(prev => ({ ...prev, item: true }));
       
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
-      const stockRes = await warehouseStockTopOrders(warehouseId);
+      const stockRes = await itemsForCaps({warehouse_id:warehouseId});
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
-
+      console.log("Fetched warehouse stocks for CAPS Collection:", stocksArray,stockRes);
       // Filter items with stock availability
       const filteredStocks = stocksArray.filter((stock: any) => {
         return Number(stock.stock_qty) > 0;
@@ -460,23 +460,7 @@ export default function AddEditCapsCollection() {
     setTableData((prev) => prev.filter((row) => row.id !== id));
   };
 
-  const fetchItem = async (searchTerm: string) => {
-    const res = await itemList({ name: searchTerm });
-    if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch items", "error");
-      setSkeleton({ ...skeleton, item: false });
-      return;
-    }
-    const data = res?.data || [];
-    setOrderData(data);
-    const options = data.map((item: { id: number; name: string; }) => ({
-      value: String(item.id),
-      label: item.name
-    }));
-    setItemsOptions(options);
-    setSkeleton({ ...skeleton, item: false });
-    return options;
-  };
+
 
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
@@ -686,7 +670,6 @@ export default function AddEditCapsCollection() {
                       const selectedOrder = orderData.find((order: FormData) => String(order.id) === value);
                       const itemUOMData = itemsWithUOM[value];
 
-                      // Priority 1: Use itemUOMData from itemsWithUOM (populated by warehouseStockTopOrders)
                       if (itemUOMData?.uoms && itemUOMData.uoms.length > 0) {
                         const uomOpts = itemUOMData.uoms.map((uom: ItemUOM) => ({
                           value: String(uom.uom_id ?? ""),

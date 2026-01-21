@@ -982,3 +982,21 @@ export const orderGlobalFilter = async ( body?: Object) => {
     return handleError(error);
   }
 };
+
+export const deliveryGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/agent-delivery/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemsForCaps = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/warehouse-stocks/itemsbywarehouse`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

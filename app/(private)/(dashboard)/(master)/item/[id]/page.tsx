@@ -50,7 +50,7 @@ interface ItemFormValues {
   quantity: string;
   is_stock_keeping_unit: string;
   enable_for: string;
-  caps_promotion: string;
+  caps_promo: string;
   commodity_goods_code: string;
   excise_duty_code: string;
   status: string;
@@ -69,7 +69,7 @@ const ItemSchema = Yup.object().shape({
   is_Promotional: Yup.string().required("Select if Promotional"),
   is_tax_applicable: Yup.string().required("Select if Tax Applicable"),
   excise: Yup.string().required("Excise is required"),
-  caps_promotion: Yup.string().required("Caps Promotion is required"),
+  caps_promo: Yup.string().required("Caps Promotion is required"),
   status: Yup.string().required("Status is required"),
   uoms: Yup.array()
     .of(
@@ -106,7 +106,7 @@ const StepSchemas = [
     "shelfLife",
     "volume",
     "excise",
-    "caps_promotion",
+    "caps_promo",
     "is_Promotional",
     "is_tax_applicable",
     "status",
@@ -168,7 +168,7 @@ export default function AddEditItem() {
     price: "",
     quantity: "",
     is_stock_keeping_unit: "",
-    caps_promotion: "",
+    caps_promo: "",
     enable_for: "",
     commodity_goods_code: "",
     excise_duty_code: "",
@@ -375,8 +375,8 @@ export default function AddEditItem() {
             volume: data.volume?.toString() || "",
             is_Promotional: data.is_promotional ? "yes" : "no",
             is_tax_applicable: data.is_taxable ? "yes" : "no",
-            excise: data.has_excies == true ? "1" : "0",
-            caps_promotion: data.caps_promotion == true ? "1" : "0",
+            excise: data.has_excies == 1 ? "1" : "0",
+            caps_promo: data.caps_promo == 1 ? "1" : "0",
             uom: firstUomName || "",
             uomType: firstUomType || "primary",
             upc: firstUomUpc || "",
@@ -517,8 +517,8 @@ export default function AddEditItem() {
         volume: values.volume || "0",
         is_promotional: values.is_Promotional === "yes" ? "1" : "0",
         is_taxable: values.is_tax_applicable === "yes" ? "1" : "0",
-        has_excies: values.excise === "true" ? "1" : "0",
-        caps_promotion: values.caps_promotion === "true" ? "1" : "0",
+        has_excies: Number(values.excise === "1" ? "1" : "0"),
+        caps_promo: Number(values.caps_promo === "1" ? "1" : "0"),
         status: values.status === "active" ? "1" : "0",
         commodity_goods_code: values.commodity_goods_code,
         excise_duty_code: values.excise_duty_code,
@@ -803,14 +803,14 @@ export default function AddEditItem() {
                   type="radio"
                   required
                   label="Caps Promotion"
-                  name="caps_promotion"
-                  value={values.caps_promotion}
-                  onChange={(e) => setFieldValue("caps_promotion", e.target.value)}
+                  name="caps_promo"
+                  value={values.caps_promo}
+                  onChange={(e) => setFieldValue("caps_promo", e.target.value)}
                   options={[
                     { value: "1", label: "Yes" },
                     { value: "0", label: "No" },
                   ]}
-                  error={touched.caps_promotion && errors.caps_promotion}
+                  error={touched.caps_promo && errors.caps_promo}
                 />
               </div>
               <div>

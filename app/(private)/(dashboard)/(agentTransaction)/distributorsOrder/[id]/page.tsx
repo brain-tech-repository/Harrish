@@ -1158,7 +1158,7 @@ export default function OrderAddEditPage() {
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search Distributor"
+                      placeholder="Select Distributor"
                       value={values.warehouse}
                       options={warehouseOptions}
                       searchable={true}
@@ -1295,7 +1295,7 @@ export default function OrderAddEditPage() {
                                   recalculateItem(Number(row.idx), "item_id", e.target.value)
                                 }}
                                 options={itemsOptions}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 disabled={!values.customer}
                                 error={err && err}
                               />
@@ -1472,7 +1472,7 @@ export default function OrderAddEditPage() {
                       ))}
                       <div className="font-semibold text-[#181D27] text-[18px] flex justify-between">
                         <span>Total</span>
-                        <span>{CURRENCY} {toInternationalNumber(Number(finalTotal))}</span>
+                        <span>{CURRENCY} {toInternationalNumber(Number(finalTotal),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   </div>
@@ -1683,7 +1683,7 @@ interface Props {
                                   value: row.id,
                                   label: row.item_name,
       }))}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 // disabled={!values.customer}
                                 // error={err && err}
                               />

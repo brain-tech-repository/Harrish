@@ -146,14 +146,34 @@ export default function AgentCustomer() {
             key: "route",
             label: "Route",
             render: (row: TableDataType) => {
-                if (
-                    typeof row.route === "object" &&
-                    row.route !== null &&
-                    "route_name" in row.route
-                ) {
-                    return (row.route as { route_name?: string }).route_name || "-";
+                 const wh = row.route as
+                    | { route_code?: string; route_name?: string }
+                    | string
+                    | null
+                    | undefined;
+
+                // If getWarehouse is an object with proper fields
+                if (wh && typeof wh === "object") {
+                    const code = wh.route_code ?? "";
+                    const name = wh.route_name ?? "";
+
+                    // Show "-" if both missing
+                    return code || name ? `${code} - ${name}` : "-";
                 }
-                return typeof row.route === 'string' ? row.route : "-";
+
+                // If getWarehouse is a simple string
+                if (typeof wh === "string") return wh;
+
+                // Default fallback
+                return "-";
+                // if (
+                //     typeof row.route === "object" &&
+                //     row.route !== null &&
+                //     "route_name" in row.route
+                // ) {
+                //     return (row.route as { route_name?: string }).route_name || "-";
+                // }
+                // return typeof row.route === 'string' ? row.route : "-";
             },
             filter: {
                 isFilterable: true,
@@ -260,7 +280,7 @@ export default function AgentCustomer() {
                 params.subcategory_id = String(selectedSubCategoryId);
             }
             if (warehouseId) {
-                params.warehouse = String(warehouseId);
+                params.warehouse_id= String(warehouseId);
             }
             if (channelId) {
                 params.outlet_channel_id = String(channelId);

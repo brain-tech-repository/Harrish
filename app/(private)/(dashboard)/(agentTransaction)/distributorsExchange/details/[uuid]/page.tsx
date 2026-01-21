@@ -293,8 +293,8 @@ export default function OrderDetailPage() {
           config={{
             columns: [
               { key: "id", label: "#", width: 60 },
-              { key: "itemCode", label: "Product Code" },
-              { key: "itemName", label: "Product Name", width: 250 },
+              { key: "itemCode,itemName", label: "Item" },
+              // { key: "itemName", label: "Product Name", width: 250 },
               { key: "UOM", label: "UOM" },
               { key: "Quantity", label: "Quantity" },
               { key: "Price", label: "Price" },

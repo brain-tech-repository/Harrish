@@ -1097,7 +1097,7 @@ export default function DeliveryAddEditPage() {
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search Distributor"
+                      placeholder="Select Distributor"
                       value={values.warehouse}
                       options={warehouseOptions}
                       showSkeleton={warehouseOptions.length === 0}
@@ -1374,7 +1374,7 @@ export default function DeliveryAddEditPage() {
                               <InputFields
                                 label=""
                                 name={`item_id_${row.idx}`}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 value={row.item_id}
                                 options={itemsOptions}
                                 searchable={true}
@@ -1670,7 +1670,7 @@ export default function DeliveryAddEditPage() {
                       >
                         <span>Total</span>
                         <span>
-                          {CURRENCY} {toInternationalNumber(Number(finalTotal))}
+                          {CURRENCY} {toInternationalNumber(Number(finalTotal),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1966,7 +1966,7 @@ interface Props {
                                   value: row.id,
                                   label: row.item_name,
       }))}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 // disabled={!values.customer}
                                 // error={err && err}
                               />

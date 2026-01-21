@@ -41,7 +41,9 @@ type Warehouse = {
 type Route = {
   id: number;
   route_name?: string;
+  route_code?: string;
   name?: string;
+  code?: string;
 };
 
 type ApiResponse<T> = {
@@ -107,16 +109,32 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     isClearing,
   } = filterProps;
 
-  const onChangeArray = (key: string, value: any) => {
-    setPayload((prev) => ({ ...prev, [key]: value }));
-  };
+
+  // Always store these keys as arrays in the payload
+  const keysToArray = [
+    "area_id",
+    "region_id",
+    "warehouse_id",
+    "route_id",
+    "company_id",
+    "salesman_id",
+  ];
 
   const toArray = (v: any) => {
     if (Array.isArray(v)) return v;
-    if (typeof v === "string") return v.split(",").filter(Boolean);
+    if (typeof v === "string" && v.includes(",")) return v.split(",").filter(Boolean);
+    if (typeof v === "string" && v !== "") return [v];
     if (typeof v === "number") return [String(v)];
     return [];
   };
+
+  const onChangeArray = (key: string, value: any) => {
+    if (keysToArray.includes(key)) {
+      setPayload((prev) => ({ ...prev, [key]: toArray(value) }));
+    } else {
+      setPayload((prev) => ({ ...prev, [key]: value }));
+    }
+  } 
 
   const companyVal = toArray(payload.company_id);
   const regionVal = toArray(payload.region_id);
@@ -240,7 +258,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         setRouteOptions(
           routeListData.map((r: Route) => ({
             value: String(r.id),
-            label: r.route_name || r.name || "",
+            label: `${r.route_code || r.code || ""} - ${r.route_name || r.name || ""}`,
           }))
         );
       } catch (err) {
