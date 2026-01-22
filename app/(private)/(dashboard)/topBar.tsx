@@ -132,7 +132,7 @@ export default function TopBar({
                             icon={isFullscreen ? "mdi:fullscreen-exit" : "humbleicons:maximize"}
                             onClick={() => toggleFullscreen()}
                         />
-                        <NotificationPopover
+                        {/* <NotificationPopover
                             count={3}
                             items={[
                                 { title: "New order created" },
@@ -140,7 +140,7 @@ export default function TopBar({
                                 { title: "Delivery assigned" },
                             ]}
                             buttonClassName="bg-primary/10 text-primary dark:bg-primary/20"
-                        />
+                        /> */}
                         <IconButton
                             icon="mi:settings"
                             onClick={() => {
