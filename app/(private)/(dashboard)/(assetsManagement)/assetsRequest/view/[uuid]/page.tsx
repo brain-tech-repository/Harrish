@@ -104,29 +104,27 @@ export default function ViewPage() {
     setStartIndex(0);
   };
 
-  const allImageFiles = [
-    `${url}/${chillerRequest?.national_id_file}`,
-    `${url}/${chillerRequest?.password_photo_file}`,
-    `${url}/${chillerRequest?.outlet_stamp_file}`,
-    `${url}/${chillerRequest?.trading_licence_file}`,
-    `${url}/${chillerRequest?.lc_letter_file}`,
-    `${url}/${chillerRequest?.outlet_address_proof_file}`,
-    `${url}/${chillerRequest?.sign__customer_file}`,
-  ].filter(Boolean) as string[];
+  // Helper to get full image URL or null
+  const getImageUrl = (file?: string | null) => {
+    if (!file) return null;
+    // If file is already a full URL, return as is
+    if (file.startsWith('http://') || file.startsWith('https://')) return file;
+    return `${url}/${file}`;
+  };
 
-  const getFileView = (file?: string | null) =>
-    file ? (
+  const getFileView = (file?: string | null) => {
+    const imageUrl = getImageUrl(file);
+    return imageUrl ? (
       <button
         className="text-blue-600 underline hover:text-blue-800 transition cursor-pointer"
-        onClick={() =>
-          openImageModal(allImageFiles, allImageFiles.indexOf(file!))
-        }
+        onClick={() => openImageModal([imageUrl], 0)}
       >
         View Image
       </button>
     ) : (
       "-"
     );
+  };
   return (
     <>
       {/* Header */}

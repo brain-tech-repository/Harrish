@@ -1212,3 +1212,12 @@ export const getCurrentCustomer = async (params: Params) => {
     return handleError(error);
   }
 };
+
+export const assetrequestGlobalFilter = async (body: Object) => {
+  try {
+    const res = await API.post("/api/assets/chiller-request/globalFilter", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

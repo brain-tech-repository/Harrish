@@ -9,7 +9,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanUnloadList,unloadExportCollapse } from "@/app/services/agentTransaction";
+import { salesmanUnloadList,unloadExportCollapse, unloadGlobalFilter } from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -38,18 +38,15 @@ const [threeDotLoading, setThreeDotLoading] = useState({
   const [warehouseId, setWarehouseId] = useState<string>();
   const [routeId, setRouteId] = useState<string>();
   const [salesmanId, setSalesmanId] = useState<string>();
+  const [filterPayload,setFilterPayload] = useState<any>();
   const {
-    regionOptions,
-    warehouseOptions,
+    
     warehouseAllOptions,
     salesmanOptions,
     routeOptions,
-    channelOptions,
-    itemCategoryOptions,
-    customerSubCategoryOptions,
     ensureWarehouseAllLoaded,
     ensureSalesmanLoaded,
-    ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
+     ensureRouteLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -60,7 +57,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
   }, [ensureRouteLoaded,ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const [isFiltered, setIsFiltered] = useState(false);
-
+  const [colFilter, setColFilter] = useState<boolean>(false);
   const [form, setForm] = useState({
     start_date: "",
     end_date: "",
@@ -152,6 +149,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     ): Promise<listReturnType> => {
       let result;
       setLoading(true);
+      setColFilter
       try {
         const params: Record<string, string> = {};
         Object.keys(payload || {}).forEach((k) => {
@@ -163,6 +161,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         result = await salesmanUnloadList(params);
       } finally {
         setLoading(false);
+        setColFilter(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -180,9 +179,50 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     [setLoading]
   );
 
+        const fetchUnloadAccordingToGlobalFilter = useCallback(
+          async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+          ): Promise<listReturnType> => {
+      
+            try {
+              setLoading(true);
+              setFilterPayload(payload);
+              const body = {
+                per_page: pageSize.toString(),
+                current_page: pageNo.toString(),
+                filter: payload
+              }
+              const listRes = await unloadGlobalFilter(body);
+             const pagination =
+              listRes.pagination?.pagination || listRes.pagination || {};
+            return {
+              data: listRes.data || [],
+              total: pagination.last_page || listRes.pagination?.last_page || 1,
+              totalRecords:
+                pagination.total || listRes.pagination?.total || 0,
+              currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+              pageSize: pagination.per_page || pageSize,
+            };
+              // fetchOrdersCache.current[cacheKey] = result;
+              // return listRes;
+            } catch (error: unknown) {
+              console.error("API Error:", error);
+              setLoading(false);
+              throw error;
+            }
+            finally{
+                setLoading(false);
+            }
+          },
+          [unloadGlobalFilter, warehouseId, salesmanId]
+        );
+
 
   // ✅ Table Columns
   const columns: configType["columns"] = [
+    { key: "osa_code", label: "Code"},
     { key: "unload_date", label: "Unload Date",render: (row: TableDataType) => {
       return formatWithPattern(
                 new Date(row.unload_date),
@@ -273,7 +313,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
           setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          const response = await unloadExportCollapse({ format });
+          const response = await unloadExportCollapse({ format , filter: filterPayload });
           if (response && typeof response === "object" && response.download_url) {
             await downloadFile(response.download_url);
             showSnackbar("File downloaded successfully ", "success");
@@ -298,7 +338,20 @@ const [threeDotLoading, setThreeDotLoading] = useState({
       <Table
         refreshKey={refreshKey}
         config={{
-          api: { list: fetchSalesmanUnloadHeader, filterBy },
+          api: { list: fetchSalesmanUnloadHeader,  filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchUnloadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              },},
           header: {
             title: "Sales Team Unload",
             searchBar: false,

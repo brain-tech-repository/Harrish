@@ -58,6 +58,7 @@ interface CustomerItem {
     osa_code: string;
     item: {
       id: number;
+      erp_code: string;
       code: string;
       name: string;
     };
@@ -104,7 +105,7 @@ export default function ViewPage() {
   const tableData =
     customer?.details?.map((detail) => ({
       item: detail.item
-        ? `${detail.item.code} - ${detail.item.name}`
+        ? `${detail.item.erp_code} - ${detail.item.name}`
         : "-",
       uom: detail.uom_name !== undefined && detail.uom_name !== null ? String(detail.uom_name) : "-",
       qty: detail.qty !== undefined && detail.qty !== null ? String(detail.qty) : "-",
@@ -192,10 +193,10 @@ export default function ViewPage() {
               <KeyValueData
                 data={[
                   {
-                    key: "Warehouse",
+                    key: "Distributor",
                     value:
                       customer?.warehouse?.code && customer?.warehouse?.name
-                        ? `${customer.warehouse.code} - ${customer.warehouse.name.split("-")[0]} - (${customer.warehouse.name.split("-")[1]})`
+                        ? `${customer.warehouse.code} - ${customer.warehouse.name}`
                         : "-",
                   },
                   {
@@ -209,7 +210,7 @@ export default function ViewPage() {
                     value: customer?.salesman_type?.name || "-",
                   },
                   {
-                    key: "Salesman",
+                    key: "Sales Team",
                     value: customer?.salesman
                       ? `${customer.salesman.code} - ${customer.salesman.name}`
                       : "-",

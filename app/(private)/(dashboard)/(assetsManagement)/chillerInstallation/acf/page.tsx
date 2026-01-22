@@ -7,7 +7,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { acfList, addAcf, crfExport } from "@/app/services/assetsApi";
+import { acfList, addAcf, crfExport, assetrequestGlobalFilter } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ import InputFields from "@/app/components/inputFields";
 // import { Icon } from "lucide-react";
 import { Icon } from "@iconify-icon/react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { button } from "framer-motion/client";
+import FilterComponent from "@/app/components/filterComponent";
 
 // Type definitions for the ACF API response
 interface ChillerRequest {
@@ -58,6 +58,21 @@ interface WorkflowStep {
     uuid: string;
     [key: string]: any;
 }
+
+const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
+  1: "Sales Team Requested",
+  2: "Area Sales Manager Accepted",
+  3: "Area Sales Manager Rejected",
+  4: "Chiller Officer Accepted",
+  5: "Chiller Officer Rejected",
+  6: "Completed",
+  7: "Chiller Manager Rejected",
+  8: "Sales/Key Manager Rejected",
+  9: "Refused by Customer",
+  10: "Fridge Manager Accepted",
+  11: "Fridge Manager Rejected",
+};
+
 
 interface ACFDataRow {
     chiller_request: ChillerRequest;
@@ -106,93 +121,14 @@ const renderCombinedField = (data: TableDataType, field: string) => {
 };
 
 // 🔹 Table Columns
-const columns = [
-    // Essential Information
-    {
-        key: "osa_code",
-        label: "OSA Code",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "osa_code"),
-    },
-    {
-        key: "owner_name",
-        label: "Owner Name",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "owner_name"),
-    },
-    {
-        key: "contact_number",
-        label: "Contact Number",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "contact_number"),
-    },
 
-    // Combined Relationship Fields
-    {
-        key: "customer",
-        label: "Customer",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "customer"),
-    },
-    {
-        key: "warehouse",
-        label: "Distributor",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "warehouse"),
-    },
-    {
-        key: "outlet",
-        label: "Outlet",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "outlet"),
-    },
-    {
-        key: "salesman",
-        label: "Sales Team",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "salesman"),
-    },
-
-    // Key Chiller Details
-    {
-        key: "machine_number",
-        label: "Machine No",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "machine_number"),
-    },
-    {
-        key: "asset_number",
-        label: "Asset No",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "asset_number"),
-    },
-    {
-        key: "model",
-        label: "Model",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "model"),
-    },
-    {
-        key: "brand",
-        label: "Brand",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "brand"),
-    },
-
-    // Status
-    {
-        key: "status",
-        label: "Status",
-        render: (data: TableDataType) =>
-            renderCombinedField(data, "status"),
-    },
-]
 
 export default function CustomerInvoicePage() {
     const { can, permissions } = usePagePermissions();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const router = useRouter();
+    const [warehouseId, setWarehouseId] = useState<string>("");
     const [selectedRowsData, setSelectedRowsData] = useState<any[]>([]);
     const { values, setFieldValue } = useFormik({
         initialValues: {
@@ -203,6 +139,7 @@ export default function CustomerInvoicePage() {
         onSubmit: (values) => {
         },
     });
+    const [colFilter, setColFilter] = useState(false);
     const [showSidebar, setShowSidebar] = useState(false);
     const [threeDotLoading, setThreeDotLoading] = useState({
         csv: false,
@@ -285,7 +222,9 @@ export default function CustomerInvoicePage() {
     //     },
     //     [setLoading, showSnackbar]
     // );
-
+    useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [warehouseId]);
     const filterBy = useCallback(
         async (
             payload: Record<string, string | number | null>,
@@ -293,6 +232,7 @@ export default function CustomerInvoicePage() {
         ): Promise<listReturnType> => {
             let result;
             // setLoading(true);
+            setColFilter(true);
             try {
                 const params: Record<string, string> = {
                     per_page: pageSize.toString(),
@@ -306,6 +246,7 @@ export default function CustomerInvoicePage() {
                 result = await acfList(params);
             } finally {
                 // setLoading(false);
+                setColFilter(false);
             }
 
             if (result?.error)
@@ -326,45 +267,74 @@ export default function CustomerInvoicePage() {
         [refreshKey],
     );
 
-    // 🔹 Search Invoices (Mock)
-    const searchInvoices = useCallback(async (): Promise<searchReturnType> => {
-        try {
-            setLoading(true);
-            return {
-                data: [],
-                currentPage: 1,
-                pageSize: 50,
-                total: 0,
+
+
+
+    const fetchAssetAccordingToGlobalFilter = useCallback(
+        async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+        ): Promise<listReturnType> => {
+            // Always send these keys as arrays
+            const keysToArray = [
+                "area_id",
+                "region_id",
+                "warehouse_id",
+                "route_id",
+                "company_id",
+                "salesman_id",
+                "model_number",
+            ];
+            const toArray = (v: any) => {
+                if (Array.isArray(v)) return v;
+                if (typeof v === "string" && v.includes(",")) return v.split(",").filter(Boolean);
+                if (typeof v === "string" && v !== "") return [v];
+                if (typeof v === "number") return [String(v)];
+                return [];
             };
-        } finally {
-            setLoading(false);
-        }
-    }, [setLoading]);
-
-
-    const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
-        try {
-            // setLoading(true);
-            // Pass selected format to the export API
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await crfExport({ format });
-            // const url = response?.url || response?.data?.url;
-            const url = response?.download_url || response?.url || response?.data?.url;
-            if (url) {
-                await downloadFile(url);
-                showSnackbar("File downloaded successfully", "success");
-            } else {
-                showSnackbar("Failed to get download file", "error");
+            // Patch payload to ensure arrays
+            let patchedPayload = { ...payload };
+            keysToArray.forEach((key) => {
+                if (patchedPayload[key] && !Array.isArray(patchedPayload[key])) {
+                    patchedPayload[key] = toArray(patchedPayload[key]);
+                }
+            });
+            try {
+                setLoading(true);
+                const body = {
+                    limit: pageSize.toString(),
+                    page: pageNo.toString(),
+                    filter: patchedPayload
+                }
+                const listRes = await assetrequestGlobalFilter(body);
+                const pagination =
+                    listRes.pagination?.pagination || listRes.pagination || {};
+                return {
+                    data: listRes.data || [],
+                    total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+                    totalRecords:
+                        pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+                    currentPage: pagination.page || listRes.pagination?.page || 1,
+                    pageSize: pagination.limit || pageSize,
+                };
+            } catch (error: unknown) {
+                console.error("API Error:", error);
+                setLoading(false);
+                throw error;
             }
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } catch (error) {
-            console.error("Export failed:", error);
-            showSnackbar("Failed to download invoices", "error");
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } finally {
-            // setLoading(false);
-        }
-    };
+            finally {
+                setLoading(false);
+            }
+        },
+        [assetrequestGlobalFilter, warehouseId]
+    );
+
+    // 🔹 Search Invoices (Mock)
+
+
+
+ 
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
@@ -376,71 +346,100 @@ export default function CustomerInvoicePage() {
         assetsModelOptions
     ]);
 
+
+    const columns = [
+        // Essential Information (flat fields)
+        {
+            key: "osa_code",
+            label: "OSA Code",
+            render: (data: TableDataType) => data.osa_code || "-",
+        },
+        {
+            key: "owner_name",
+            label: "Owner Name",
+            render: (data: TableDataType) => data.owner_name || "-",
+        },
+        {
+            key: "contact_number",
+            label: "Contact Number",
+            render: (data: TableDataType) => data.contact_number || "-",
+        },
+
+        // If you have nested fields, use renderCombinedField, otherwise use direct access
+        // For now, Customer, Distributor, Outlet, Sales Team are flat fields or can be adjusted as needed
+        {
+            key: "customer_id",
+            label: "Customer",
+            render: (data: TableDataType) => `${data.customer?.osa_code || ""} - ${data.customer?.name || ""}`,
+        },
+        {
+            key: "warehouse_id",
+            label: "Distributor",
+            render: (data: TableDataType) => `${data.warehouse?.warehouse_code || ""} - ${data.warehouse?.warehouse_name || ""}`,
+            filter: {
+                isFilterable: true,
+                width: 320,
+                filterkey: "warehouse_id",
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected: string | string[]) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
+        },
+        {
+            key: "outlet_id",
+            label: "Outlet",
+            render: (data: TableDataType) => `${data.outlet.outlet_channel || "-"}`,
+        },
+        {
+            key: "salesman_id",
+            label: "Sales Team",
+            render: (data: TableDataType) => `${data.salesman?.osa_code || ""} - ${data.salesman?.name || ""}`,
+        },
+
+       
+        {
+            key: "model",
+            label: "Model",
+            render: (data: TableDataType) => data.model || "-",
+        },
+       
+
+        // Status
+        {
+            key: "status",
+            label: "Status",
+                render: (data: TableDataType) => {
+                    const statusValue = data.status;
+                    return CHILLER_REQUEST_STATUS_MAP[statusValue] || "-";
+                },
+        },
+    ];
+
     return (
         <div className="flex flex-col h-full">
             {/* 🔹 Table Section */}
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { filterBy: filterBy },
+                    api: {
+                        // list: filterBy,
+                        filterBy:fetchAssetAccordingToGlobalFilter
+                    },
                     header: {
                         title: "Approve Chiller Request",
                         columnFilter: true,
                         searchBar: false,
-                        // threeDot: [
-                        //     {
-                        //         icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export CSV",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                        //     },
-                        //     {
-                        //         icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                        //         label: "Export Excel",
-                        //         labelTw: "text-[12px] hidden sm:block",
-                        //         onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                        //     },],
-                        filterByFields: [
-                            {
-                                key: "warehouse_id",
-                                label: "Warehouse",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(warehouseAllOptions)
-                                    ? warehouseAllOptions
-                                    : [],
-                            },
-                            {
-                                key: "region_id",
-                                label: "Region",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(regionOptions) ? regionOptions : [],
-                            },
-                            {
-                                key: "sub_region_id",
-                                label: "Sub Region",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(areaOptions) ? areaOptions : [],
-                            },
-                            {
-                                key: "route_id",
-                                label: "Route",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(routeOptions) ? routeOptions : [],
-                            },
-                            {
-                                key: "model_number",
-                                label: "Model Number",
-                                isSingle: false,
-                                multiSelectChips: true,
-                                options: Array.isArray(assetsModelOptions)
-                                    ? assetsModelOptions
-                                    : [],
-                            },
-                        ],
+                        
+                        filterRenderer: (props) => (
+                            <FilterComponent
+                                currentDate={true}
+                                onlyFilters={["company_id","region_id","area_id","warehouse_id","route_id","salesman_id",'model_number']}
+                                {...props}
+                            />
+                        ),
                         actionsWithData: (data: TableDataType[], selectedRow?: number[]) => {
                             // if (!can("create")) return [];
                             // gets the ids of the selected rows with type narrowing
@@ -486,6 +485,7 @@ export default function CustomerInvoicePage() {
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
+                    rowSelection: true,
                     // rowSelection: true,
                     floatingInfoBar: {
                         showByDefault: true,

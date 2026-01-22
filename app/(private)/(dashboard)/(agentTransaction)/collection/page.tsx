@@ -18,7 +18,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
 export default function SalemanLoad() {
     const { can, permissions } = usePagePermissions();
-    const { routeOptions,agentCustomerOptions,ensureRouteLoaded,ensureAgentCustomerLoaded,warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
+    const { warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
     const [salesmanId, setSalesmanId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
@@ -34,9 +34,7 @@ export default function SalemanLoad() {
   useEffect(() => {
     ensureSalesmanLoaded();
     ensureWarehouseAllLoaded();
-    ensureRouteLoaded();
-    ensureAgentCustomerLoaded();
-  }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded, ensureRouteLoaded, ensureAgentCustomerLoaded]);
+  }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const columns: configType["columns"] = [
         { key: "code", label: "Invoice Code" },
         { key: "collection_no", label: "Collection No." },
@@ -70,7 +68,7 @@ export default function SalemanLoad() {
     },
         },
         {
-            key: "route_code", label: "Route Code", render: (row: TableDataType) => {
+            key: "route_code", label: "Route", render: (row: TableDataType) => {
                 const code = row.route_code || "-";
                 const name = row.route_name || "-";
                 return `${code}${code && name ? " - " : ""}${name}`;

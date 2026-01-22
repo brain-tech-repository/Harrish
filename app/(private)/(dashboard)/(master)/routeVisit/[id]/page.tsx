@@ -324,14 +324,12 @@ export default function AddEditRouteVisit() {
     setLoading(true);
     try {
       const res = await getRouteVisitDetails(uuid);
-      console.log("Route Visit Data:", res.data);
 
       if (res?.data) {
         const d = Array.isArray(res.data) ? res.data[0] : res.data;
         setHeaderUuid(d.header?.uuid || "");
 
         const routeId = res.data[0].route[0]?.id;
-        console.log("Route ID:", routeId);
 
         // Format dates from "2025-10-31T00:00:00.000000Z" to "2025-10-31"
         const formatDate = (dateString: string) => {
@@ -358,7 +356,6 @@ export default function AddEditRouteVisit() {
           to_date: formatDate(d.to_date),
           status: statusValue,
         });
-        console.log("Form data:", d.route.id);
 
         setSelectedCustomerType(d.customer_type || "1");
 

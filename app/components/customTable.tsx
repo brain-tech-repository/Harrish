@@ -71,7 +71,8 @@ export type configType = {
         ) => Promise<listReturnType> | listReturnType;
         filterBy?: (
             payload: Record<string, string | number | null>,
-            pageSize: number
+            pageSize: number,
+            pageNo?: number
         ) => Promise<listReturnType> | listReturnType;
     };
     header?: {
@@ -1093,7 +1094,7 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                             "
                                             style={{ backgroundColor: rowBgColor || 'white' }}
                                             >
-                                                <div className="flex items-center gap-[4px]">
+                                                <div className="flex items-center gap-[10px]">
                                                     {rowActions.map(
                                                         (action, index) => (
                                                             <div key={index}>
@@ -1438,11 +1439,9 @@ function TableFooter() {
             try {
                 const globalFilter = filterState;
                 if (globalFilter && globalFilter.applied && api?.filterBy) {
-                    // reuse payload and request the requested page; add page if backend expects it
+                    // reuse payload and request the requested page; do NOT add .page to payload, instead pass as 3rd arg
                     const payload = { ...(globalFilter.payload || {}) } as Record<string, any>;
-                    // include page param (1-based) so backend can return correct page
-                    payload.page = pageNo + 1;
-                    const res = await api.filterBy(payload, pageSize);
+                    const res = await api.filterBy(payload, pageSize, pageNo + 1);
                     const resolvedResult = res instanceof Promise ? await res : res;
                     const { data, total, currentPage } = resolvedResult;
                     setTableDetails({
@@ -1736,25 +1735,48 @@ function FilterBy() {
     }, [config.header?.filterByFields, hasCustomRenderer]);
 
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
-    const activeFilterCount = Object.keys(sourcePayload || {}).reduce((acc, k) => {
+    // Custom logic: if both from_date and to_date are set, count as 1 filter (not 2)
+    const filterKeys = Object.keys(sourcePayload || {});
+    let counted = new Set<string>();
+    let count = 0;
+    for (const k of filterKeys) {
+        if (counted.has(k)) continue;
         const v = (sourcePayload as any)[k];
         const hasValue = Array.isArray(v)
             ? v.length > 0
             : String(v ?? '').trim().length > 0;
-        if (!hasValue) return acc;
+        if (!hasValue) continue;
+
+        // Special case: from_date and to_date together count as 1
+        if ((k === 'from_date' || k === 'to_date')) {
+            const from = (sourcePayload as any)['from_date'];
+            const to = (sourcePayload as any)['to_date'];
+            const fromHas = from && String(from).trim().length > 0;
+            const toHas = to && String(to).trim().length > 0;
+            if (fromHas || toHas) {
+                if (!counted.has('from_date') && !counted.has('to_date')) {
+                    count += 1;
+                    counted.add('from_date');
+                    counted.add('to_date');
+                }
+            }
+            continue;
+        }
 
         // For built-in filters, respect applyWhen; custom renderer handles its own logic
         if (!hasCustomRenderer) {
             const field = (config.header?.filterByFields || []).find((f: FilterField) => f.key === k);
             try {
-                if (field?.applyWhen && !field.applyWhen(filters)) return acc;
+                if (field?.applyWhen && !field.applyWhen(filters)) continue;
             } catch (err) {
-                return acc;
+                continue;
             }
         }
 
-        return acc + 1;
-    }, 0);
+        count += 1;
+        counted.add(k);
+    }
+    const activeFilterCount = count;
 
     const toApiPayload = (payload: Record<string, any>) => {
         const payloadForApi: Record<string, string | number | null> = {};

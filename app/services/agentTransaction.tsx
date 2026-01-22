@@ -1018,3 +1018,22 @@ export const itemsForCaps = async (id:string, params?: Params) => {
     return handleError(error);
   }
 };
+
+
+export const unloadGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/unload/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const returnGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/returns/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
