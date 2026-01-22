@@ -9,6 +9,7 @@ import { useSnackbar } from '@/app/services/snackbarContext';
 import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
+import toInternationalNumber from '../(private)/utils/formatNumber';
 
 // Define TypeScript interfaces
 interface FilterChildItem {
@@ -188,26 +189,16 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         return;
       }
 
-      const response = reportType === 'item' ?
-        await axios.get(
-          apiEndpoints.dashboard + '?' + new URLSearchParams(payload).toString(),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-            }
-          }
-        )
-        : await axios.post(
-          apiEndpoints.dashboard,
-          payload,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-            }
-          }
-        );
+    const response = await axios.post(
+      apiEndpoints.dashboard,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        }
+      }
+    );
 
       setDashboardData(response.data);
     } catch (error) {
@@ -1437,13 +1428,17 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                           <table className="w-full border-collapse">
                             <thead>
                               <tr className="bg-gray-100 border-b border-gray-200">
-                                {dynamicColumn.type === 'customer-report' ? (
-                                  // Customer report - show only customer columns
+                                {reportType === 'item' ? (
+                                  <>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">S. No.</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Value</th>
+                                  </>
+                                ) : dynamicColumn.type === 'customer-report' ? (
                                   dynamicColumn.columns.map((col: any, idx: number) => (
                                     <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
                                   ))
                                 ) : (
-                                  // Sales report - show item columns + dynamic columns
                                   <>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Code</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
@@ -1460,13 +1455,17 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                             <tbody>
                               {rows.map((row: any, rowIdx: number) => (
                                 <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
-                                  {dynamicColumn.type === 'customer-report' ? (
-                                    // Customer report - show only customer data
+                                  {reportType === 'item' ? (
+                                    <>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{rowIdx + 1}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.value !== undefined ? toInternationalNumber(row.value) : '-'}</td>
+                                    </>
+                                  ) : dynamicColumn.type === 'customer-report' ? (
                                     dynamicColumn.columns.map((col: any, idx: number) => (
                                       <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
                                     ))
                                   ) : (
-                                    // Sales report - show item data + dynamic columns
                                     <>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.item_code || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
