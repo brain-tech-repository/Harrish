@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect ,useRef} from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import Table, {
@@ -15,7 +15,8 @@ import {
   agentOrderList,
   changeStatusAgentOrder,
   // agentOrderExport ,
-  orderExportCollapse
+  orderExportCollapse,
+  orderGlobalFilter
 } from "@/app/services/agentTransaction";
 import OrderStatus from "@/app/components/orderStatus";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
@@ -25,12 +26,13 @@ import ApprovalStatus from "@/app/components/approvalStatus";
 import InputFields from "@/app/components/inputFields";
 import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
+import { li } from "framer-motion/client";
 // import { useLoading } from "@/app/services/loadingContext";
 
 export default function CustomerInvoicePage() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
-
+  
   // const { setLoading } = useLoading();
 
   const { showSnackbar } = useSnackbar();
@@ -40,7 +42,7 @@ export default function CustomerInvoicePage() {
     ensureWarehouseLoaded();
     ensureSalesmanLoaded();
   }, [ensureWarehouseLoaded, ensureSalesmanLoaded]);
-  
+  const [colFilter,setColFilter] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Refresh table when permissions load
@@ -58,146 +60,146 @@ export default function CustomerInvoicePage() {
   const [warehouseId, setWarehouseId] = useState<string>();
   const [salesmanId, setSalesmanId] = useState<string>();
   const columns = [
-  {
-    key: "created_at",
-    label: "Order Date",
-    // showByDefault: true,
-    render: (row: TableDataType) => (
-      <span
-        className="
+    {
+      key: "created_at",
+      label: "Order Date",
+      // showByDefault: true,
+      render: (row: TableDataType) => (
+        <span
+          className="
           font-bold
           cursor-pointer
         "
-      >
-        {formatWithPattern(
-          new Date(row.created_at),
-          "DD MMM YYYY",
-          "en-GB",
-        ).toLowerCase()}
-      </span>
-    ),
-  },
-  {
-    key: "order_code",
-    label: "Order Number",
-    // showByDefault: true,
-    render: (row: TableDataType) => (
-      <span
-        className="
-          font-bold
-          cursor-pointer
-        "
-      >
-        {row.order_code}
-      </span>
-    ),
-  },
-  {
-    key: "warehouse_name",
-    label: "Distributor",
-    // showByDefault: true,
-    render: (row: TableDataType) => {
-      const code = row.warehouse_code ?? "";
-      const name = row.warehouse_name ?? "";
-      if (!code && !name) return "-";
-      return `${code}${code && name ? " - " : ""}${name}`;
+        >
+          {formatWithPattern(
+            new Date(row.created_at),
+            "DD MMM YYYY",
+            "en-GB",
+          ).toLowerCase()}
+        </span>
+      ),
     },
-    filter: {
+    {
+      key: "order_code",
+      label: "Order Number",
+      // showByDefault: true,
+      render: (row: TableDataType) => (
+        <span
+          className="
+          font-bold
+          cursor-pointer
+        "
+        >
+          {row.order_code}
+        </span>
+      ),
+    },
+    {
+      key: "warehouse_name",
+      label: "Distributor",
+      // showByDefault: true,
+      render: (row: TableDataType) => {
+        const code = row.warehouse_code ?? "";
+        const name = row.warehouse_name ?? "";
+        if (!code && !name) return "-";
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
+      filter: {
         isFilterable: true,
         width: 320,
         filterkey: "warehouse_id",
         options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
         onSelect: (selected: string | string[]) => {
-            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
         },
         isSingle: false,
         selectedValue: warehouseId,
+      },
     },
-  },
 
-  {
-    key: "customer_name",
-    label: "Customer",
-    // showByDefault: true,
-    render: (row: TableDataType) => {
-      const code = row.customer_code ?? "";
-      const name = row.customer_name ?? "";
-      if (!code && !name) return "-";
-      return `${code}${code && name ? " - " : ""}${name}`;
+    {
+      key: "customer_name",
+      label: "Customer",
+      // showByDefault: true,
+      render: (row: TableDataType) => {
+        const code = row.customer_code ?? "";
+        const name = row.customer_name ?? "";
+        if (!code && !name) return "-";
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
     },
-  },
-  {
-    key: "salesman_name",
-    label: "Sales Team",
-    // showByDefault: true,
-    render: (row: TableDataType) => {
-      const code = row.salesman_code ?? "";
-      const name = row.salesman_name ?? "";
-      if (!code && !name) return "-";
-      return `${code}${code && name ? " - " : ""}${name}`;
-    },
-    filter: {
+    {
+      key: "salesman_name",
+      label: "Sales Team",
+      // showByDefault: true,
+      render: (row: TableDataType) => {
+        const code = row.salesman_code ?? "";
+        const name = row.salesman_name ?? "";
+        if (!code && !name) return "-";
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
+      filter: {
         isFilterable: true,
         width: 320,
         filterkey: "salesman_id",
         options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
         onSelect: (selected: string | string[]) => {
-            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+          setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
         },
         isSingle: false,
         selectedValue: salesmanId,
+      },
     },
-  },
-  {
-    key: "route_name",
-    label: "Route",
-    // showByDefault: true,
-    render: (row: TableDataType) => {
-      const code = row.route_code ?? "";
-      const name = row.route_name ?? "";
-      if (!code && !name) return "-";
-      return `${code}${code && name ? " - " : ""}${name}`;
+    {
+      key: "route_name",
+      label: "Route",
+      // showByDefault: true,
+      render: (row: TableDataType) => {
+        const code = row.route_code ?? "";
+        const name = row.route_name ?? "";
+        if (!code && !name) return "-";
+        return `${code}${code && name ? " - " : ""}${name}`;
+      },
     },
-  },
-  // {
-  //   key: "payment_method",
-  //   label: "Payment Method",
-  //   render: (row: TableDataType) => row.payment_method || "-",
-  // },
-  {
-    key: "order_source",
-    label: "Order Source",
-    render: (row: TableDataType) => row.order_source || "-",
-  },
-  {
-    key: "delivery_date",
-    label: "Delivery Date",
-    // showByDefault: true,
-    render: (row: TableDataType) =>
-      formatWithPattern(
-        new Date(row.delivery_date),
-        "DD MMM YYYY",
-        "en-GB",
-      ).toLowerCase() || "-",
-  },
-  {
-    key: "comment",
-    label: "Comment",
-    render: (row: TableDataType) => row.comment || "-",
-  },
-  {
-    key: "approval_status",
-    label: "Approval Status",
-    // showByDefault: true,
-    render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-  },
-  {
-    key: "order_flag",
-    label: "Status",
-    // showByDefault: true,
-    render: (row: TableDataType) => <OrderStatus order_flag={row.order_flag} />,
-  },
-];
+    // {
+    //   key: "payment_method",
+    //   label: "Payment Method",
+    //   render: (row: TableDataType) => row.payment_method || "-",
+    // },
+    {
+      key: "order_source",
+      label: "Order Source",
+      render: (row: TableDataType) => row.order_source || "-",
+    },
+    {
+      key: "delivery_date",
+      label: "Delivery Date",
+      // showByDefault: true,
+      render: (row: TableDataType) =>
+        formatWithPattern(
+          new Date(row.delivery_date),
+          "DD MMM YYYY",
+          "en-GB",
+        ).toLowerCase() || "-",
+    },
+    {
+      key: "comment",
+      label: "Comment",
+      render: (row: TableDataType) => row.comment || "-",
+    },
+    {
+      key: "approval_status",
+      label: "Approval Status",
+      // showByDefault: true,
+      render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+    },
+    {
+      key: "order_flag",
+      label: "Status",
+      // showByDefault: true,
+      render: (row: TableDataType) => <OrderStatus order_flag={row.order_flag} />,
+    },
+  ];
 
   // Memoize the fetchOrders API call so it only fetches once per session
   const fetchOrdersCache = useRef<{ [key: string]: listReturnType }>({});
@@ -206,7 +208,7 @@ export default function CustomerInvoicePage() {
       page: number = 1,
       pageSize: number = 50
     ): Promise<listReturnType> => {
-     
+
       try {
         // setLoading(true);
         let params: any = {
@@ -214,10 +216,10 @@ export default function CustomerInvoicePage() {
           page: page.toString(),
         };
         if (warehouseId) {
-            params.warehouse_id = warehouseId;
+          params.warehouse_id = warehouseId;
         }
         if (salesmanId) {
-            params.salesman_id = salesmanId;
+          params.salesman_id = salesmanId;
         }
         const listRes = await agentOrderList(params);
         const result = {
@@ -236,6 +238,45 @@ export default function CustomerInvoicePage() {
     },
     [agentOrderList, warehouseId, salesmanId]
   );
+  const fetchOrdersAccordingToGlobalFilter = useCallback(
+    async (
+      payload: Record<string, any>,
+      pageSize: number = 50,
+      pageNo: number = 1
+    ): Promise<listReturnType> => {
+
+      try {
+        setLoading(true);
+       
+        const body = {
+          limit: pageSize.toString(),
+          page: pageNo.toString(),
+          filter: payload
+        }
+        const listRes = await orderGlobalFilter(body);
+       const pagination =
+        listRes.pagination?.pagination || listRes.pagination || {};
+      return {
+        data: listRes.data || [],
+        total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+        totalRecords:
+          pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+        currentPage: pagination.page || listRes.pagination?.page || 1,
+        pageSize: pagination.limit || pageSize,
+      };
+        // fetchOrdersCache.current[cacheKey] = result;
+        // return listRes;
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+      finally{
+        setLoading(false);
+      }
+    },
+    [orderGlobalFilter, warehouseId, salesmanId]
+  );
 
   // In-memory cache for filterBy API calls
   const agentOrderFilterCache = useRef<{ [key: string]: any }>({});
@@ -245,6 +286,7 @@ export default function CustomerInvoicePage() {
       payload: Record<string, string | number | null>,
       pageSize: number,
     ): Promise<listReturnType> => {
+      setColFilter(true);
       const params: Record<string, string> = {
         per_page: pageSize.toString(),
       };
@@ -268,17 +310,18 @@ export default function CustomerInvoicePage() {
           pageSize: pagination.limit || pageSize,
         };
       }
-       if (warehouseId) {
-            params.warehouse_id = warehouseId;
-        }
-        if (salesmanId) {
-            params.salesman_id = salesmanId;
-        }
+      if (warehouseId) {
+        params.warehouse_id = warehouseId;
+      }
+      if (salesmanId) {
+        params.salesman_id = salesmanId;
+      }
       // const result = await agentOrderList({ filter: Object.values(params) });
       const result = await agentOrderList(params);
       agentOrderFilterCache.current[cacheKey] = result;
       const pagination =
         result.pagination?.pagination || result.pagination || {};
+        setColFilter(false);
       return {
         data: result.data || [],
         total: pagination.totalPages || result.pagination?.totalPages || 1,
@@ -288,7 +331,7 @@ export default function CustomerInvoicePage() {
         pageSize: pagination.limit || pageSize,
       };
     },
-    [agentOrderList, warehouseId, salesmanId],
+    [agentOrderList, warehouseId, salesmanId,colFilter],
   );
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
@@ -352,7 +395,7 @@ export default function CustomerInvoicePage() {
     res();
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     setRefreshKey((prev) => prev + 1);
   }, [warehouseId, salesmanId]);
 
@@ -362,7 +405,23 @@ export default function CustomerInvoicePage() {
         <Table
           refreshKey={refreshKey}
           config={{
-            api: { list: fetchOrders, filterBy: filterBy },
+            api: {
+              list: fetchOrders,
+              filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchOrdersAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              },
+            },
             header: {
               title: "Distributor's Orders",
               searchBar: false,
@@ -386,11 +445,12 @@ export default function CustomerInvoicePage() {
                 },
               ],
               filterRenderer: (props) => (
-                                                                                                  <FilterComponent
-                                                                                                  currentDate={true}
-                                                                                                    {...props}
-                                                                                                  />
-                                                                                                ),
+                <FilterComponent
+                  currentDate={true}
+                  {...props}
+                  api={fetchOrdersAccordingToGlobalFilter}
+                />
+              ),
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}
@@ -413,7 +473,7 @@ export default function CustomerInvoicePage() {
               },
               {
                 icon: "lucide:download",
-                showLoading:true,
+                showLoading: true,
                 onClick: (row: TableDataType) => downloadPdf(row.uuid),
               },
               {

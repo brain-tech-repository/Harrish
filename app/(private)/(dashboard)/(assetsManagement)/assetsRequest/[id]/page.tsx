@@ -103,18 +103,12 @@ const validationSchema = Yup.object({
   landmark: Yup.string()
     .trim()
     .max(255, "Landmark cannot exceed 255 characters"),
-    chiller_size_requested: Yup.string().required("Model Number is required"),
+  model: Yup.string().required("Model Number is required"),
   existing_coolers: Yup.string(),
   outlet_weekly_sale_volume_current: Yup.string(),
   outlet_weekly_sale_volume: Yup.string(),
   display_location: Yup.string(),
   chiller_safty_grill: Yup.string(),
-  warehouse_id: Yup.string()
-    .required("Warehouse is required")
-    .typeError("Warehouse must be a number"),
-  customer_id: Yup.number()
-    .required("Customer is required")
-    .typeError("Customer must be a number"),
   national_id: Yup.string()
     .trim()
     .max(50, "National ID cannot exceed 50 characters"),
@@ -137,13 +131,11 @@ const validationSchema = Yup.object({
 const stepSchemas = [
   // Step 1: Basic Outlet Information
   Yup.object().shape({
-    warehouse_id: validationSchema.fields.warehouse_id,
-    customer_id: validationSchema.fields.customer_id,
     owner_name: validationSchema.fields.owner_name,
     contact_number: validationSchema.fields.contact_number,
     landmark: validationSchema.fields.landmark,
     outlet_id: validationSchema.fields.outlet_id,
-    chiller_size_requested: validationSchema.fields.chiller_size_requested,
+    model: validationSchema.fields.model,
   }),
 
   // Step 2: Location and Personnel
@@ -170,8 +162,8 @@ const stepSchemas = [
 type Chiller = {
   osa_code: string;
   warehouse_id: string;
-  customer_id:  string;
-  chiller_size_requested:  string;
+  customer_id: string;
+  model: string;
   owner_name: string;
   contact_number: string;
   landmark: string;
@@ -294,10 +286,12 @@ export default function AddCompanyWithStepper() {
   const [isLoading, setIsLoading] = useState(true);
   const [existingData, setExistingData] = useState<Chiller | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { agentCustomerOptions,assetsModelOptions, channelOptions, ensureAgentCustomerLoaded, ensureChannelLoaded,ensureAssetsModelLoaded } = useAllDropdownListData();
+  const { agentCustomerOptions, assetsModelOptions, channelOptions, ensureAgentCustomerLoaded, ensureChannelLoaded, ensureAssetsModelLoaded } = useAllDropdownListData();
   const url = process.env.NEXT_PUBLIC_API_URL;
   const params = useParams();
   const uuid = params?.id;
+  const [warehouseId, setWarehouseId] = useState<string>("");
+  const [customerId, setCustomerId] = useState<string>("");
 
   const steps: StepperStep[] = [
     { id: 1, label: "Outlet Information" },
@@ -313,7 +307,7 @@ export default function AddCompanyWithStepper() {
     isStepCompleted,
     isLastStep,
   } = useStepperForm(steps.length);
-  
+
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
@@ -350,14 +344,15 @@ export default function AddCompanyWithStepper() {
 
       if (res.status === "success" && res.data) {
         const data = res.data;
-
+        setWarehouseId(data.warehouse?.id || "");
+        setCustomerId(data.customer?.id || "");
         // Transform the API response to match our Chiller type
         const fileBaseUrl = 'https://api.coreexl.com/osa_developmentV2/public';
         const transformedData: Chiller = {
           osa_code: data.osa_code || "",
-          chiller_size_requested: String(data.chiller_size_requested?.id || ""),
-          warehouse_id: String(data.warehouse?.id),
-          customer_id: String(data.customer?.id),
+          model: String(data.model?.id || ""),
+          warehouse_id: `${data.warehouse?.code || ""} - ${data.warehouse?.name || ""}`,
+          customer_id: `${data.customer?.code || ""} - ${data.customer?.name || ""}`,
           owner_name: data.owner_name || "",
           contact_number: data.contact_number || "",
           landmark: data.landmark || "",
@@ -643,7 +638,7 @@ export default function AddCompanyWithStepper() {
     address: "",
     location: "",
     outlet_id: "",
-    chiller_size_requested: "",
+    model: "",
     existing_coolers: "",
     stock_share_with_competitor: "",
     outlet_weekly_sale_volume_current: "",
@@ -665,7 +660,7 @@ export default function AddCompanyWithStepper() {
   };
 
   const stepFields = [
-    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "outlet_weekly_sale_volume_current","display_location", "chiller_safty_grill","chiller_size_requested"],
+    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "outlet_weekly_sale_volume_current", "display_location", "chiller_safty_grill", "model"],
     ["warehouse_id", "salesman_id", "outlet_id", "manager_sales_marketing"],
     ["national_id", "outlet_stamp", "model", "hil", "ir_reference_no", "installation_done_by", "date_lnitial", "date_lnitial2", "contract_attached", "machine_number", "brand", "asset_number"],
     ["lc_letter", "trading_licence", "password_photo", "outlet_address_proof", "chiller_asset_care_manager", "national_id_file", "password_photo_file", "outlet_address_proof_file", "trading_licence_file", "lc_letter_file", "outlet_stamp_file", "sign__customer_file", "chiller_manager_id", "is_merchandiser", "status", "fridge_status", "iro_id", "remark"]
@@ -703,7 +698,11 @@ export default function AddCompanyWithStepper() {
     try {
       setIsSubmitting(true);
       // Convert existing_coolers to string if it's an array
-      const submitValues = { ...values };
+      const submitValues = {
+        ...values,
+        warehouse_id: warehouseId,
+        customer_id: customerId,
+      };
       if (Array.isArray(submitValues.existing_coolers)) {
         submitValues.existing_coolers = submitValues.existing_coolers.join(",");
       }
@@ -788,7 +787,7 @@ export default function AddCompanyWithStepper() {
     errors: FormikErrors<Chiller>,
     touched: FormikTouched<Chiller>
   ) => {
-   
+
 
     switch (currentStep) {
       case 1:
@@ -797,7 +796,7 @@ export default function AddCompanyWithStepper() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <InputFields
-                disabled
+                  disabled
                   label="OSA Code"
                   name="osa_code"
                   value={values.osa_code}
@@ -812,13 +811,12 @@ export default function AddCompanyWithStepper() {
               </div>
               <div>
                 <InputFields
-                  required
                   searchable
                   disabled
                   label="Distributors"
                   name="warehouse_id"
                   value={values.warehouse_id.toString()}
-                  options={warehouseOptions}
+                  // options={warehouseOptions}
                   onChange={(e) =>
                     setFieldValue("warehouse_id", e.target.value)
                   }
@@ -832,13 +830,12 @@ export default function AddCompanyWithStepper() {
               </div>
               <div>
                 <InputFields
-                  required
                   searchable
                   disabled
                   label="Customer"
                   name="customer_id"
                   value={values.customer_id.toString()}
-                  options={agentCustomerOptions}
+                  // options={agentCustomerOptions}
                   onChange={(e) =>
                     setFieldValue("customer_id", e.target.value)
                   }
@@ -867,7 +864,7 @@ export default function AddCompanyWithStepper() {
               </div>
               <div>
                 <InputFields
-                type="contact2"
+                  type="contact2"
                   required
                   label="Contact Number"
                   name="contact_number"
@@ -883,7 +880,7 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-              
+
               <div>
                 <InputFields
                   label="Landmark"
@@ -942,20 +939,20 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-                   <InputFields
-                                  required
-                                  label="Model Number"
-                                  name="chiller_size_requested"
-                                  value={values.chiller_size_requested}
-                                  options={assetsModelOptions}
-                                  onChange={(e) => setFieldValue("chiller_size_requested", e.target.value)}
-                                  // error={touched.chiller_size_requested && errors.chiller_size_requested}
-                                />
-                                <ErrorMessage
-                  name="chiller_size_requested"
-                  component="div"
-                  className="text-sm text-red-600 mb-1"
-                />
+              <InputFields
+                required
+                label="Model Number"
+                name="model"
+                value={values.model}
+                options={assetsModelOptions}
+                onChange={(e) => setFieldValue("model", e.target.value)}
+              // error={touched.model && errors.model}
+              />
+              <ErrorMessage
+                name="model"
+                component="div"
+                className="text-sm text-red-600 mb-1"
+              />
 
             </div>
           </ContainerCard>
@@ -968,7 +965,7 @@ export default function AddCompanyWithStepper() {
 
               <div>
                 <InputFields
-                multiSelectChips
+                  multiSelectChips
                   label="Existing Coolers"
                   name="existing_coolers"
                   isSingle={false}
@@ -993,8 +990,8 @@ export default function AddCompanyWithStepper() {
               </div>
               <div>
                 <InputFields
-                type="number"
-                integerOnly
+                  type="number"
+                  integerOnly
                   label="Stock Share With Competitor In %"
                   name="stock_share_with_competitor"
                   value={values.stock_share_with_competitor}
@@ -1009,10 +1006,10 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-                  <div>
+              <div>
                 <InputFields
-                type="number"
-                integerOnly
+                  type="number"
+                  integerOnly
                   label="Outlet Weekly Sale Volume Current"
                   name="outlet_weekly_sale_volume_current"
                   value={values.outlet_weekly_sale_volume_current}
@@ -1030,12 +1027,12 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
-             
+
 
               <div>
                 <InputFields
-                type="number"
-                integerOnly
+                  type="number"
+                  integerOnly
                   label="Outlet Weekly Sale Volume"
                   name="outlet_weekly_sale_volume"
                   value={values.outlet_weekly_sale_volume}
@@ -1075,7 +1072,7 @@ export default function AddCompanyWithStepper() {
                 />
               </div>
 
-            
+
               <div>
                 <InputFields
                   label="Chiller Safety Grill"
@@ -1279,13 +1276,13 @@ export default function AddCompanyWithStepper() {
         return null;
     }
   };
- if (loading) {
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <Loading />
-        </div>
-      );
-    }
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loading />
+      </div>
+    );
+  }
   return (
     <div>
       <div className="flex justify-between items-center mb-6">

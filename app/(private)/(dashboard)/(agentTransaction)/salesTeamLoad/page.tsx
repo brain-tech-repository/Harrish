@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse,salesmanLoadPdf } from "@/app/services/agentTransaction";
+import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse,salesmanLoadPdf,loadGlobalFilter } from "@/app/services/agentTransaction";
 import { useRef } from "react";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -41,7 +41,7 @@ export default function SalemanLoad() {
   const [routeId, setRouteId] = useState<string>();
   const [salesmanId, setSalesmanId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [colFilter, setColFilter] = useState<boolean>(false);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -229,6 +229,7 @@ export default function SalemanLoad() {
       payload: Record<string, string | number | null>,
       pageSize: number
     ): Promise<listReturnType> => {
+      setColFilter(true);
       const params: Record<string, string> = {};
       Object.keys(payload || {}).forEach((k) => {
         const v = payload[k as keyof typeof payload];
@@ -255,6 +256,7 @@ export default function SalemanLoad() {
         salesmanLoadHeaderFilterCache.current[cacheKey] = result;
       } finally {
         setLoading(false);
+        setColFilter(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -271,6 +273,46 @@ export default function SalemanLoad() {
     },
     [setLoading]
   );
+
+        const fetchLoadAccordingToGlobalFilter = useCallback(
+          async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+          ): Promise<listReturnType> => {
+      
+            try {
+              setLoading(true);
+             
+              const body = {
+                 per_page: pageSize.toString(),
+            current_page: pageNo.toString(),
+                filter: payload
+              }
+              const listRes = await loadGlobalFilter(body);
+             const pagination =
+              listRes.pagination?.pagination || listRes.pagination || {};
+            return {
+             data: listRes.data || [],
+          total: pagination.last_page || listRes.pagination?.last_page || 1,
+          totalRecords:
+            pagination.total || listRes.pagination?.total || 0,
+          currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+          pageSize: pagination.per_page || pageSize,
+            };
+              // fetchOrdersCache.current[cacheKey] = result;
+              // return listRes;
+            } catch (error: unknown) {
+              console.error("API Error:", error);
+              setLoading(false);
+              throw error;
+            }
+            finally{
+              setLoading(false);
+            }
+          },
+          [loadGlobalFilter, warehouseId, salesmanId]
+        );
 
   useEffect(() => {
     setLoading(true);
@@ -347,8 +389,21 @@ export default function SalemanLoad() {
         config={{
           api: {
             list: fetchSalesmanLoadHeader,
-            filterBy: filterBy,
+            filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchLoadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
           },
+        },
           header: {
             title: "Sales Team Load",
             searchBar: false,

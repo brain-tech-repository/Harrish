@@ -2042,7 +2042,7 @@ export default function InvoiceddEditPage() {
                             ))}
                             <div className="font-semibold text-[#181D27] text-[18px] flex justify-between mt-2 mb-2">
                                 <span>Total</span>
-                                <span>{CURRENCY} {toInternationalNumber(Number(finalTotal))}</span>
+                                <span>{CURRENCY} {toInternationalNumber(Number(finalTotal),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 

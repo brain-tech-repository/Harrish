@@ -24,6 +24,7 @@ import {
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadFile } from "@/app/services/allApi";
+import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
@@ -38,15 +39,26 @@ interface LocalTableDataType {
   contact_number?: string;
   customer?: string;
   warehouse?: string;
-  outlet?: string;
+  outlet?: { code: string; name: string };
   salesman?: string;
   machine_number?: string;
   asset_number?: string;
-  model?: string;
+  model?: { code: string; name: string };
   brand?: string;
   approval_status?: string;
   status?: number | string;
 }
+
+const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
+  1: "Salesman Requested",
+  2: "Area Sales Manager Accepted",
+  3: "Area Sales Manager Rejected",
+  4: "Chiller Officer Accepted",
+  5: "Chiller Officer Rejected",
+  6: "Completed",
+  7: "Chiller Manager Rejected",
+};
+
 
 export default function Page() {
   const { can, permissions } = usePagePermissions();
@@ -255,24 +267,12 @@ export default function Page() {
             columns: [
               // Essential Information
               {
+                key: "created_at",
+                label: "Date", render: (data: TableDataType) => formatDate(data.created_at),
+              },
+              {
                 key: "osa_code",
                 label: "OSA Code",
-              },
-              {
-                key: "owner_name",
-                label: "Owner Name",
-              },
-              {
-                key: "contact_number",
-                label: "Contact Number",
-              },
-
-              // Combined Relationship Fields
-              {
-                key: "customer",
-                label: "Customer",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "customer"),
               },
               {
                 key: "warehouse",
@@ -281,54 +281,45 @@ export default function Page() {
                   renderCombinedField(data, "warehouse"),
               },
               {
+                key: "customer",
+                label: "Customer",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "customer"),
+              },
+              {
+                key: "owner_name",
+                label: "Owner Name",
+              },
+
+              // Combined Relationship Fields
+
+              {
+                key: "contact_number",
+                label: "Contact Number",
+              },
+
+              {
                 key: "outlet",
                 label: "Outlet",
                 render: (data: TableDataType) =>
-                  renderCombinedField(data, "outlet"),
-              },
-              {
-                key: "salesman",
-                label: "Sales Team",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "salesman"),
-              },
-
-              // Key Chiller Details
-              {
-                key: "machine_number",
-                label: "Machine No",
-              },
-              {
-                key: "asset_number",
-                label: "Asset No",
+                  data.outlet?.name || "-",
               },
               {
                 key: "model",
                 label: "Model",
+                render: (data: TableDataType) =>
+                  renderNestedField(data, "model", "name"),
               },
-              {
-                key: "brand",
-                label: "Brand",
-              },
-
               {
                 key: "approval_status",
                 label: "Approval Status",
               },
 
-              // Status
               {
                 key: "status",
                 label: "Status",
-                render: (data: TableDataType) => (
-                  <StatusBtn
-                    isActive={
-                      data.status && data.status.toString() === "1"
-                        ? true
-                        : false
-                    }
-                  />
-                ),
+                render: (data: TableDataType) =>
+                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
               },
             ],
             // rowSelection: true,

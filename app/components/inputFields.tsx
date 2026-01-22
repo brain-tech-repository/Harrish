@@ -818,7 +818,7 @@ export default function InputFields({
                           )}
                           <input
                             type="text"
-                            placeholder={placeholder ? placeholder : label ? `Search ${label}` : "Search"}
+                            placeholder={placeholder ? placeholder : label ? `Select ${label}` : "Select"}
                             onChange={(e) => {
                               const v = (e.target as HTMLInputElement).value;
                               setSearch(v);
