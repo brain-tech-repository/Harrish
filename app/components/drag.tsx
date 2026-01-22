@@ -9,7 +9,8 @@ import { useSnackbar } from '@/app/services/snackbarContext';
 import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
-import { routeType } from '../services/allApi';
+import toInternationalNumber from '../(private)/utils/formatNumber';
+
 // Define TypeScript interfaces
 interface FilterChildItem {
   id: string;
@@ -40,7 +41,7 @@ interface SalesReportDashboardProps {
     table: string;
     export: string;
   };
-  reportType?: 'sales' | 'customer'; // default to 'sales'
+  reportType?: 'sales' | 'customer' | 'item'; // default to 'sales'
 }
 
 const SalesReportDashboard = (props: SalesReportDashboardProps) => {
@@ -58,13 +59,13 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [searchbyopen, setSearchbyclose] = useState(false);
 
-  
+
   const [draggedFilter, setDraggedFilter] = useState<Filter | null>(null);
   const [droppedFilters, setDroppedFilters] = useState<Filter[]>([]);
   const [selectedChildItems, setSelectedChildItems] = useState<SelectedChildItems>({});
   const [searchTerms, setSearchTerms] = useState<SearchTerms>({});
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  
+
   // API states
   const [availableFilters, setAvailableFilters] = useState<Filter[]>([]);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
@@ -78,7 +79,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [displayQuantity, setDisplayQuantity] = useState('with_free_good'); // 'Free-Good' or 'Without-Free-Good'
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 50; // pagination size
-  
+
   // Dashboard API states
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
@@ -91,10 +92,11 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     salesman: { name: 'Salesman', icon: 'mdi:account-tie' },
     company: { name: 'Company', icon: 'mdi:company' },
     region: { name: 'Region', icon: 'mingcute:location-line' },
-    warehouse: { name: 'Warehouse', icon: 'hugeicons:warehouse' },
+    warehouse: { name: 'Distributor', icon: 'hugeicons:warehouse' },
     area: { name: 'Area', icon: 'mdi:map-marker-radius' },
     'item-category': { name: 'Item Category', icon: 'mdi:category' },
     items: { name: 'Items', icon: 'mdi:package-variant' },
+    item_brands: { name: 'Item Brand', icon: 'mdi:tag' },
     'channel-categories': { name: 'Customer Channel', icon: 'mdi:account-group' },
     'customer-category': { name: 'Customer Category', icon: 'mdi:account-supervisor' },
     customer: { name: 'Customer', icon: 'mdi:account' },
@@ -124,7 +126,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     'warehouse': ['route', 'salesman'],
     'route': ['salesman'],
     'item-category': ['items'],
-    'channel-categories': [ 'customer'],
+    'channel-categories': ['customer'],
     'customer-category': ['customer']
   };
 
@@ -180,23 +182,23 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       const payloadString = JSON.stringify(payload);
       const estimatedUrlSize = apiEndpoints.dashboard.length + payloadString.length;
       const MAX_URL_SIZE = 8000; // Safe limit for most servers (typical limit is 8192)
-      
+
       if (estimatedUrlSize > MAX_URL_SIZE) {
         showSnackbar('Too many filters selected! URL size exceeds safe limit. Please reduce your selection.', 'error');
         setIsLoadingDashboard(false);
         return;
       }
 
-      const response = await axios.post(
-        apiEndpoints.dashboard,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-          }
+    const response = await axios.post(
+      apiEndpoints.dashboard,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
         }
-      );
+      }
+    );
 
       setDashboardData(response.data);
     } catch (error) {
@@ -220,6 +222,17 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       showSnackbar('Dashboard not allowed with Search By/More filters. Clear them to view the dashboard.', 'warning');
       return;
     }
+
+    // Validation: Prevent Dashboard request for Item, Brand, or Category filters
+    // These levels are not supported in the Dashboard view
+    const restrictedFilters = ['items', 'item_brands', 'item-category'];
+    const hasRestrictedSelection = restrictedFilters.some(id => (selectedChildItems[id] || []).length > 0);
+
+    if (hasRestrictedSelection) {
+      showSnackbar('Dashboard is not available for Item, Brand, or Category filters. Please select Company, Region, Area, or Distributor.', 'warning');
+      return;
+    }
+
     setViewType('graph');
     fetchDashboardData();
   };
@@ -236,7 +249,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         hierarchyReached = true;
         return false;
       }
-      if(hierarchyReached) {
+      if (hierarchyReached) {
         if (droppedFilters.find(f => f.id === filterId)) {
           filtersToLoad.add(filterId);
         }
@@ -244,19 +257,19 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       }
     });
 
-    if(onDrop && currentFilterId) {
+    if (onDrop && currentFilterId) {
       filtersToLoad.add(currentFilterId);
     }
 
-    if(availableFilters.length > 0 && filtersToLoad.size === 0) return;
+    if (availableFilters.length > 0 && filtersToLoad.size === 0) return;
     // Set loading state for specific filters
     setLoadingFilterIds(filtersToLoad);
-    if(availableFilters.length <= 0) setIsLoadingFilters(true);
+    if (availableFilters.length <= 0) setIsLoadingFilters(true);
 
     try {
       // Build query params
       const params = new URLSearchParams();
-      
+
       if (selectedChildItems['company']?.length) {
         params?.append('company_ids', selectedChildItems['company'].join(','));
       }
@@ -299,7 +312,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
       // Transform API response to Filter format
       const transformedFilters: Filter[] = [];
-      
+
       const apiKeyMap: Record<string, string> = {
         companies: 'company',
         regions: 'region',
@@ -311,40 +324,42 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         salesmen: 'salesman',
         channel_categories: 'channel-categories',
         customer_categories: 'customer-category',
-        customers: 'customer'
+        customers: 'customer',
+        item_brands: 'item_brands',
       };
-
+      let dd: any = [];
       Object.entries(data).forEach(([apiKey, items]: [string, any]) => {
+        dd.push({ apiKey });
         const filterId = apiKeyMap[apiKey] || apiKey;
         const metadata = filterMetadata[filterId];
-        
+
         if (metadata && Array.isArray(items)) {
           if (apiKey === 'routes' || apiKey === 'salesmen' || apiKey === 'channel_categories') {
           }
-          
+
           transformedFilters.push({
             id: filterId,
             name: metadata.name,
             icon: metadata.icon,
             childData: items.map((item: any) => {
-              const id = item.company_id || item.region_id || item.area_id || item.warehouse_id || 
-                         item.route_id || item.salesman_id || item.item_category_id || item.item_id ||
-                         item.channel_category_id || item.customer_category_id || item.customer_id ||
-                         item.id || item.code || item.route_code || item.salesman_code;
-              
+              const id = item.company_id || item.region_id || item.area_id || item.warehouse_id ||
+                item.route_id || item.salesman_id || item.item_category_id || item.item_id ||
+                item.channel_category_id || item.customer_category_id || item.customer_id ||
+                item.id || item.code || item.route_code || item.salesman_code;
+
               let name = item.company_name || item.region_name || item.area_name || item.warehouse_name ||
-                         item.route_name || item.route_label || item.route_title || 
-                         item.salesman_name || item.salesman_label || item.salesman_title ||
-                         item.category_name || item.item_name || 
-                         item.outlet_channel || item.channel_category_name || item.channel_name || 
-                         item.customer_category_name || item.customer_name || 
-                         item.name || item.label || item.title;
-              
+                item.route_name || item.route_label || item.route_title ||
+                item.salesman_name || item.salesman_label || item.salesman_title ||
+                item.category_name || item.item_name ||
+                item.outlet_channel || item.channel_category_name || item.channel_name ||
+                item.customer_category_name || item.customer_name ||
+                item.name || item.label || item.title;
+
               if (!name && (apiKey === 'routes' || apiKey === 'salesmen' || apiKey === 'channel_categories')) {
                 name = item.description || item.full_name || item.display_name;
                 console.warn(`${apiKey} missing standard name field, using fallback:`, item);
               }
-              
+
               return {
                 id: String(id || item),
                 name: String(name || id || item)
@@ -353,16 +368,16 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           });
         }
       });
-
+      console.log(dd, "ddd")
       setAvailableFilters(transformedFilters);
       setLoadingFilterIds(new Set());
-      if(availableFilters.length <= 0) setIsLoadingFilters(false);
+      if (availableFilters.length <= 0) setIsLoadingFilters(false);
     } catch (error) {
       console.error('Failed to fetch filters:', error);
       setFilterError(error instanceof Error ? error.message : 'Failed to load filters');
       setAvailableFilters([]);
       setLoadingFilterIds(new Set());
-      if(availableFilters.length <= 0) setIsLoadingFilters(false);
+      if (availableFilters.length <= 0) setIsLoadingFilters(false);
     }
   };
 
@@ -420,7 +435,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     try {
       // Get only the lowest-level filter for table data
       const lowestLevelFilters = getLowestLevelFilters();
-      
+
       // Build the request payload with dates and only the lowest filter
       const payload = {
         from_date: startDate,
@@ -464,7 +479,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     try {
       // Get only the lowest-level filter for export data
       const lowestLevelFilters = getLowestLevelFilters();
-      
+
       // Build the payload with file_type and view_type
       const payload: any = {
         from_date: startDate,
@@ -521,7 +536,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     try {
       // Get only the lowest-level filter for export data
       const lowestLevelFilters = getLowestLevelFilters();
-      
+
       // Build the base payload with dates, dataview and only the lowest filter
       const payload: any = {
         from_date: startDate,
@@ -587,7 +602,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const getDynamicFilterColumn = () => {
     const hierarchyOrder = [
       'company',
-      'region', 
+      'region',
       'area',
       'warehouse',
       'route',
@@ -631,7 +646,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     // Special handling for customer-related filters - show only selected columns
     if (lowestFilter && ['channel-categories', 'customer-category', 'customer'].includes(lowestFilter)) {
       const columns = [];
-      
+
       // Only add columns for filters that have selections
       if (selectedChildItems['channel-categories']?.length > 0) {
         // API may return channel category under several keys; prefer the explicit key used elsewhere
@@ -643,7 +658,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       if (selectedChildItems['customer']?.length > 0 || selectedChildItems['customer-category']?.length > 0 || selectedChildItems['channel-categories']?.length > 0) {
         columns.push({ label: 'Customer Name', field: 'customer_name' });
       }
-      
+
       return {
         type: 'customer-group',
         columns: columns
@@ -674,7 +689,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     // Define hierarchy order from highest to lowest level
     const hierarchyOrder = [
       'company',
-      'region', 
+      'region',
       'area',
       'warehouse',
       'route',
@@ -689,7 +704,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     // For customer reportType, send all selected filters
     if (reportType === 'customer') {
       const payload: any = {};
-      
+
       if (selectedChildItems['company']?.length > 0) {
         payload.company_ids = selectedChildItems['company'].map(id => parseInt(id));
       }
@@ -714,7 +729,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       if (selectedChildItems['customer']?.length > 0) {
         payload.customer_ids = selectedChildItems['customer'].map(id => parseInt(id));
       }
-      
+
       return payload;
     }
 
@@ -730,7 +745,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
     // Build payload with only the lowest filter
     const payload: any = {};
-    
+
     if (lowestFilter) {
       switch (lowestFilter) {
         case 'company':
@@ -852,10 +867,10 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   // }, [selectedChildItems, droppedFilters.length]);
 
   const chartData = {
-    salesTrend: Array.from({length: 5}, (_, i) => ({ year: `${2021+i}`, sales: [2, 6, 3, 8, 6][i] })),
-    companies: Array.from({length: 5}, (_, i) => ({ name: `Company ${i+1}`, sales: [400000, 280000, 220000, 150000, 80000][i], color: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'][i] })),
-    region: Array.from({length: 3}, (_, i) => ({ name: `Region ${i+1}`, value: [35, 30, 35][i], color: ['#1e3a8a', '#3b82f6', '#38bdf8'][i] })),
-    brand: Array.from({length: 5}, (_, i) => ({ brand: `Brand ${i+1}`, sales: [8, 7, 5, 4, 3.5][i] }))
+    salesTrend: Array.from({ length: 5 }, (_, i) => ({ year: `${2021 + i}`, sales: [2, 6, 3, 8, 6][i] })),
+    companies: Array.from({ length: 5 }, (_, i) => ({ name: `Company ${i + 1}`, sales: [400000, 280000, 220000, 150000, 80000][i], color: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'][i] })),
+    region: Array.from({ length: 3 }, (_, i) => ({ name: `Region ${i + 1}`, value: [35, 30, 35][i], color: ['#1e3a8a', '#3b82f6', '#38bdf8'][i] })),
+    brand: Array.from({ length: 5 }, (_, i) => ({ brand: `Brand ${i + 1}`, sales: [8, 7, 5, 4, 3.5][i] }))
   };
 
   const handleDateSelect = () => {
@@ -894,12 +909,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const handleRemoveFilter = (filterToRemove: Filter) => {
     setDroppedFilters(prev => prev.filter(f => f.id !== filterToRemove.id));
     // setAvailableFilters(prev => [...prev, filterToRemove]);
-    
+
     // Clear this filter and all its dependent filters
     setSelectedChildItems(prev => {
-      const newObj = {...prev};
+      const newObj = { ...prev };
       delete newObj[filterToRemove.id];
-      
+
       // Also clear dependent filters
       const dependentFilters = filterHierarchy[filterToRemove.id] || [];
       dependentFilters.forEach(dependentId => {
@@ -907,11 +922,11 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           newObj[dependentId] = [];
         }
       });
-      
+
       return newObj;
     });
-    
-    setSearchTerms(prev => { const newObj = {...prev}; delete newObj[filterToRemove.id]; return newObj; });
+
+    setSearchTerms(prev => { const newObj = { ...prev }; delete newObj[filterToRemove.id]; return newObj; });
     if (openDropdown === filterToRemove.id) setOpenDropdown(null);
   };
 
@@ -999,17 +1014,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Organize filters into groups
   // For customer reportType, show route directly with other visible filters
-  const visibleFilters = reportType === 'customer'
-    ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
-    : availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id));
+  const visibleFilters = reportType === 'sales'
+    ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
+    : reportType === 'customer' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
+      : reportType === 'item' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
+        : [];
+
   // For customer reportType, don't show searchby dropdown. For sales, show both salesman and route
-  const searchby = reportType === 'customer' 
+  const searchby = reportType === 'customer' || reportType === 'item'
     ? []
     : availableFilters.filter(f => ['salesman', 'route'].includes(f.id));
   // const searchtype = availableFilters.filter(f => ['display-quantity', 'amount'].includes(f.id));
   // Show all moreFilters, but mark 'customer' as disabled unless 'channel-categories' or 'customer-category' is dropped
   const isCustomerEnabled = droppedFilters.some(f => f.id === 'channel-categories' || f.id === 'customer-category');
-  const moreFilters = availableFilters.filter(f => 
+  const moreFilters = reportType === 'item' ? [] : availableFilters.filter(f =>
     !['company', 'region', 'area', 'warehouse', 'salesman', 'route', 'display-quantity', 'amount'].includes(f.id)
   );
 
@@ -1046,520 +1064,528 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           </div>
         </section> */}
 
-        <section className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6">
-          <div className="mb-6">
-            <h1 className="text-xl lg:text-2xl flex gap-2 lg:gap-4 font-semibold items-center text-gray-900">
-              {/* <Icon icon="lucide:arrow-left" width="20" height="20" className="lg:w-6 lg:h-6" /> */}
-              {title}
-            </h1>
-          </div>
+      <section className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6">
+        <div className="mb-6">
+          <h1 className="text-xl lg:text-2xl flex gap-2 lg:gap-4 font-semibold items-center text-gray-900">
+            {/* <Icon icon="lucide:arrow-left" width="20" height="20" className="lg:w-6 lg:h-6" /> */}
+            {title}
+          </h1>
+        </div>
 
-          {/* Controls Section */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
-              <div className="relative w-full sm:w-auto">
-                <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-auto" onClick={() => setShowDatePicker(!showDatePicker)}>
-                  <Calendar size={18} className="text-gray-600" />
-                  <input type="text" value={dateRange} className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto" readOnly />
-                </div>
-                {showDatePicker && (
-                  <div id="date-picker-dropdown" className="filter-dropdown absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 w-full sm:w-80">
-                    <div className="flex flex-col gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={handleDateSelect} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</button>
-                        <button onClick={() => setShowDatePicker(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                      </div>
+        {/* Controls Section */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+            <div className="relative w-full sm:w-auto">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-auto" onClick={() => setShowDatePicker(!showDatePicker)}>
+                <Calendar size={18} className="text-gray-600" />
+                <input type="text" value={dateRange} className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto" readOnly />
+              </div>
+              {showDatePicker && (
+                <div id="date-picker-dropdown" className="filter-dropdown absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 w-full sm:w-80">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                      <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleDateSelect} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</button>
+                      <button onClick={() => setShowDatePicker(false)} className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
                     </div>
                   </div>
-                )}
-              </div>
-
-              <div className="relative w-full gap-3 flex sm:w-auto">
-                <div className="relative w-full sm:w-auto">
-                  <select
-                    value={searchType}
-                    onChange={(e) => setSearchType(e.target.value)}
-                    className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
-                  >
-                    <option value="amount"> Amount</option>
-                    <option value="quantity"> Quantity</option>
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
-                </div>  
-                <div className="relative w-full sm:w-auto">
-                  <select
-                    value={displayQuantity}
-                    onChange={(e) => setDisplayQuantity(e.target.value)}
-                    className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
-                  >
-                    <option value="with_free_good"> With Free Good</option>
-                    <option value="without_free_good">Without Free Good</option>
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <button 
-                onClick={handleDashboardClick}
-                disabled={isLoadingDashboard}
-                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isLoadingDashboard ? (
-                  <Icon icon="eos-icons:loading" width="18" height="18" />
-                ) : (
-                  <BarChart3 size={18} />
-                )}
-                <span className="text-sm">Dashboard</span>
-              </button>
-              <button 
-                onClick={() => {
-                  setViewType('table');
-                  handleTableView();
-                }} 
-                disabled={isLoadingTable}
-                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'table' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isLoadingTable ? (
-                  <Icon icon="eos-icons:loading" width="18" height="18" />
-                ) : (
-                  <Table size={18} />
-                )}
-                <span className="text-sm">Table</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="bg-white w-full rounded-lg shadow-sm">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 border-b border-[#E9EAEB] gap-3">
-              <h2 className="font-semibold text-lg text-[#181D27]">{titleNearExport}</h2>
-              {can("export") && (
-                reportType === 'customer' ? (
-                  <CustomerExportButtons 
-                    onExport={handleCustomerExport}
-                    isLoading={isExporting}
-                  />
-                ) : (
-                  <ExportButtons 
-                    onExportXLSX={handleExportXLSX}
-                    isLoading={isExporting}
-                    searchType={searchType}
-                    displayQuantity={displayQuantity}
-                  />
-                )
               )}
             </div>
 
-            <div className="p-4 border border-[#E9EAEB]">
-              {/* Loading & Error States */}
-          
+            <div className="relative w-full gap-3 flex sm:w-auto">
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={searchType}
+                  onChange={(e) => setSearchType(e.target.value)}
+                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
+                >
+                  <option value="amount"> Amount</option>
+                  <option value="quantity"> Quantity</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+              </div>
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={displayQuantity}
+                  onChange={(e) => setDisplayQuantity(e.target.value)}
+                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
+                >
+                  <option value="with_free_good"> With Free Good</option>
+                  <option value="without_free_good">Without Free Good</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+              </div>
+            </div>
+          </div>
 
-              {/* Filter Section */}
-              <div>
-                <div className="flex flex-wrap min-h-[44px] items-center justify-start gap-2 sm:gap-3 px-3 py-2 border rounded-[10px] bg-[#F5F5F5] border-[#E9EAEB]">
-                  <span className="font-semibold text-gray-800 text-sm sm:text-base whitespace-nowrap">Drag & Drop Filter</span>
-                  
-                 <div className="flex h-auto sm:h-[28px] justify-center items-center w-full sm:w-auto">
-  {isLoadingFilters && (
-    <div className="h-auto sm:h-[28px] px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs sm:text-sm text-blue-700 flex items-center gap-2">
-      <div className="animate-spin w-3 h-3 rounded-full border-b-2 border-blue-700"></div>
-      <span className="whitespace-nowrap">Loading filters...</span>
-    </div>
-  )}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={handleDashboardClick}
+              disabled={isLoadingDashboard}
+              className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isLoadingDashboard ? (
+                <Icon icon="eos-icons:loading" width="18" height="18" />
+              ) : (
+                <BarChart3 size={18} />
+              )}
+              <span className="text-sm">Dashboard</span>
+            </button>
+            <button
+              onClick={() => {
+                setViewType('table');
+                handleTableView();
+              }}
+              disabled={isLoadingTable}
+              className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'table' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isLoadingTable ? (
+                <Icon icon="eos-icons:loading" width="18" height="18" />
+              ) : (
+                <Table size={18} />
+              )}
+              <span className="text-sm">Table</span>
+            </button>
+          </div>
+        </div>
 
-  {filterError && (
-    <div className="h-auto sm:h-[28px] flex justify-center items-center px-3 py-1 bg-red-50 border border-red-200 rounded-lg text-xs sm:text-sm text-red-700">
-      <span className="truncate">{filterError}</span>
-      <button
-        onClick={() => fetchFiltersData()}
-        className="ml-2 underline hover:text-red-900 font-medium whitespace-nowrap"
-      >
-        Retry
-      </button>
-    </div>
-  )}
-</div>
+        {/* Main Content */}
+        <div className="bg-white w-full rounded-lg shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 px-4 border-b border-[#E9EAEB] gap-3">
+            <h2 className="font-semibold text-lg text-[#181D27]">{titleNearExport}</h2>
+            {can("export") && (
+              reportType === 'customer' ? (
+                <CustomerExportButtons
+                  onExport={handleCustomerExport}
+                  isLoading={isExporting}
+                />
+              ) : (
+                <ExportButtons
+                  onExportXLSX={handleExportXLSX}
+                  isLoading={isExporting}
+                  searchType={searchType}
+                  displayQuantity={displayQuantity}
+                />
+              )
+            )}
+          </div>
 
-                  <div className="flex flex-wrap gap-2 flex-1 w-full">
-                    {visibleFilters
-                      .filter(filter => !droppedFilters.some(df => df.id === filter.id))
-                      .map(filter => (
-                      <div key={filter.id} draggable onDragStart={(e) => handleDragStart(e, filter)} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#D1D5DB] rounded-[8px] cursor-grab hover:bg-gray-50">
-                        <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{color: '#414651'}} />
-                        <span className="text-xs sm:text-sm font-medium text-[#414651] whitespace-nowrap">{filter.name}</span>
-                        <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{color: '#A4A7AE'}} />
-                      </div>
-                    ))}
-                 
+          <div className="p-4 border border-[#E9EAEB]">
+            {/* Loading & Error States */}
 
-                
-                           {searchby.length > 0 && (
-                      <div className="relative">
-                        <button className="dropdown-trigger flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 bg-white border border-[#D1D5DB] rounded-[8px] whitespace-nowrap" onClick={() => {
-                          // Close other dropdowns when opening search by
-                          setOpenDropdown(null);
-                          setShowMoreFilters(false);
-                          setSearchbyclose(!searchbyopen);
-                        }}>
-                          Search by <ChevronDown size={14} />
-                        </button>
-                        {searchbyopen && (
-                          <div id="searchby-dropdown" className="filter-dropdown absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[calc(100vw-2rem)] sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-80 overflow-y-auto">
-                            <div className="p-2">
-                              {searchby.map(filter => (
-                                <div key={filter.id} draggable onDragStart={(e) => handleDragStart(e, filter)} className="flex items-center gap-2 px-2 sm:px-3 py-2 justify-between rounded hover:bg-gray-50 cursor-grab">
-                                  <div className='flex gap-2 sm:gap-4 items-center'>
-                                    <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{color: '#414651'}} />
-                                    <span className="text-xs sm:text-sm text-gray-700">{filter.name}</span>
-                                  </div>
-                                  <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{color: '#A4A7AE'}} />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
- {moreFilters.length > 0 && (
-                      <div className="relative">
-                        <button className="dropdown-trigger flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 bg-white border border-[#D1D5DB] rounded-[8px] whitespace-nowrap" onClick={() => {
-                          // Close other dropdowns when opening more
-                          setOpenDropdown(null);
-                          setSearchbyclose(false);
-                          setShowMoreFilters(!showMoreFilters);
-                        }}>
-                          More <ChevronDown size={14} />
-                        </button>
-                        {showMoreFilters && (
-                          <div id="morefilters-dropdown" className="filter-dropdown absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[calc(100vw-2rem)] sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-80 overflow-y-auto">
-                            <div className="p-2">
-                              {moreFilters.map(filter => {
-                                let isUndraggable = viewType === 'table' && droppedFilters.length === 0;
-                                // Disable 'customer' unless 'channel-categories' or 'customer-category' is dropped
-                                if (filter.id === 'customer' && !isCustomerEnabled) {
-                                  isUndraggable = true;
-                                }
-                                return (
-                                  <div 
-                                    key={filter.id} 
-                                    draggable={!isUndraggable} 
-                                    onDragStart={!isUndraggable ? (e) => { handleDragStart(e, filter);  } : undefined} 
-                                    className={`flex items-center gap-2 px-2 sm:px-3 py-2 justify-between rounded hover:bg-gray-50 ${isUndraggable ? 'cursor-not-allowed opacity-50' : 'cursor-grab'}`}
-                                    title={filter.id === 'customer' && !isCustomerEnabled ? 'Select Customer Channel or Customer Category first' : ''}
-                                  >
-                                    <div className='flex gap-2 sm:gap-4 items-center'>
-                                      <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{color: '#414651'}} />
-                                      <span className="text-xs sm:text-sm text-gray-700">{filter.name}</span>
-                                    </div>
-                                    <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{color: '#A4A7AE'}} />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    
-                  </div>
-                </div>
 
-                <div className="mt-4 p-3 sm:p-4 border border-dashed border-[#D1D5DB] rounded-[10px]" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
-                  {droppedFilters.length === 0 ? (
-                    <div className="flex justify-center items-center py-6 sm:py-4">
-                      <Icon icon="basil:add-outline" width="20" height="20" className="sm:w-6 sm:h-6" style={{color: '#717680'}} />
-                      <span className="text-xs sm:text-sm text-gray-400 ml-2">Drop Filter Here</span>
+            {/* Filter Section */}
+            <div>
+              <div className="flex flex-wrap min-h-[44px] items-center justify-start gap-2 sm:gap-3 px-3 py-2 border rounded-[10px] bg-[#F5F5F5] border-[#E9EAEB]">
+                <span className="font-semibold text-gray-800 text-sm sm:text-base whitespace-nowrap">Drag & Drop Filter</span>
+
+                <div className="flex h-auto sm:h-[28px] justify-center items-center w-full sm:w-auto">
+                  {isLoadingFilters && (
+                    <div className="h-auto sm:h-[28px] px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs sm:text-sm text-blue-700 flex items-center gap-2">
+                      <div className="animate-spin w-3 h-3 rounded-full border-b-2 border-blue-700"></div>
+                      <span className="whitespace-nowrap">Loading filters...</span>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 items-start sm:items-center justify-between">
-                        <div className="flex flex-wrap gap-2 flex-1 w-full">
-                          {droppedFilters.map(filter => {
-                            const selectedCount = getSelectedCount(filter.id);
-                            const isLoading = loadingFilterIds.has(filter.id);
-                            return (
-                              <div key={filter.id} className="relative w-full sm:w-auto">
-                                <div className="dropdown-trigger flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#414651] rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
-                                  // Close search by and more filters when opening a filter dropdown
-                                  setSearchbyclose(false);
-                                  setShowMoreFilters(false);
-                                  setOpenDropdown(openDropdown === filter.id ? null : filter.id);
-                                }}>
-                                  {isLoading ? (
-                                    <Icon icon="eos-icons:loading" width="16" height="16" className="sm:w-[18px] sm:h-[18px] text-blue-600" />
-                                  ) : (
-                                    <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{color: '#414651'}} />
-                                  )}
-                                  <span className="text-xs sm:text-sm font-medium text-[#414651] whitespace-nowrap">
-                                    {filter.name}
-                                    {selectedCount > 0 && <span className="bg-[#252B37] text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full ml-1">{selectedCount}</span>}
-                                  </span>
-                                  <ChevronDown size={12} className={`sm:w-[14px] sm:h-[14px] text-[#414651] ${openDropdown === filter.id ? 'rotate-180' : ''}`} />
-                                  <button onClick={(e) => { e.stopPropagation(); handleRemoveFilter(filter); }} className="text-[#414651] hover:text-red-600 ml-1 flex items-center">
-                                    <Icon icon="mdi:close" width="14" height="14" className="sm:w-4 sm:h-4" />
-                                  </button>
-                                </div>
+                  )}
 
-                                {openDropdown === filter.id && !isLoading && (
-                                  <div id={`filter-dropdown-${filter.id}`} className="filter-dropdown absolute top-full left-0 mt-1 w-full min-w-[200px] sm:w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-[60]">
-                                    <div className="p-3">
-                                      <input type="text" placeholder="Search here..." value={searchTerms[filter.id] || ''} onChange={(e) => setSearchTerms(prev => ({ ...prev, [filter.id]: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                                    </div>
-                                    <div className="max-h-60 overflow-y-auto">
-                                      {getFilteredChildData(filter.id).length === 0 ? (
-                                        <div className="text-center text-sm text-gray-500 py-4">No items found</div>
-                                      ) : (
-                                        <div className="space-y-1 p-2">
-                                          {/* Select All checkbox */}
-                                          {(() => {
-                                            const visible = getFilteredChildData(filter.id);
-                                            const visibleIds = visible.map(v => v.id);
-                                            const selected = selectedChildItems[filter.id] || [];
-                                            const allSelected = visibleIds.length > 0 && visibleIds.every(id => selected.includes(id));
-                                            const someSelected = visibleIds.length > 0 && visibleIds.some(id => selected.includes(id));
-                                            return (
-                                              <label key="__select_all__" className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                                <input
-                                                  ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
-                                                  type="checkbox"
-                                                  checked={allSelected}
-                                                  onChange={() => handleSelectAll(filter.id, visibleIds)}
-                                                  className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
-                                                />
-                                                <span className="text-sm text-gray-700 font-medium">Select All</span>
-                                              </label>
-                                            );
-                                          })()}
-
-                                          {getFilteredChildData(filter.id).map(childItem => {
-                                            const isSelected = (selectedChildItems[filter.id] || []).includes(childItem.id);
-                                            return (
-                                              <label key={childItem.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                                                <input type="checkbox" checked={isSelected} onChange={() => { handleChildItemToggle(filter.id, childItem.id); }} className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500" />
-                                                <span className="text-sm text-gray-700">{childItem.name}</span>
-                                              </label>
-                                            );
-                                          })}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {droppedFilters.length > 0 && (
-                          <button onClick={handleClearAllFilters} className="text-[#252B37] italic text-xs sm:text-sm underline hover:text-red-600 whitespace-nowrap mt-2 sm:mt-0 self-start sm:self-auto">Clear Filter</button>
-                        )}
-                      </div>
+                  {filterError && (
+                    <div className="h-auto sm:h-[28px] flex justify-center items-center px-3 py-1 bg-red-50 border border-red-200 rounded-lg text-xs sm:text-sm text-red-700">
+                      <span className="truncate">{filterError}</span>
+                      <button
+                        onClick={() => fetchFiltersData()}
+                        className="ml-2 underline hover:text-red-900 font-medium whitespace-nowrap"
+                      >
+                        Retry
+                      </button>
                     </div>
                   )}
                 </div>
+
+                <div className="flex flex-wrap gap-2 flex-1 w-full">
+                  {visibleFilters
+                    .filter(filter => !droppedFilters.some(df => df.id === filter.id))
+                    .map(filter => (
+                      <div key={filter.id} draggable onDragStart={(e) => handleDragStart(e, filter)} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#D1D5DB] rounded-[8px] cursor-grab hover:bg-gray-50">
+                        <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{ color: '#414651' }} />
+                        <span className="text-xs sm:text-sm font-medium text-[#414651] whitespace-nowrap">{filter.name}</span>
+                        <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{ color: '#A4A7AE' }} />
+                      </div>
+                    ))}
+
+
+
+                  {searchby.length > 0 && (
+                    <div className="relative">
+                      <button className="dropdown-trigger flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 bg-white border border-[#D1D5DB] rounded-[8px] whitespace-nowrap" onClick={() => {
+                        // Close other dropdowns when opening search by
+                        setOpenDropdown(null);
+                        setShowMoreFilters(false);
+                        setSearchbyclose(!searchbyopen);
+                      }}>
+                        Search by <ChevronDown size={14} />
+                      </button>
+                      {searchbyopen && (
+                        <div id="searchby-dropdown" className="filter-dropdown absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[calc(100vw-2rem)] sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-80 overflow-y-auto">
+                          <div className="p-2">
+                            {searchby.map(filter => (
+                              <div key={filter.id} draggable onDragStart={(e) => handleDragStart(e, filter)} className="flex items-center gap-2 px-2 sm:px-3 py-2 justify-between rounded hover:bg-gray-50 cursor-grab">
+                                <div className='flex gap-2 sm:gap-4 items-center'>
+                                  <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{ color: '#414651' }} />
+                                  <span className="text-xs sm:text-sm text-gray-700">{filter.name}</span>
+                                </div>
+                                <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{ color: '#A4A7AE' }} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {moreFilters.length > 0 && (
+                    <div className="relative">
+                      <button className="dropdown-trigger flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 bg-white border border-[#D1D5DB] rounded-[8px] whitespace-nowrap" onClick={() => {
+                        // Close other dropdowns when opening more
+                        setOpenDropdown(null);
+                        setSearchbyclose(false);
+                        setShowMoreFilters(!showMoreFilters);
+                      }}>
+                        More <ChevronDown size={14} />
+                      </button>
+                      {showMoreFilters && (
+                        <div id="morefilters-dropdown" className="filter-dropdown absolute top-full left-0 sm:left-auto sm:right-0 mt-1 w-[calc(100vw-2rem)] sm:w-64 max-w-xs bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-80 overflow-y-auto">
+                          <div className="p-2">
+                            {moreFilters.map(filter => {
+                              let isUndraggable = viewType === 'table' && droppedFilters.length === 0;
+                              // Disable 'customer' unless 'channel-categories' or 'customer-category' is dropped
+                              if (filter.id === 'customer' && !isCustomerEnabled) {
+                                isUndraggable = true;
+                              }
+                              return (
+                                <div
+                                  key={filter.id}
+                                  draggable={!isUndraggable}
+                                  onDragStart={!isUndraggable ? (e) => { handleDragStart(e, filter); } : undefined}
+                                  className={`flex items-center gap-2 px-2 sm:px-3 py-2 justify-between rounded hover:bg-gray-50 ${isUndraggable ? 'cursor-not-allowed opacity-50' : 'cursor-grab'}`}
+                                  title={filter.id === 'customer' && !isCustomerEnabled ? 'Select Customer Channel or Customer Category first' : ''}
+                                >
+                                  <div className='flex gap-2 sm:gap-4 items-center'>
+                                    <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{ color: '#414651' }} />
+                                    <span className="text-xs sm:text-sm text-gray-700">{filter.name}</span>
+                                  </div>
+                                  <Icon icon="ph:dots-six-vertical-bold" width="14" height="14" className="sm:w-4 sm:h-4" style={{ color: '#A4A7AE' }} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+
+                </div>
               </div>
 
-              {/* Charts Grid or Table View */}
-              {viewType === 'graph' ? (
-                 <SalesCharts 
-                  chartData={chartData} 
-                  dashboardData={dashboardData}
-                  isLoading={isLoadingDashboard}
-                  error={dashboardError}
-                  searchType={searchType}
-                  reportType={reportType}
-                />
-              ) : viewType === 'table' ? (
-                <div className="mt-4">
-                  {isLoadingTable ? (
-                    <div className="flex flex-col justify-center items-center py-20 mt-5 h-80">
-                      <Loading style={{ zIndex: 70 }} />
+              <div className="mt-4 p-3 sm:p-4 border border-dashed border-[#D1D5DB] rounded-[10px]" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop}>
+                {droppedFilters.length === 0 ? (
+                  <div className="flex justify-center items-center py-6 sm:py-4">
+                    <Icon icon="basil:add-outline" width="20" height="20" className="sm:w-6 sm:h-6" style={{ color: '#717680' }} />
+                    <span className="text-xs sm:text-sm text-gray-400 ml-2">Drop Filter Here</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 items-start sm:items-center justify-between">
+                      <div className="flex flex-wrap gap-2 flex-1 w-full">
+                        {droppedFilters.map(filter => {
+                          const selectedCount = getSelectedCount(filter.id);
+                          const isLoading = loadingFilterIds.has(filter.id);
+                          return (
+                            <div key={filter.id} className="relative w-full sm:w-auto">
+                              <div className="dropdown-trigger flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#414651] rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
+                                // Close search by and more filters when opening a filter dropdown
+                                setSearchbyclose(false);
+                                setShowMoreFilters(false);
+                                setOpenDropdown(openDropdown === filter.id ? null : filter.id);
+                              }}>
+                                {isLoading ? (
+                                  <Icon icon="eos-icons:loading" width="16" height="16" className="sm:w-[18px] sm:h-[18px] text-blue-600" />
+                                ) : (
+                                  <Icon icon={filter.icon} width="16" height="16" className="sm:w-[18px] sm:h-[18px]" style={{ color: '#414651' }} />
+                                )}
+                                <span className="text-xs sm:text-sm font-medium text-[#414651] whitespace-nowrap">
+                                  {filter.name}
+                                  {selectedCount > 0 && <span className="bg-[#252B37] text-white text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 rounded-full ml-1">{selectedCount}</span>}
+                                </span>
+                                <ChevronDown size={12} className={`sm:w-[14px] sm:h-[14px] text-[#414651] ${openDropdown === filter.id ? 'rotate-180' : ''}`} />
+                                <button onClick={(e) => { e.stopPropagation(); handleRemoveFilter(filter); }} className="text-[#414651] hover:text-red-600 ml-1 flex items-center">
+                                  <Icon icon="mdi:close" width="14" height="14" className="sm:w-4 sm:h-4" />
+                                </button>
+                              </div>
+
+                              {openDropdown === filter.id && !isLoading && (
+                                <div id={`filter-dropdown-${filter.id}`} className="filter-dropdown absolute top-full left-0 mt-1 w-full min-w-[200px] sm:w-[240px] bg-white border border-gray-200 rounded-lg shadow-lg z-[60]">
+                                  <div className="p-3">
+                                    <input type="text" placeholder="Search here..." value={searchTerms[filter.id] || ''} onChange={(e) => setSearchTerms(prev => ({ ...prev, [filter.id]: e.target.value }))} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                  </div>
+                                  <div className="max-h-60 overflow-y-auto">
+                                    {getFilteredChildData(filter.id).length === 0 ? (
+                                      <div className="text-center text-sm text-gray-500 py-4">No items found</div>
+                                    ) : (
+                                      <div className="space-y-1 p-2">
+                                        {/* Select All checkbox */}
+                                        {(() => {
+                                          const visible = getFilteredChildData(filter.id);
+                                          const visibleIds = visible.map(v => v.id);
+                                          const selected = selectedChildItems[filter.id] || [];
+                                          const allSelected = visibleIds.length > 0 && visibleIds.every(id => selected.includes(id));
+                                          const someSelected = visibleIds.length > 0 && visibleIds.some(id => selected.includes(id));
+                                          return (
+                                            <label key="__select_all__" className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                              <input
+                                                ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+                                                type="checkbox"
+                                                checked={allSelected}
+                                                onChange={() => handleSelectAll(filter.id, visibleIds)}
+                                                className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                                              />
+                                              <span className="text-sm text-gray-700 font-medium">Select All</span>
+                                            </label>
+                                          );
+                                        })()}
+
+                                        {getFilteredChildData(filter.id).map(childItem => {
+                                          const isSelected = (selectedChildItems[filter.id] || []).includes(childItem.id);
+                                          return (
+                                            <label key={childItem.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                              <input type="checkbox" checked={isSelected} onChange={() => { handleChildItemToggle(filter.id, childItem.id); }} className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500" />
+                                              <span className="text-sm text-gray-700">{childItem.name}</span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {droppedFilters.length > 0 && (
+                        <button onClick={handleClearAllFilters} className="text-[#252B37] italic text-xs sm:text-sm underline hover:text-red-600 whitespace-nowrap mt-2 sm:mt-0 self-start sm:self-auto">Clear Filter</button>
+                      )}
                     </div>
-                  ) : tableData && (tableData.data || tableData.rows)?.length > 0 ? (
-                    (() => {
-                      const dynamicColumn = getDynamicFilterColumn();
-                      const rows = tableData.data || tableData.rows || [];
-                      
-                      // Use server-side pagination data
-                      const totalRows = tableData.total_rows || rows.length;
-                      const totalPages = tableData.total_pages || Math.max(1, Math.ceil(totalRows / rowsPerPage));
-                      const apiCurrentPage = tableData.current_page || currentPage;
-                      const startIdx = ((apiCurrentPage - 1) * rowsPerPage) + 1;
-                      const endIdx = Math.min(apiCurrentPage * rowsPerPage, totalRows);
+                  </div>
+                )}
+              </div>
+            </div>
 
-                      const changePage = (page: number) => {
-                        if (page < 1) page = 1;
-                        if (page > totalPages) page = totalPages;
-                        setCurrentPage(page);
-                        handleTableView(page);
-                      };
+            {/* Charts Grid or Table View */}
+            {viewType === 'graph' ? (
+              <SalesCharts
+                chartData={chartData}
+                dashboardData={dashboardData}
+                isLoading={isLoadingDashboard}
+                error={dashboardError}
+                searchType={searchType}
+                reportType={reportType}
+              />
+            ) : viewType === 'table' ? (
+              <div className="mt-4">
+                {isLoadingTable ? (
+                  <div className="flex flex-col justify-center items-center py-20 mt-5 h-80">
+                    <Loading style={{ zIndex: 70 }} />
+                  </div>
+                ) : tableData && (tableData.data || tableData.rows)?.length > 0 ? (
+                  (() => {
+                    const dynamicColumn = getDynamicFilterColumn();
+                    const rows = tableData.data || tableData.rows || [];
 
-                      return (
-                        <div>
-                          <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                              <thead>
-                                <tr className="bg-gray-100 border-b border-gray-200">
-                                  {dynamicColumn.type === 'customer-report' ? (
-                                    // Customer report - show only customer columns
-                                    dynamicColumn.columns.map((col: any, idx: number) => (
+                    // Use server-side pagination data
+                    const totalRows = tableData.total_rows || rows.length;
+                    const totalPages = tableData.total_pages || Math.max(1, Math.ceil(totalRows / rowsPerPage));
+                    const apiCurrentPage = tableData.current_page || currentPage;
+                    const startIdx = ((apiCurrentPage - 1) * rowsPerPage) + 1;
+                    const endIdx = Math.min(apiCurrentPage * rowsPerPage, totalRows);
+
+                    const changePage = (page: number) => {
+                      if (page < 1) page = 1;
+                      if (page > totalPages) page = totalPages;
+                      setCurrentPage(page);
+                      handleTableView(page);
+                    };
+
+                    return (
+                      <div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr className="bg-gray-100 border-b border-gray-200">
+                                {reportType === 'item' ? (
+                                  <>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">S. No.</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Value</th>
+                                  </>
+                                ) : dynamicColumn.type === 'customer-report' ? (
+                                  dynamicColumn.columns.map((col: any, idx: number) => (
+                                    <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
+                                  ))
+                                ) : (
+                                  <>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Code</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Category</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice Date</th>
+                                    {dynamicColumn.columns.map((col: any, idx: number) => (
                                       <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
+                                    ))}
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Quantity</th>
+                                  </>
+                                )}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((row: any, rowIdx: number) => (
+                                <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
+                                  {reportType === 'item' ? (
+                                    <>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{rowIdx + 1}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.value !== undefined ? toInternationalNumber(row.value) : '-'}</td>
+                                    </>
+                                  ) : dynamicColumn.type === 'customer-report' ? (
+                                    dynamicColumn.columns.map((col: any, idx: number) => (
+                                      <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
                                     ))
                                   ) : (
-                                    // Sales report - show item columns + dynamic columns
                                     <>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Code</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Name</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Item Category</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice Date</th>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.item_code || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.item_category || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_date || '-'}</td>
                                       {dynamicColumn.columns.map((col: any, idx: number) => (
-                                        <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
+                                        <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
                                       ))}
-                                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Quantity</th>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{getTotalValue(row)}</td>
                                     </>
                                   )}
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {rows.map((row: any, rowIdx: number) => (
-                                  <tr key={rowIdx} className="border-b border-gray-200 hover:bg-gray-50">
-                                    {dynamicColumn.type === 'customer-report' ? (
-                                      // Customer report - show only customer data
-                                      dynamicColumn.columns.map((col: any, idx: number) => (
-                                        <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
-                                      ))
-                                    ) : (
-                                      // Sales report - show item data + dynamic columns
-                                      <>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_code || '-'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_name || '-'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{row.item_category || '-'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_date || '-'}</td>
-                                        {dynamicColumn.columns.map((col: any, idx: number) => (
-                                          <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
-                                        ))}
-                                        <td className="px-4 py-3 text-sm text-gray-700">{getTotalValue(row)}</td>
-                                      </>
-                                    )}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
 
-                          {/* Pagination controls */}
-                          <div className="flex items-center justify-between mt-3 px-2">
-                            <div className="text-sm text-gray-600">Showing {startIdx} - {endIdx} of {totalRows}</div>
-                            <div className="flex items-center gap-2">
-                              <button 
-                                onClick={() => changePage(apiCurrentPage - 1)} 
-                                disabled={!tableData.previous_page || apiCurrentPage === 1} 
-                                className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Prev
-                              </button>
-                              
-                              {/* Smart pagination with groups of 5 */}
-                              {(() => {
-                                // Adjust to 0-indexed for logic (API returns 1-indexed)
-                                const cPage = apiCurrentPage - 1;
-                                const pages = [];
-                                
-                                // If 6 or fewer pages, show all
-                                if (totalPages <= 6) {
-                                  for (let i = 1; i <= totalPages; i++) {
-                                    pages.push(
-                                      <button 
-                                        key={i} 
-                                        onClick={() => changePage(i)} 
-                                        className={`px-3 py-1 border rounded cursor-pointer ${apiCurrentPage === i ? 'bg-gray-900 text-white' : 'bg-white'}`}
-                                      >
-                                        {i}
-                                      </button>
-                                    );
-                                  }
-                                  return pages;
-                                }
-                                
-                                // More than 6 pages: smart pagination
-                                const elems: (number | string)[] = [];
-                                
-                                // If near the start, show first up to five pages then ellipsis + last
-                                if (cPage <= 2) {
-                                  const end = Math.min(totalPages - 1, 4); // pages 0..4 (display 1..5)
-                                  for (let i = 0; i <= end; i++) elems.push(i);
-                                  if (end < totalPages - 1) elems.push("...", totalPages - 1);
-                                }
-                                // If near the end, show first, ellipsis, then last up to five pages
-                                else if (cPage >= totalPages - 3) {
-                                  const start = Math.max(0, totalPages - 5); // show last 5 pages
-                                  elems.push(0);
-                                  if (start > 1) elems.push("...");
-                                  for (let i = start; i <= totalPages - 1; i++) elems.push(i);
-                                }
-                                // Middle: show first page, ellipsis, two before/after current, ellipsis, last page
-                                else {
-                                  elems.push(0, "...");
-                                  const start = Math.max(0, cPage - 2);
-                                  const end = Math.min(totalPages - 1, cPage + 2);
-                                  for (let i = start; i <= end; i++) elems.push(i);
-                                  elems.push("...", totalPages - 1);
-                                }
-                                
-                                return elems.map((p, idx) =>
-                                  typeof p === "string" ? (
-                                    <span key={`e-${idx}`} className="px-2 text-gray-500">{p}</span>
-                                  ) : (
-                                    <button 
-                                      key={p} 
-                                      onClick={() => changePage(p + 1)} 
-                                      className={`px-3 py-1 border rounded ${apiCurrentPage === p + 1 ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                        {/* Pagination controls */}
+                        <div className="flex items-center justify-between mt-3 px-2">
+                          <div className="text-sm text-gray-600">Showing {startIdx} - {endIdx} of {totalRows}</div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => changePage(apiCurrentPage - 1)}
+                              disabled={!tableData.previous_page || apiCurrentPage === 1}
+                              className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Prev
+                            </button>
+
+                            {/* Smart pagination with groups of 5 */}
+                            {(() => {
+                              // Adjust to 0-indexed for logic (API returns 1-indexed)
+                              const cPage = apiCurrentPage - 1;
+                              const pages = [];
+
+                              // If 6 or fewer pages, show all
+                              if (totalPages <= 6) {
+                                for (let i = 1; i <= totalPages; i++) {
+                                  pages.push(
+                                    <button
+                                      key={i}
+                                      onClick={() => changePage(i)}
+                                      className={`px-3 py-1 border rounded cursor-pointer ${apiCurrentPage === i ? 'bg-gray-900 text-white' : 'bg-white'}`}
                                     >
-                                      {p + 1}
+                                      {i}
                                     </button>
-                                  )
-                                );
-                              })()}
-                              
-                              <button 
-                                onClick={() => changePage(apiCurrentPage + 1)} 
-                                disabled={!tableData.next_page || apiCurrentPage === totalPages} 
-                                className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Next
-                              </button>
-                            </div>
+                                  );
+                                }
+                                return pages;
+                              }
+
+                              // More than 6 pages: smart pagination
+                              const elems: (number | string)[] = [];
+
+                              // If near the start, show first up to five pages then ellipsis + last
+                              if (cPage <= 2) {
+                                const end = Math.min(totalPages - 1, 4); // pages 0..4 (display 1..5)
+                                for (let i = 0; i <= end; i++) elems.push(i);
+                                if (end < totalPages - 1) elems.push("...", totalPages - 1);
+                              }
+                              // If near the end, show first, ellipsis, then last up to five pages
+                              else if (cPage >= totalPages - 3) {
+                                const start = Math.max(0, totalPages - 5); // show last 5 pages
+                                elems.push(0);
+                                if (start > 1) elems.push("...");
+                                for (let i = start; i <= totalPages - 1; i++) elems.push(i);
+                              }
+                              // Middle: show first page, ellipsis, two before/after current, ellipsis, last page
+                              else {
+                                elems.push(0, "...");
+                                const start = Math.max(0, cPage - 2);
+                                const end = Math.min(totalPages - 1, cPage + 2);
+                                for (let i = start; i <= end; i++) elems.push(i);
+                                elems.push("...", totalPages - 1);
+                              }
+
+                              return elems.map((p, idx) =>
+                                typeof p === "string" ? (
+                                  <span key={`e-${idx}`} className="px-2 text-gray-500">{p}</span>
+                                ) : (
+                                  <button
+                                    key={p}
+                                    onClick={() => changePage(p + 1)}
+                                    className={`px-3 py-1 border rounded ${apiCurrentPage === p + 1 ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                                  >
+                                    {p + 1}
+                                  </button>
+                                )
+                              );
+                            })()}
+
+                            <button
+                              onClick={() => changePage(apiCurrentPage + 1)}
+                              disabled={!tableData.next_page || apiCurrentPage === totalPages}
+                              className="px-3 py-1 bg-white border rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Next
+                            </button>
                           </div>
                         </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="flex flex-col justify-center items-center py-12 text-gray-500">
-                      <Table size={48} className="mb-4 opacity-30" />
-                      <p className="text-lg font-medium">No table data available</p>
-                      <p className="text-sm mt-2">Select filters and date range, then click the Table button</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col justify-center items-center py-12 text-gray-500">
-                  <p className="text-lg font-medium">Select a view</p>
-                  <p className="text-sm mt-2">Click Dashboard or Table button to view data</p>
-                </div>
-              )}
-            </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex flex-col justify-center items-center py-12 text-gray-500">
+                    <Table size={48} className="mb-4 opacity-30" />
+                    <p className="text-lg font-medium">No table data available</p>
+                    <p className="text-sm mt-2">Select filters and date range, then click the Table button</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col justify-center items-center py-12 text-gray-500">
+                <p className="text-lg font-medium">Select a view</p>
+                <p className="text-sm mt-2">Click Dashboard or Table button to view data</p>
+              </div>
+            )}
           </div>
-        </section>
+        </div>
+      </section>
       {/* </div> */}
     </div>
   );

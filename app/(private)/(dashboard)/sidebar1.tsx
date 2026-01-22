@@ -128,12 +128,12 @@ export default function Sidebar({
         toggleFullscreen();
       },
     },
-    {
-      type: "icon",
-      href: "",
-      label: "Notifications",
-      icon: "lucide:bell",
-    },
+    // {
+    //   type: "icon",
+    //   href: "",
+    //   label: "Notifications",
+    //   icon: "lucide:bell",
+    // },
     {
       type: "icon",
       href: "/settings",

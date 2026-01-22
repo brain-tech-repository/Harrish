@@ -617,6 +617,13 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "stash:person-duotone",
             iconColor: "text-cyan-500",
           },
+          {
+            isActive: false,
+            href: "/itemReport",
+            label: "Item Report",
+            leadingIcon: "raphael:package",
+            iconColor: "text-cyan-500",
+          },
         ],
       },
     ],
