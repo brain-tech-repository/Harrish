@@ -188,17 +188,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         return;
       }
 
-      const response = reportType === 'item' ?
-        await axios.get(
-          apiEndpoints.dashboard + '?' + new URLSearchParams(payload).toString(),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-            }
-          }
-        )
-        : await axios.post(
+      const response = await axios.post(
           apiEndpoints.dashboard,
           payload,
           {
