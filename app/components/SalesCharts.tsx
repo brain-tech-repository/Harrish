@@ -5,6 +5,7 @@ import { Icon } from "@iconify-icon/react";
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { useSnackbar } from '../services/snackbarContext';
+import toInternationalNumber from '../(private)/utils/formatNumber';
 import Loading from './Loading';
 interface ChartData {
   salesTrend: { year: string; sales: number }[];
@@ -1110,7 +1111,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     }
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 h-screen flex items-center justify-center p-4">
         <div className="bg-white rounded-lg w-full h-full max-w-7xl max-h-[95vh] overflow-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
@@ -2222,32 +2223,84 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               </>
             )}
             {/* Item Report Views */}
+
             {selectedMaxView === 'regionItemPerformance' && (
-              <div className="bg-white p-6 border rounded-lg shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Region Wise Item Performance</h3>
-                <MaximizedExplodedPieChart
-                  data={(dashboardData?.region_wise_item_performance || []).map((item: any, idx: number) => ({
-                    name: item.region_name,
-                    value: item.total_sales || 0,
-                    color: regionColors[idx % regionColors.length]
-                  }))}
-                  outerRadius={200}
-                />
-              </div>
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Region Wise Item Performance</h3>
+                  <MaximizedExplodedPieChart
+                    data={(dashboardData?.region_wise_item_performance || []).map((item: any, idx: number) => ({
+                      name: item.region_name,
+                      value: item.total_sales || 0,
+                      color: regionColors[idx % regionColors.length]
+                    }))}
+                    outerRadius={200}
+                  />
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Region Wise Item Performance Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">S. No.</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Region Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(dashboardData?.region_wise_item_performance || []).map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{idx + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.region_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{toInternationalNumber(item.total_sales || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
             )}
 
+
             {selectedMaxView === 'areaItemPerformance' && (
-              <div className="bg-white p-6 border rounded-lg shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Area Wise Item Performance</h3>
-                <MaximizedExplodedPieChart
-                  data={(dashboardData?.area_wise_item_performance || []).map((item: any, idx: number) => ({
-                    name: item.area_name,
-                    value: item.total_sales || 0,
-                    color: areaColors[idx % areaColors.length]
-                  }))}
-                  outerRadius={200}
-                />
-              </div>
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Area Wise Item Performance</h3>
+                  <MaximizedExplodedPieChart
+                    data={(dashboardData?.area_wise_item_performance || []).map((item: any, idx: number) => ({
+                      name: item.area_name,
+                      value: item.total_sales || 0,
+                      color: areaColors[idx % areaColors.length]
+                    }))}
+                    outerRadius={200}
+                  />
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Area Wise Item Performance Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">S. No.</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Area Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(dashboardData?.area_wise_item_performance || []).map((item: any, idx: number) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{idx + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.area_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{toInternationalNumber(item.total_sales || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
             )}
 
             {selectedMaxView === 'purchaseTrend' && (
