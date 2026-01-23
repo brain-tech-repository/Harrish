@@ -44,7 +44,7 @@ interface ChillerRequest {
     status: number;
     fridge_status: number;
     iro_id: number;
-    model_number: number;
+    // model: number;
     [key: string]: any; // For other fields we don't explicitly need
 }
 
@@ -284,7 +284,7 @@ export default function CustomerInvoicePage() {
                 "route_id",
                 "company_id",
                 "salesman_id",
-                "model_number",
+                "model",
             ];
             const toArray = (v: any) => {
                 if (Array.isArray(v)) return v;
@@ -401,9 +401,9 @@ export default function CustomerInvoicePage() {
 
        
         {
-            key: "model",
+            key: "model_number",
             label: "Model",
-            render: (data: TableDataType) => data.model || "-",
+            render: (data: TableDataType) => data.model_number?.name || "-",
         },
        
 
@@ -436,7 +436,7 @@ export default function CustomerInvoicePage() {
                         filterRenderer: (props) => (
                             <FilterComponent
                                 currentDate={true}
-                                onlyFilters={["company_id","region_id","area_id","warehouse_id","route_id","salesman_id",'model_number']}
+                                onlyFilters={["company_id","region_id","area_id","warehouse_id","route_id","salesman_id",'model']}
                                 {...props}
                             />
                         ),
@@ -464,7 +464,7 @@ export default function CustomerInvoicePage() {
                                             return;
                                         }
                                         try {
-                                            const res = await addAcf({ crf_id: ids.join(",") });
+                                            const res = await addAcf({ crf_id: ids });
                                             if (res.error) {
                                                 showSnackbar(res.message || "Failed to add ACF", "error");
                                             } else {
