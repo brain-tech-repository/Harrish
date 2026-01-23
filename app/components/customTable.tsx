@@ -566,12 +566,14 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     const [searchBarValue, setSearchBarValue] = useState("");
     const { selectedRow } = useContext(SelectedRow);
 
-    async function handleSearch() {
+    // need search Term only when you want to search using you word instead of the searchBarValue
+    async function handleSearch(searchTerm?: string) {
         if (!config.api?.search) return;
+        const termToUse = searchTerm !== undefined ? searchTerm : searchBarValue;
         try {
             setNestedLoading(true);
             const result = await config.api.search(
-                searchBarValue,
+                termToUse,
                 config.pageSize || defaultPageSize
             );
             const resolvedResult = result instanceof Promise ? await result : result;
@@ -584,8 +586,8 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
             });
             // persist global search state so pagination can reuse it (via context)
             try {
-                if (searchBarValue && String(searchBarValue).trim().length > 0) {
-                    setSearchState({ applied: true, term: searchBarValue });
+                if (termToUse && String(termToUse).trim().length > 0) {
+                    setSearchState({ applied: true, term: termToUse });
                 } else {
                     setSearchState({ applied: false, term: "" });
                 }
@@ -612,7 +614,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                         ) => setSearchBarValue(e.target.value)}
                                         onClear={async () => {
                                             setSearchBarValue("");
-                                            handleSearch();
+                                            handleSearch("");
                                         }}
                                         onEnterPress={handleSearch}
                                     />
