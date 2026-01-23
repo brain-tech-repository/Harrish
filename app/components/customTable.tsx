@@ -301,6 +301,7 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 
 function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
+    const searchParams = useSearchParams();
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
@@ -357,6 +358,10 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         }
         // if api is passed, use default values
         else if (config.api?.list) {
+            const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+            if (hasUrlParams && config.api?.filterBy) {
+                return; 
+            }
             const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
             const start = Date.now();
             const pageNo = 1;
@@ -1729,8 +1734,53 @@ function FilterBy() {
     const [customPayload, setCustomPayload] = useState<Record<string, string | number | null | (string | number)[]>>({});
     const [isApplyingCustom, setIsApplyingCustom] = useState(false);
     const [isClearingCustom, setIsClearingCustom] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false); // fixes the loop and going back of url with params to url without params
     const router = useRouter();
     const searchParams = useSearchParams();
+    const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
+
+    useEffect(() => {
+    if (!searchParams) return;
+
+    const paramsObj: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+        // If the value contains a comma, treat it as an array (matching your .join(',') logic)
+        if (value.includes(',')) {
+            paramsObj[key] = value.split(',');
+        } else if (value === 'all') {
+            paramsObj[key] = 'all';
+        } else {
+            paramsObj[key] = value;
+        }
+    });
+
+    if (hasCustomRenderer) {
+        setCustomPayload(paramsObj);
+    } else {
+        // For built-in filters, we need to match the structure expected by filterByFields
+        const initialFilters: Record<string, string | string[]> = {};
+        (config.header?.filterByFields || []).forEach((f: any) => {
+            const val = paramsObj[f.key];
+            if (val) {
+                initialFilters[f.key] = val;
+            } else {
+                initialFilters[f.key] = f.isSingle === false ? [] : "";
+            }
+        });
+        setFilters(initialFilters);
+    }
+
+    if (Object.keys(paramsObj).length > 0) {
+        setAppliedFilters(true);
+        // Sync to global context so TableHeader/Footer see it
+        setFilterState({ 
+            applied: true, 
+            payload: toApiPayload(paramsObj) 
+        });
+    }
+
+    setIsInitialized(true);
+}, []);
 
     useEffect(() => {
         if (!hasCustomRenderer) return;
@@ -1757,68 +1807,13 @@ function FilterBy() {
         Array.from(params.keys()).forEach((k) => {
         if (!(k in customPayload)) params.delete(k);
         });
-        const newQuery = params.toString();
-        const currentQuery = searchParams.toString();
-        if (newQuery !== currentQuery) {
-        router.push(window.location.pathname + (newQuery ? '?' + newQuery : ''), { scroll: false });
-        }
-    }, [customPayload, hasCustomRenderer, router]);
 
-    useEffect(() => {
-        // --- Handle custom renderer (customPayload) ---
-        if (hasCustomRenderer) {
-            const initial: Record<string, any> = {};
-            if (searchParams) {
-                for (const [key, value] of searchParams.entries()) {
-                    // If value is 'all', treat as all selected
-                    if (value === 'all') {
-                        initial[key] = 'all';
-                    } else if (value.includes(',')) {
-                        initial[key] = value.split(',');
-                    } else {
-                        initial[key] = value;
-                    }
-                }
-            }
-            // Only update if different
-            const isDifferent = Object.keys(initial).length !== Object.keys(customPayload).length ||
-                Object.keys(initial).some(key => {
-                    const a = initial[key];
-                    const b = customPayload[key];
-                    if (Array.isArray(a) && Array.isArray(b)) {
-                        return a.join(',') !== b.join(',');
-                    }
-                    return a !== b;
-                });
-            if (isDifferent) {
-                setCustomPayload(initial);
-                const anyFilter = Object.values(initial).some(v => v === 'all' || (Array.isArray(v) ? v.length > 0 : String(v ?? '').trim().length > 0));
-                setAppliedFilters(anyFilter);
-            }
-            return;
+        if (urlRef.current !== params.toString()) {
+            urlRef.current = params.toString();
+            const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newRelativePathQuery, { scroll: false });
         }
-        // --- Handle built-in filterByFields (filters) ---
-        const initial: Record<string, string | string[]> = {};
-        (config.header?.filterByFields || []).forEach((f: FilterField) => {
-            const param = searchParams?.get(f.key);
-            if (param != null) {
-                if (f.isSingle === false) {
-                    if (param === 'all') {
-                        initial[f.key] = 'all';
-                    } else {
-                        initial[f.key] = param.split(',').filter(Boolean);
-                    }
-                } else {
-                    initial[f.key] = param;
-                }
-            } else {
-                initial[f.key] = f.isSingle === false ? [] : "";
-            }
-        });
-        setFilters(initial);
-        const anyFilter = Object.values(initial).some(v => v === 'all' || (Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0));
-        setAppliedFilters(anyFilter);
-    }, [config.header?.filterByFields, hasCustomRenderer, searchParams]);
+    }, [customPayload, hasCustomRenderer, router, searchParams]);
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
@@ -1829,6 +1824,19 @@ function FilterBy() {
         });
         setFilters(initial);
     }, [config.header?.filterByFields, hasCustomRenderer]);
+
+    useEffect(() => {
+    // This triggers as soon as hydration finishes
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            // Note: pass the hydrated filters directly to ensure we don't 
+            // wait for a state re-render cycle
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
 
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
     const activeFilterCount = Object.keys(sourcePayload || {}).reduce((acc, k) => {
@@ -1863,7 +1871,36 @@ function FilterBy() {
         });
         return payloadForApi;
     };
-    const applyFilter = async () => {
+    const applyFilter = useCallback(async (overridingFilters?: Record<string, any>) => {
+    // Use overridingFilters if provided (for initial load), otherwise use state
+    const currentFilters = overridingFilters || filters;
+    if (Object.keys(currentFilters).length === 0) return;
+    
+    setShowDropdown(false);
+    if (config.api?.filterBy) {
+        setNestedLoading(true);
+        try {
+            const payloadForApi = toApiPayload(currentFilters);
+            setFilterState({ applied: true, payload: payloadForApi });
+            
+            const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+            const resolved = res instanceof Promise ? await res : res;
+            const { currentPage, totalRecords, pageSize, total, data } = resolved;
+            
+            setTableDetails({
+                data: data || [],
+                total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
+                totalRecords: totalRecords,
+                currentPage: (currentPage || 1) - 1,
+                pageSize: pageSize,
+            });
+            setAppliedFilters(true);
+        } catch (err) {
+            console.error("Filter API error", err);
+        } finally {
+            setNestedLoading(false);
+        }
+    } else {
         if (activeFilterCount === 0) return;
         setShowDropdown(false);
         // call API if provided
@@ -1957,8 +1994,9 @@ function FilterBy() {
 
         setShowDropdown(false);
     };
+}, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
 
-    const applyCustomPayload = async (payload?: Record<string, string | number | null | (string | number)[]>) => {
+const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
@@ -2013,7 +2051,18 @@ function FilterBy() {
         } finally {
             setIsApplyingCustom(false);
         }
-    };
+}, [customPayload, config, tableDetails.data]);
+
+useEffect(() => {
+    // Only trigger once state is initialized and there are actual params to apply
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
 
     const clearAll = async () => {
         if (activeFilterCount === 0) return;
