@@ -154,6 +154,20 @@ export default function CustomerDetails() {
 
         }}><Icon icon="material-symbols:download" /></div>)
     }
+
+const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
+        const [smallLoading, setSmallLoading] = useState(false)
+
+        return <Icon 
+            icon={smallLoading ? "eos-icons:three-dots-loading" : "material-symbols:download"} 
+            className="cursor-pointer" 
+            onClick={async () => {
+                setSmallLoading(true);
+                await exportFile(row.uuid, "pdf");
+                setSmallLoading(false);
+            }} />
+    }
+
     function convertDate(input: string) {
         const [dd, mm, yy] = input.split("-");
 
@@ -183,14 +197,19 @@ export default function CustomerDetails() {
             label: "Route"
         },
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
-        // {
-        //     key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
-
-
-        //         return (<IconComponentData2 row={row} />)
-        //     }
-        // }
-
+        {
+            key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
+                return (<ExportDownloadButton row={row} />)
+            }
+        },
+        // rowActions: [
+        //         {
+        //             icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
+        //             onClick: (data: TableDataType) => {
+        //                 exportFile(data.uuid, "pdf");
+        //             },
+        //         }
+        //     ],
     ];
 
     const returnColumns: configType["columns"] = [
@@ -357,7 +376,6 @@ export default function CustomerDetails() {
 
     const exportFile = async (uuid: string, format: string) => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
             const response = await exportInvoice({ uuid, format }); // send proper body object
             if (response && typeof response === "object" && response.download_url) {
                 await downloadFile(response.download_url);
@@ -368,8 +386,6 @@ export default function CustomerDetails() {
         } catch (error) {
             console.error(error);
             showSnackbar("Failed to download data", "error");
-        } finally {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
 
@@ -581,14 +597,6 @@ export default function CustomerDetails() {
                                     height: 500,
                                 },
                                 rowSelection: false,
-                                rowActions: [
-                                    {
-                                        icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
-                                        onClick: (data: TableDataType) => {
-                                            exportFile(data.uuid, "pdf");
-                                        },
-                                    }
-                                ],
                                 pageSize: 50,
                             }}
                         />

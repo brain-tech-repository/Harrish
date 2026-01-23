@@ -223,15 +223,15 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       return;
     }
 
-    // Validation: Prevent Dashboard request for Item, Brand, or Category filters
-    // These levels are not supported in the Dashboard view
-    const restrictedFilters = ['items', 'item_brands', 'item-category'];
-    const hasRestrictedSelection = restrictedFilters.some(id => (selectedChildItems[id] || []).length > 0);
+    // // Validation: Prevent Dashboard request for Item, Brand, or Category filters
+    // // These levels are not supported in the Dashboard view
+    // const restrictedFilters = ['items', 'item_brands', 'item-category'];
+    // const hasRestrictedSelection = restrictedFilters.some(id => (selectedChildItems[id] || []).length > 0);
 
-    if (hasRestrictedSelection) {
-      showSnackbar('Dashboard is not available for Item, Brand, or Category filters. Please select Company, Region, Area, or Distributor.', 'warning');
-      return;
-    }
+    // if (hasRestrictedSelection) {
+    //   showSnackbar('Dashboard is not available for Item, Brand, or Category filters. Please select Company, Region, Area, or Distributor.', 'warning');
+    //   return;
+    // }
 
     setViewType('graph');
     fetchDashboardData();

@@ -702,16 +702,16 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     );
   }
 
-  // Validation: Only show graphs for company, region, area, or warehouse levels
-  const validDataLevels = ['company', 'region', 'area', 'warehouse'];
-  if (!validDataLevels.includes(dataLevel)) {
-    // Show snackbar message
-    if (typeof window !== 'undefined') {
-      showSnackbar('Dashboard is not available for Item, Brand, or Category filters. Please select Company, Region, Area, or Distributor.', 'warning');
-    }
+  // // Validation: Only show graphs for company, region, area, or warehouse levels
+  // const validDataLevels = ['company', 'region', 'area', 'warehouse'];
+  // if (!validDataLevels.includes(dataLevel)) {
+  //   // Show snackbar message
+  //   if (typeof window !== 'undefined') {
+  //     showSnackbar('Dashboard is not available for Item, Brand, or Category filters. Please select Company, Region, Area, or Distributor.', 'warning');
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   const totalCompany = companyData.reduce((sum: number, item: any) => sum + item.value, 0);
   const totalRegion = regionData.reduce((sum: number, item: any) => sum + item.value, 0);
@@ -3776,25 +3776,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         title: 'Total Items',
         value: Math.floor((kpisData.total_items ?? 0)).toLocaleString(),
         icon: 'mdi:package-variant',
-        color: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: 'Total Sales',
         value: Math.floor((kpisData.total_sales ?? 0)).toLocaleString(),
         icon: 'mdi:currency-usd',
-        color: 'linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)',
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: 'Total Purchase',
         value: Math.floor((kpisData.total_purchase ?? 0)).toLocaleString(),
         icon: 'mdi:cart-arrow-down',
-        color: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: 'Total Return',
         value: Math.floor((kpisData.total_return ?? 0)).toLocaleString(),
         icon: 'mdi:backup-restore',
-        color: 'linear-gradient(135deg, #ef4444 0%, #f43f5e 100%)',
+        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
     ];
 
