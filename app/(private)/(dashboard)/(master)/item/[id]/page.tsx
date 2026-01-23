@@ -503,12 +503,12 @@ export default function AddEditItem() {
     }));
 
     try {
-      const payload = {
+      // Only include image if it is a File (changed by user), not if it's a URL string
+      const payload: any = {
         code: values.itemCode,
         erp_code: values.ErpCode,
         name: values.itemName,
         description: values.itemDesc,
-        image: values.itemImage,
         brand: values.brand,
         category_id: values.itemCategory,
         sub_category_id: values.itemSubCategory,
@@ -524,6 +524,9 @@ export default function AddEditItem() {
         excise_duty_code: values.excise_duty_code,
         uoms: mappedUoms
       };
+      if (values.itemImage instanceof File) {
+        payload.image = values.itemImage;
+      }
 
       const itemId = Array.isArray(params?.id) ? params?.id[0] : params?.id ?? "";
 
@@ -538,7 +541,6 @@ export default function AddEditItem() {
         );
         router.push("/item");
       } else {
-        //  console.error("Error:", res);
         throw new Error(res?.data?.message || "Something went wrong");
       }
     } catch (error: unknown) {

@@ -28,10 +28,6 @@ export default function StockTransferPage() {
         warehouseOptions,
         warehouseAllOptions,
         ensureWarehouseAllLoaded,
-        routeOptions,
-        channelOptions,
-        itemCategoryOptions,
-        customerSubCategoryOptions,
         ensureRegionLoaded,
         ensureWarehouseLoaded,
     } = useAllDropdownListData();

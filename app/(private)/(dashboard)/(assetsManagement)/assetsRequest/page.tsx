@@ -20,12 +20,13 @@ import {
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
+  assetrequestGlobalFilter
 } from "@/app/services/assetsApi";
-import StatusBtn from "@/app/components/statusBtn2";
+import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadFile } from "@/app/services/allApi";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
@@ -50,13 +51,17 @@ interface LocalTableDataType {
 }
 
 const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
-  1: "Salesman Requested",
+  1: "Sales Team Requested",
   2: "Area Sales Manager Accepted",
   3: "Area Sales Manager Rejected",
   4: "Chiller Officer Accepted",
   5: "Chiller Officer Rejected",
   6: "Completed",
   7: "Chiller Manager Rejected",
+  8: "Sales/Key Manager Rejected",
+  9: "Refused by Customer",
+  10: "Fridge Manager Accepted",
+  11: "Fridge Manager Rejected",
 };
 
 
@@ -68,13 +73,18 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
+  const { warehouseAllOptions, ensureWarehouseAllLoaded } =
+    useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>("");
   const [threeDotLoading, setThreeDotLoading] = useState({
     csv: false,
     xlsx: false,
   });
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [colFilter, setColFilter] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  useEffect(() => {
+    ensureWarehouseAllLoaded();
+  }, [ensureWarehouseAllLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -224,47 +234,10 @@ export default function Page() {
     }
   };
 
-  return (
-    <>
-      {/* Table */}
-      <div className="flex flex-col h-full">
-        <Table
-          refreshKey={refreshKey}
-          config={{
-            api: {
-              list: fetchTableData,
-              search: searchChillerRequest,
-            },
-            header: {
-              title: "Assets Requests",
-              threeDot: [
-                {
-                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                },
-                {
-                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                },],
-              searchBar: true,
-              columnFilter: true,
-              // actions: can("create") ? [
-              //   <SidebarBtn
-              //     key="name"
-              //     href="/assetsRequest/add"
-              //     leadingIcon="lucide:plus"
-              //     label="Add"
-              //     labelTw="hidden lg:block"
-              //     isActive
-              //   />,
-              // ] : [],
-            },
-            footer: { nextPrevBtn: true, pagination: true },
-            columns: [
+
+
+
+    const columns=[
               // Essential Information
               {
                 key: "created_at",
@@ -279,7 +252,19 @@ export default function Page() {
                 label: "Distributor",
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "warehouse"),
+                 filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
               },
+
               {
                 key: "customer",
                 label: "Customer",
@@ -321,7 +306,56 @@ export default function Page() {
                 render: (data: TableDataType) =>
                   CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
               },
-            ],
+            ];
+
+  return (
+    <>
+      {/* Table */}
+      <div className="flex flex-col h-full">
+        <Table
+          refreshKey={refreshKey}
+          config={{
+            api: {
+              list: fetchTableData,
+              search: searchChillerRequest,
+            },
+            header: {
+              title: "Assets Requests",
+              threeDot: [
+                {
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  label: "Export CSV",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                },
+                {
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  label: "Export Excel",
+                  labelTw: "text-[12px] hidden sm:block",
+                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+                },],
+              searchBar: true,
+              columnFilter: true,
+              // filterRenderer: (props) => (
+              //                 <FilterComponent
+              //                   currentDate={true}
+              //                   {...props}
+              //                   api={fetchAssetAccordingToGlobalFilter}
+              //                 />
+              //               ),
+              // actions: can("create") ? [
+              //   <SidebarBtn
+              //     key="name"
+              //     href="/assetsRequest/add"
+              //     leadingIcon="lucide:plus"
+              //     label="Add"
+              //     labelTw="hidden lg:block"
+              //     isActive
+              //   />,
+              // ] : [],
+            },
+            footer: { nextPrevBtn: true, pagination: true },
+            columns,
             // rowSelection: true,
             rowActions: [
               {

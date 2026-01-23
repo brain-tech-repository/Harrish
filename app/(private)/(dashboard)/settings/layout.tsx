@@ -95,7 +95,7 @@ export default function Settings({ children }: { children: React.ReactNode }) {
                                             <li
                                                 key={`${link.href || "parent"}-${link.label}-${linkIdx}`}
                                             >
-                                                <SidebarBtn
+                                                {/* <SidebarBtn
                                                     isActive={isActive}
                                                     href={hasChildren ? "#" : link.href}
                                                     buttonTw="px-3 py-2 h-fit w-full"
@@ -105,22 +105,30 @@ export default function Settings({ children }: { children: React.ReactNode }) {
                                                     trailingIcon={trailingIcon}
                                                     trailingIconTw={`${isOpen ? "block" : "hidden"}`}
                                                     onClick={() => handleClick(link.href, link.label, hasChildren)}
-                                                />
+                                                /> */}
 
+                                                 <SidebarBtn
+                                                                            isActive={isActive}
+                                                                            href={hasChildren ? "#" : link.href}
+                                                                            label={link.label}
+                                                                            labelTw={`${isOpen ? "block" : "hidden" } group-hover:block text-sm`}
+                                                                            leadingIcon={link.leadingIcon}
+                                                                            leadingIconSize={20}
+                                                                            {...(trailingIcon && { trailingIcon })}
+                                                                            trailingIconTw={`${isOpen ? "block" : "hidden" } group-hover:block`}
+                                                                            onClick={() => handleClick(link.href, link.label, hasChildren)}
+                                                                          />
                                                 {hasChildren &&
                                                     isMenuOpen &&
                                                     link.children && (
                                                         <ul className={`${isOpen ? "block" : "hidden"} gap-[6px] mt-1 ml-[10px]`}>
                                                             {link.children.map(
                                                                 (child: LinkDataType, childIdx) => {
-                                                                    const isChildActive = child.href === activeHref;
+                                                                    const isChildActive = child.href === pathname || (child.children && child.children.some((grand) => grand.href === pathname));
                                                                     return (
                                                                         <li
                                                                             key={`${child.href || "child"}-${child.label}-${childIdx}`}
-                                                                            className={`w-full cursor-pointer transition-all rounded-md ${isChildActive
-                                                                                ? "text-[#2563eb] font-medium"
-                                                                                : ""
-                                                                                }`}
+                                                                            className={`w-full cursor-pointer transition-all rounded-md group/child ${isChildActive ? "text-[#2563eb] font-medium" : ""}`}
                                                                         >
                                                                             <div
                                                                                 className="flex items-center gap-2 w-full"
@@ -134,7 +142,10 @@ export default function Settings({ children }: { children: React.ReactNode }) {
                                                                                         isActive={false}
                                                                                         href={child.href}
                                                                                         label={child.label}
-                                                                                        labelTw={`${isOpen ? "block" : "hidden"}`}
+                                                                                        className={`${!isChildActive
+                                                                                            ? "group-hover/child:bg-[var(--secondary-btn-color)]! group-hover/child:dark:bg-[var(--primary-btn-color)]/20! hover:bg-[var(--secondary-btn-color)]! hover:dark:bg-[var(--primary-btn-color)]/20!"
+                                                                                            : "bg-[var(--secondary-btn-color)]! dark:bg-[var(--primary-btn-color)]/20!"}`}
+                                                                                        labelTw={`${isOpen ? "block" : "hidden"} ${isChildActive ? "text-[var(--primary-btn-color)] dark:text-[var(--primary-btn-color)]" : ""} group-hover:block`}
                                                                                         isSubmenu={true}
                                                                                     />
                                                                                 </div>

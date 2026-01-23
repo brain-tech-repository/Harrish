@@ -185,17 +185,17 @@ const exportFile = async (format: string) => {
           {row.osa_code} - {row.name}
         </span>
       ),
-      filter: {
-          isFilterable: true,
-          width: 320,
-          filterkey: "salesteam_id",
-          options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-          onSelect: (selected: string | string[]) => {
-              setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-          },
-          isSingle: false,
-          selectedValue: warehouseId,
-      },
+      // filter: {
+      //     isFilterable: true,
+      //     width: 320,
+      //     filterkey: "salesteam_id",
+      //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+      //     onSelect: (selected: string | string[]) => {
+      //         setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+      //     },
+      //     isSingle: false,
+      //     selectedValue: warehouseId,
+      // },
     },
     {
       key: "salesman_type",

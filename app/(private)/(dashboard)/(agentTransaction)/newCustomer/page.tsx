@@ -18,7 +18,7 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 export default function NewCustomer() {
     const { can, permissions } = usePagePermissions();
-    const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions , ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+    const { customerCategoryOptions,ensureCustomerCategoryLoaded,customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions , ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
 
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -32,11 +32,13 @@ export default function NewCustomer() {
   // Load dropdown data
   useEffect(() => {
     ensureChannelLoaded();
+    ensureCustomerCategoryLoaded();
     ensureCustomerSubCategoryLoaded();
     ensureRouteLoaded();
     ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureRouteLoaded, ensureWarehouseLoaded,ensureCustomerCategoryLoaded]);
     const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
+    const [categoryId, setCategoryId] = useState<string>("");
     const [warehouseId, setWarehouseId] = useState<string>("");
     const [channelId, setChannelId] = useState<string>("");
     const [routeId, setRouteId] = useState<string>("");
@@ -48,15 +50,15 @@ export default function NewCustomer() {
     const columns: configType["columns"] = [
         {
             key: "osa_code",
-            label: "Outlet Code",
+            label: "Outlet",
             render: (row: TableDataType) => (
                 <span className="font-semibold text-[#181D27] text-[14px]">
-                    {row.osa_code || "-"}
+                    {row.osa_code} - {row.outlet_name}
                 </span>
             ),
             showByDefault: true,
         },
-        { key: "outlet_name", label: "Outlet Name", showByDefault: true },
+        // { key: "outlet_name", label: "Outlet Name", showByDefault: true },
         { key: "owner_name", label: "Owner Name" },
         {
             key: "customertype",
@@ -78,6 +80,16 @@ export default function NewCustomer() {
                     ? (row.category as { customer_category_name?: string })
                         .customer_category_name || "-"
                     : "-",
+                     filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(customerCategoryOptions) ? customerCategoryOptions : [], // [{ value, label }]
+                onSelect: (selected) => {
+                    setCategoryId((prev) => prev === selected ? "" : (selected as string));
+                },
+                selectedValue: categoryId,
+            },
+            showByDefault: true,
         },
         {
             key: "subcategory",
@@ -264,6 +276,9 @@ export default function NewCustomer() {
             const params: any = {
                 page: page.toString(),
             };
+            if (categoryId) {
+                params.category_id = categoryId;
+            }
             if (selectedSubCategoryId) {
                 params.subcategory_id = selectedSubCategoryId;
             }
@@ -310,7 +325,7 @@ export default function NewCustomer() {
                 };
             }
         },
-        [selectedSubCategoryId, warehouseId, channelId, routeId, approvalStatus, setLoading]
+        [categoryId,selectedSubCategoryId, warehouseId, channelId, routeId, approvalStatus, setLoading]
     );
 
     //  const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
@@ -408,7 +423,7 @@ export default function NewCustomer() {
     // Refresh table when subcategory filter changes
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseOptions, channelOptions, selectedSubCategoryId, warehouseId, channelId, routeId, approvalStatus]);
+    }, [customerSubCategoryOptions, routeOptions, warehouseOptions, channelOptions, selectedSubCategoryId, categoryId,warehouseId, channelId, routeId, approvalStatus]);
 
     return (
         <>

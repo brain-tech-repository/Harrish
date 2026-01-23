@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { itemById, itemReturn, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport } from "@/app/services/allApi";
+import { itemById, itemPurchase, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal } from "@/app/services/allApi";
 import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
@@ -192,7 +192,7 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await itemReturn(String(item?.id), { from_date: params?.from_date, to_date: params?.to_date });
+        result = await itemPurchase({ item_id: String(item?.id), from_date: params?.from_date, to_date: params?.to_date });
       } finally {
         setLoading(false);
       }
@@ -214,10 +214,12 @@ export default function Page() {
 
   const downloadSalesPdf = async (uuid: string) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        const fileName = `sales-${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -225,15 +227,16 @@ export default function Page() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
   const downloadPdf = async (uuid: string) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        await downloadPDFGlobal(response.download_url, `return.pdf`);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -241,7 +244,7 @@ export default function Page() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -250,7 +253,8 @@ export default function Page() {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
       const response = await itemAllReturnExport({ item_id: itemId, format }); // send proper body object
       if (response && typeof response === "object" && response.download_url) {
-        await downloadFile(response.download_url);
+        await downloadPDFGlobal(response.download_url, `item-return-${id}`);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -481,7 +485,8 @@ export default function Page() {
                 footer: { nextPrevBtn: true, pagination: true },
                 rowActions: [
                   {
-                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
+                    icon:  "lucide:download",
+                    showLoading: true,
                     onClick: (row: TableDataType) => downloadSalesPdf(row.header_uuid),
                   },
                 ],
@@ -504,7 +509,7 @@ export default function Page() {
               config={{
                 api: {
                   list: async (page: number = 1, pageSize: number = 50) => {
-                    const res = await itemReturn(String(item?.id), { page: page.toString(), per_page: pageSize.toString() });
+                    const res = await itemPurchase( { item_id: String(item?.id), page: page.toString(), per_page: pageSize.toString() });
                     if (res.error) {
                       // showSnackbar(res.data?.message || "Unable to fetch Return data", "error");
                       throw new Error(res.data?.message || "Unable to fetch Return data");
@@ -528,34 +533,37 @@ export default function Page() {
                       onlyFilters={['from_date', 'to_date']}
                     />
                   ),
-                  actions: [
-                    <ExportDropdownButton
-                      disabled={returnData?.length === 0}
-                      keyType="excel"
-                      threeDotLoading={threeDotLoading}
-                      exportReturnFile={exportReturnFile}
-                      uuid={id}
-                    />
-                  ],
+                  // actions: [
+                  //   <ExportDropdownButton
+                  //     disabled={returnData?.length === 0}
+                  //     keyType="excel"
+                  //     threeDotLoading={threeDotLoading}
+                  //     exportReturnFile={exportReturnFile}
+                  //     uuid={id}
+                  //   />
+                  // ],
                 },
-                rowActions: [
+                // rowActions: [
 
-                  {
-                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
-                    onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
-                  },
-                ],
+                //   {
+                //     icon: "lucide:download",
+                //     showLoading: true,
+                //     onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
+                //   },
+                // ],
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
-                  height: "400px"
+                  height: "400px",
+                  width: "w-full"
                 },
                 columns: [
-                  { key: "header_code", label: "Return Code" },
-                  { key: "item_name", label: "Item Name", render: (row: TableDataType) => <>{row.item_code ? row.item_code : ""}{row.item_code && row.item_name ? " - " : ""}{row.item_name ? row.item_name : ""}</> },
-                  // { key: "uom_id", label: "UOM", render: (row: TableDataType) => <>{ (typeof row?.uom_id === "object" && (row?.uom_id as {name: string})?.name) ?? row?.uom ?? row.uom_id}</>},
-                  { key: "name", label: "UOM" },
-                  { key: "item_quantity", label: "Quantity" },
-                  { key: "item_price", label: "Price", render: (row: TableDataType) => <>{toInternationalNumber(row.item_price)}</> }
+                  { key: "order_code", label: "Order Code" },
+                  { key: "delivery_date", label: "Delivery Date",render: (row: TableDataType) => <>{row.delivery_date ? new Date(row.delivery_date).toLocaleDateString() : "-"}</> },
+                  { key: "warehouse_code,warehouse_name", label: "Distributor" ,render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</>},
+                  { key: "customer_code,customer_name", label: "Customer" ,render: (row: TableDataType) => <>{row?.customer_code} - {row?.customer_name}</>},
+                  { key: "salesman_code,salesman_name", label: "Sales Team" ,render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</>},
+                  { key: "total", label: "Total", render: (row: TableDataType) => <>{toInternationalNumber(row.total)}</> },
+                  { key: "sap_msg", label: "SAP Status" }
                 ],
                 pageSize: 50
               }}

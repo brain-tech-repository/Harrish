@@ -11,7 +11,7 @@ type FilterComponentProps = FilterRendererProps & {
 };
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
-import { regionList, subRegionList, warehouseList, routeList } from "@/app/services/allApi";
+import { regionList, subRegionList, warehouseList, routeList, salesmanList } from "@/app/services/allApi";
 
 type DropdownOption = {
   value: string;
@@ -44,6 +44,7 @@ type Route = {
   route_code?: string;
   name?: string;
   code?: string;
+  osa_code?: string;
 };
 
 type ApiResponse<T> = {
@@ -57,16 +58,24 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const {
     customerSubCategoryOptions,
     companyOptions,
+    
+    // fetchSalesmanByRouteOptions,
+    assetsModelOptions,
     ensureCompanyLoaded,
-    salesmanOptions,
+
     ensureSalesmanLoaded,
     channelOptions,
+    ensureAssetsModelLoaded
   } = useAllDropdownListData();
 
   useEffect(() => {
     ensureCompanyLoaded();
-    ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
+    // ensureSalesmanLoaded();
+    if(showFilter("model")){
+      ensureAssetsModelLoaded();
+
+    };
+  }, [ensureCompanyLoaded, ensureAssetsModelLoaded]);
   const { onlyFilters, currentDate, api } = filterProps;
 
   // Set default date for from_date and to_date to today if currentDate is true
@@ -98,6 +107,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const [areaOptions, setAreaOptions] = useState<DropdownOption[]>([]);
   const [warehouseOptions, setWarehouseOptions] = useState<DropdownOption[]>([]);
   const [routeOptions, setRouteOptions] = useState<DropdownOption[]>([]);
+  const [salesmanOptions, setSalesmanOptions] = useState<DropdownOption[]>([]);
 
   const {
     payload,
@@ -118,6 +128,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     "route_id",
     "company_id",
     "salesman_id",
+    "model",
   ];
 
   const toArray = (v: any) => {
@@ -142,6 +153,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
+  const modelNumberVal = toArray(payload.model);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -245,6 +257,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
       return;
     }
 
+
     const fetchRoutes = async () => {
         setSkeleton((prev) => ({ ...prev, route: true }));
       try {
@@ -267,9 +280,39 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
       }
         setSkeleton((prev) => ({ ...prev, route: false }));
     };
-
-    fetchRoutes();
+fetchRoutes();
   }, [warehouseVal.join(",")]);
+
+       useEffect(() => {
+    if (!areaVal.length) {
+      setSalesmanOptions([]);
+      return;
+    }
+    const fetchSalesman = async () => {
+        setSkeleton((prev) => ({ ...prev, salesteam: true }));
+      try {
+        const res: ApiResponse<{ data: Route[] } | Route[]> = await salesmanList({
+          route_id: routeVal.join(","),
+          dropdown:"true",
+        });
+        const routeListData =
+          (res as { data: Route[] })?.data || (res as Route[]) || [];
+
+        setSalesmanOptions(
+          routeListData.map((r: Route) => ({
+            value: String(r.id),
+            label: `${r.osa_code || r.code || ""} - ${r.route_name || r.name || ""}`,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch salesman list:", err);
+        setSalesmanOptions([]);
+      }
+        setSkeleton((prev) => ({ ...prev, salesteam: false }));
+    };
+
+    fetchSalesman();
+  }, [routeVal.join(",")]);
 
 
   // Helper to check if a filter should be shown
@@ -277,6 +320,9 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     // Only show day_filter if onlyFilters is provided and includes it
     if (key === 'day_filter') {
       return Array.isArray(onlyFilters) && onlyFilters.includes('day_filter');
+    }
+    if (key === 'model') {
+      return Array.isArray(onlyFilters) && onlyFilters.includes('model');
     }
     if (!onlyFilters) return true;
     return onlyFilters.includes(key);
@@ -375,6 +421,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -402,6 +449,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -428,6 +476,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -453,6 +502,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : [];
             onChangeArray("warehouse_id", val);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -471,12 +521,14 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           value={routeVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
+            // fetchSalesmanByRouteOptions(raw)
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("route_id", val);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -501,6 +553,29 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("salesman_id", val);
+          }}
+        />
+      )}
+      {showFilter("model") && (
+        <InputFields
+          label="Model Number"
+          name="model"
+          type="select"
+          searchable={true}
+          isSingle={false}
+          multiSelectChips
+          // showSkeleton={skeleton.salesteam}
+          // disabled={disabled || routeVal.length === 0}
+          options={Array.isArray(assetsModelOptions) ? assetsModelOptions : []}
+          value={modelNumberVal as any}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            const val = Array.isArray(raw)
+              ? raw
+              : typeof raw === "string"
+              ? raw.split(",").filter(Boolean)
+              : [];
+            onChangeArray("model", val);
           }}
         />
       )}

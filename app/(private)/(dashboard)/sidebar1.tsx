@@ -179,7 +179,7 @@ export default function Sidebar({
           {/* logo */}
           <div className="flex items-center justify-center w-full h-[40px]">
             <Image
-              src="/logowhite.png"
+              src="/logowhite2.png"
               className="p-[10px] cursor-pointer"
               width={152}
               height={222}

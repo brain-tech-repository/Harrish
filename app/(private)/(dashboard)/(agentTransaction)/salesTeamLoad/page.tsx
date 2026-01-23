@@ -36,12 +36,13 @@ interface SalesmanLoadRow {
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { regionOptions, warehouseAllOptions,salesmanOptions,ensureSalesmanLoaded,warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions, ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const {  warehouseAllOptions,salesmanOptions,ensureSalesmanLoaded, routeOptions, ensureRouteLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>();
   const [routeId, setRouteId] = useState<string>();
   const [salesmanId, setSalesmanId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
   const [colFilter, setColFilter] = useState<boolean>(false);
+  const [filterPayload,setFilterPayload] = useState<any>();
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -57,6 +58,10 @@ export default function SalemanLoad() {
   }, [ ensureRouteLoaded, ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const columns: configType["columns"] = [
+    {
+      key:"osa_code",
+      label:"Code",
+    },
     {
       key:"created_at",
       label:"Load Date",
@@ -283,7 +288,7 @@ export default function SalemanLoad() {
       
             try {
               setLoading(true);
-             
+              setFilterPayload(payload);
               const body = {
                  per_page: pageSize.toString(),
             current_page: pageNo.toString(),
@@ -326,7 +331,7 @@ export default function SalemanLoad() {
   const downloadPdf = async (uuid: string) => {
     try {
       // setLoading(true);
-      setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
+      // setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
       const response = await salesmanLoadPdf({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
          const fileName = `load-${uuid}.pdf`;
@@ -339,7 +344,7 @@ export default function SalemanLoad() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
+      // setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
       // setLoading(false);
     }
   };
@@ -349,7 +354,7 @@ export default function SalemanLoad() {
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportSalesmanLoad({ format });
+      const response = await exportSalesmanLoad({ format, filter: filterPayload });
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -367,7 +372,7 @@ export default function SalemanLoad() {
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
       try {
         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-        const response = await loadExportCollapse({ format });
+        const response = await loadExportCollapse({ format, filter: filterPayload });
         if (response && typeof response === "object" && response.download_url) {
           await downloadFile(response.download_url);
           showSnackbar("File downloaded successfully ", "success");
@@ -453,6 +458,7 @@ export default function SalemanLoad() {
             },
             {
               icon: "material-symbols:download",
+              showLoading: true,
               onClick: (row: TableDataType) => downloadPdf(row.uuid),
             },
           ],
