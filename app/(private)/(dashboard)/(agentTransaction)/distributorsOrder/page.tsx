@@ -44,7 +44,7 @@ export default function CustomerInvoicePage() {
   }, [ensureWarehouseLoaded, ensureSalesmanLoaded]);
   const [colFilter,setColFilter] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [filterPayload,setFilterPayload] = useState<any>();
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -190,8 +190,9 @@ export default function CustomerInvoicePage() {
     {
       key: "approval_status",
       label: "Approval Status",
-      // showByDefault: true,
+      showByDefault: false,
       render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+
     },
     {
       key: "order_flag",
@@ -247,7 +248,7 @@ export default function CustomerInvoicePage() {
 
       try {
         setLoading(true);
-       
+        setFilterPayload(payload);
         const body = {
           limit: pageSize.toString(),
           page: pageNo.toString(),
@@ -310,14 +311,14 @@ export default function CustomerInvoicePage() {
           pageSize: pagination.limit || pageSize,
         };
       }
-      if (warehouseId) {
-        params.warehouse_id = warehouseId;
-      }
-      if (salesmanId) {
-        params.salesman_id = salesmanId;
-      }
+      // if (warehouseId) {
+      //   params.warehouse_id = warehouseId;
+      // }
+      // if (salesmanId) {
+      //   params.salesman_id = salesmanId;
+      // }
       // const result = await agentOrderList({ filter: Object.values(params) });
-      const result = await agentOrderList(params);
+      const result = await orderGlobalFilter(params);
       agentOrderFilterCache.current[cacheKey] = result;
       const pagination =
         result.pagination?.pagination || result.pagination || {};
@@ -331,13 +332,13 @@ export default function CustomerInvoicePage() {
         pageSize: pagination.limit || pageSize,
       };
     },
-    [agentOrderList, warehouseId, salesmanId,colFilter],
+    [orderGlobalFilter, warehouseId, salesmanId,colFilter],
   );
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await agentOrderExport({ format });
+      const response = await agentOrderExport({ format, filter: filterPayload });
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -354,7 +355,7 @@ export default function CustomerInvoicePage() {
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await orderExportCollapse({ format });
+      const response = await orderExportCollapse({ format,filter:filterPayload });
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -407,6 +408,7 @@ export default function CustomerInvoicePage() {
           config={{
             api: {
               list: fetchOrders,
+              // filterBy: fetchOrdersAccordingToGlobalFilter
               filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
                 if (colFilter) {
                   return filterBy(payload, pageSize);

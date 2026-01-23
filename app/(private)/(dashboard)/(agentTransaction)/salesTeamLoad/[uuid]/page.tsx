@@ -217,7 +217,7 @@ export default function AddEditSalesmanLoad() {
 
               return {
                 id: stockItem.item_id,
-                item_code: stockItem.item_code,
+                erp_code: stockItem.erp_code,
                 name: stockItem.item_name,
                 cse_qty: "",
                 pcs_qty: "",
@@ -505,33 +505,64 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
       setErrors({});
       setSubmitting(true);
 
-      let validItems = itemData.filter((i) => (i.cse_qty && Number(i.cse_qty) > 0) || (i.pcs_qty && Number(i.pcs_qty) > 0));
+
+      // Always generate details for items with any qty entered in BOX (cse_qty) or OUT (pcs_qty)
+      const validItems = itemData.filter((i) => {
+        const cseQty = Number(i.cse_qty || 0);
+        const pcsQty = Number(i.pcs_qty || 0);
+        return cseQty > 0 || pcsQty > 0;
+      });
 
       if (validItems.length === 0) {
         showSnackbar("Please add at least one item with quantity", "error");
         setSubmitting(false);
         return;
       }
-      const details: any = validItems.flatMap((singleItems: any) => {
-        if (!Array.isArray(singleItems.uom)) return [];
-        return singleItems.uom.flatMap((singleUom: any) => {
-          const name = singleUom.name?.toUpperCase?.() || "";
-          const uomType = singleUom.uom_type?.toUpperCase?.() || "";
-          const isPcs = name.includes("PCS") || uomType.includes("OUT");
-          const qty = isPcs ? singleItems.pcs_qty : singleItems.cse_qty;
 
-          if (qty && Number(qty) > 0) {
-            return [{
+      // Only generate details for the correct UOM type: if OUT (pcs_qty) is filled, only include the UOM with type 'primary' or name containing 'OUT' or 'PCS'.
+      // If BOX (cse_qty) is filled, only include the UOM with type 'secondary' or name containing 'BOX' or 'CSE'.
+      const details = validItems.flatMap((singleItems: any) => {
+        if (!Array.isArray(singleItems.uom)) return [];
+        const cseQty = Number(singleItems.cse_qty || 0);
+        const pcsQty = Number(singleItems.pcs_qty || 0);
+        let detailsArr: any[] = [];
+        if (cseQty > 0) {
+          // Find the UOM for cse_qty (BOX)
+          const cseUom = singleItems.uom.find((u: any) => {
+            const name = (u.name || '').toUpperCase();
+            const type = (u.uom_type || '').toUpperCase();
+            return type === 'SECONDARY' || name.includes('BOX') || name.includes('CSE');
+          });
+          if (cseUom) {
+            detailsArr.push({
               item_id: Number(singleItems.id),
-              qty: Number(qty),
-              uom: singleUom.uom_id ?? singleUom.id ?? singleUom.uom?.id,
-            }];
+              qty: cseQty,
+              uom: cseUom.uom_id ?? cseUom.id ?? cseUom.uom?.id,
+              type: 'cse_qty',
+            });
           }
-          return [];
-        });
+        }
+        if (pcsQty > 0) {
+          // Find the UOM for pcs_qty (OUT)
+          const pcsUom = singleItems.uom.find((u: any) => {
+            const name = (u.name || '').toUpperCase();
+            const type = (u.uom_type || '').toUpperCase();
+            return type === 'PRIMARY' || name.includes('OUT') || name.includes('PCS');
+          });
+          if (pcsUom) {
+            detailsArr.push({
+              item_id: Number(singleItems.id),
+              qty: pcsQty,
+              uom: pcsUom.uom_id ?? pcsUom.id ?? pcsUom.uom?.id,
+              type: 'pcs_qty',
+            });
+          }
+        }
+        return detailsArr;
       });
 
       const payload: any = {
+        osa_code: code,
         salesman_type: Number(form.salesman_type),
         warehouse_id: Number(form.warehouse),
         route_id: Number(form.route),
@@ -745,13 +776,12 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
                 key: "item",
                 label: "Items",
                 render: (row: TableDataType) => {
-                  const currentItem = itemData.find((item) => item.id === row.id);
                   return (
                     <span>
-                      {row.item_code && row.name
-                        ? `${row.item_code} - ${row.name}`
-                        : row.item_code
-                          ? row.item_code
+                      {row.erp_code && row.name
+                        ? `${row.erp_code} - ${row.name}`
+                        : row.erp_code
+                          ? row.erp_code
                           : row.name
                             ? row.name
                             : "-"}
@@ -929,7 +959,7 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
               //   },
               // },
             ],
-            pageSize: itemData.length > 0 ? itemData.length : 10
+            pageSize: itemData.length > 0 ? itemData.length : 100000
           }}
         />
 
@@ -965,7 +995,7 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
             label={submitting ? "Creating Load..." : "Create Load"}
             onClick={handleSubmit}
             disabled={
-              submitting ||
+              submitting || !form.salesman ||
               Object.values(rowQtyErrors).some(
                 (err) => (err && (err.pcs || err.cse))
               )

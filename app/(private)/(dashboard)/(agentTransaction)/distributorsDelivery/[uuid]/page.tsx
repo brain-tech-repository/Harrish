@@ -1402,7 +1402,6 @@ export default function DeliveryAddEditPage() {
                           const idx = Number(row.idx);
                           const err = itemErrors[idx]?.uom_id;
                           const options = JSON.parse(row.UOM ?? "[]");
-                           console.log("UOM changed:", options);
                           return (
                             <div>
                               <InputFields

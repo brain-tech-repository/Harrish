@@ -57,27 +57,34 @@ export default function Sidebar({
   };
 
   // Helper to check if a parent menu should be active if any child is active
-  // Checks if any child or grandchild is active
+  // Checks if any child or grandchild is active, using pathname for reliability
   const isParentActive = (children: LinkDataType[] | undefined): boolean => {
     if (!children) return false;
     return children.some((child) => {
-      if (child.href === activeHref) return true;
+      if (child.href === pathname) return true;
       if (child.children && child.children.length > 0) {
-        return child.children.some((grand) => grand.href === activeHref);
+        return child.children.some((grand) => grand.href === pathname);
       }
       return false;
     });
   };
 
   useEffect(() => {
-    const current = pathname ?? window.location.pathname;
+    const current = pathname ?? (typeof window !== 'undefined' ? window.location.pathname : "");
     setActiveHref(current);
 
     const initialOpen: Record<string, boolean> = {};
     data.forEach((group) => {
       group.data.forEach((link) => {
         if (link.children && link.children.length > 0) {
-          const shouldOpen = link.children.some((child) => child.href === current);
+          // Open if any child or grandchild matches current path
+          const shouldOpen = link.children.some((child) => {
+            if (child.href === current) return true;
+            if (child.children && child.children.length > 0) {
+              return child.children.some((grand) => grand.href === current);
+            }
+            return false;
+          });
           if (shouldOpen) {
             initialOpen[link.label] = true;
           }
@@ -86,7 +93,7 @@ export default function Sidebar({
     });
 
     setOpenMenus((prev) => ({ ...prev, ...initialOpen }));
-  }, [])
+  }, [pathname]);
 
   // close sidebar when clicking outside
   useEffect(() => {
@@ -129,24 +136,26 @@ export default function Sidebar({
                         ? "mdi-light:chevron-down"
                         : "mdi-light:chevron-right"
                       : link.trailingIcon;
-                    const isActive = link.href === activeHref || isParentActive(link.children);
+                    const isActive = link.href === pathname || isParentActive(link.children);
                     return (
                       <li key={link.href+index}>
-                        <SidebarBtn
-                          isActive={isActive}
-                          href={hasChildren ? "#" : link.href}
-                          label={link.label}
-                          labelTw={`${isOpen ? "block" : "hidden" } group-hover:block text-sm`}
-                          leadingIcon={link.leadingIcon}
-                          leadingIconSize={20}
-                          {...(trailingIcon && { trailingIcon })}
-                          trailingIconTw={`${isOpen ? "block" : "hidden" } group-hover:block`}
-                          onClick={() => handleClick(link.href, link.label, hasChildren)}
-                        />
+                        <div className={isActive ? "bg-red-50 rounded-xl" : ""}>
+                          <SidebarBtn
+                            isActive={isActive}
+                            href={hasChildren ? "#" : link.href}
+                            label={link.label}
+                            labelTw={`${isOpen ? "block" : "hidden" } group-hover:block text-sm`}
+                            leadingIcon={link.leadingIcon}
+                            leadingIconSize={20}
+                            {...(trailingIcon && { trailingIcon })}
+                            trailingIconTw={`${isOpen ? "block" : "hidden" } group-hover:block`}
+                            onClick={() => handleClick(link.href, link.label, hasChildren)}
+                          />
+                        </div>
                         {hasChildren && isChildrenOpen && link.children && (
                           <ul className={`${isOpen ? "block" : "hidden"} group-hover:block mt-1 ml-[10px]`}>
                             {link.children.map((child: LinkDataType) => {
-                              const isChildActive = child.href === activeHref || (child.children && child.children.some((grand) => grand.href === activeHref));
+                              const isChildActive = child.href === pathname || (child.children && child.children.some((grand) => grand.href === pathname));
                               const hasThirdLevel = child.children && child.children.length > 0;
                               const isThirdLevelOpen = openMenus[child.label] ?? false;
                               return (
@@ -173,8 +182,8 @@ export default function Sidebar({
                                         isActive={false}
                                         href={child.href}
                                         label={child.label}
-                                        className={`${!isChildActive ? "hover:bg-transparent!" : ""}`}
-                                        labelTw={`${isOpen ? "block" : "hidden"} ${isChildActive ? "text-primary font-medium" : ""} group-hover:block`}
+                                        className={`${!isChildActive ? "hover:bg-transparent!" : "bg-[#FFF0F2]!"}`}
+                                        labelTw={`${isOpen ? "block" : "hidden"} ${isChildActive ? "text-[#EA0A2A]" : ""} group-hover:block`}
                                         isSubmenu={true}
                                         trailingIcon={hasThirdLevel ? (isThirdLevelOpen ? "mdi-light:chevron-down" : "mdi-light:chevron-right") : child.trailingIcon}
                                         trailingIconTw={`${isChildActive ? "text-primary font-medium" : ""}`}
@@ -185,7 +194,7 @@ export default function Sidebar({
                                   {hasThirdLevel && isThirdLevelOpen && (
                                     <ul className="ml-8 mt-1">
                                       {(child.children || []).map((third: LinkDataType) => {
-                                        const isThirdActive = third.href === activeHref;
+                                        const isThirdActive = third.href === pathname;
                                         return (
                                           <li key={third.href} className={`w-full cursor-pointer transition-all rounded ${isThirdActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-primary/10 dark:hover:bg-primary/30 hover:font-medium"} group/third px-2`}>
                                             <div

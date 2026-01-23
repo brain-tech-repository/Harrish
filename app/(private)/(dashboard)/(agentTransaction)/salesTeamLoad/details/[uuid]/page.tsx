@@ -36,7 +36,7 @@ interface CustomerItem {
     id: number;
     uuid: string;
     osa_code: string;
-    item: { id: number; code: string; name: string };
+    item: { id: number;erp_code:string; code: string; name: string };
     uom_name: string;
     qty: number;
     price: string;
@@ -96,7 +96,7 @@ export default function ViewPage() {
   // ✅ Prepare table data
   const tableData =
     customer?.details?.map((detail) => ({
-      item: detail.item ? `${detail.item.code} - ${detail.item.name}` : "-",
+      item: detail.item ? `${detail.item.erp_code} - ${detail.item.name}` : "-",
       uom: detail.uom_name || "-",
       qty: detail.qty?.toString() ?? "-",
       price: detail.price ?? "-",

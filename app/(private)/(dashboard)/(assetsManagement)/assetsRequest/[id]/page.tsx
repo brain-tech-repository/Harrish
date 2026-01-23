@@ -31,6 +31,7 @@ import {
 import { salesmanList } from "@/app/services/allApi";
 import { channelList } from "@/app/services/allApi";
 import { useEffect, useState } from "react";
+import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import { useParams } from "next/navigation";
 import Loading from "@/app/components/Loading";
 
@@ -281,6 +282,9 @@ export default function AddCompanyWithStepper() {
   const [uploadedFiles, setUploadedFiles] = useState<
     Record<string, { file: File; preview?: string }>
   >({});
+  // For image preview modal
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -361,7 +365,7 @@ export default function AddCompanyWithStepper() {
           outlet_id: data.outlet?.id.toString() || 0,
           existing_coolers: typeof data.existing_coolers === "string" && data.existing_coolers.length > 0 ? data.existing_coolers.split(",") : [],
           stock_share_with_competitor: data.stock_share_with_competitor || "",
-          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume_current,
+          outlet_weekly_sale_volume_current: data.outlet_weekly_sale_volume_current ,
           outlet_weekly_sale_volume: data.outlet_weekly_sale_volume || "",
           display_location: data.display_location || "",
           chiller_safty_grill: data.chiller_safty_grill || "",
@@ -550,14 +554,45 @@ export default function AddCompanyWithStepper() {
   ) => {
     const fileInfo = uploadedFiles[fieldName];
     const currentValue = values[fieldName];
-    const hasFile =
-      fileInfo || (typeof currentValue === "string" && currentValue);
+    const hasFile = fileInfo || (typeof currentValue === "string" && currentValue);
+
+    // If the value is a string and looks like a file path, treat as image for preview
+    const isImageUrl = (val: string) => {
+      if (!val) return false;
+      const ext = val.split('.').pop()?.toLowerCase();
+      return ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext || "");
+    };
+
+    // Build full URL if needed
+    const getFullUrl = (val: string) => {
+      if (!val) return "";
+      if (val.startsWith("http://") || val.startsWith("https://")) return val;
+      if (val.startsWith("/storage/")) return `https://api.coreexl.com/osa_developmentV2/public${val}`;
+      return val;
+    };
 
     return (
-      <div className="col-span-1">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {label}
-        </label>
+      <div className="col-span-1 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {label}
+          </label>
+          {/* Eye icon for preview if file is image or file path exists, right of label */}
+          {typeof currentValue === "string" && currentValue && (
+            <button
+              type="button"
+              className="mt-2 sm:mt-0 sm:ml-2 text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+              onClick={() => {
+                setModalImage(getFullUrl(currentValue));
+                setIsImageModalOpen(true);
+              }}
+              title="View Image"
+            >
+              <Icon icon="mdi:eye" className="w-5 h-5" />
+              <span className="text-xs cursor-pointer mb-1">View Image</span>
+            </button>
+          )}
+        </div>
 
         {!hasFile ? (
           <div className="flex items-center justify-center w-full">
@@ -583,8 +618,8 @@ export default function AddCompanyWithStepper() {
             </label>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-gray-50">
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-gray-300 rounded-lg bg-gray-50 w-full">
+            <div className="flex items-center space-x-3 w-full">
               {fileInfo?.preview ? (
                 <img
                   src={fileInfo.preview}
@@ -594,13 +629,26 @@ export default function AddCompanyWithStepper() {
               ) : (
                 <Icon icon="lucide:file" className="w-8 h-8 text-gray-500" />
               )}
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  {fileInfo
-                    ? fileInfo.file.name
-                    : typeof currentValue === "string"
-                      ? currentValue
-                      : "File"}
+              <div className="truncate w-full">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {(() => {
+                    function extractFileName(val:any) {
+                      // Remove query string if present
+                      let fileName = val.split('/').pop()?.split('?')[0] || val;
+                      // If fileName contains an underscore, take the part after the last underscore
+                      if (fileName.includes('_')) {
+                        return fileName.substring(fileName.lastIndexOf('_') + 1);
+                      }
+                      return fileName;
+                    }
+                    if (fileInfo) {
+                      return extractFileName(fileInfo.file.name);
+                    } else if (typeof currentValue === "string" && currentValue) {
+                      return extractFileName(currentValue);
+                    } else {
+                      return "File";
+                    }
+                  })()}
                 </p>
                 <p className="text-xs text-gray-500">
                   {fileInfo
@@ -612,7 +660,7 @@ export default function AddCompanyWithStepper() {
             <button
               type="button"
               onClick={() => removeFile(fieldName, setFieldValue)}
-              className="text-red-600 hover:text-red-800"
+               className="text-red-600 hover:text-red-800 mt-4 sm:mt-0 ml-3"
             >
               <Icon icon="lucide:trash-2" className="w-5 h-5 cursor-pointer" />
             </button>
@@ -708,6 +756,16 @@ export default function AddCompanyWithStepper() {
       }
       await validationSchema.validate(submitValues, { abortEarly: false });
 
+      // Helper: fetch file from URL and return File object
+      const urlToFile = async (url: string, filename: string): Promise<File> => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        // Try to get extension from url
+        let ext = url.split('.').pop()?.split('?')[0] || 'jpg';
+        let mime = blob.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg');
+        return new File([blob], filename, { type: mime });
+      };
+
       // Create FormData for file upload
       const formData = new FormData();
 
@@ -736,17 +794,25 @@ export default function AddCompanyWithStepper() {
       });
 
       // Only append *_file fields as binary if present, otherwise empty string
-      fileFields.forEach((fileField) => {
-        // Only append *_file fields, not the select fields
+      for (const fileField of fileFields) {
         if (fileField.fieldName.endsWith('_file')) {
-          const fileValue = submitValues[fileField.fieldName];
+          let fileValue = submitValues[fileField.fieldName];
           if (fileValue instanceof File) {
             formData.append(fileField.fieldName, fileValue);
-          } else {
-            formData.append(fileField.fieldName, "");
+          } else if (typeof fileValue === 'string' && fileValue && (fileValue.startsWith('http') || fileValue.startsWith('/storage/'))) {
+            // Convert URL/path to File
+            let url = fileValue.startsWith('http') ? fileValue : `https://api.coreexl.com/osa_developmentV2/public${fileValue}`;
+            let filename = url.split('/').pop() || 'file';
+            try {
+              const fileObj = await urlToFile(url, filename);
+              formData.append(fileField.fieldName, fileObj);
+            } catch (e) {
+              // skip appending if fetch fails
+            }
           }
+          // else: do not append the field at all if not present
         }
-      });
+      }
 
       let res;
       if (isEditMode && uuid) {
@@ -939,6 +1005,7 @@ export default function AddCompanyWithStepper() {
                   className="text-sm text-red-600 mb-1"
                 />
               </div>
+              <div>
               <InputFields
                 required
                 label="Model Number"
@@ -953,6 +1020,7 @@ export default function AddCompanyWithStepper() {
                 component="div"
                 className="text-sm text-red-600 mb-1"
               />
+              </div>
 
             </div>
           </ContainerCard>
@@ -1287,7 +1355,7 @@ export default function AddCompanyWithStepper() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <div onClick={() => router.back()}>
+          <div onClick={() => router.back()} className="cursor-pointer">
             <Icon icon="lucide:arrow-left" width={24} />
           </div>
           <h1 className="text-xl font-semibold text-gray-900">
@@ -1311,38 +1379,46 @@ export default function AddCompanyWithStepper() {
           setTouched,
           isSubmitting: formikSubmitting,
         }) => (
-          <Form>
-            <StepperForm
-              steps={steps.map((step) => ({
-                ...step,
-                isCompleted: isStepCompleted(step.id),
-              }))}
-              currentStep={currentStep}
-              onStepClick={() => { }}
-              onBack={prevStep}
-              onNext={() =>
-                handleNext(values, {
-                  setErrors,
-                  setTouched,
-                } as unknown as FormikHelpers<Chiller>)
-              }
-              onSubmit={() => handleSubmit(values)}
-              showSubmitButton={isLastStep}
-              showNextButton={!isLastStep}
-              nextButtonText="Save & Next"
-              submitButtonText={
-                isSubmitting
-                  ? isEditMode
-                    ? "Updating..."
-                    : "Submitting..."
-                  : isEditMode
-                    ? "Update"
-                    : "Submit"
-              }
-            >
-              {renderStepContent(values, setFieldValue, errors, touched)}
-            </StepperForm>
-          </Form>
+          <>
+            <Form>
+              <StepperForm
+                steps={steps.map((step) => ({
+                  ...step,
+                  isCompleted: isStepCompleted(step.id),
+                }))}
+                currentStep={currentStep}
+                onStepClick={() => { }}
+                onBack={prevStep}
+                onNext={() =>
+                  handleNext(values, {
+                    setErrors,
+                    setTouched,
+                  } as unknown as FormikHelpers<Chiller>)
+                }
+                onSubmit={() => handleSubmit(values)}
+                showSubmitButton={isLastStep}
+                showNextButton={!isLastStep}
+                nextButtonText="Save & Next"
+                submitButtonText={
+                  isSubmitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Submitting..."
+                    : isEditMode
+                      ? "Update"
+                      : "Submit"
+                }
+              >
+                {renderStepContent(values, setFieldValue, errors, touched)}
+              </StepperForm>
+            </Form>
+            {/* Image Preview Modal */}
+            <ImagePreviewModal
+              images={modalImage ? [modalImage] : []}
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
+            />
+          </>
         )}
       </Formik>
     </div>

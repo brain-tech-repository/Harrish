@@ -35,7 +35,7 @@ export default function CustomerInvoicePage() {
     const { setLoading } = useLoading();
     const router = useRouter();
     const [refreshKey, setRefreshKey] = useState<number>(0);
-
+    const [filterPayload,setFilterPayload] = useState<any>();
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -131,82 +131,83 @@ export default function CustomerInvoicePage() {
     const filterBy = useCallback(
         async (
             payload: Record<string, string | number | null>,
-            pageSize: number
+            pageSize: number = 50,
+            pageNo?: number
         ): Promise<listReturnType> => {
-            setColFilter(true);
-            const params: Record<string, string> = { per_page: pageSize.toString() };
-            Object.keys(payload || {}).forEach((k) => {
-                const v = payload[k as keyof typeof payload];
-                if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-                    params[k] = String(v);
-                }
-            });
-            const result = await fetchDeliveryData(params);
-            if (!result) {
+            let result;
+            setLoading(true);
+            setFilterPayload(payload);
+            try {
+                const body = {
+                    per_page: pageSize.toString(),
+                    current_page: (pageNo ?? 1).toString(),
+                    filter: payload
+                };
+                result = await deliveryGlobalFilter(body);
+            } finally {
+                setLoading(false);
+                setColFilter(false);
+            }
+
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
                 return {
-                    data: [],
-                    total: 1,
-                    currentPage: 1,
-                    pageSize: pageSize,
+                    data: result.data || [],
+                    total: pagination?.last_page || result.pagination?.last_page || 0,
+                    totalRecords: pagination?.total || result.pagination?.total || 0,
+                    currentPage: pagination?.current_page || result.pagination?.current_page || 0,
+                    pageSize: pagination?.per_page || pageSize,
                 };
             }
-            if (result?.error) throw new Error(result.data?.message || "Filter failed");
-            const pagination = result.pagination || {};
-            setColFilter(false);
-            return {
-                data: result.data || [],
-                total: pagination?.last_page || 1,
-                totalRecords: pagination?.total || 0,
-                currentPage: pagination?.current_page || 1,
-                pageSize: pagination?.per_page || pageSize,
-            };
         },
-        [fetchDeliveryData, warehouseId, salesmanId]
+        [setLoading]
     );
 
-  const fetchDeliveriesAccordingToGlobalFilter = useCallback(
-    async (
-      payload: Record<string, any>,
-      pageSize: number = 50,
-      pageNo: number = 1
-    ): Promise<listReturnType> => {
+//   const fetchDeliveriesAccordingToGlobalFilter = useCallback(
+//     async (
+//       payload: Record<string, any>,
+//       pageSize: number = 50,
+//       pageNo: number = 1
+//     ): Promise<listReturnType> => {
 
-      try {
-        setLoading(true);
-        const body = {
-          per_page: pageSize.toString(),
-          current_page: pageNo.toString(),
-          filter: payload
-        }
-        const listRes = await deliveryGlobalFilter(body);
-       const pagination =
-        listRes.pagination?.pagination || listRes.pagination || {};
-      return {
-        data: listRes.data || [],
-        total: pagination.last_page || listRes.pagination?.last_page || 1,
-        totalRecords:
-          pagination.total || listRes.pagination?.total || 0,
-        currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
-        pageSize: pagination.per_page || pageSize,
-      };
-        // fetchOrdersCache.current[cacheKey] = result;
-        // return listRes;
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
-      }
-      finally{
-          setLoading(false);
-      }
-    },
-    [deliveryGlobalFilter, warehouseId, salesmanId]
-  );
+//       try {
+//         setLoading(true);
+//         setFilterPayload(payload);
+//         const body = {
+//           per_page: pageSize.toString(),
+//           current_page: pageNo.toString(),
+//           filter: payload
+//         }
+//         const listRes = await deliveryGlobalFilter(body);
+//        const pagination =
+//         listRes.pagination?.pagination || listRes.pagination || {};
+//       return {
+//         data: listRes.data || [],
+//         total: pagination.last_page || listRes.pagination?.last_page || 1,
+//         totalRecords:
+//           pagination.total || listRes.pagination?.total || 0,
+//         currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+//         pageSize: pagination.per_page || pageSize,
+//       };
+//         // fetchOrdersCache.current[cacheKey] = result;
+//         // return listRes;
+//       } catch (error: unknown) {
+//         console.error("API Error:", error);
+//         setLoading(false);
+//         throw error;
+//       }
+//       finally{
+//           setLoading(false);
+//       }
+//     },
+//     [deliveryGlobalFilter, warehouseId, salesmanId]
+//   );
 
     const exportFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await agentDeliveryExport({ format });
+            const response = await agentDeliveryExport({ format,filter:filterPayload });
             if (response && typeof response === 'object' && response.download_url) {
                 await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully ", "success");
@@ -223,7 +224,7 @@ export default function CustomerInvoicePage() {
       const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
           setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          const response = await deliveryExportCollapse({ format });
+          const response = await deliveryExportCollapse({ format,filter:filterPayload });
           if (response && typeof response === "object" && response.download_url) {
             await downloadFile(response.download_url);
             showSnackbar("File downloaded successfully ", "success");
@@ -240,7 +241,7 @@ export default function CustomerInvoicePage() {
 
     const downloadPdf = async (uuid: string) => {
         try {
-            setLoading(true);
+            // setLoading(true);
             const response = await agentDeliveryExport({ uuid: uuid, format: "pdf" });
             if (response && typeof response === 'object' && response.download_url) {
                  const fileName = `delivery-${uuid}.pdf`;
@@ -253,7 +254,7 @@ export default function CustomerInvoicePage() {
         } catch (error) {
             showSnackbar("Failed to download file", "error");
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 
@@ -348,7 +349,7 @@ export default function CustomerInvoicePage() {
     {
         key: "approval_status",
         label: "Approval Status",
-        showByDefault: true,
+        showByDefault: false,
         render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
     },
     {
@@ -367,20 +368,23 @@ export default function CustomerInvoicePage() {
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchDelivery, filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
-                if (colFilter) {
-                  return filterBy(payload, pageSize);
-                } else {
-                  let pageNo = 1;
-                  if (payload && typeof payload.page === 'number') {
-                    pageNo = payload.page;
-                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
-                    pageNo = Number(payload.page);
-                  }
-                  const { page, ...restPayload } = payload || {};
-                  return fetchDeliveriesAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
-                }
-              }, },
+                    api: { list: fetchDelivery,
+                        filterBy: filterBy,
+            //              filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+            //     if (colFilter) {
+            //       return filterBy(payload, pageSize);
+            //     } else {
+            //       let pageNo = 1;
+            //       if (payload && typeof payload.page === 'number') {
+            //         pageNo = payload.page;
+            //       } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+            //         pageNo = Number(payload.page);
+            //       }
+            //       const { page, ...restPayload } = payload || {};
+            //       return fetchDeliveriesAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+            //     }
+            //   },
+             },
                     header: {
                         title: "Distributor's Delivery",
                         columnFilter: true,
@@ -413,7 +417,7 @@ export default function CustomerInvoicePage() {
                                                                                                             <FilterComponent
                                                                                                             currentDate={true}
                                                                                                               {...props}
-                                                                                                              api={fetchDeliveriesAccordingToGlobalFilter}
+                                                                                                            //   api={fetchDeliveriesAccordingToGlobalFilter}
                                                                                                             />
                                                                                                           ),
                     },
@@ -431,6 +435,7 @@ export default function CustomerInvoicePage() {
                         },
                         {
                             icon: "lucide:download",
+                            showLoading: true,
                             onClick: (row: TableDataType) =>
                                 downloadPdf(row.uuid),
                         },

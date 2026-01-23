@@ -671,7 +671,6 @@ export default function InvoiceddEditPage() {
     // }, [form.warehouse, showSnackbar]);
 
     const handleCustomerSearch = useCallback(async (searchText?: string) => {
-        console.log("Warehouse id",warehouseIdForCus)
         
         try {
             let response;
@@ -1127,11 +1126,9 @@ export default function InvoiceddEditPage() {
             } else {
                 // Create new invoice
                
-                console.log(payload,"payload")
                       let promotionPayload = convertOrderPayload(payload)
                
                 const promotionRes = await applyPromotion(promotionPayload);
-                      console.log(promotionRes,"promotionRes")
                       if(checkout == 1)
                       {
                       if (promotionRes?.data?.itemPromotionInfo.length > 0) {
@@ -1237,9 +1234,7 @@ export default function InvoiceddEditPage() {
         return [ form.warehouse, form.customer, form.invoice_type, form.invoice_date].every(Boolean);
     })();
 
-    useEffect(() => {
-        console.log("1209",warehouseIdForCus)
-    });
+
     // Check if any item row has quantity greater than available stock
     const isAnyQtyOverStock = itemData.some((row, idx) => {
         if (!row.item_id || !row.uom_id || !itemsWithUOM[row.item_id]) return false;
@@ -1556,12 +1551,7 @@ export default function InvoiceddEditPage() {
                                         setErrors(prev => ({ ...prev, warehouse: "" }));
                                     }
                                     const id = option.value
-                                    console.log("Selected warehouse:",id, option.value);
-                                    // Fetch agent customers for the selected warehouse
                                     setWarehouseIdForCus(id);
-                                    console.log("1524",warehouseIdForCus)
-
-                                    // Fetch items for the selected warehouse
                                     fetchWarehouseItems(option.value);
                                     setItemData([{item_id: "",
         itemName: "",
@@ -2163,13 +2153,10 @@ function getPromotionItemsByIndex(
   };
 
   const handleSubmit = () => {
-    console.log(selectedPromotionsItems,"selectedPromotionsItems",itemData)
 
     let result = getPromotionItemsByIndex(promotions,selectedPromotionsItems)
-    console.log(result,"result",selectedPromotionsItems)
 
     result.map((item:any)=>{
-      console.log(item,"item")
       itemData.push({
       item_id: item.id,
       itemName: `${item.item_code}-${item.item_name}`,
@@ -2275,10 +2262,8 @@ interface Props {
                                 value={selects}
                                 searchable={true}
                                 onChange={(e) => {
-                                  console.log(e.target.value,"e.target.value")
                                   setSelects(e.target.value);    
                                   selectedPromotionsItems[currentStep - 1] = e.target.value;
-                                  console.log(selectedPromotionsItems,"selectedPromotionsItems1.2")
                                   setSelectedPromotionsItems([...selectedPromotionsItems]);  
 
                                 }}

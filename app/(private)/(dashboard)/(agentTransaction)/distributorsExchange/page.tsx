@@ -39,6 +39,7 @@ export default function CustomerInvoicePage() {
         ensureWarehouseAllLoaded();
     }, [ensureWarehouseAllLoaded]);
     const [warehouseId, setWarehouseId] = useState<string>("");
+    const [filterPayload,setFilterPayload] = useState<any>();
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -324,6 +325,7 @@ useEffect(() => {
                         },
                         {
                             icon: "lucide:download",
+                            showLoading: true,
                             onClick: (row: TableDataType) => exportFile()
                         }
                     ],

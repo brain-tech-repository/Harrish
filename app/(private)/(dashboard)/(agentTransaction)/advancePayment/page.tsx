@@ -42,7 +42,6 @@ interface Payment {
 export default function PaymentListPage() {
   const { can, permissions } = usePagePermissions();
   const [selectedPayment, setSelectedPayment] = useState<string>("");
-  const { warehouseOptions, salesmanOptions, routeOptions, regionOptions, areaOptions, companyOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -53,15 +52,6 @@ export default function PaymentListPage() {
     }
   }, [permissions]);
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureCompanyLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
 
   const columns: configType["columns"] = [
     { key: "osa_code", label: "OSA Code", },
@@ -313,9 +303,6 @@ export default function PaymentListPage() {
     }
   }
 
-  useEffect(() => {
-    setRefreshKey(k => k + 1);
-  }, [companyOptions, regionOptions, areaOptions, warehouseOptions, routeOptions, salesmanOptions]);
 
   return (
     <>

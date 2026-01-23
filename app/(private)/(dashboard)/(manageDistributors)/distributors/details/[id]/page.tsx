@@ -83,6 +83,7 @@ export default function ViewPage() {
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+    const [threeDotLoadingReturn, setThreeDotLoadingReturn] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [UUIDAgentCustomer, setUUIDAgentCustomer] = useState<string>("");
@@ -1218,7 +1219,7 @@ export default function ViewPage() {
 
         const exportReturnFile = async (uuid: string, format: string) => {
             try {
-                setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                setThreeDotLoadingReturn((prev) => ({ ...prev, [format]: true }));
                 const response = await exportReturnByWarehouse({ warehouse_id:uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
                 if (response && typeof response === "object" && response.download_url) {
                     await downloadFile(response.download_url);
@@ -1230,7 +1231,7 @@ export default function ViewPage() {
                 console.error(error);
                 showSnackbar("Failed to download data", "error");
             } finally {
-                setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                setThreeDotLoadingReturn((prev) => ({ ...prev, [format]: false }));
             }
         };
         const exportSalesFile = async (uuid: string, format: string) => {
@@ -1490,7 +1491,7 @@ export default function ViewPage() {
                                 config={{
                                     api: {
                                         list: (...args) => salesByAgentCustomer(...args, UUIDAgentCustomer),
-                                        filterBy: (...args) => filterBySales(...args, UUIDAgentCustomer)
+                                        filterBy: (payload, pageSize) => filterBySales(payload, pageSize, UUIDAgentCustomer)
                                     },
                                     header: {
                                         filterByFields: [
@@ -1736,7 +1737,7 @@ export default function ViewPage() {
                                                                 <ExportDropdownButton
                                                                 disabled={returnData?.length === 0}
                                                                    keyType="excel"
-                                                                    threeDotLoading={threeDotLoading}
+                                                                    threeDotLoading={threeDotLoadingReturn}
                                                                     exportReturnFile={exportReturnFile}
                                                                     uuid={warehouseId}
                                                                 />
