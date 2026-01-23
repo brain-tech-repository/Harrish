@@ -15,6 +15,7 @@ import { naturalSort } from "../(private)/utils/naturalSort";
 import { CustomTableSkelton } from "./customSkeleton";
 import Draggable from "react-draggable";
 import Skeleton from "@mui/material/Skeleton";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -654,6 +655,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     );
 }
 
+// For showing/hiding columns using a dropdown with checkboxes
 function ColumnFilter() {
     const { config } = useContext(Config);
     const { columns } = config;
@@ -1149,6 +1151,8 @@ function IconWithLoading({ action, index, row ,showLoading}: { action: any; inde
                                                         </div>
 }</>)
 }
+
+// Filter Component for column near column name using icon button
 function FilterTableHeader({
     column,
     dimensions,
@@ -1711,6 +1715,7 @@ export function FilterOptionList({
     );
 }
 
+// FilterBy Component for global table filtering (Top Left Corner of Table) - dropdown near search bar
 function FilterBy() {
     const { config } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setFilterState, initialTableData } = useContext(TableDetails);
@@ -1724,6 +1729,96 @@ function FilterBy() {
     const [customPayload, setCustomPayload] = useState<Record<string, string | number | null | (string | number)[]>>({});
     const [isApplyingCustom, setIsApplyingCustom] = useState(false);
     const [isClearingCustom, setIsClearingCustom] = useState(false);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (!hasCustomRenderer) return;
+        if (!searchParams || !router) return;
+        const params = new URLSearchParams(searchParams.toString());
+        Object.keys(customPayload || {}).forEach((k) => {
+        const v = customPayload[k];
+        // Only ever put 'all' or a comma-joined array in the URL
+        if (v === 'all') {
+        params.set(k, 'all');
+        } else if (Array.isArray(v)) {
+        if (v.length > 0) {
+            params.set(k, v.join(','));
+        } else {
+            params.delete(k);
+        }
+        } else if (v !== null && String(v).trim().length > 0) {
+        params.set(k, String(v));
+        } else {
+        params.delete(k);
+        }
+        });
+        // Remove any keys in params not present in customPayload
+        Array.from(params.keys()).forEach((k) => {
+        if (!(k in customPayload)) params.delete(k);
+        });
+        const newQuery = params.toString();
+        const currentQuery = searchParams.toString();
+        if (newQuery !== currentQuery) {
+        router.push(window.location.pathname + (newQuery ? '?' + newQuery : ''), { scroll: false });
+        }
+    }, [customPayload, hasCustomRenderer, router]);
+
+    useEffect(() => {
+        // --- Handle custom renderer (customPayload) ---
+        if (hasCustomRenderer) {
+            const initial: Record<string, any> = {};
+            if (searchParams) {
+                for (const [key, value] of searchParams.entries()) {
+                    // If value is 'all', treat as all selected
+                    if (value === 'all') {
+                        initial[key] = 'all';
+                    } else if (value.includes(',')) {
+                        initial[key] = value.split(',');
+                    } else {
+                        initial[key] = value;
+                    }
+                }
+            }
+            // Only update if different
+            const isDifferent = Object.keys(initial).length !== Object.keys(customPayload).length ||
+                Object.keys(initial).some(key => {
+                    const a = initial[key];
+                    const b = customPayload[key];
+                    if (Array.isArray(a) && Array.isArray(b)) {
+                        return a.join(',') !== b.join(',');
+                    }
+                    return a !== b;
+                });
+            if (isDifferent) {
+                setCustomPayload(initial);
+                const anyFilter = Object.values(initial).some(v => v === 'all' || (Array.isArray(v) ? v.length > 0 : String(v ?? '').trim().length > 0));
+                setAppliedFilters(anyFilter);
+            }
+            return;
+        }
+        // --- Handle built-in filterByFields (filters) ---
+        const initial: Record<string, string | string[]> = {};
+        (config.header?.filterByFields || []).forEach((f: FilterField) => {
+            const param = searchParams?.get(f.key);
+            if (param != null) {
+                if (f.isSingle === false) {
+                    if (param === 'all') {
+                        initial[f.key] = 'all';
+                    } else {
+                        initial[f.key] = param.split(',').filter(Boolean);
+                    }
+                } else {
+                    initial[f.key] = param;
+                }
+            } else {
+                initial[f.key] = f.isSingle === false ? [] : "";
+            }
+        });
+        setFilters(initial);
+        const anyFilter = Object.values(initial).some(v => v === 'all' || (Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0));
+        setAppliedFilters(anyFilter);
+    }, [config.header?.filterByFields, hasCustomRenderer, searchParams]);
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
