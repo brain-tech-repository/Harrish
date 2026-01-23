@@ -43,21 +43,21 @@ const columns = [
         key: "region",
         label: "Region",
         render: (row: any) => (
-            <p>{row.region?.name || '-'}</p>
+            <p>{row.region?.code || ''} - {row.region?.name || ''}</p>
         )
     },
     {
         key: "area",
         label: "Area",
         render: (row: any) => (
-            <p>{row.area?.name || '-'}</p>
+            <p>{row.area?.code || ''} - {row.area?.name || ''}</p>
         ),
     },
     {
         key: "warehouse",
         label: "Distributors",
         render: (row: any) => (
-            <p>{row.warehouse?.name || '-'}</p>
+            <p>{row.warehouse?.code || ''} - {row.warehouse?.name || ''}</p>
         ),
     },
     {
@@ -75,7 +75,7 @@ const columns = [
     {
         key: "approved_qty",
         label: "Approved Chiller",
-        render: (row: any) => <p>{row.approved_qty}</p>,
+        render: (row: any) => <p>{row.approved_qty || "-"}</p>,
     },
     {
         key: "comment_reject",
@@ -186,10 +186,6 @@ export default function BulkTransferListPage() {
     }, []);
 
 
-    // Refresh table when dropdown options load
-    useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions]);
 
 
     return (
@@ -264,7 +260,7 @@ export default function BulkTransferListPage() {
                         {
                             icon: "lucide:eye",
                             onClick: (row: any) => {
-                                router.push(`/chillerInstallation/bulkTransfer/Detail/${row.uuid}`);
+                                router.push(`/chillerInstallation/bulkTransfer/detail/${row.uuid}`);
                             },
                         },
                     ],

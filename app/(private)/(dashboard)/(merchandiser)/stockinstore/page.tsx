@@ -47,7 +47,7 @@ export default function StockInStore() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   type TableRow = TableDataType & { id?: string };
 
   const fetchPlanogram = useCallback(
@@ -132,20 +132,20 @@ export default function StockInStore() {
     { key: "activity_name", label: "Name" },
     {
       key: "from",
-      label: "From",
+      label: "From Date",
       render: (row: any) => formatDate(row.from),
     },
     {
       key: "to",
-      label: "To",
+      label: "To Date",
       render: (row: any) => formatDate(row.to),
     },
   ];
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
-
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
       const res = await exportPlanogram({ format: fileType });
 
       let downloadUrl = "";
@@ -183,7 +183,8 @@ export default function StockInStore() {
       console.error("Export error:", error);
       showSnackbar("Failed to export Planogram data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -202,14 +203,14 @@ export default function StockInStore() {
 
             threeDot: [
               {
-                icon: "gala:file-document",
+                icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export CSV",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("csv");
                 },
               },
               {
-                icon: "gala:file-document",
+                icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export Excel",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("xlsx");

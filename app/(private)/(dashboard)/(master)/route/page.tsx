@@ -78,17 +78,17 @@ export default function Route() {
                 </span>
             ),
         },
-        {
-            key: "getrouteType",
-            label: "Route Type",
-            render: (data: TableDataType) => {
-                const typeObj = data.getrouteType
-                    ? JSON.parse(JSON.stringify(data.getrouteType))
-                    : null;
-                return typeObj?.name ? typeObj.name : "-";
-            },
-            width: 218,
-        },
+        // {
+        //     key: "getrouteType",
+        //     label: "Route Type",
+        //     render: (data: TableDataType) => {
+        //         const typeObj = data.getrouteType
+        //             ? JSON.parse(JSON.stringify(data.getrouteType))
+        //             : null;
+        //         return typeObj?.name ? typeObj.name : "-";
+        //     },
+        //     width: 218,
+        // },
         {
             key: "warehouse",
             label: "Distributor",

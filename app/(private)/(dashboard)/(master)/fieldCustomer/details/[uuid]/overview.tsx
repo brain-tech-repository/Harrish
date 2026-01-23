@@ -30,14 +30,30 @@ export default function Overview({ data }: { data: AgentCustomerDetails | null }
                 </div>
                 <div className="flex flex-col gap-[20px] text-[#414651]">
                     <div className="flex items-center gap-[8px] text-[16px]">
+                        {data?.contact_no &&
+                        <>
                         <Icon
                             icon="lucide:phone-call"
                             width={16}
                             className="text-[#EA0A2A]"
                         />
                         <span>
-                            {data?.contact_no} <br />{data?.contact_no2}
+                            {data?.contact_no}
                         </span>
+                        </>
+                    }
+                    {data?.contact_no2 &&
+                    <>
+                        <Icon
+                            icon="lucide:phone-call"
+                            width={16}
+                            className="text-[#EA0A2A]"
+                        />
+                        <span>
+                            {data?.contact_no2}
+                        </span>
+                        </>
+}
                     </div>
                     <div className="flex items-center gap-[8px] text-[16px]">
                         {data?.whatsapp_no ? <><Icon

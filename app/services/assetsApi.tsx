@@ -470,7 +470,7 @@ export const iroList = async (params: Params) => {
   }
 };
 
-export const iroViewList = async (id: string, params: Params) => {
+export const iroViewList = async (id: string, params?: Params) => {
   try {
     const res = await API.get(`/api/assets/iro/${id}`, {
       params: params,

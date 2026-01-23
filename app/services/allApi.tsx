@@ -4304,3 +4304,14 @@ export const itemPurchase = async ( params?: Params) => {
     return handleError(error);
   }
 };
+
+
+
+export const exportAllPO = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/po_orders/exportclitembsdpoorders`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

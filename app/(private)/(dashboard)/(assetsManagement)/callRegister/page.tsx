@@ -106,7 +106,7 @@ export default function CallRegister() {
     return (
         <>
             {/* Table */}
-            <div className="h-full">
+            <div className="flex flex-col h-full">
                 <Table
                     refreshKey={refreshKey}
                     config={{
@@ -148,9 +148,7 @@ export default function CallRegister() {
                             ] : [],
                         },
                         localStorageKey: "call-register-table",
-                        table: {
-                            height: 400
-                        },
+                        
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: [
                             { key: "osa_code", label: "Ticket Number" },

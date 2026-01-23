@@ -271,6 +271,7 @@ const nextConfig: NextConfig = {
       // assetsManagement
       { source: '/assetsmaster/add', destination: '/assetsMaster/add' },
       { source: '/assetsmaster/:uuid', destination: '/assetsMaster/:uuid' },
+      { source: '/assetsmaster/view/:uuid', destination: '/assetsMaster/view/:uuid' },
       { source: '/assetsmaster', destination: '/assetsMaster' },
 
       { source: '/assetsrequest/add', destination: '/assetsRequest/add' },
@@ -280,6 +281,7 @@ const nextConfig: NextConfig = {
 
       { source: '/callregister/add', destination: '/callRegister/add' },
       { source: '/callregister/:uuid', destination: '/callRegister/:uuid' },
+      { source: '/callregister/details/:uuid', destination: '/callRegister/details/:uuid' },
       { source: '/callregister', destination: '/callRegister' },
 
       { source: '/chillerinstallation/add', destination: '/chillerInstallation/add' },
@@ -290,8 +292,11 @@ const nextConfig: NextConfig = {
       { source: '/chillerinstallation/installationreport', destination: '/chillerInstallation/installationReport' },
       { source: '/chillerinstallation/bulktransfer/add', destination: '/chillerInstallation/bulkTransfer/add' },
       { source: '/chillerinstallation/bulktransfer/:uuid', destination: '/chillerInstallation/bulkTransfer/:uuid' },
+      { source: '/chillerinstallation/bulktransfer/detail/:uuid', destination: '/chillerInstallation/bulkTransfer/detail/:uuid' },
       { source: '/chillerinstallation/bulktransfer', destination: '/chillerInstallation/bulkTransfer' },
-
+      // { source: '/chillerinstallation/iro/view/:id', destination: '/chillerInstallation/iro/view/:id' },
+      // { source: '/chillerinstallation/iro', destination: '/chillerInstallation/iro' },
+{ source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
       { source: '/fridgeupdatecustomer/add', destination: '/fridgeUpdateCustomer/add' },
       { source: '/fridgeupdatecustomer/:uuid', destination: '/fridgeUpdateCustomer/:uuid' },
       { source: '/fridgeupdatecustomer', destination: '/fridgeUpdateCustomer' },
@@ -302,6 +307,7 @@ const nextConfig: NextConfig = {
 
       { source: '/servicevisit/add', destination: '/serviceVisit/add' },
       { source: '/servicevisit/:uuid', destination: '/serviceVisit/:uuid' },
+      { source: '/servicevisit/details/:uuid', destination: '/serviceVisit/details/:uuid' },
       { source: '/servicevisit', destination: '/serviceVisit' },
       // claimManagement
       { source: '/compensationreport/add', destination: '/compensationReport/add' },
@@ -374,6 +380,7 @@ const nextConfig: NextConfig = {
       // master
       { source: '/companycustomer/add', destination: '/companyCustomer/add' },
       { source: '/companycustomer/:uuid', destination: '/companyCustomer/:uuid' },
+      { source: '/companycustomer/details/:uuid', destination: '/companyCustomer/details/:uuid' },
       { source: '/companycustomer', destination: '/companyCustomer' },
 
       { source: '/discount/add', destination: '/discount/add' },
@@ -382,6 +389,7 @@ const nextConfig: NextConfig = {
 
       { source: '/fieldcustomer/add', destination: '/fieldCustomer/add' },
       { source: '/fieldcustomer/:uuid', destination: '/fieldCustomer/:uuid' },
+      { source: '/fieldcustomer/details/:uuid', destination: '/fieldCustomer/details/:uuid' },
       { source: '/fieldcustomer', destination: '/fieldCustomer' },
 
       { source: '/item/add', destination: '/item/add' },
