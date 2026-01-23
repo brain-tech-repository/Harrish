@@ -388,6 +388,7 @@ const nextConfig: NextConfig = {
       { source: '/discount', destination: '/discount' },
 
       { source: '/fieldcustomer/add', destination: '/fieldCustomer/add' },
+      { source: '/fieldcustomer/details/:uuid', destination: '/fieldCustomer/details/:uuid' },
       { source: '/fieldcustomer/:uuid', destination: '/fieldCustomer/:uuid' },
       { source: '/fieldcustomer/details/:uuid', destination: '/fieldCustomer/details/:uuid' },
       { source: '/fieldcustomer', destination: '/fieldCustomer' },

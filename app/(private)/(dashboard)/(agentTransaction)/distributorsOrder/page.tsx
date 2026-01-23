@@ -30,7 +30,6 @@ import { li } from "framer-motion/client";
 // import { useLoading } from "@/app/services/loadingContext";
 
 export default function CustomerInvoicePage() {
-  console.log("Distributor's Order Page Rendered");
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
   
