@@ -1,8 +1,6 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 import { APIFormData } from "./merchandiserApi";
-import { useRouter } from "next/navigation";
-import { p } from "framer-motion/client";
 
 
 export const API = axios.create({
@@ -162,7 +160,7 @@ export async function downloadFileGlobal(
     const link = document.createElement('a');
     link.href = url;
     link.download = finalFileName;
-    link.target = '_blank';
+    link.target = '_self';
     link.rel = 'noopener noreferrer';
     link.style.display = 'none';
 
@@ -179,18 +177,6 @@ export async function downloadFileGlobal(
     return false;
   }
 }
-
-/**
- * Download PDF specifically - Optimized for PDF files
- * Uses the global download function with PDF-specific defaults
- * 
- * @param url - URL to the PDF file
- * @param fileName - Optional custom filename (default: 'document.pdf')
- * @returns Promise<boolean>
- * 
- * @example
- * await downloadPDFGlobal(response.download_url, 'invoice-12345.pdf');
- */
 export async function downloadPDFGlobal(
   url: string,
   fileName: string = 'document.pdf'
@@ -4310,3 +4296,11 @@ export const routeVisitCustomerImport = async (formData: FormData) => {
 };
 
 
+export const itemPurchase = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/po_orders/itembsdpoorders`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

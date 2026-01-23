@@ -71,7 +71,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   useEffect(() => {
     ensureCompanyLoaded();
     // ensureSalesmanLoaded();
-    if(showFilter("model_number")){
+    if(showFilter("model")){
       ensureAssetsModelLoaded();
 
     };
@@ -128,7 +128,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     "route_id",
     "company_id",
     "salesman_id",
-    "model_number",
+    "model",
   ];
 
   const toArray = (v: any) => {
@@ -153,7 +153,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
-  const modelNumberVal = toArray(payload.model_number);
+  const modelNumberVal = toArray(payload.model);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -321,8 +321,8 @@ fetchRoutes();
     if (key === 'day_filter') {
       return Array.isArray(onlyFilters) && onlyFilters.includes('day_filter');
     }
-    if (key === 'model_number') {
-      return Array.isArray(onlyFilters) && onlyFilters.includes('model_number');
+    if (key === 'model') {
+      return Array.isArray(onlyFilters) && onlyFilters.includes('model');
     }
     if (!onlyFilters) return true;
     return onlyFilters.includes(key);
@@ -556,10 +556,10 @@ fetchRoutes();
           }}
         />
       )}
-      {showFilter("model_number") && (
+      {showFilter("model") && (
         <InputFields
           label="Model Number"
-          name="model_number"
+          name="model"
           type="select"
           searchable={true}
           isSingle={false}
@@ -575,7 +575,7 @@ fetchRoutes();
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("model_number", val);
+            onChangeArray("model", val);
           }}
         />
       )}

@@ -47,7 +47,7 @@ type PlanogramFormValues = {
 type MerchandiserResponse = { id: number; name: string };
 type CustomerFromBackend = {
   id: number;
-  customer_code: string;
+  osa_code: string;
   business_name: string;
   merchendisher_ids?: string;
 };
@@ -84,6 +84,7 @@ const validationSchema = Yup.object({
   customer_ids: Yup.array()
     .of(Yup.number())
     .min(1, "Select at least one customer"),
+ 
 });
 
 // Only validate specific fields for each step
@@ -151,7 +152,7 @@ export default function Planogram() {
 
   // ---------------- HELPERS ----------------
   const formatCustomerLabel = (customer: CustomerFromBackend): string => {
-    return `${customer.customer_code || ""} - ${customer.business_name || ""}`;
+    return `${customer.osa_code || ""} - ${customer.business_name || ""}`;
   };
 
   // Each image object
@@ -391,7 +392,7 @@ export default function Planogram() {
                   name="name"
                   value={values.name}
                   onChange={(e) => setFieldValue("name", e.target.value)}
-                // error={touched.name && errors.name}
+                error={touched.name && errors.name}
                 // error={touched.name && errors.name}
                 />
                 {/* <ErrorMessage
@@ -408,7 +409,7 @@ export default function Planogram() {
                   name="valid_from"
                   value={values.valid_from}
                   onChange={(e) => setFieldValue("valid_from", e.target.value)}
-                // error={touched.valid_from && errors.valid_from}
+                error={touched.valid_from && errors.valid_from}
                 // error={touched.valid_from && errors.valid_from}
                 />
                 {/* <ErrorMessage
@@ -424,9 +425,10 @@ export default function Planogram() {
                   type="date"
                   label="Valid To"
                   name="valid_to"
+                  min={values.valid_from}
                   value={values.valid_to}
                   onChange={(e) => setFieldValue("valid_to", e.target.value)}
-                // error={touched.valid_to && errors.valid_to}
+                error={touched.valid_to && errors.valid_to}
                 // error={touched.valid_to && errors.valid_to}
                 />
                 {/* <ErrorMessage
@@ -515,6 +517,7 @@ export default function Planogram() {
               </div>
               <div className="relative">
                 <InputFields
+                  required
                   label="Planogram Images"
                   name="images"
                   type="file"
@@ -553,6 +556,18 @@ export default function Planogram() {
                     setFieldValue("images", validFiles);
                     setImagePreviews(previews);
                   }}
+                  error={
+                    planogramImageError ||
+                    (touched.images && errors.images
+                      ? Array.isArray(errors.images)
+                        ? typeof errors.images[0] === "string"
+                          ? errors.images[0]
+                          : undefined
+                        : typeof errors.images === "string"
+                          ? errors.images
+                          : undefined
+                      : undefined)
+                  }
                 />
 
 

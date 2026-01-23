@@ -90,7 +90,7 @@ export default function ProfilePage() {
 
   // File upload state
   const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | any>(null);
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,7 +296,8 @@ export default function ProfilePage() {
         <ContainerCard className="w-full lg:w-[450px] space-y-6 p-6 h-fit">
           <div className="flex flex-col items-center">
             <img
-              src={profile?.profile_picture ?? "/noprofile.svg"}
+              src={"/noprofile.svg"}
+              // src={profile?.profile_picture ?? "/noprofile.svg"}
               alt={profile?.name ?? "profile"}
               className="w-28 h-28 rounded-full object-cover"
             />
@@ -473,13 +474,19 @@ export default function ProfilePage() {
                 {/* Upload */}
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 overflow-hidden">
-                    {imagePreview ? (
+                      <img
+              src={"/noprofile.svg"}
+              // src={profile?.profile_picture ?? "/noprofile.svg"}
+              alt={profile?.name ?? "profile"}
+              className="w-20 h-20 rounded-full object-cover"
+            />
+                    {/* {imagePreview ? (
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : profile?.profile_picture ? (
                       <img src={profile.profile_picture} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <Icon icon="lucide:image" width={30} />
-                    )}
+                    )} */}
                   </div>
 
                   <div>

@@ -132,11 +132,11 @@ export default function ShelfDisplay() {
     isLastStep,
   } = useStepperForm(steps.length);
 
-  // Format label for customer dropdown
-  const formatCustomerLabel = (customer: CustomerFromBackend | CustomerFromEdit) => {
-    if ("business_name" in customer)
-      return `${customer.osa_code} - ${customer.business_name}`;
-    return `${customer.osa_code} - ${customer.owner_name}`;
+  // Format label for customer dropdown (handles both backend and edit response)
+  const formatCustomerLabel = (customer: any) => {
+    const code = customer.osa_code || customer.customer_code || "";
+    const name = customer.business_name || customer.owner_name || "";
+    return `${code} - ${name}`;
   };
 
   // Fetch Data
@@ -172,7 +172,6 @@ export default function ShelfDisplay() {
               merchendiser_ids: shelf.merchendiser_ids || [],
               customer_ids: shelf.customer_ids || [],
             });
-
             setCustomerOptions(
               shelf.customers?.map((c: CustomerFromEdit) => ({
                 value: String(c.customers),
@@ -188,10 +187,12 @@ export default function ShelfDisplay() {
       }
     };
 
+    
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+ 
   // Fetch customers when merchandiser changes
   const fetchCustomers = async (merchIds: number[]) => {
     if (!merchIds.length) return setCustomerOptions([]);
@@ -339,6 +340,7 @@ export default function ShelfDisplay() {
               onChange={(e: any) => setFieldValue("valid_to", e?.target?.value ?? "")}
               onBlur={handleBlur}
               disabled={!values.valid_from}
+              min={values.valid_from}
               error={touched.valid_to && errors.valid_to ? String(errors.valid_to) : undefined}
             />
           </div>
