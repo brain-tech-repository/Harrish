@@ -566,7 +566,8 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     const [searchBarValue, setSearchBarValue] = useState("");
     const { selectedRow } = useContext(SelectedRow);
 
-    // need search Term only when you want to search using you word instead of the searchBarValue
+    // need search Term only when you want to search using you word instead of the searchBarValue 
+    // ---> used for fixing searchBarValue is not updating immediately issue
     async function handleSearch(searchTerm?: string) {
         if (!config.api?.search) return;
         const termToUse = searchTerm !== undefined ? searchTerm : searchBarValue;
@@ -595,7 +596,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                 // ignore in non-browser environments
             }
         } finally {
-            setNestedLoading(false);
+            setTimeout(() => setNestedLoading(false), 0);
         }
     }
 
