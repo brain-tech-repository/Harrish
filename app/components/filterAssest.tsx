@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
-import {AssestMasterModel,AssestMasterStatus,AssestMasterfilter} from "@/app/services/allApi";
+import {AssestMasterModel,AssetMasterStatus,AssestMasterfilter} from "@/app/services/allApi";
 
 
 
@@ -246,49 +246,6 @@ const isDistributorMissing =
 
 
 
-// const applyFilterApi = async () => {
-//   try {
-//     const finalPayload = {
-      
-//       company_id: companyVal.join(","),
-//       region_id: regionVal.join(","),
-//       area_id: areaVal.join(","),
-//       warehouse_id: warehouseVal.join(","),
-//       // route_id: routeVal.join(","),
-//       model_id: modelVal.join(","),
-//       status: statusVal.join(","),
-
-//     };
-
-// const filterPayload: any = Object.fromEntries(
-//   Object.entries(payload).filter(
-//     ([_, value]) =>
-//       value !== "" &&
-//       value !== null &&
-//       value !== undefined &&
-//       !(Array.isArray(value) && value.length === 0)
-//   )
-// );
-
-// // API call
-// // AssestMasterStatus(filterPayload);
-
-
-
-//      console.log("Filter Payload 👉", finalPayload);
-
-//       const res = await AssestMasterStatus(finalPayload);
-
-//     console.log("Filter API Response 👉", res?.data);
-
-//     // agar parent table ko data chahiye
-//      submit(finalPayload);
-
-//   } catch (error) {
-//     console.error("Filter API Error ❌", error);
-//   }
-// };
-
 const applyFilterApi = async () => {
   try {
     // Step 1: raw payload banao
@@ -307,11 +264,11 @@ const applyFilterApi = async () => {
     console.log("✅ FINAL FILTER PAYLOAD", finalPayload);
 
     // Step 3: API call
-    const res = await AssestMasterStatus(finalPayload);
+    const res = await AssetMasterStatus(finalPayload);
 
     console.log("✅ FILTER API RESPONSE", res?.data);
 
-    // Step 4: table ko payload bhejo
+    // Step 4: table ko payload bhejos
     submit(finalPayload);
 
   } catch (error) {

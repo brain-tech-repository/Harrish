@@ -266,6 +266,7 @@ const fetchServiceTypes = useCallback(
 
     return {
       data: res.data || [],
+      //  list: res?.data ?? [],
       currentPage: res?.pagination?.page || 0,
       pageSize: res?.pagination?.limit || 10,
       total: res?.pagination?.totalPages || 0,

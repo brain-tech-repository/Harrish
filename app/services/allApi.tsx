@@ -4319,16 +4319,50 @@ export const AssestMasterModel = async (params?: Params) => {
   }
 };
 
-export const AssestMasterStatus = async (params?: Params) => {
+// export const AssestMasterStatus = async (params?: Params) => {
+//   try {
+//     const res = await API.get("api/assets/chiller/filterData",
+//       { params }
+//     );
+//     return res.data;
+//   } catch (error: unknown) {
+//     return handleError(error);
+//   }
+// };
+
+
+export const AssetMasterStatus = async (params?: Params) => {
   try {
-    const res = await API.get("api/assets/chiller/filterData",
-      { params }
+    const paramsData = {
+      per_page: params?.per_page ? Number(params.per_page) : 10,
+
+      status: params?.status,        // Optional
+      model_id: params?.model_id,    // Optional
+      warehouse_id: params?.warehouse_id,
+      area_id: params?.area_id,
+      region_id: params?.region_id,
+      company_id: params?.company_id,
+    };
+    console.log("AssestRequestFilter paramsData", paramsData);
+
+    const res = await API.post(
+      "api/assets/chiller/filterData",
+      paramsData
     );
+
     return res.data;
+
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
+
+
+
+
+
+
 export const AssestRequestFilter = async (params?: Params) => {
   try {
    const paramsData = {
