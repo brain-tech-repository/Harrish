@@ -37,7 +37,7 @@ import InputFields from "@/app/components/inputFields";
 import { camelToTitleCase } from "@/app/(private)/utils/text";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import { generatePdfFromElement } from "@/app/utils/generateDeliveryPdf";
-
+import { downloadPDFGlobal } from "@/app/services/allApi";
 const columns = [
   { key: "index", label: "#" },
   {
@@ -201,37 +201,55 @@ export default function OrderDetailPage() {
     // { key: "Delivery Charges", value: "AED 0.00" },
   ];
 
-  const exportFile = async () => {
-    if (!targetRef.current) {
-      showSnackbar("Content not ready for PDF generation", "error");
-      return;
-    }
+  // const exportFile = async () => {
+  //   if (!targetRef.current) {
+  //     showSnackbar("Content not ready for PDF generation", "error");
+  //     return;
+  //   }
 
+  //   try {
+  //     setLoadingState(true);
+
+  //     // Generate PDF directly from the visible page content
+  //     await generatePdfFromElement(targetRef.current, {
+  //       fileName: `order-${data?.order_code || 'document'}.pdf`,
+  //       orientation: 'landscape',
+  //       margin: 10,
+  //       scale: 2,
+  //       onSuccess: () => {
+  //         showSnackbar("PDF downloaded successfully", "success");
+  //       },
+  //       onError: (error) => {
+  //         console.error('PDF generation error:', error);
+  //         showSnackbar("Failed to generate PDF", "error");
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error('Export error:', error);
+  //     showSnackbar("Failed to download PDF", "error");
+  //   } finally {
+  //     setLoadingState(false);
+  //   }
+  // };
+const exportFile = async () => {
     try {
+      // setLoading(true);
       setLoadingState(true);
-
-      // Generate PDF directly from the visible page content
-      await generatePdfFromElement(targetRef.current, {
-        fileName: `order-${data?.order_code || 'document'}.pdf`,
-        orientation: 'landscape',
-        margin: 10,
-        scale: 2,
-        onSuccess: () => {
-          showSnackbar("PDF downloaded successfully", "success");
-        },
-        onError: (error) => {
-          console.error('PDF generation error:', error);
-          showSnackbar("Failed to generate PDF", "error");
-        },
-      });
+      const response = await agentOrderExport({ uuid: UUID, format: "pdf" });
+      if (response && typeof response === 'object' && response.download_url) {
+        const fileName = `order-${UUID}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
     } catch (error) {
-      console.error('Export error:', error);
-      showSnackbar("Failed to download PDF", "error");
+      showSnackbar("Failed to download file", "error");
     } finally {
+      // setLoading(false);
       setLoadingState(false);
     }
   };
-
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [comment, setComment] = useState<{
     show: boolean;

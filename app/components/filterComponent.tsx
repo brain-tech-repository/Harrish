@@ -6,6 +6,7 @@ import { FilterRendererProps } from "./customTable";
 type FilterComponentProps = FilterRendererProps & {
   onlyFilters?: string[]; // e.g. ['warehouse_id', 'company_id']
   currentDate?: boolean;
+  currentMonth?: boolean; // New prop to select current month range
   api?: (payload: any) => Promise<any>; // Optional API function to call on filter submit
   disabled?: boolean;
 };
@@ -76,11 +77,23 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
     };
   }, [ensureCompanyLoaded, ensureAssetsModelLoaded]);
-  const { onlyFilters, currentDate, api } = filterProps;
+  const { onlyFilters, currentDate, currentMonth, api } = filterProps;
 
-  // Set default date for from_date and to_date to today if currentDate is true
+  // Set default date for from_date and to_date based on currentDate or currentMonth
   useEffect(() => {
-    if (currentDate) {
+    if (currentMonth) {
+      // Set to first and last day of current month
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      // First day
+      const firstDay = new Date(year, month, 2);
+      // Last day
+      const lastDay = new Date(year, month + 1, 1);
+      const firstDayStr = firstDay.toISOString().slice(0, 10);
+      const lastDayStr = lastDay.toISOString().slice(0, 10);
+      filterProps.setPayload((prev) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
+    } else if (currentDate) {
       const today = new Date().toISOString().slice(0, 10);
       if (!filterProps.payload.from_date) {
         filterProps.setPayload((prev) => ({ ...prev, from_date: today }));
@@ -89,12 +102,12 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         filterProps.setPayload((prev) => ({ ...prev, to_date: today }));
       }
     } else {
-      // If currentDate is false, clear the dates
+      // If neither, clear the dates
       filterProps.setPayload((prev) => ({ ...prev, from_date: "", to_date: "" }));
     }
-    // Only run on mount or when currentDate changes
+    // Only run on mount or when currentDate/currentMonth changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate]);
+  }, [currentDate, currentMonth]);
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,

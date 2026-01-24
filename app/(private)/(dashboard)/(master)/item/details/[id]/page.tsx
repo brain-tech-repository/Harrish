@@ -20,7 +20,8 @@ import FilterComponent from "@/app/components/filterComponent";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import { exportPurposeOrderViewPdf } from "@/app/services/companyTransaction";
-import { div } from "framer-motion/client";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 interface Item {
   id?: number;
   erp_code?: string;
@@ -86,6 +87,10 @@ export default function Page() {
   const [salesData, setSalesData] = useState<any[]>([]);
   const [itemId, setItemId] = useState("");
   // const { id, tabName } = useParams();
+   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+     const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
+        const [showPODrawer, setShowPODrawer] = useState(false);
   const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; pdf: boolean }>({ csv: false, xlsx: false, pdf: false });
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -345,9 +350,10 @@ export default function Page() {
             </div>
             </ContainerCard>
         </div> */}
+      </div>
 
         {/* Right Side - Description, Tabs, and Tab Content */}
-        <div className="flex-1 flex flex-col gap-y-[5px]">
+        {/* <div className="flex-1 flex flex-col gap-y-[5px]"> */}
           {/* {item?.description && (
             <ContainerCard className="w-full">
               <h3 className="text-lg font-semibold mb-3">Description</h3>
@@ -358,7 +364,10 @@ export default function Page() {
           )} */}
 
           {/* Tabs */}
-          <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+         <ContainerCard
+                         className="w-full flex gap-[4px] overflow-x-auto"
+                         padding="5px"
+                     >
             {tabList.map((tab, index) => (
               <div key={index}>
                 <TabBtn
@@ -446,6 +455,8 @@ export default function Page() {
             })
           )}
           {activeTab === "sales" && (
+            <ContainerCard >
+             <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
@@ -469,7 +480,7 @@ export default function Page() {
                 header: {
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -493,11 +504,16 @@ export default function Page() {
                   },
                 ],
                 table: {
-                  height: "400px",
-                  maxWidth: "1320px",
-                },
+                                    height: 400,
+                                },
                 columns: [
-                  { key: "invoice_code", label: "Invoice Code" },
+                   { key: "invoice_code", label: "Code", render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.invoice_code || "-"}</span>
+        ) },
                   { key: "invoice_date", label: "Invoice Date",render: (row: TableDataType) => <>{formatDate(row.invoice_date)}</> },
                   { key: "warehouse_code,warehouse_name", label: "Distributor",render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</> },
                   { key: "route_code,route_name", label: "Route",render: (row: TableDataType) => <>{row?.route_code} - {row?.route_name}</> },
@@ -507,8 +523,13 @@ export default function Page() {
                 pageSize: 50
               }}
             />
+            </div>
+            </ContainerCard>
           )}
           {activeTab === "return" && (
+            <ContainerCard >
+            
+                            <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
@@ -532,7 +553,7 @@ export default function Page() {
                 header: {
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -561,9 +582,14 @@ export default function Page() {
                   maxWidth: "1320px",
                 },
                 columns: [
-                  { key: "order_code", label: "Order Code" },
+                   { key: "order_code", label: "Code", render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedPORow(row);
+                setShowPODrawer(true);
+            }}>{row.order_code || "-"}</span>
+        ) },
                   { key: "delivery_date", label: "Delivery Date",render: (row: TableDataType) => <>{formatDate(row.delivery_date)}</> },
-                  { key: "warehouse_code,warehouse_name", label: "Distributor" ,render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</>},
                   { key: "customer_code,customer_name", label: "Customer" ,render: (row: TableDataType) => <>{row?.customer_code} - {row?.customer_name}</>},
                   { key: "salesman_code,salesman_name", label: "Sales Team" ,render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</>},
                   { key: "total", label: "Total", render: (row: TableDataType) => <>{toInternationalNumber(row.total)}</> },
@@ -572,9 +598,19 @@ export default function Page() {
                 pageSize: 50
               }}
             />
+            </div>
+            </ContainerCard>
           )}
-        </div>
-      </div>
+        {/* </div> */}
+          <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                                    {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                                  </Drawer>
+                                  
+                                    <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
+                                                              {selectedPORow && <SideBarDetailPage title="Purchase Order" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
+                                                            </Drawer>
+                                                            
+
     </>
   );
 }

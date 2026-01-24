@@ -138,12 +138,19 @@ useEffect(() => {
             if (result?.error) throw new Error(result.data?.message || "Filter failed");
             const pagination = result.pagination || {};
             return {
-                data: result.data || [],
-                total: pagination?.totalPages || 1,
-                totalRecords: pagination?.total || 0,
-                currentPage: pagination?.page || 1,
-                pageSize: pagination?.limit || pageSize,
+                data: Array.isArray(result.data) ? result.data : [],
+                totalRecords: result?.meta?.totalRecords || 0,
+                total: result?.meta?.totalPages || 1,
+                currentPage: result?.meta?.page || 1,
+                pageSize: result?.meta?.limit || pageSize,
             };
+            // return {
+            //     data: result.data || [],
+            //     total: pagination?.totalPages || 1,
+            //     totalRecords: pagination?.total || 0,
+            //     currentPage: pagination?.page || 1,
+            //     pageSize: pagination?.limit || pageSize,
+            // };
         },
         [fetchExchangeData]
     );
@@ -158,14 +165,14 @@ useEffect(() => {
             
             const result = await exchangeList({
                 page: page.toString(),
-                per_page: pageSize.toString(),
+                limit: pageSize.toString(),
             });
 
             return {
                 data: Array.isArray(result.data) ? result.data : [],
-                total: result?.pagination?.totalPages || 1,
-                currentPage: result?.pagination?.page || 1,
-                pageSize: result?.pagination?.limit || pageSize,
+                total: result?.meta?.totalRecords || 1,
+                currentPage: result?.meta?.page || 1,
+                pageSize: result?.meta?.limit || pageSize,
             };
         } catch (error) {
             console.error(error);
