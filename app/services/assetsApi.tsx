@@ -229,7 +229,7 @@ export const deleteVendor = async (uuid: string) => {
 // chiller Request
 export const chillerRequestList = async (params: Params) => {
   try {
-    const res = await API.get(`/api/assets/chiller-request/list`, {
+    const res = await API.post(`/api/assets/chiller-request/list`, {
       params: params,
     });
     return res.data;

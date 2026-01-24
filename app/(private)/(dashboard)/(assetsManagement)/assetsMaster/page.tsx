@@ -13,7 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { assetsMasterExport, chillerList, deleteChiller, deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { AssestMasterfilter, AssestMasterModel, assestMasterQR, downloadQR } from "@/app/services/allApi";
+import { AssestMasterfilter, AssetMasterStatus, AssestMasterModel, assestMasterQR, downloadQR } from "@/app/services/allApi";
 
 import { generateAssetLabelPdfDirect } from "./utils/util";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
@@ -315,31 +315,23 @@ const fetchServiceTypes = useCallback(
 //   []
 // );
 
+
 const filterBy = useCallback(
-  async (payload: Record<string, any>, pageSize = 10) => {
+    async (payload: Record<string, string | number | null>, pageSize = 10) => {
+       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
+      setTableFilters(payload);
 
-    // ✅ CLEAN EMPTY VALUES HERE
-    const cleanedPayload = Object.fromEntries(
-      Object.entries(payload).filter(
-        ([_, v]) =>
-          v !== "" &&
-          v !== null &&
-          v !== undefined &&
-          !(Array.isArray(v) && v.length === 0)
-      )
-    );
+      const res = await   AssetMasterStatus(finalPayload);
 
-    setTableFilters(cleanedPayload); // ✅ only valid filters stored
-
-    return {
-      data: [],
-      total: 0,
-      currentPage: 0,
-      pageSize,
-    };
-  },
-  []
-);
+      return {
+        data: res?.data || [],
+        total: res?.pagination?.totalPages || 0,
+        currentPage: res?.pagination?.page || 0,
+        pageSize: res?.pagination?.limit || pageSize,
+      };
+    },
+    [tableFilters]  // dependency array
+  );
 
 
 
@@ -446,7 +438,7 @@ const handleDownloadQR = async (row: TableDataType) => {
             api: {
               
               list: fetchServiceTypes,
-              search: searchChiller,
+              // search: searchChiller,
               filterBy: filterBy,
             },
             header: {

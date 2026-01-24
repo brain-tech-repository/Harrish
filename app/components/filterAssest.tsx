@@ -264,9 +264,9 @@ const applyFilterApi = async () => {
     console.log("✅ FINAL FILTER PAYLOAD", finalPayload);
 
     // Step 3: API call
-    const res = await AssetMasterStatus(finalPayload);
+    // const res = await AssetMasterStatus(finalPayload);
 
-    console.log("✅ FILTER API RESPONSE", res?.data);
+    // console.log("✅ FILTER API RESPONSE", res?.data);
 
     // Step 4: table ko payload bhejos
     submit(finalPayload);

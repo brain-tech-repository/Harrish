@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAllDropdownListData } from "./contexts/allDropdownListData";
 import { FilterRendererProps } from "./customTable";
-import {FridgeUpdate,AssestMasterStatus,AssestMasterModel,AssestMasterfilter} from "@/app/services/allApi";
+import {FridgeUpdate,AssestMasterModel,AssestMasterfilter} from "@/app/services/allApi";
 
 
 

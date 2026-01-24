@@ -256,9 +256,9 @@ const applyFilterApi = async () => {
     console.log("Filter Payload 👉", finalPayload);
 
     // 🔥 API CALL
-     const res = await AssestRequestFilter(finalPayload);
+    //  const res = await AssestRequestFilter(finalPayload);
 
-     console.log("Filter API Response 👉", res);
+    //  console.log("Filter API Response 👉", res);
 
    
      await submit(finalPayload);

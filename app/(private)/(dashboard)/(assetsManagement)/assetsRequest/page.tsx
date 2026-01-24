@@ -254,7 +254,7 @@ const filterBy = useCallback(
             api: {
               list: fetchTableData,
               // search: searchChillerRequest,
-              // filterBy: filterBy,
+               filterBy: filterBy,
                
             },
             header: {
