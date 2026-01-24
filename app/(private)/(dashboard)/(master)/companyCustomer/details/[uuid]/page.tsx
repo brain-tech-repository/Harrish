@@ -21,6 +21,8 @@ import { exportCustomerPurchaseOrder, exportPurposeOrderViewPdf } from "@/app/se
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import ItemCellWithPopup from "@/app/components/multipleDataPopUp";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 // Component to show first item and popup for remaining items
 
 interface CustomerItem {
@@ -71,9 +73,11 @@ export default function ViewPage() {
   const uuid = Array.isArray(params?.uuid)
     ? params?.uuid[0] || ""
     : (params?.uuid as string) || "";
+    const [purchaseData, setPurchaseData] = useState<any>(null);
   const [purchaseList, setPurchaseList] = useState<any>("");
   const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
-
+   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
   const [customer, setCustomer] = useState<CustomerItem | null>(null);
   const [isChecked, setIsChecked] = useState(false);
   const { showSnackbar } = useSnackbar();
@@ -115,32 +119,35 @@ export default function ViewPage() {
 
   const Columns: configType["columns"] = [
     // { key: "osa_code", label: "Code", showByDefault: true },
-    { key: "order_code", label: "Order Code", showByDefault: true },
+    { key: "order_code", label: "Order Code", showByDefault: true , render: (row: TableDataType) => <div className="cursor-pointer hover:text-red-500" onClick={() => {
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.order_code || "-"}</div> },
     { key: "delivery_date", label: "Delivery Date", showByDefault: true,render: (row: TableDataType) => {
       return  formatDate((row.delivery_date))
                  
     },
   },
     // { key: "delivery_code", label: "Delivery Code", showByDefault: true },
-    {
-      key: "warehouse_code", label: "Distributor", showByDefault: true, render: (row: TableDataType) => {
-        const code = row.warehouse_code || "";
-        const name = row.warehouse_name || "";
-        return `${code}${code && name ? " - " : "-"}${name}`;
-      }
-    },
+    // {
+    //   key: "warehouse_code", label: "Distributor", showByDefault: true, render: (row: TableDataType) => {
+    //     const code = row.warehouse_code || "";
+    //     const name = row.warehouse_name || "";
+    //     return `${code}${code && name ? " - " : "-"}${name}`;
+    //   }
+    // },
     {
       key: "item",
       label: "Item",
       showByDefault: true,
-      render: (row: TableDataType) => <ItemCellWithPopup details={row.details} />
+      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" details={row.details} />
     },
 
     {
       key: "salesman_code", label: "Sales Team", showByDefault: true, render: (row: TableDataType) => {
         const code = row.salesman_code || "";
         const name = row.salesman_name || "";
-        return `${code}${code && name ? " - " : ""}${name}`;
+        return `${code}${code && name ? " - " : "-"}${name}`;
       }
     },
     {
@@ -185,6 +192,7 @@ export default function ViewPage() {
       customer_id: purchaseList,
       ...params
     });
+    setPurchaseData(res.data);
     // setLoading(false);
     if (res.error) {
       showSnackbar(res.data.message || "Failed to fetch Purchase order", "error");
@@ -383,7 +391,7 @@ export default function ViewPage() {
 
                       filterRenderer: (props) => (
                         <FilterComponent
-                          currentDate={true}
+                          currentMonth={true}
                           {...props}
                           onlyFilters={['from_date', 'to_date']}
                         />
@@ -410,9 +418,9 @@ export default function ViewPage() {
                       {
                         icon: "material-symbols:download",
                         showLoading: true,
-                        onClick: (data: TableDataType) => {
-                          exportFile(data.uuid, "pdf");
-                        },
+                        onClick: (data: TableDataType) => 
+                          exportFile(data.uuid, "pdf")
+                        
                       }
                     ],
                     pageSize: 50,
@@ -431,7 +439,7 @@ export default function ViewPage() {
                     header: {
                       filterRenderer: (props) => (
                         <FilterComponent
-                          currentDate={true}
+                          currentMonth={true}
                           {...props}
                           onlyFilters={['from_date', 'to_date']}
                         />
@@ -461,6 +469,9 @@ export default function ViewPage() {
             </ContainerCard>
           )}
         </div>
+        <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+          {selectedRow && <SideBarDetailPage title="Purchase Order" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+        </Drawer>
       </div>
     </>
   );

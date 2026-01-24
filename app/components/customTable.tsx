@@ -1214,7 +1214,7 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
 
 function IconWithLoading({ action, index, row ,showLoading}: { action: any; index: number; row: any; showLoading?: boolean }){
     const [isLoading, setIsLoading] = useState(false);
-    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={20}/></div> : <div 
+    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={30} className="flex justify-center items-center ml-2"/></div> : <div 
                                                                 key={index} 
                                                                 onClick={async () => {
                                                                     if (action.onClick) {

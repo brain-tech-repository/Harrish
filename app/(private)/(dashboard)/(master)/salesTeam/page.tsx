@@ -212,7 +212,7 @@ const exportFile = async (format: string) => {
     },
     {
       key: "warehouse",
-      label: "Warehouse",
+      label: "Distributor",
       render: (row: TableDataType) => {
         // Accepts array or single object
         const warehouses = Array.isArray(row.warehouses)
@@ -222,6 +222,7 @@ const exportFile = async (format: string) => {
             : [];
         return (
           <ItemCellWithPopup
+          title="Distributors List"
             details={warehouses.map((w: any) => ({
               erp_code: w.warehouse_code,
               item_name: w.warehouse_name,

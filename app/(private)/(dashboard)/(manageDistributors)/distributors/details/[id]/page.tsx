@@ -24,7 +24,7 @@ import FilterComponent from "@/app/components/filterComponent";
 import {  exportReturneWithDetails } from "@/app/services/agentTransaction";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import { CustomTableSkelton } from "@/app/components/customSkeleton";
-
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 interface Item {
     id: string;
     sap_id: string;
@@ -79,6 +79,10 @@ export default function ViewPage() {
     const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const [routeId, setRouteId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
+     const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+        const [showDrawer, setShowDrawer] = useState(false);
+         const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
+            const [showPODrawer, setShowPODrawer] = useState(false);
     const [stockData, setStockData] = useState<TableDataType[]>([]);
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
@@ -258,16 +262,23 @@ export default function ViewPage() {
     
 
     const salesColumns: configType["columns"] = [
-        {
-            key: "invoice_code",
-            label: "Invoice Number",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.invoice_code ? data.invoice_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
+         { key: "invoice_code", label: "Code",showByDefault: true, render: (row: TableDataType) => (
+                    <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedRow(row);
+                        setShowDrawer(true);
+                    }}>{row.invoice_code || "-"}</span>
+                ) },
+        // {
+        //     key: "invoice_code",
+        //     label: "Invoice Number",
+        //     render: (data: TableDataType) => (
+        //         <span className="font-semibold text-[#181D27] text-[14px]">
+        //             {data.invoice_code ? data.invoice_code : "-"}
+        //         </span>
+        //     ),
+        //     showByDefault: true,
+        // },
         {
             key: "invoice_date",
             label: "Invoice Date",
@@ -330,16 +341,13 @@ export default function ViewPage() {
 
     ];
     const returnColumns: configType["columns"] = [
-        {
-            key: "osa_code",
-            label: "Code",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.osa_code ? data.osa_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
+        { key: "osa_code", label: "Code", showByDefault:true, render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedPORow(row);
+                setShowPODrawer(true);
+            }}>{row.osa_code || "-"}</span>
+        ) },
         // {
         //     key: "return_date",
         //     label: "Return Date",
@@ -368,14 +376,14 @@ export default function ViewPage() {
             showByDefault: true,
         },
 
-        {
-            key: "warehouse_code,warehouse_name",
-            label: "Distributor",
-            render: (row: TableDataType) => {
-                return row.warehouse_code && row.warehouse_name ? `${row.warehouse_code} - ${row.warehouse_name}` : "-";
-            },
-            showByDefault: true,
-        },
+        // {
+        //     key: "warehouse_code,warehouse_name",
+        //     label: "Distributor",
+        //     render: (row: TableDataType) => {
+        //         return row.warehouse_code && row.warehouse_name ? `${row.warehouse_code} - ${row.warehouse_name}` : "-";
+        //     },
+        //     showByDefault: true,
+        // },
         {
             key: "route_code",
             label: "Route",
@@ -1696,7 +1704,7 @@ export default function ViewPage() {
                                                             ],
                                 filterRenderer: (props) => (
                                                                         <FilterComponent
-                                                                        currentDate={true}
+                                                                        currentMonth={true}
                                                                           {...props}
                                                                           onlyFilters={['from_date', 'to_date']}
                                                                         />
@@ -1744,7 +1752,7 @@ export default function ViewPage() {
                                                             ],
                                 filterRenderer: (props) => (
                                                                         <FilterComponent
-                                                                        currentDate={true}
+                                                                        currentMonth={true}
                                                                           {...props}
                                                                           onlyFilters={['from_date', 'to_date']}
                                                                         />
@@ -1768,6 +1776,14 @@ export default function ViewPage() {
 
                 // </ContainerCard>
             )}
+
+             <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                                                {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                                              </Drawer>
+                                              
+                                                <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
+                                                                          {selectedPORow && <SideBarDetailPage title="Return" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
+                                                                        </Drawer>
         </>
     );
 }

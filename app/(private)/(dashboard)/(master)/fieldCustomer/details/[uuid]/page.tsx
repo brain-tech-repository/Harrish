@@ -20,6 +20,8 @@ import Overview from "./overview";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import Skeleton from "@mui/material/Skeleton";
 import FilterComponent from "@/app/components/filterComponent";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 export interface AgentCustomerDetails {
     id: string;
     uuid: string;
@@ -64,7 +66,12 @@ const tabs = ["Overview", "Sales", "Market Return"];
 
 
 export default function CustomerDetails() {
-    const router = useRouter();
+    const router = useRouter(); 
+      const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+      const [selectedReturnRow, setSelectedReturnRow] = useState<TableDataType | null>(null);
+    const [showReturnDrawer, setShowReturnDrawer] = useState(false);
+    
     const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
     const [activeTab, setActiveTab] = useState("Overview");
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
@@ -177,13 +184,15 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
         return `${fullYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
     }
 
-    const columns: configType["columns"] = [
+    const salesColumns: configType["columns"] = [
+        { key: "invoice_code", label: "Invoice Code" , render: (row: TableDataType) => <div className="cursor-pointer hover:text-red-500" onClick={() => {
+               setSelectedRow(row);
+               setShowDrawer(true);
+           }}>{row.invoice_code || "-"}</div> 
+        },
         { key: "invoice_date", label: "Date", render: (row: TableDataType) => formatDate(row.invoice_date) },
         { key: "invoice_time", label: "Time" },
-        {
-            key: "invoice_code",
-            label: "Invoice Number"
-        },
+       
         {
             key: "salesman_name",
             label: "Sales Team"
@@ -197,11 +206,11 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
             label: "Route"
         },
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
-        {
-            key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
-                return (<ExportDownloadButton row={row} />)
-            }
-        },
+        // {
+        //     key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
+        //         return (<ExportDownloadButton row={row} />)
+        //     }
+        // },
         // rowActions: [
         //         {
         //             icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
@@ -213,7 +222,14 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
     ];
 
     const returnColumns: configType["columns"] = [
-        { key: "osa_code", label: "Code", showByDefault: true },
+        { key: "osa_code", label: "Code", showByDefault: true, render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedReturnRow(row);
+                setShowReturnDrawer(true);
+            }}>{row.osa_code || "-"}</span>
+        ) },
+        // { key: "osa_code", label: "Code", showByDefault: true },
         { key: "order_code", label: "Order Code", showByDefault: true },
         { key: "delivery_code", label: "Delivery Code", showByDefault: true },
         {
@@ -230,13 +246,13 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
                 return `${code}${code && name ? " - " : ""}${name}`;
             }
         },
-        {
-            key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
-                const code = row.customer_code || "";
-                const name = row.customer_name || "";
-                return `${code}${code && name ? " - " : ""}${name}`;
-            }
-        },
+        // {
+        //     key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
+        //         const code = row.customer_code || "";
+        //         const name = row.customer_name || "";
+        //         return `${code}${code && name ? " - " : ""}${name}`;
+        //     }
+        // },
         {
             key: "salesman_code", label: "Sales Team", showByDefault: true, render: (row: TableDataType) => {
                 const code = row.salesman_code || "";
@@ -485,7 +501,7 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
         <>
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
-                <div className="flex items-center gap-[16px]">
+                <div className="flex items-center gap-[16px] cursor-pointer">
                     <Icon
                         icon="lucide:arrow-left"
                         width={24}
@@ -588,16 +604,16 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
                                     ],
                                     filterRenderer: (props) => (
                                         <FilterComponent
-                                            currentDate={true}
+                                            currentMonth={true}
                                             {...props}
                                             onlyFilters={['from_date', 'to_date']}
                                         />
                                     ),
 
                                 },
-                                showNestedLoading: false,
+                                showNestedLoading: true,
                                 footer: { nextPrevBtn: true, pagination: true },
-                                columns: columns,
+                                columns: salesColumns,
                                 table: {
                                     height: 500,
                                 },
@@ -635,7 +651,7 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
                             header: {
                                 filterRenderer: (props) => (
                                     <FilterComponent
-                                        currentDate={true}
+                                        currentMonth={true}
                                         {...props}
                                         onlyFilters={['from_date', 'to_date']}
                                     />
@@ -673,6 +689,14 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
                 </div>
 
             </ContainerCard>) : ""}
+             <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                      {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                    </Drawer>
+                    {selectedReturnRow && (
+             <Drawer anchor="right" open={showReturnDrawer} onClose={() => { setShowReturnDrawer(false) }} className="p-2" >
+                      {selectedReturnRow && <SideBarDetailPage title="Return" data={selectedReturnRow} onClose={() => setShowReturnDrawer(false)} />}
+                    </Drawer>
+                    )}
         </>
     );
 }
