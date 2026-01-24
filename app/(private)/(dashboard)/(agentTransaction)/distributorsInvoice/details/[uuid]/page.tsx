@@ -8,7 +8,7 @@ import Logo from "@/app/components/logo";
 import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, RefObject, Fragment } from "react";
-import { invoiceByUuid } from "@/app/services/agentTransaction";
+import { invoiceByUuid,exportOrderInvoice } from "@/app/services/agentTransaction";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -20,6 +20,7 @@ import { isValidDate } from "@/app/utils/formatDate";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { generatePdfFromElement } from "@/app/utils/generateDeliveryPdf";
+import { downloadPDFGlobal } from "@/app/services/allApi";
 // const CURRENCY = localStorage.getItem("country") || "";
 
 interface DeliveryDetail {
@@ -220,36 +221,54 @@ export default function OrderDetailPage() {
 
   const [loading, setLoadingState] = useState<boolean>(false);
 
-  const exportFile = async () => {
-    if (!targetRef.current) {
-      showSnackbar("Content not ready for PDF generation", "error");
-      return;
-    }
+  // const exportFile = async () => {
+  //   if (!targetRef.current) {
+  //     showSnackbar("Content not ready for PDF generation", "error");
+  //     return;
+  //   }
 
-    try {
-      setLoadingState(true);
+  //   try {
+  //     setLoadingState(true);
 
-      await generatePdfFromElement(targetRef.current, {
-        fileName: `invoice-${deliveryData?.invoice_code || uuid}.pdf`,
-        orientation: 'landscape',
-        margin: 10,
-        scale: 2,
-        onSuccess: () => {
-          showSnackbar("PDF downloaded successfully", "success");
-        },
-        onError: (error: any) => {
-          console.error('PDF generation error:', error);
-          showSnackbar("Failed to generate PDF", "error");
-        },
-      });
-    } catch (error) {
-      console.error('Export error:', error);
-      showSnackbar("Failed to download PDF", "error");
-    } finally {
-      setLoadingState(false);
-    }
-  };
+  //     await generatePdfFromElement(targetRef.current, {
+  //       fileName: `invoice-${deliveryData?.invoice_code || uuid}.pdf`,
+  //       orientation: 'landscape',
+  //       margin: 10,
+  //       scale: 2,
+  //       onSuccess: () => {
+  //         showSnackbar("PDF downloaded successfully", "success");
+  //       },
+  //       onError: (error: any) => {
+  //         console.error('PDF generation error:', error);
+  //         showSnackbar("Failed to generate PDF", "error");
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error('Export error:', error);
+  //     showSnackbar("Failed to download PDF", "error");
+  //   } finally {
+  //     setLoadingState(false);
+  //   }
+  // };
 
+      const downloadPdf = async () => {
+          try {
+              setLoadingState(true);
+              const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
+              if (response && typeof response === 'object' && response.download_url) {
+                   const fileName = `invoice-${uuid}.pdf`;
+                  await downloadPDFGlobal(response.download_url, fileName);
+                  // await downloadFile(response.download_url);
+                  showSnackbar("File downloaded successfully ", "success");
+              } else {
+                  showSnackbar("Failed to get download URL", "error");
+              }
+          } catch (error) {
+              showSnackbar("Failed to download file", "error");
+          } finally {
+              setLoadingState(false);
+          }
+      };
   return (
     <>
       {/* ---------- Header ---------- */}
@@ -444,7 +463,7 @@ export default function OrderDetailPage() {
                 leadingIcon={loading ? "eos-icons:three-dots-loading" : "lucide:download"}
                 leadingIconSize={20}
                 label="Download"
-                onClick={exportFile}
+                onClick={downloadPdf}
               />
             <PrintButton targetRef={targetRef as unknown as RefObject<HTMLElement>} />
           </div>

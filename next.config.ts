@@ -419,6 +419,7 @@ const nextConfig: NextConfig = {
 
       { source: '/salesteam/add', destination: '/salesTeam/add' },
       { source: '/salesteam/:uuid', destination: '/salesTeam/:uuid' },
+      { source: '/salesteam/details/:uuid', destination: '/salesTeam/details/:uuid' },
       { source: '/salesteam', destination: '/salesTeam' },
 
       { source: '/vehicle/add', destination: '/vehicle/add' },

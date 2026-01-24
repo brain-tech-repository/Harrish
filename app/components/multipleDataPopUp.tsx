@@ -1,14 +1,24 @@
 
 import React, { useState } from 'react';
 import SidebarBtn from "./dashboardSidebarBtn";
+import Table from './customTable';
 
-export default function ItemCellWithPopup({ details }: { details: any[] }) {
+export default function ItemCellWithPopup({ details,title }: { details: any[],title?:string }) {
   const [showPopup, setShowPopup] = useState(false);
   if (!details || details.length === 0) return "-";
   const first = details[0];
   const rest = details.slice(1);
   const firstLabel = `${first.erp_code || ""}${first.erp_code && first.item_name ? " - " : ""}${first.item_name || ""}`;
   const restCount = rest.length;
+    const columns = [
+        {
+            key: 'item',
+            label: 'Item',
+            render: (row: any) => (
+                <span>{`${row.erp_code || ""}${row.erp_code && row.item_name ? " - " : ""}${row.item_name || ""}`}</span>
+            ),
+        },
+    ];  
   return (
     <>
       <span className="mr-2">{firstLabel}</span>
@@ -25,11 +35,18 @@ export default function ItemCellWithPopup({ details }: { details: any[] }) {
           onClick={() => setShowPopup(false)}
         >
           <div
-            className="bg-white rounded-lg p-4 min-w-[450px] min-h-[325px] max-w-[550px] max-h-[550px] shadow-lg flex flex-col"
+            className="bg-white rounded-lg p-4 min-w-[350px] max-h-[450px] w-fit h-fit shadow-lg flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="text-xl font-semibold mb-3">Other Items</div>
-            <ul
+            <div className="text-xl font-semibold mb-3">{title}</div>
+            <Table
+            config={{
+                showNestedLoading:false,
+                columns
+            }}
+            data={details}
+             />
+            {/* <ul
               className="flex-1 overflow-y-auto mb-0 p-0 list-none max-h-[325px]"
             >
               {rest.map((item: any, idx: number) => (
@@ -37,7 +54,7 @@ export default function ItemCellWithPopup({ details }: { details: any[] }) {
                   {`${item.erp_code || ""}${item.erp_code && item.item_name ? " - " : ""}${item.item_name || ""}`}
                 </li>
               ))}
-            </ul>
+            </ul> */}
             <div className="flex justify-end mt-2">
               <SidebarBtn
                 isActive

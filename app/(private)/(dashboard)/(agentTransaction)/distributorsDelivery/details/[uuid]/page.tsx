@@ -15,7 +15,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import PrintButton from "@/app/components/printButton";
 import DownloadPdfButton from "@/app/components/downloadPdfButton";
-import { downloadFile } from "@/app/services/allApi";
+import { downloadPDFGlobal } from "@/app/services/allApi";
 import { formatWithPattern, isValidDate } from "@/app/utils/formatDate";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 
@@ -213,6 +213,25 @@ export default function OrderDetailPage() {
 
   const printRef = useRef<HTMLDivElement>(null);
 
+  const exportFile = async () => {
+      try {
+        // setLoading(true);
+        setLoadingState(true);
+        const response = await agentDeliveryExport({ uuid: uuid, format: "pdf" });
+        if (response && typeof response === 'object' && response.download_url) {
+          const fileName = `order-${uuid}.pdf`;
+          await downloadPDFGlobal(response.download_url, fileName);
+          showSnackbar("File downloaded successfully ", "success");
+        } else {
+          showSnackbar("Failed to get download URL", "error");
+        }
+      } catch (error) {
+        showSnackbar("Failed to download file", "error");
+      } finally {
+        // setLoading(false);
+        setLoadingState(false);
+      }
+    };
   return (
     <>
       {/* ---------- Header ---------- */}
@@ -423,13 +442,21 @@ export default function OrderDetailPage() {
 
           {/* ---------- Footer Buttons ---------- */}
           <div className="flex flex-wrap justify-end gap-[20px] print:hidden">
-            <DownloadPdfButton 
+             <SidebarBtn
+                          leadingIcon={
+                            loading ? "eos-icons:three-dots-loading" : "lucide:download"
+                          }
+                          leadingIconSize={20}
+                          label="Download"
+                          onClick={exportFile}
+                        />
+            {/* <DownloadPdfButton 
               targetRef={printRef as React.RefObject<HTMLDivElement>}
               filename={`Delivery-${deliveryData?.delivery_code || "document"}`}
               orientation="landscape"
               onSuccess={() => showSnackbar("PDF downloaded successfully", "success")}
               onError={() => showSnackbar("Failed to generate PDF", "error")}
-            />
+            /> */}
             <PrintButton targetRef={printRef as React.RefObject<HTMLDivElement>} />
           </div>
         </ContainerCard>
