@@ -3761,7 +3761,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
   // Item-level KPIs for item report type
   if (reportType === 'item') {
     const kpisData = dashboardData?.kpis || {};
-    console.log(kpisData)
 
     // Determine which level we are at to decide what charts to show
     // The user wants "Item Performance Chart (area wise)" and "Top performance Item - region wise"

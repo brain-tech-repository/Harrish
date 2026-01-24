@@ -244,7 +244,6 @@ export default function CustomerInvoicePage() {
                         {
                             icon: "lucide:eye",
                             onClick: (row: TableDataType) => {
-                                console.log(row);
                                 router.push(`/chillerInstallation/iro/view/${row.id}`);
                             },
                         },
