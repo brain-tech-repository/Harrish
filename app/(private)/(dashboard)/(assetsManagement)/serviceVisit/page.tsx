@@ -128,16 +128,7 @@ export default function ServiceVisit() {
                 render: (r: any) => (r as ServiceVisitRow).cabin_temperature || "-",
             },
 
-            {
-                key: "work_status",
-                label: "Work Status",
-                render: (r: any) => (
-                    <StatusBtn
-                        isActive={(r as ServiceVisitRow).work_status === "completed"}
-                    />
-                ),
-            },
-
+           
             { key: "work_done_type", label: "Work Done Type" },
             { key: "spare_request", label: "Spare Request" },
             { key: "technical_behavior", label: "Tech Behavior" },
@@ -151,6 +142,16 @@ export default function ServiceVisit() {
 
             { key: "comment", label: "Comment" },
             { key: "cts_comment", label: "CTS Comment" },
+             {
+                key: "work_status",
+                label: "Work Status",
+                render: (r: any) => (
+                    <StatusBtn
+                        isActive={(r as ServiceVisitRow).work_status === "completed"}
+                    />
+                ),
+            },
+
             {
                 key: "approval_status",
                 label: "Approval Status",

@@ -20,7 +20,7 @@ import {
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import ItemCellWithPopup from "@/app/components/multipleDataPopUp";
 const SalesmanPage = () => {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
@@ -153,7 +153,7 @@ const exportFile = async (format: string) => {
           
         };
         if (warehouseId) {
-            params.salesman_id = warehouseId;
+            params.warehouse_id = warehouseId;
         }
         
         // Add status filter if active (true=1, false=0)
@@ -210,30 +210,40 @@ const exportFile = async (format: string) => {
         return obj?.salesman_type_name || "-";
       },
     },
+    {
+      key: "warehouse",
+      label: "Warehouse",
+      render: (row: TableDataType) => {
+        // Accepts array or single object
+        const warehouses = Array.isArray(row.warehouses)
+          ? row.warehouses
+          : row.warehouse
+            ? [row.warehouse]
+            : [];
+        return (
+          <ItemCellWithPopup
+            details={warehouses.map((w: any) => ({
+              erp_code: w.warehouse_code,
+              item_name: w.warehouse_name,
+            }))}
+          />
+        );
+      },
+      filter: {
+        isFilterable: true,
+        isSingle: false,
+        width: 320,
+        options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+        onSelect: (selected: string | string[]) => {
+          setWarehouseId((prev) => prev === selected ? "" : (selected as string));
+        },
+        selectedValue: warehouseId,
+      },
+      showByDefault: true,
+    },
 
     { key: "designation", label: "Designation" },
-    // {
-    //       key: "warehouse",
-    //       label: "Warehouse",
-    //       render: (row: TableDataType) =>
-    //           typeof row.warehouse === "object" &&
-    //           row.warehouse !== null &&
-    //           "warehouse_name" in row.warehouse
-    //               ? (row.warehouse as { warehouse_name?: string })
-    //                     .warehouse_name || "-"
-    //               : "-",
-    //               filter: {
-    //                   isFilterable: true,
-    //                   width: 320,
-    //                   options: Array.isArray(warehouseOptions) ? warehouseOptions : [], // [{ value, label }]
-    //                   onSelect: (selected: string | string[]) => {
-    //                       setWarehouseId((prev) => prev === selected ? "" : (selected as string));
-    //                   },
-    //                   selectedValue: warehouseId,
-    //               },
-
-    //       showByDefault: true,
-    //   },
+  
     //   {
     //       key: "route",
     //       label: "Route",

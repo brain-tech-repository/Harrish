@@ -118,10 +118,10 @@ export default function ViewPage() {
       </ContainerCard>
 
 
-      <div className="flex flex-wrap lg:gap-[20px]">
+      <div className="flex grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-[10px]">
 
         {/* ---------- Basic Information ---------- */}
-        <ContainerCard className="w-full lg:w-[450px]">
+        <ContainerCard className="w-full">
           <KeyValueData
             title="Assets Basic Information"
             data={[
@@ -136,7 +136,7 @@ export default function ViewPage() {
         </ContainerCard>
 
         {/* ---------- Acquisition & Vendor ---------- */}
-        <ContainerCard className="w-full lg:w-[450px]">
+        <ContainerCard className="w-full">
           <KeyValueData
             title="Acquisition and Vendor Information"
             data={[
@@ -149,7 +149,7 @@ export default function ViewPage() {
         </ContainerCard>
 
         {/* ---------- Other Info ---------- */}
-        <ContainerCard className="w-full lg:w-[450px]">
+        <ContainerCard className="w-full">
           <KeyValueData
             title="Other Information"
             data={[

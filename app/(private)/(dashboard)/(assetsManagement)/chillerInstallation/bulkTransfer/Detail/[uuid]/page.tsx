@@ -111,19 +111,19 @@ export default function ViewPage() {
                     />
                 </div>
             </ContainerCard>
-            <div className="flex flex-wrap gap-x-[30px] gap-y-[30px]">
-                <ContainerCard className="w-full lg:w-[680px]">
+            <div className="flex flex-wrap gap-x-[30px] gap-y-[6px]">
+                <ContainerCard className="w-full">
                     <KeyValueData
                         data={[
-                            { value: transferData?.region?.name, key: "Region" },
-                            { value: transferData?.area?.name, key: "Area" },
-                            { value: transferData?.warehouse?.name, key: "Warehouse" },
-                            { value: transferData?.model_number?.name, key: "Model Number" },
+                            { value: `${transferData?.region?.code || ''} - ${transferData?.region?.name || ''}`, key: "Region" },
+                            { value: `${transferData?.area?.code || ''} - ${transferData?.area?.name || ''}`, key: "Area" },
+                            { value: `${transferData?.warehouse?.code || ''} - ${transferData?.warehouse?.name || ''}`, key: "Distributor" },
+                            { value: transferData?.model_number?.name || "-", key: "Model Number" },
 
                         ]}
                     />
                 </ContainerCard>
-                <ContainerCard className="w-full lg:w-[680px]">
+                <ContainerCard className="w-full">
                     <KeyValueData
                         data={[
 
@@ -136,7 +136,7 @@ export default function ViewPage() {
                 </ContainerCard>
 
                 {transferData?.comment_reject && (
-                    <ContainerCard className="w-full lg:w-[350px]">
+                    <ContainerCard className="w-full">
                         <div>
                             <h3 className="font-semibold mb-2">Rejection Comment</h3>
                             <p className="text-gray-700">{transferData.comment_reject}</p>
