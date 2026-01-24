@@ -1107,9 +1107,10 @@ export default function ViewPage() {
 
     const salesByAgentCustomer = useCallback(
         async (
+            uuid: string,
             pageNo: number = 1,
             pageSize: number = 50,
-            uuid: string
+            payload?: Record<string, string | number | null>,
         ): Promise<searchReturnType> => {
             const result = await getAgentCustomerBySalesId(uuid, { from_date: "", to_date: "" });
             if (result.error) {
@@ -1498,7 +1499,7 @@ export default function ViewPage() {
                             <Table
                                 config={{
                                     api: {
-                                        list: (...args) => salesByAgentCustomer(...args, UUIDAgentCustomer),
+                                        list: (...args) => salesByAgentCustomer(UUIDAgentCustomer, ...args),
                                         filterBy: (payload, pageSize) => filterBySales(payload, pageSize, UUIDAgentCustomer)
                                     },
                                     header: {
