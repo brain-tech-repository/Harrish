@@ -45,6 +45,7 @@ export default function Planogram() {
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -144,7 +145,8 @@ export default function Planogram() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
       const res = await exportPlanogram({ format: fileType });
 
@@ -183,7 +185,9 @@ export default function Planogram() {
       console.error("Export error:", error);
       showSnackbar("Failed to export Planogram data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -202,14 +206,14 @@ export default function Planogram() {
 
             threeDot: [
               {
-                icon: "gala:file-document",
+                icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" :"gala:file-document",
                 label: "Export CSV",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("csv");
                 },
               },
               {
-                icon: "gala:file-document",
+                icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading":"gala:file-document",
                 label: "Export Excel",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("xlsx");

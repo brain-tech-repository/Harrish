@@ -57,7 +57,7 @@ export default function Survey() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -174,8 +174,8 @@ export default function Survey() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
-
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
       const res = await surveyExport({ format: fileType });
 
       let downloadUrl = "";
@@ -213,7 +213,8 @@ export default function Survey() {
       console.error("Export error:", error);
       showSnackbar("Failed to export Survey data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -231,14 +232,14 @@ export default function Survey() {
             title: "Survey",
             threeDot: [
               {
-                icon: "gala:file-document",
+                icon:  threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export CSV",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("csv");
                 },
               },
               {
-                icon: "gala:file-document",
+                icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                 label: "Export Excel",
                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                   handleExport("xlsx");

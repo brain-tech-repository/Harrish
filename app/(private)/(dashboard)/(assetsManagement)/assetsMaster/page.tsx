@@ -177,7 +177,7 @@ export default function ShelfDisplay() {
                   },
                 },
                 {
-                  icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  icon: threeDotLoading.xlsx || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx");
@@ -198,9 +198,7 @@ export default function ShelfDisplay() {
               ] : [],
             },
             localStorageKey: "assetsMasterTable",
-            table: {
-              height: 400
-            },
+            
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               {
