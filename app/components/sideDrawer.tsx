@@ -52,9 +52,9 @@ export function SideBarDetailPage({ data, onClose, title }: { data?: any; onClos
     ? deliveryData?.details.map((detail: any, index: number) => ({
         id: String(index + 1),
         itemCode: String(detail.item_code ?? ""),
-        erp_code: String(detail.erp_code ?? ""),
-        itemName: String(detail.item_name ?? ""),
-        UOM: String(detail.uom_name ?? detail.uom ?? ""),
+        erp_code: String(detail.erp_code || detail?.item?.erp_code || ""),
+        itemName: String(detail.item_name || detail?.item?.name || ""),
+        UOM: String(detail.uom_name || detail?.uoms?.name || ""),
         Quantity: String(detail.quantity || detail.item_quantity || 0),
         Price: String(detail.item_price ?? detail.itemvalue ?? "0"),
         Excise: String(detail.excise ?? "0"),

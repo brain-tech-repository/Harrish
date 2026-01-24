@@ -368,7 +368,6 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           });
         }
       });
-      console.log(dd, "ddd")
       setAvailableFilters(transformedFilters);
       setLoadingFilterIds(new Set());
       if (availableFilters.length <= 0) setIsLoadingFilters(false);
