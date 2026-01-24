@@ -28,7 +28,7 @@ export default function CampaignPage() {
   const { setLoading } = useLoading();
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   const [refreshKey, setRefreshKey] = useState(0);
 
   const IMAGE_BASE_URL =
@@ -89,7 +89,8 @@ export default function CampaignPage() {
   /* ================= EXPORT ================= */
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
       const res = await exportCompaignData({ file_type: fileType });
 
@@ -125,7 +126,8 @@ export default function CampaignPage() {
       console.error(err);
       showSnackbar("Export failed", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
     }
   };
 
@@ -167,7 +169,6 @@ export default function CampaignPage() {
   /* ================= RENDER ================= */
   return (
     <div className="flex flex-col h-full">
-      <div className="h-[calc(100%-60px)]">
         <Table
           refreshKey={refreshKey}
           config={{
@@ -176,12 +177,12 @@ export default function CampaignPage() {
               title: "Campaigns Information",
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" :"gala:file-document",
                   label: "Export CSV",
                   onClick: () => handleExport("csv"),
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading":"gala:file-document",
                   label: "Export Excel",
                   onClick: () => handleExport("xlsx"),
                 },
@@ -191,9 +192,7 @@ export default function CampaignPage() {
             footer: { nextPrevBtn: true, pagination: true },
             // rowSelection: true,
             pageSize: 50,
-            table: {
-              height: "400px"
-            },
+            
             columns: [
               {
                 key: "code",
@@ -233,7 +232,7 @@ export default function CampaignPage() {
                     <button
                       type="button"
                       onClick={() => openImageModal(images, 0)}
-                      className="text-blue-600 font-medium hover:underline"
+                      className="text-blue-600 font-medium hover:underline cursor-pointer"
                     >
                       View Images ({images.length})
                     </button>
@@ -251,7 +250,6 @@ export default function CampaignPage() {
           onClose={closeImageModal}
           startIndex={imageModal?.index ?? 0}
         />
-      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import Table, { configType, listReturnType, searchReturnType, TableDataType } fr
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
 import { exportAllInvoices, agentCustomerReturnExport, exportSpecificCustomerReturn, exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
-import { agentCustomerById, downloadFile } from "@/app/services/allApi";
+import { agentCustomerById, downloadFile, downloadPDFGlobal } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -154,6 +154,20 @@ export default function CustomerDetails() {
 
         }}><Icon icon="material-symbols:download" /></div>)
     }
+
+const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
+        const [smallLoading, setSmallLoading] = useState(false)
+
+        return <Icon 
+            icon={smallLoading ? "eos-icons:three-dots-loading" : "material-symbols:download"} 
+            className="cursor-pointer" 
+            onClick={async () => {
+                setSmallLoading(true);
+                await exportFile(row.uuid, "pdf");
+                setSmallLoading(false);
+            }} />
+    }
+
     function convertDate(input: string) {
         const [dd, mm, yy] = input.split("-");
 
@@ -183,14 +197,19 @@ export default function CustomerDetails() {
             label: "Route"
         },
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
-        // {
-        //     key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
-
-
-        //         return (<IconComponentData2 row={row} />)
-        //     }
-        // }
-
+        {
+            key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
+                return (<ExportDownloadButton row={row} />)
+            }
+        },
+        // rowActions: [
+        //         {
+        //             icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
+        //             onClick: (data: TableDataType) => {
+        //                 exportFile(data.uuid, "pdf");
+        //             },
+        //         }
+        //     ],
     ];
 
     const returnColumns: configType["columns"] = [
@@ -357,10 +376,11 @@ export default function CustomerDetails() {
 
     const exportFile = async (uuid: string, format: string) => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
             const response = await exportInvoice({ uuid, format }); // send proper body object
             if (response && typeof response === "object" && response.download_url) {
-                await downloadFile(response.download_url);
+                await downloadPDFGlobal(response.download_url, 'invoice' );
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -369,7 +389,7 @@ export default function CustomerDetails() {
             console.error(error);
             showSnackbar("Failed to download data", "error");
         } finally {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
 
@@ -443,12 +463,13 @@ export default function CustomerDetails() {
         [setLoading]
     );
 
-    const exportReturn = async (uuid: string, format: string) => {
+    const exportReturn = async (uuid: string) => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await exportSpecificCustomerReturn({ uuid, format });
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            const response = await exportSpecificCustomerReturn({ uuid, format:"pdf" });
             if (response && typeof response === 'object' && response.download_url) {
-                await downloadFile(response.download_url);
+                await downloadPDFGlobal(response.download_url, 'return');
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -456,7 +477,7 @@ export default function CustomerDetails() {
         } catch (error) {
             showSnackbar("Failed to download vehicle data", "error");
         } finally {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
 
@@ -574,7 +595,7 @@ export default function CustomerDetails() {
                                     ),
 
                                 },
-                                showNestedLoading: true,
+                                showNestedLoading: false,
                                 footer: { nextPrevBtn: true, pagination: true },
                                 columns: columns,
                                 table: {
@@ -583,10 +604,11 @@ export default function CustomerDetails() {
                                 rowSelection: false,
                                 rowActions: [
                                     {
-                                        icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
-                                        onClick: (data: TableDataType) => {
-                                            exportFile(data.uuid, "pdf");
-                                        },
+                                        icon: "lucide:download",
+                                        showLoading: true,
+                                        onClick: (data: TableDataType) => 
+                                            exportFile(data.uuid, "pdf")
+                                        
                                     }
                                 ],
                                 pageSize: 50,
@@ -601,7 +623,7 @@ export default function CustomerDetails() {
 
             {activeTab === "Market Return" ? (<ContainerCard >
 
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full w-full overflow-x-auto">
                     <Table
                         config={{
                             api: {
@@ -629,21 +651,22 @@ export default function CustomerDetails() {
                                     />
                                 ],
                             },
-                            showNestedLoading: true,
                             footer: { nextPrevBtn: true, pagination: true },
+                             rowActions: [
+                                {
+                                    icon:  "lucide:download",
+                                    showLoading: true,
+                                    onClick: (data: TableDataType) => 
+                                        exportReturn(data.uuid)
+                                    
+                                }
+                            ],
                             columns: returnColumns,
                             table: {
                                 height: 500,
                             },
                             rowSelection: false,
-                            rowActions: [
-                                {
-                                    icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "material-symbols:download",
-                                    onClick: (data: TableDataType) => {
-                                        exportReturn(data.uuid, "csv");
-                                    },
-                                }
-                            ],
+                           
                             pageSize: 50,
                         }}
                     />

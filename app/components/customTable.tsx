@@ -15,6 +15,7 @@ import { naturalSort } from "../(private)/utils/naturalSort";
 import { CustomTableSkelton } from "./customSkeleton";
 import Draggable from "react-draggable";
 import Skeleton from "@mui/material/Skeleton";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -301,6 +302,7 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 
 function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
+    const searchParams = useSearchParams();
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
@@ -357,6 +359,10 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         }
         // if api is passed, use default values
         else if (config.api?.list) {
+            const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+            if (hasUrlParams && config.api?.filterBy) {
+                return; 
+            }
             const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
             const start = Date.now();
             const pageNo = 1;
@@ -560,12 +566,15 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     const [searchBarValue, setSearchBarValue] = useState("");
     const { selectedRow } = useContext(SelectedRow);
 
-    async function handleSearch() {
+    // need search Term only when you want to search using you word instead of the searchBarValue 
+    // ---> used for fixing searchBarValue is not updating immediately issue
+    async function handleSearch(searchTerm?: string) {
         if (!config.api?.search) return;
+        const termToUse = searchTerm !== undefined ? searchTerm : searchBarValue;
         try {
             setNestedLoading(true);
             const result = await config.api.search(
-                searchBarValue,
+                termToUse,
                 config.pageSize || defaultPageSize
             );
             const resolvedResult = result instanceof Promise ? await result : result;
@@ -578,8 +587,8 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
             });
             // persist global search state so pagination can reuse it (via context)
             try {
-                if (searchBarValue && String(searchBarValue).trim().length > 0) {
-                    setSearchState({ applied: true, term: searchBarValue });
+                if (termToUse && String(termToUse).trim().length > 0) {
+                    setSearchState({ applied: true, term: termToUse });
                 } else {
                     setSearchState({ applied: false, term: "" });
                 }
@@ -587,7 +596,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                 // ignore in non-browser environments
             }
         } finally {
-            setNestedLoading(false);
+            setTimeout(() => setNestedLoading(false), 0);
         }
     }
 
@@ -606,7 +615,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                         ) => setSearchBarValue(e.target.value)}
                                         onClear={async () => {
                                             setSearchBarValue("");
-                                            handleSearch();
+                                            handleSearch("");
                                         }}
                                         onEnterPress={handleSearch}
                                     />
@@ -655,6 +664,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     );
 }
 
+// For showing/hiding columns using a dropdown with checkboxes
 function ColumnFilter() {
     const { config } = useContext(Config);
     const { columns } = config;
@@ -1150,6 +1160,8 @@ function IconWithLoading({ action, index, row ,showLoading}: { action: any; inde
                                                         </div>
 }</>)
 }
+
+// Filter Component for column near column name using icon button
 function FilterTableHeader({
     column,
     dimensions,
@@ -1710,6 +1722,7 @@ export function FilterOptionList({
     );
 }
 
+// FilterBy Component for global table filtering (Top Left Corner of Table) - dropdown near search bar
 function FilterBy() {
     const { config } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setFilterState, initialTableData } = useContext(TableDetails);
@@ -1723,6 +1736,86 @@ function FilterBy() {
     const [customPayload, setCustomPayload] = useState<Record<string, string | number | null | (string | number)[]>>({});
     const [isApplyingCustom, setIsApplyingCustom] = useState(false);
     const [isClearingCustom, setIsClearingCustom] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false); // fixes the loop and going back of url with params to url without params
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
+
+    useEffect(() => {
+    if (!searchParams) return;
+
+    const paramsObj: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+        // If the value contains a comma, treat it as an array (matching your .join(',') logic)
+        if (value.includes(',')) {
+            paramsObj[key] = value.split(',');
+        } else if (value === 'all') {
+            paramsObj[key] = 'all';
+        } else {
+            paramsObj[key] = value;
+        }
+    });
+
+    if (hasCustomRenderer) {
+        setCustomPayload(paramsObj);
+    } else {
+        // For built-in filters, we need to match the structure expected by filterByFields
+        const initialFilters: Record<string, string | string[]> = {};
+        (config.header?.filterByFields || []).forEach((f: any) => {
+            const val = paramsObj[f.key];
+            if (val) {
+                initialFilters[f.key] = val;
+            } else {
+                initialFilters[f.key] = f.isSingle === false ? [] : "";
+            }
+        });
+        setFilters(initialFilters);
+    }
+
+    if (Object.keys(paramsObj).length > 0) {
+        setAppliedFilters(true);
+        // Sync to global context so TableHeader/Footer see it
+        setFilterState({ 
+            applied: true, 
+            payload: toApiPayload(paramsObj) 
+        });
+    }
+
+    setIsInitialized(true);
+}, []);
+
+    useEffect(() => {
+        if (!hasCustomRenderer) return;
+        if (!searchParams || !router) return;
+        const params = new URLSearchParams(searchParams.toString());
+        Object.keys(customPayload || {}).forEach((k) => {
+        const v = customPayload[k];
+        // Only ever put 'all' or a comma-joined array in the URL
+        if (v === 'all') {
+        params.set(k, 'all');
+        } else if (Array.isArray(v)) {
+        if (v.length > 0) {
+            params.set(k, v.join(','));
+        } else {
+            params.delete(k);
+        }
+        } else if (v !== null && String(v).trim().length > 0) {
+        params.set(k, String(v));
+        } else {
+        params.delete(k);
+        }
+        });
+        // Remove any keys in params not present in customPayload
+        Array.from(params.keys()).forEach((k) => {
+        if (!(k in customPayload)) params.delete(k);
+        });
+
+        if (urlRef.current !== params.toString()) {
+            urlRef.current = params.toString();
+            const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newRelativePathQuery, { scroll: false });
+        }
+    }, [customPayload, hasCustomRenderer, router, searchParams]);
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
@@ -1733,6 +1826,19 @@ function FilterBy() {
         });
         setFilters(initial);
     }, [config.header?.filterByFields, hasCustomRenderer]);
+
+    useEffect(() => {
+    // This triggers as soon as hydration finishes
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            // Note: pass the hydrated filters directly to ensure we don't 
+            // wait for a state re-render cycle
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
 
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
     // Custom logic: if both from_date and to_date are set, count as 1 filter (not 2)
@@ -1790,7 +1896,36 @@ function FilterBy() {
         });
         return payloadForApi;
     };
-    const applyFilter = async () => {
+    const applyFilter = useCallback(async (overridingFilters?: Record<string, any>) => {
+    // Use overridingFilters if provided (for initial load), otherwise use state
+    const currentFilters = overridingFilters || filters;
+    if (Object.keys(currentFilters).length === 0) return;
+    
+    setShowDropdown(false);
+    if (config.api?.filterBy) {
+        setNestedLoading(true);
+        try {
+            const payloadForApi = toApiPayload(currentFilters);
+            setFilterState({ applied: true, payload: payloadForApi });
+            
+            const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+            const resolved = res instanceof Promise ? await res : res;
+            const { currentPage, totalRecords, pageSize, total, data } = resolved;
+            
+            setTableDetails({
+                data: data || [],
+                total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
+                totalRecords: totalRecords,
+                currentPage: (currentPage || 1) - 1,
+                pageSize: pageSize,
+            });
+            setAppliedFilters(true);
+        } catch (err) {
+            console.error("Filter API error", err);
+        } finally {
+            setNestedLoading(false);
+        }
+    } else {
         if (activeFilterCount === 0) return;
         setShowDropdown(false);
         // call API if provided
@@ -1884,8 +2019,9 @@ function FilterBy() {
 
         setShowDropdown(false);
     };
+}, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
 
-    const applyCustomPayload = async (payload?: Record<string, string | number | null | (string | number)[]>) => {
+const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
@@ -1940,7 +2076,18 @@ function FilterBy() {
         } finally {
             setIsApplyingCustom(false);
         }
-    };
+}, [customPayload, config, tableDetails.data]);
+
+useEffect(() => {
+    // Only trigger once state is initialized and there are actual params to apply
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
 
     const clearAll = async () => {
         if (activeFilterCount === 0) return;

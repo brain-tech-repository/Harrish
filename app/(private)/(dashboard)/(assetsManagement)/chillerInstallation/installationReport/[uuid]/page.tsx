@@ -326,7 +326,7 @@ export default function AddInstallationReportPage() {
                     if (e.path) formErrors[e.path] = e.message;
                 });
                 setErrors(formErrors);
-                showSnackbar("Please fix the form errors", "warning");
+                // showSnackbar("Please fix the form errors", "warning");
             } else {
                 console.error("❌ Submission error:", err);
                 showSnackbar("Failed to add installation report", "error");
@@ -442,6 +442,7 @@ export default function AddInstallationReportPage() {
                     value={warehouseName}
                     disabled
                     onChange={() => { }}
+                    // error={errors.warehouse_id}
                 />
 
                 <InputFields

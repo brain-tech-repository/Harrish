@@ -68,6 +68,7 @@ export default function StockInStoreAddPage() {
     const codeGeneratedRef = useRef(false);
 
     const [code, setCode] = useState("");
+    const [genCode, setGenCode] = useState("");
     const [itemData, setItemData] = useState<ItemRow[]>([
         { item_id: "", uom_id: "", capacity: "", UOM: [] },
     ]);
@@ -105,6 +106,7 @@ export default function StockInStoreAddPage() {
                     ...prev,
                     code: res.code,
                 }));
+                setGenCode(res.code);
             }
         })();
     }, [isEditMode]);
@@ -260,7 +262,7 @@ export default function StockInStoreAddPage() {
 
             const payload = isEditMode
                 ? basePayload
-                : { ...basePayload, code };
+                : { ...basePayload, code: genCode };
 
             const res = isEditMode
                 ? await updateStockInStore(id as string, payload)
@@ -274,7 +276,7 @@ export default function StockInStoreAddPage() {
             // 🔥 FINAL CODE SAVE — ONLY ON ADD
             if (!isEditMode) {
                 await saveFinalCode({
-                    reserved_code: code,
+                    reserved_code: genCode,
                     model_name: "code",
                 });
             }
@@ -309,7 +311,7 @@ export default function StockInStoreAddPage() {
                     onClick={() => router.back()}
                 />
                 <h1 className="text-lg font-semibold">
-                    {isEditMode ? "Edit" : "Add"} Stock In Store
+                    {isEditMode ? "Update" : "Add"} Stock In Store
                 </h1>
             </div>
 
@@ -461,7 +463,8 @@ export default function StockInStoreAddPage() {
                                 <SidebarBtn
                                     label={isSubmitting ? "Submitting" :"Submit"}
                                     isActive
-                                    disabled={isSubmitting}
+                                    leadingIcon="mdi-check"
+                                    disabled={isSubmitting || !validationSchema.isValidSync(values) }
                                     onClick={submitForm}
                                 />
                             </div>
