@@ -7,7 +7,7 @@ import { createBonus, getBonusDetails, updateBonus } from "@/app/services/settin
 import { itemGlobalSearch } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as yup from "yup";

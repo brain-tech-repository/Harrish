@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { ArrowLeft, FileText, Truck, Receipt, Calculator, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import Loading from "@/app/components/Loading";
 import { Icon } from "@iconify-icon/react";
 import { useRouter,useSearchParams  } from "next/navigation";

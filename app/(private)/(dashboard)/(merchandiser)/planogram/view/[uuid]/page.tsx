@@ -11,7 +11,7 @@ import Image from "next/image";
 import SummaryCard from "@/app/components/summaryCard";
 import { getPlanogramById } from "@/app/services/merchandiserApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { OverviewTab } from "./tabs/overview";
 import { CustomerData } from "./tabs/customer";
 import { differenceInDays, parseISO } from "date-fns";

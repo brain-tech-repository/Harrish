@@ -15,7 +15,7 @@ import {
   FormikHelpers,
   FormikTouched
 } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";

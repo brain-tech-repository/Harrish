@@ -172,15 +172,17 @@ export default function VehiclePage() {
   const fetchVehicles = async (
 
     page: number = 1,
-    pageSize: number = 50
+    pageSize: number = 50,
+    payload?: Record<string, any>
   ): Promise<listReturnType> => {
     try {
       // setLoading(true);
-
+      console.log(payload)
       // Build params with all filters
       const params: any = {
         page: page.toString(),
         per_page: pageSize.toString(),
+        ...payload,
       };
 
       // Add warehouse filter if selected

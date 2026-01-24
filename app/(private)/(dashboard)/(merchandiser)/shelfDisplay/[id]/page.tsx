@@ -6,7 +6,7 @@ import StepperForm, {
 } from "@/app/components/stepperForm";
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter, useParams } from "next/navigation";

@@ -142,6 +142,7 @@ const exportFile = async (format: string) => {
     async (
       page: number = 1,
       pageSize: number = 50,
+      payload?: Record<string, any>
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
@@ -149,6 +150,7 @@ const exportFile = async (format: string) => {
         // Build params with all filters
         const params: any = {
           page: page.toString(),
+          
         };
         if (warehouseId) {
             params.salesman_id = warehouseId;

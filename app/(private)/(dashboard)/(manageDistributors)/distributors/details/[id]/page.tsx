@@ -7,7 +7,7 @@ import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehic
 import { useSnackbar } from "@/app/services/snackbarContext";
 import InputFields from "@/app/components/inputFields";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";

@@ -11,7 +11,7 @@ import {  downloadPDFGlobal } from '@/app/services/allApi';
 import { iframeDownload } from "@/app/utils/iframeDownload";
 import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence,salesmanAllInvoiceExport } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";

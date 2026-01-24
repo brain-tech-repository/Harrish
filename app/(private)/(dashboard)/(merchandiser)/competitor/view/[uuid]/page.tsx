@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { getCompititorById } from "@/app/services/merchandiserApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { OverviewTab } from "./tabs/overview";
 interface compititor {
   uuid: string;

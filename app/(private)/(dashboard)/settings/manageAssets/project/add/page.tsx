@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Formik, Form, FormikHelpers } from "formik";

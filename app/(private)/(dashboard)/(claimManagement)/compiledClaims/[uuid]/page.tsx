@@ -11,7 +11,7 @@ import {
 import { filterCompailedClaim, createCompailedClaim } from "@/app/services/claimManagement";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as yup from "yup";

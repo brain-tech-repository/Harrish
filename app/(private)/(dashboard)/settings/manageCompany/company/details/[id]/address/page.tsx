@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { Icon } from "@iconify-icon/react";

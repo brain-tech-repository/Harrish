@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { Formik, Form, ErrorMessage, type FormikHelpers } from "formik";
 import * as Yup from "yup";

@@ -28,7 +28,7 @@ import StepperForm, {
   useStepperForm,
 } from "@/app/components/stepperForm";
 
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { AnyARecord } from "dns";
 
 

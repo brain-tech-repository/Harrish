@@ -18,7 +18,7 @@ import { agentCustomerList, genearateCode, warehouseListGlobalSearch } from "@/a
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import * as yup from "yup";
