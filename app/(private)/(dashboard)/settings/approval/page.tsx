@@ -220,7 +220,7 @@ export default function WorkflowTable() {
                         pagination: true,
                     },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
                     rowActions: [
                         {
                             icon: "lucide:edit-2",

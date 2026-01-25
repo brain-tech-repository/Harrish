@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import { formatWithPattern } from "@/app/utils/formatDate";
 // import 
 
 export default function SalesTeamReconciliationPage() {
@@ -22,15 +23,22 @@ export default function SalesTeamReconciliationPage() {
     const router = useRouter();
     const { setLoading } = useLoading();
     const { showSnackbar } = useSnackbar();
-
+    const [warehouseId, setWarehouseId] = useState<string>("");
+    const [salesmanId, setSalesmanId] = useState<string>("");
     const {
         warehouseOptions,
+        warehouseAllOptions,
+        salesmanOptions,
+        ensureWarehouseAllLoaded,
+        ensureSalesmanLoaded,
         ensureWarehouseLoaded
     } = useAllDropdownListData();
 
     useEffect(() => {
         ensureWarehouseLoaded();
-    }, [ensureWarehouseLoaded]);
+        ensureWarehouseAllLoaded();
+        ensureSalesmanLoaded();
+    }, [ensureWarehouseLoaded, ensureWarehouseAllLoaded, ensureSalesmanLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -41,6 +49,9 @@ export default function SalesTeamReconciliationPage() {
         }
     }, [permissions]);
 
+    useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId, salesmanId]);
     /* -------------------------------------------------------
        FETCH LIST (TABLE API)
     ------------------------------------------------------- */
@@ -52,11 +63,16 @@ export default function SalesTeamReconciliationPage() {
             try {
                 setLoading(true);
 
-                const params = {
+                const params:any = {
                     page: String(page),
                     per_page: String(pageSize),
                 };
-
+                if (warehouseId) {
+                    params.warehouse_id = warehouseId;
+                }
+                if (salesmanId) {
+                    params.salesman_id = salesmanId;
+                }
                 const res = await salesTeamRecontionOrdersList(params);
 
                 return {
@@ -79,7 +95,7 @@ export default function SalesTeamReconciliationPage() {
                 setLoading(false);
             }
         },
-        [setLoading, showSnackbar]
+        [setLoading, showSnackbar, warehouseId, salesmanId]
     );
 
     /* -------------------------------------------------------
@@ -128,8 +144,11 @@ export default function SalesTeamReconciliationPage() {
             key: "reconsile_date",
             label: "Date",
             render: (row: any) => {
-                const date = row.reconsile_date ? new Date(row.reconsile_date) : null;
-                return date ? date.toLocaleDateString() : "-";
+               return formatWithPattern(
+                         new Date(row.reconsile_date),
+                         "DD MMM YYYY",
+                         "en-GB",
+                       );
             }
         },
         {
@@ -139,14 +158,36 @@ export default function SalesTeamReconciliationPage() {
                 row.warehouse_code && row.warehouse_name
                     ? `${row.warehouse_code} - ${row.warehouse_name}`
                     : row.warehouse_name || "-",
+                     filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
         },
         {
             key: "salesman_name",
-            label: "Salesman",
+            label: "Sales Team",
             render: (row: any) =>
                 row.salesman_code && row.salesman_name
                     ? `${row.salesman_code} - ${row.salesman_name}`
                     : row.salesman_name || "-",
+                     filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
         },
         {
             key: "cash_amount",
@@ -206,7 +247,7 @@ export default function SalesTeamReconciliationPage() {
                     localStorageKey: "sales-team-reconciliation-table",
                     footer: { pagination: true, nextPrevBtn: true },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
                     rowActions: [
                         {
                             icon: "lucide:eye",

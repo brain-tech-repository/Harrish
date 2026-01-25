@@ -33,7 +33,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
-
+import { LocationInput } from "@/app/components/LocationInput";
 interface AgentCustomerFormValues {
     osa_code: string;
     name: string;
@@ -689,7 +689,14 @@ export default function AddEditAgentCustomer() {
                                         onChange={(e) => {
                                             const val = e.target.value;
                                             setFieldValue("customer_type", val);
-                                            generateCode(val, setFieldValue);
+                                            setFieldValue("osa_code", ""); // Clear OSA code to trigger skeleton
+                                            setSkeleton((prev) => ({ ...prev, osa_code: true })); // Show skeleton
+                                            generateCode(val, (field, value) => {
+                                                setFieldValue(field, value);
+                                                if (field === "osa_code") {
+                                                    setSkeleton((prev) => ({ ...prev, osa_code: false })); // Hide skeleton when code is set
+                                                }
+                                            });
                                             setFieldError?.("customer_type", undefined);
                                         }}
                                         error={
@@ -704,6 +711,7 @@ export default function AddEditAgentCustomer() {
                                         label="OSA Code"
                                         name="osa_code"
                                         value={values.osa_code}
+                                        showSkeleton={!!values.customer_type && !values.osa_code}
                                         onChange={(e) => {
                                             setFieldValue(
                                                 "osa_code",
@@ -878,21 +886,25 @@ export default function AddEditAgentCustomer() {
 
                                 <div>
                                     <InputFields
-                                        label="Latitude"
-                                        type="number"
-                                        name="latitude"
-                                        value={values.latitude?.toString()}
+                                    label="Latitude"
+                                        type="location"
+                                        value={
+                                            values.latitude && values.longitude
+                                                ? `${values.latitude},${values.longitude}`
+                                                : values.latitude || ""
+                                        }
                                         onChange={(e) => {
-                                            setFieldValue(
-                                                "latitude",
-                                                e.target.value
-                                            );
+                                            // e.target.value is "lat,lng"
+                                            const [lat, lng] = (e.target.value || "").split(",");
+                                            setFieldValue("latitude", lat || "");
+                                            setFieldValue("longitude", lng || "");
                                             if (setFieldError) setFieldError("latitude", undefined);
                                         }}
                                         error={
                                             touched.latitude && errors.latitude
                                         }
                                     />
+                                       
                                 </div>
 
                                 <div>
@@ -1031,7 +1043,7 @@ export default function AddEditAgentCustomer() {
 
                                 <div>
                                     <InputFields
-                                        label="VAT No"
+                                        label="TIN No"
                                         name="vat_no"
                                         value={values.vat_no?.toString()}
                                         onChange={(e) => {

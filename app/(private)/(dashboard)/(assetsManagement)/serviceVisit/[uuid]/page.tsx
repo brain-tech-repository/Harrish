@@ -831,19 +831,19 @@ export default function AddServiceVisitStepper() {
             if (res.error) {
                 showSnackbar(
                     res.data?.message ||
-                    `Failed to ${isEditMode ? "update" : "add"} ServiceVisit`,
+                    `Failed to ${isEditMode ? "update" : "add"} Service Visit`,
                     "error"
                 );
             } else {
                 showSnackbar(
-                    `ServiceVisit ${isEditMode ? "updated" : "added"} successfully`,
+                    `Service Visit ${isEditMode ? "updated" : "added"} successfully`,
                     "success"
                 );
 
                 if (isAddMode) {
                     await saveFinalCode({
                         reserved_code: values.osa_code,
-                        model_name: values.osa_code,
+                        model_name: TICKET_MODEL_MAP[values.ticket_type],
                     });
                 }
                 router.push("/serviceVisit");
@@ -851,7 +851,7 @@ export default function AddServiceVisitStepper() {
         } catch (error) {
             console.error("Submit error:", error);
             showSnackbar(
-                `${isEditMode ? "Update" : "Add"} ServiceVisit failed ❌`,
+                `${isEditMode ? "Update" : "Add"} Service Visit failed ❌`,
                 "error"
             );
         } finally {

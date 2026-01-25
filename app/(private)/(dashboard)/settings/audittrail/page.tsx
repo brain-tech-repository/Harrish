@@ -12,7 +12,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Drawer from "@mui/material/Drawer";
 import AuditTrailDetailDrawer from "./AuditTrailDetailDrawer";
-
+import { formatWithPattern } from "@/app/utils/formatDate";
 // ---------------- TABLE HELPERS ----------------
 const renderNestedField = (data: TableDataType, field: string, subField: string) => {
     if (
@@ -27,6 +27,16 @@ const renderNestedField = (data: TableDataType, field: string, subField: string)
 };
 
 const renderCombinedField = (data: TableDataType, field: string) => {
+    if (field === "created_at" && (typeof data[field] === "string" || typeof data[field] === "number")) {
+        // Format date using formatWithPattern
+        try {
+            const date = new Date(data[field]);
+            if (!isNaN(date.getTime())) {
+                return formatWithPattern(date, "DD MMM YYYY", "en-GB");
+            }
+        } catch {}
+        return data[field];
+    }
     if (typeof data[field] === "string" || typeof data[field] === "number") {
         return data[field];
     }

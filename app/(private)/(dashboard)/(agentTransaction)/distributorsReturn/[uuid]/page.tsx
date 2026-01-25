@@ -30,7 +30,7 @@ import { Icon } from "@iconify-icon/react";
 import { useParams, useRouter } from "next/navigation";
 import React, { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import * as yup from "yup";
-
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 // ---- Types ----
 interface Uom {
   id: string;
@@ -1114,7 +1114,7 @@ export default function OrderAddEditPage() {
               {
                 key: "Total",
                 label: "Total",
-                render: (row: any) => <span>{Number(row.Total || 0).toFixed(2)}</span>,
+                render: (row: any) => <span>{toInternationalNumber(Number(row.Total || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
               },
               {
                 key: "action",
@@ -1170,7 +1170,8 @@ export default function OrderAddEditPage() {
             Cancel
           </button>
           <SidebarBtn
-            disabled={!hasValidItems}
+            disabled={!hasValidItems || isSubmitting}
+            leadingIcon="mdi:check"
             isActive={!isSubmitting}
             label={isSubmitting ? (isEditMode ? "Updating Return..." : "Creating Return...") : (isEditMode ? "Update Return" : "Create Return")}
             onClick={handleSubmit}

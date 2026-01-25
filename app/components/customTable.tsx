@@ -5,6 +5,7 @@ import { Icon } from "@iconify-icon/react";
 import CustomDropdown from "./customDropdown";
 import BorderIconButton from "./borderIconButton";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import UploadPopup from "./UploadPopup";
 import FilterDropdown from "./filterDropdown";
 import InputFields from "./inputFields";
 import SidebarBtn from "./dashboardSidebarBtn";
@@ -13,6 +14,8 @@ import DismissibleDropdown from "./dismissibleDropdown";
 import { naturalSort } from "../(private)/utils/naturalSort";
 import { CustomTableSkelton } from "./customSkeleton";
 import Draggable from "react-draggable";
+import Skeleton from "@mui/material/Skeleton";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -69,7 +72,8 @@ export type configType = {
         ) => Promise<listReturnType> | listReturnType;
         filterBy?: (
             payload: Record<string, string | number | null>,
-            pageSize: number
+            pageSize: number,
+            pageNo?: number
         ) => Promise<listReturnType> | listReturnType;
     };
     header?: {
@@ -89,6 +93,15 @@ export type configType = {
             threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean; xslx?:boolean}; 
             show: boolean;
             onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
+        };
+        /**
+         * Optional upload prop. If provided, shows upload icon next to exportButton.
+         * dummyApi: function for dummy upload
+         * api: function for real upload
+         */
+        upload?: {
+            dummyApi: (...args: any[]) => Promise<any>;
+            api: (...args: any[]) => Promise<any>;
         };
         threeDot?: {
             label: string;
@@ -110,6 +123,7 @@ export type configType = {
     };
     rowActions?: {
         icon?: string;
+        showLoading?: boolean;
         label?: string;
         onClick?: (data: TableDataType) => void;
     }[];
@@ -288,6 +302,7 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 
 function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
+    const searchParams = useSearchParams();
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
     const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
@@ -344,6 +359,10 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         }
         // if api is passed, use default values
         else if (config.api?.list) {
+            const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+            if (hasUrlParams && config.api?.filterBy) {
+                return; 
+            }
             const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
             const start = Date.now();
             const pageNo = 1;
@@ -430,6 +449,14 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                         }
                     }, [selectedRow, config.onRowSelectionChange]);
 
+                    const [showUploadPopup, setShowUploadPopup] = useState(false);
+                    // Listen for open-upload-popup event
+                    useEffect(() => {
+                        const handler = () => setShowUploadPopup(true);
+                        window.addEventListener('open-upload-popup', handler);
+                        return () => window.removeEventListener('open-upload-popup', handler);
+                    }, []);
+
                     const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
 
                     return (
@@ -447,22 +474,30 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                                             config.header?.wholeTableActions?.map(
                                                 (action) => action
                                             )}
-                                            {config.header?.exportButton &&
-                                        <div className="flex gap-[12px] relative">
-                                            <BorderIconButton
-                                                icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
-                                                label="Export Excel"
-                                                onClick={async () => {
-                                                    if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
-                                                    if (!config.header?.exportButton?.onClick) return;
-                                                    config.header.exportButton.onClick(config.api?.list as any, displayedData);
-                                                }}
-                                            />
-                                        </div>
-                                            }
+                                            {config.header?.exportButton && (
+                                                <div className="flex gap-[12px] relative items-center">
+                                                    <BorderIconButton
+                                                        icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
+                                                        label="Export Excel"
+                                                        onClick={async () => {
+                                                            if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
+                                                            if (!config.header?.exportButton?.onClick) return;
+                                                            config.header.exportButton.onClick(config.api?.list as any, displayedData);
+                                                        }}
+                                                    />
+                                                    {/* Upload icon next to exportButton if upload prop is provided */}
+                                                    {config.header?.upload && (
+                                                        <BorderIconButton
+                                                            icon="material-symbols:upload-rounded"
+                                                            // label="Upload"
+                                                            onClick={() => setShowUploadPopup(true)}
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
                                         {/* If you want to add threeDot dropdown, do it in the correct place in header */}
                                       {config.header?.threeDot && (() => {
-                                            
+                            
                                             const visibleOptions = config.header.threeDot.filter(option => {
                                                 const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
                                                 return shouldShow;
@@ -512,6 +547,15 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                                 <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
                                 <TableFooter />
                             </div>
+                            {/* Upload Popup */}
+                            {config.header?.upload && (
+                                <UploadPopup
+                                    open={showUploadPopup}
+                                    onClose={() => setShowUploadPopup(false)}
+                                    dummyApi={config.header.upload.dummyApi}
+                                    api={config.header.upload.api}
+                                />
+                            )}
                         </>
                     );
                 }
@@ -522,12 +566,15 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     const [searchBarValue, setSearchBarValue] = useState("");
     const { selectedRow } = useContext(SelectedRow);
 
-    async function handleSearch() {
+    // need search Term only when you want to search using you word instead of the searchBarValue 
+    // ---> used for fixing searchBarValue is not updating immediately issue
+    async function handleSearch(searchTerm?: string) {
         if (!config.api?.search) return;
+        const termToUse = searchTerm !== undefined ? searchTerm : searchBarValue;
         try {
             setNestedLoading(true);
             const result = await config.api.search(
-                searchBarValue,
+                termToUse,
                 config.pageSize || defaultPageSize
             );
             const resolvedResult = result instanceof Promise ? await result : result;
@@ -540,8 +587,8 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
             });
             // persist global search state so pagination can reuse it (via context)
             try {
-                if (searchBarValue && String(searchBarValue).trim().length > 0) {
-                    setSearchState({ applied: true, term: searchBarValue });
+                if (termToUse && String(termToUse).trim().length > 0) {
+                    setSearchState({ applied: true, term: termToUse });
                 } else {
                     setSearchState({ applied: false, term: "" });
                 }
@@ -549,7 +596,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                 // ignore in non-browser environments
             }
         } finally {
-            setNestedLoading(false);
+            setTimeout(() => setNestedLoading(false), 0);
         }
     }
 
@@ -568,7 +615,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                         ) => setSearchBarValue(e.target.value)}
                                         onClear={async () => {
                                             setSearchBarValue("");
-                                            handleSearch();
+                                            handleSearch("");
                                         }}
                                         onEnterPress={handleSearch}
                                     />
@@ -617,6 +664,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
     );
 }
 
+// For showing/hiding columns using a dropdown with checkboxes
 function ColumnFilter() {
     const { config } = useContext(Config);
     const { columns } = config;
@@ -1056,27 +1104,13 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                             "
                                             style={{ backgroundColor: rowBgColor || 'white' }}
                                             >
-                                                <div className="flex items-center gap-[4px]">
+                                                <div className="flex items-center gap-[10px]">
                                                     {rowActions.map(
                                                         (action, index) => (
-                                                            <div 
-                                                                key={index} 
-                                                                onClick={() => {
-                                                                    if (action.onClick) {
-                                                                        action.onClick(row);
-                                                                    }
-                                                                }}
-                                                                className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
-                                                            >
-                                                            {action.icon 
-                                                                ? <Icon
-                                                                    key={index}
-                                                                    icon={action.icon}
-                                                                    width={20}
-                                                                /> 
-                                                                : <span>{action.label}</span>
-                                                            }
-                                                        </div>)
+                                                            <div key={index}>
+                                                                <IconWithLoading action={action} index={index} row={row} showLoading={action.showLoading} />
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             </td>
@@ -1102,6 +1136,32 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     );
 }
 
+function IconWithLoading({ action, index, row ,showLoading}: { action: any; index: number; row: any; showLoading?: boolean }){
+    const [isLoading, setIsLoading] = useState(false);
+    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={30} className="flex justify-center items-center ml-2"/></div> : <div 
+                                                                key={index} 
+                                                                onClick={async () => {
+                                                                    if (action.onClick) {
+                                                                        setIsLoading(true);
+                                                                        await action.onClick(row);
+                                                                        setIsLoading(false);
+                                                                    }
+                                                                }}
+                                                                className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
+                                                            >
+                                                            {action.icon  
+                                                                ? <Icon
+                                                                    key={index}
+                                                                    icon={action.icon}
+                                                                    width={20}
+                                                                /> 
+                                                                : <span>{action.label}</span>
+                                                            }
+                                                        </div>
+}</>)
+}
+
+// Filter Component for column near column name using icon button
 function FilterTableHeader({
     column,
     dimensions,
@@ -1242,39 +1302,18 @@ function FilterTableHeader({
             }
             setShowFilterDropdown(false);
         } else {
-            setSelectedValues((prev) => {
-                let updated: string[];
-                if (prev.includes(value)) {
-                    updated = prev.filter((v) => v !== value);
-                } else {
-                    updated = [...prev, value];
-                }
-                // persist multi-select in global filter state
-                try {
-                    setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
-                } catch (err) { }
-                if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
-                // Call search API for multi-select
-                if(api?.list) {
-                    try {
-                        setNestedLoading(true);
-                        const res = api.list(1,defaultPageSize); // assuming API accepts comma-separated values for multi-select
-                        Promise.resolve(res).then(async (result) => {
-                            const resolvedResult = result instanceof Promise ? await result : result;
-                            const { data, total, currentPage } = resolvedResult;
-                            setTableDetails({
-                                ...tableDetails,
-                                data,
-                                currentPage: currentPage - 1,
-                                total,
-                                pageSize: defaultPageSize,
-                            });
-                            setNestedLoading(false);
-                        });
-                    } catch (err) { setNestedLoading(false); /* ignore */ }
-                }
-                return updated;
-            });
+            let updated: string[];
+            if (selectedValues.includes(value)) {
+                updated = selectedValues.filter((v) => v !== value);
+            } else {
+                updated = [...selectedValues, value];
+            }
+            // persist multi-select in global filter state
+            try {
+                setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
+            } catch (err) { }
+            if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
+            setSelectedValues(updated);
         }
     }
 // function handleSelect(value: string) {
@@ -1412,11 +1451,9 @@ function TableFooter() {
             try {
                 const globalFilter = filterState;
                 if (globalFilter && globalFilter.applied && api?.filterBy) {
-                    // reuse payload and request the requested page; add page if backend expects it
+                    // reuse payload and request the requested page; do NOT add .page to payload, instead pass as 3rd arg
                     const payload = { ...(globalFilter.payload || {}) } as Record<string, any>;
-                    // include page param (1-based) so backend can return correct page
-                    payload.page = pageNo + 1;
-                    const res = await api.filterBy(payload, pageSize);
+                    const res = await api.filterBy(payload, pageSize, pageNo + 1);
                     const resolvedResult = res instanceof Promise ? await res : res;
                     const { data, total, currentPage } = resolvedResult;
                     setTableDetails({
@@ -1685,6 +1722,7 @@ export function FilterOptionList({
     );
 }
 
+// FilterBy Component for global table filtering (Top Left Corner of Table) - dropdown near search bar
 function FilterBy() {
     const { config } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setFilterState, initialTableData } = useContext(TableDetails);
@@ -1698,6 +1736,86 @@ function FilterBy() {
     const [customPayload, setCustomPayload] = useState<Record<string, string | number | null | (string | number)[]>>({});
     const [isApplyingCustom, setIsApplyingCustom] = useState(false);
     const [isClearingCustom, setIsClearingCustom] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false); // fixes the loop and going back of url with params to url without params
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
+
+    useEffect(() => {
+    if (!searchParams) return;
+
+    const paramsObj: Record<string, any> = {};
+    searchParams.forEach((value, key) => {
+        // If the value contains a comma, treat it as an array (matching your .join(',') logic)
+        if (value.includes(',')) {
+            paramsObj[key] = value.split(',');
+        } else if (value === 'all') {
+            paramsObj[key] = 'all';
+        } else {
+            paramsObj[key] = value;
+        }
+    });
+
+    if (hasCustomRenderer) {
+        setCustomPayload(paramsObj);
+    } else {
+        // For built-in filters, we need to match the structure expected by filterByFields
+        const initialFilters: Record<string, string | string[]> = {};
+        (config.header?.filterByFields || []).forEach((f: any) => {
+            const val = paramsObj[f.key];
+            if (val) {
+                initialFilters[f.key] = val;
+            } else {
+                initialFilters[f.key] = f.isSingle === false ? [] : "";
+            }
+        });
+        setFilters(initialFilters);
+    }
+
+    if (Object.keys(paramsObj).length > 0) {
+        setAppliedFilters(true);
+        // Sync to global context so TableHeader/Footer see it
+        setFilterState({ 
+            applied: true, 
+            payload: toApiPayload(paramsObj) 
+        });
+    }
+
+    setIsInitialized(true);
+}, []);
+
+    useEffect(() => {
+        if (!hasCustomRenderer) return;
+        if (!searchParams || !router) return;
+        const params = new URLSearchParams(searchParams.toString());
+        Object.keys(customPayload || {}).forEach((k) => {
+        const v = customPayload[k];
+        // Only ever put 'all' or a comma-joined array in the URL
+        if (v === 'all') {
+        params.set(k, 'all');
+        } else if (Array.isArray(v)) {
+        if (v.length > 0) {
+            params.set(k, v.join(','));
+        } else {
+            params.delete(k);
+        }
+        } else if (v !== null && String(v).trim().length > 0) {
+        params.set(k, String(v));
+        } else {
+        params.delete(k);
+        }
+        });
+        // Remove any keys in params not present in customPayload
+        Array.from(params.keys()).forEach((k) => {
+        if (!(k in customPayload)) params.delete(k);
+        });
+
+        if (urlRef.current !== params.toString()) {
+            urlRef.current = params.toString();
+            const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newRelativePathQuery, { scroll: false });
+        }
+    }, [customPayload, hasCustomRenderer, router, searchParams]);
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
@@ -1709,26 +1827,62 @@ function FilterBy() {
         setFilters(initial);
     }, [config.header?.filterByFields, hasCustomRenderer]);
 
+    useEffect(() => {
+    // This triggers as soon as hydration finishes
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            // Note: pass the hydrated filters directly to ensure we don't 
+            // wait for a state re-render cycle
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
+
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
-    const activeFilterCount = Object.keys(sourcePayload || {}).reduce((acc, k) => {
+    // Custom logic: if both from_date and to_date are set, count as 1 filter (not 2)
+    const filterKeys = Object.keys(sourcePayload || {});
+    let counted = new Set<string>();
+    let count = 0;
+    for (const k of filterKeys) {
+        if (counted.has(k)) continue;
         const v = (sourcePayload as any)[k];
         const hasValue = Array.isArray(v)
             ? v.length > 0
             : String(v ?? '').trim().length > 0;
-        if (!hasValue) return acc;
+        if (!hasValue) continue;
+
+        // Special case: from_date and to_date together count as 1
+        if ((k === 'from_date' || k === 'to_date')) {
+            const from = (sourcePayload as any)['from_date'];
+            const to = (sourcePayload as any)['to_date'];
+            const fromHas = from && String(from).trim().length > 0;
+            const toHas = to && String(to).trim().length > 0;
+            if (fromHas || toHas) {
+                if (!counted.has('from_date') && !counted.has('to_date')) {
+                    count += 1;
+                    counted.add('from_date');
+                    counted.add('to_date');
+                }
+            }
+            continue;
+        }
 
         // For built-in filters, respect applyWhen; custom renderer handles its own logic
         if (!hasCustomRenderer) {
             const field = (config.header?.filterByFields || []).find((f: FilterField) => f.key === k);
             try {
-                if (field?.applyWhen && !field.applyWhen(filters)) return acc;
+                if (field?.applyWhen && !field.applyWhen(filters)) continue;
             } catch (err) {
-                return acc;
+                continue;
             }
         }
 
-        return acc + 1;
-    }, 0);
+        count += 1;
+        counted.add(k);
+    }
+    const activeFilterCount = count;
 
     const toApiPayload = (payload: Record<string, any>) => {
         const payloadForApi: Record<string, string | number | null> = {};
@@ -1742,7 +1896,36 @@ function FilterBy() {
         });
         return payloadForApi;
     };
-    const applyFilter = async () => {
+    const applyFilter = useCallback(async (overridingFilters?: Record<string, any>) => {
+    // Use overridingFilters if provided (for initial load), otherwise use state
+    const currentFilters = overridingFilters || filters;
+    if (Object.keys(currentFilters).length === 0) return;
+    
+    setShowDropdown(false);
+    if (config.api?.filterBy) {
+        setNestedLoading(true);
+        try {
+            const payloadForApi = toApiPayload(currentFilters);
+            setFilterState({ applied: true, payload: payloadForApi });
+            
+            const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+            const resolved = res instanceof Promise ? await res : res;
+            const { currentPage, totalRecords, pageSize, total, data } = resolved;
+            
+            setTableDetails({
+                data: data || [],
+                total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
+                totalRecords: totalRecords,
+                currentPage: (currentPage || 1) - 1,
+                pageSize: pageSize,
+            });
+            setAppliedFilters(true);
+        } catch (err) {
+            console.error("Filter API error", err);
+        } finally {
+            setNestedLoading(false);
+        }
+    } else {
         if (activeFilterCount === 0) return;
         setShowDropdown(false);
         // call API if provided
@@ -1836,8 +2019,9 @@ function FilterBy() {
 
         setShowDropdown(false);
     };
+}, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
 
-    const applyCustomPayload = async (payload?: Record<string, string | number | null | (string | number)[]>) => {
+const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
@@ -1892,7 +2076,18 @@ function FilterBy() {
         } finally {
             setIsApplyingCustom(false);
         }
-    };
+}, [customPayload, config, tableDetails.data]);
+
+useEffect(() => {
+    // Only trigger once state is initialized and there are actual params to apply
+    if (isInitialized && searchParams && searchParams.size > 0) {
+        if (hasCustomRenderer) {
+            applyCustomPayload(customPayload);
+        } else {
+            applyFilter(filters);
+        }
+    }
+}, [isInitialized, hasCustomRenderer]);
 
     const clearAll = async () => {
         if (activeFilterCount === 0) return;

@@ -1,9 +1,6 @@
 import axios from "axios";
 import { Params } from "next/dist/server/request/params";
 import { APIFormData } from "./merchandiserApi";
-import { useRouter } from "next/navigation";
-import { p } from "framer-motion/client";
-
 
 
 export const API = axios.create({
@@ -50,7 +47,7 @@ export const downloadFile = (fileurl: string, type?: string): void => {
   const n = fileurl.lastIndexOf("/");
   const final_url = fileurl.substring(n + 1);
   const link = document.createElement("a");
-  link.setAttribute("target", "_blank");
+  link.setAttribute("target", "_self");
   link.setAttribute("href", fileurl);
   link.setAttribute("download", final_url);
   document.body.appendChild(link);
@@ -163,7 +160,7 @@ export async function downloadFileGlobal(
     const link = document.createElement('a');
     link.href = url;
     link.download = finalFileName;
-    link.target = '_blank';
+    link.target = '_self';
     link.rel = 'noopener noreferrer';
     link.style.display = 'none';
 
@@ -180,18 +177,6 @@ export async function downloadFileGlobal(
     return false;
   }
 }
-
-/**
- * Download PDF specifically - Optimized for PDF files
- * Uses the global download function with PDF-specific defaults
- * 
- * @param url - URL to the PDF file
- * @param fileName - Optional custom filename (default: 'document.pdf')
- * @returns Promise<boolean>
- * 
- * @example
- * await downloadPDFGlobal(response.download_url, 'invoice-12345.pdf');
- */
 export async function downloadPDFGlobal(
   url: string,
   fileName: string = 'document.pdf'
@@ -199,8 +184,6 @@ export async function downloadPDFGlobal(
   const finalFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
   return downloadFileGlobal(url, finalFileName, true);
 }
-
-
 
 
 export const login = async (credentials: {
@@ -265,7 +248,7 @@ export const companyById = async (id: string) => {
 
 export const updateCompany = async (id: string, data: object) => {
   try {
-    const res = await APIFormData.put(`/api/master/company/company/${id}`, data);
+    const res = await APIFormData.post(`/api/master/company/company/${id}`, data);
 
     return res.data;
   } catch (error: unknown) {
@@ -875,6 +858,18 @@ export const subRegionList = async (params?: Params) => {
 export const getCompanyCustomers = async (params?: Params) => {
   try {
     const res = await API.get("/api/master/companycustomer/list", {
+      params: params,
+    });
+
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const getCompanyCustomersPurchase = async (params?: Params) => {
+  try {
+    const res = await API.get("/api/hariss_transaction/po_orders/cusbsdpuchorder", {
       params: params,
     });
 
@@ -4150,29 +4145,6 @@ export const discountGlobalSearch = async (params?: Params) => {
   }
 };
 
-export const assetsTransfer = async (payload: object) => {
-  try {
-    const res = await API.post("/api/assets/chiller/transfer-chillers", payload);
-
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-  console.log("assetsTransfer payload", payload);
-};
-
-export const assestsTansferget = async (params?: Params) => {
-  try {
-    const res = await API.get(`api/assets/chiller/getupdatewarehouse_chiller`, {
-      params: params,
-    });
-    return res.data;
-  } catch (error: unknown) {
-    return handleError(error);
-  }
-};
-
-
 export const salesmanAttendence = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/salesmen/getattendance`, {
@@ -4228,7 +4200,7 @@ export const itemAllReturnExport = async (params?: Params) => {
   }
 };
 
-export const allItemInvoiceExport = async (uuid: string, params?: Params) => {
+export const allItemInvoiceExport = async (params?: Params) => {
   try {
     const res = await API.get(`/api/master/items/item-exportInvoice`, {
       params: params,
@@ -4268,15 +4240,113 @@ export const statusFilter = async (params?: Params) => {
     return handleError(error);
   }
 };
-export const warehouseFilter = async (params?: Params) => {
+
+export const salesmanAllInvoiceExport = async (uuid: string, params?: Params) => {
   try {
-    const res = await API.get("api/assets/chiller/getupdatewarehouse_chiller", {params});
+    const res = await API.get(`/api/master/salesmen/export-invoices/${uuid}`, { params });
 
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
+
+
+export const allRoleList = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/roles/getDropdownRole`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const distributorStockOverview = async (id: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/settings/warehouse-stocks/${id}/stock-helth`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const dummyImport = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/master/route-visits/dummy-csv`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const routeVisitCustomerImport = async (formData: FormData) => {
+  try {
+    const res = await API.post(`/api/master/route-visits/bulk-import`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const itemPurchase = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/po_orders/itembsdpoorders`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+
+export const exportAllPO = async (params?: Params) => {
+  try {
+    const res = await API.get(`/api/hariss_transaction/po_orders/exportclitembsdpoorders`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const assetsTransfer = async (payload: object) => {
+  try {
+    const res = await API.post("/api/assets/chiller/transfer-chillers", payload);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+  console.log("assetsTransfer payload", payload);
+}; 
+
+export const assestsTansferget = async (params?: Params) => {
+  try {
+    const res = await API.get(`api/assets/chiller/getupdatewarehouse_chiller`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+}; 
+
+export const warehouseFilter = async (params?: Params) => {
+  try {
+    const res = await API.get("api/assets/chiller/getupdatewarehouse_chiller", {params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
 export const downloadQR = (fileurl: string, type?: string): void => {
   const n = fileurl.lastIndexOf("/");
   const final_url = fileurl.substring(n + 1);
@@ -4287,16 +4357,16 @@ export const downloadQR = (fileurl: string, type?: string): void => {
   document.body.appendChild(link);
   link.click();
   link.remove();
-};
+}; 
+
 export const assestMasterQR = async (uuid: string, params?:{ format?: string } ) => {
   try {
     const res = await API.get(`api/assets/chiller/${uuid}`, { params });
     return res.data;
-     
   } catch (error: unknown) {
     return handleError(error);
   }
-};
+}; 
 
 export const AssestMasterfilter = async (params?: Params) => {
   try {
@@ -4307,7 +4377,8 @@ export const AssestMasterfilter = async (params?: Params) => {
   } catch (error: unknown) {
     return handleError(error);
   }
-};
+}; 
+
 export const AssestMasterModel = async (params?: Params) => {
   try {
     const res = await API.get("api/settings/asset-model-number/list?dropdown=true",
@@ -4319,134 +4390,62 @@ export const AssestMasterModel = async (params?: Params) => {
   }
 };
 
-// export const AssestMasterStatus = async (params?: Params) => {
-//   try {
-//     const res = await API.get("api/assets/chiller/filterData",
-//       { params }
-//     );
-//     return res.data;
-//   } catch (error: unknown) {
-//     return handleError(error);
-//   }
-// };
-
-
 export const AssetMasterStatus = async (params?: Params) => {
   try {
     const paramsData = {
       per_page: params?.per_page ? Number(params.per_page) : 10,
-
-      status: params?.status,        // Optional
-      model_id: params?.model_id,    // Optional
+      status: params?.status,
+      model_id: params?.model_id,
       warehouse_id: params?.warehouse_id,
       area_id: params?.area_id,
       region_id: params?.region_id,
       company_id: params?.company_id,
     };
     console.log("AssestRequestFilter paramsData", paramsData);
-
-    const res = await API.post(
-      "api/assets/chiller/filterData",
-      paramsData
-    );
-
+    const res = await API.post("api/assets/chiller/filterData", paramsData);
     return res.data;
-
   } catch (error: unknown) {
     return handleError(error);
   }
-};
-
-
-
-
-
-
+}; 
 
 export const AssestRequestFilter = async (params?: Params) => {
   try {
-   const paramsData = {
-  // "filter": {
-  //   "company_id": params?.company_id,
-  //   "region_id": params?.region_id,
-  //   "area_id": params?.area_id,
-  //   "warehouse_id": params?.warehouse_id
-  // }
-  
-  "filter": {
-    "company_id": [1, 2],
-    "region_id": [2],
-    "area_id": [25],
-    "warehouse_id": [109]
-  }
-
-
-}
-// console.log("AssestRequestFilter paramsData", paramsData);
-  
-
-    const res = await API.post("api/assets/chiller-request/list",
-       paramsData 
-    );
+    const paramsData = {
+      "filter": {
+        "company_id": [1, 2],
+        "region_id": [2],
+        "area_id": [25],
+        "warehouse_id": [109]
+      }
+    };
+    const res = await API.post("api/assets/chiller-request/list", paramsData);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-// export const FridgeUpdate = async (params?: Params) => {
-//   console.log("FridgeUpdate params", params);
-  
-//   const paramsData = {  
-//   "filter": {
-//     "company_id": [1, 2],
-//     "region_id": [2],
-//     "area_id": [25],
-//     "warehouse_id": [109]
-//   }
-// }
-//   try {
-//     const res = await API.post("api/assets/fridge-customer-update/list",
-//       { params }
-//     );
-//     return res.data;
-//   } catch (error: unknown) {
-//     return handleError(error);
-//   }
-// };
-  const toNumberArray = (value?:  any) =>
-  value ? value.split(",").map(Number) : [];
-
+const toNumberArray = (value?: any) =>
+  value ? value.split(",").map(Number) : []; 
 
 export const FridgeUpdate = async (params?: Params) => {
   console.log("FridgeUpdate params", params);
-
   const paramsData = {
     per_page: Number(params?.per_page) || 10,
     filter: {
-
       company_id: toNumberArray(params?.company_id),
       region_id: toNumberArray(params?.region_id),
       area_id: toNumberArray(params?.area_id),
       warehouse_id: toNumberArray(params?.warehouse_id),
     },
   };
-
   console.log("Converted paramsData", paramsData);
-
   try {
-    const res = await API.post(
-
-
-
-      "api/assets/fridge-customer-update/list",
-      paramsData
-    );
+    const res = await API.post("api/assets/fridge-customer-update/list", paramsData);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
-
-
 

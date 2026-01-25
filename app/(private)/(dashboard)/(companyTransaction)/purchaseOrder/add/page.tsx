@@ -1064,7 +1064,7 @@ export default function PurchaseOrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.customer ||  !values.delivery_date || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
+                  <SidebarBtn type="submit" leadingIcon="mdi:check" isActive={true} label={isSubmitting ? "Creating Purchase Order..." : "Create Purchase Order"} disabled={isSubmitting || !values.customer ||  !values.delivery_date || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );

@@ -10,7 +10,7 @@ import Table, {
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice ,invoiceExportCollapse} from "@/app/services/agentTransaction";
+import { invoiceList, exportInvoice, invoiceStatusUpdate, exportOrderInvoice ,invoiceExportCollapse,invoiceGlobalFilter} from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
@@ -22,7 +22,7 @@ import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import Drawer from "@mui/material/Drawer";
 import { OrderDetailPage } from "./OrderDetailComponent";
-import { Params } from "next/dist/server/request/params";
+import { downloadPDFGlobal } from "@/app/services/allApi";
 // import StatusBtn from "@/app/components/statusBtn2";
 // import ApprovalStatus from "@/app/components/approvalStatus";
 
@@ -42,7 +42,11 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    const [filterPayload,setFilterPayload] = useState<any>();
+    const [warehouseId, setWarehouseId] = useState<string>("");
+    const [salesmanId, setSalesmanId] = useState<string>("");
+    const {  warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+        const [colFilter, setColFilter] = useState<boolean>(false);
     const columns = [
     {
         key: "invoice_date",
@@ -89,14 +93,36 @@ export default function CustomerInvoicePage() {
             const code = row.warehouse_code || "-";
             const name = row.warehouse_name || "-";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
     },
     {
         key: "salesman_code", label: "Slaes Team", showByDefault: true, render: (row: TableDataType) => {
             const code = row.salesman_code || "-";
             const name = row.salesman_name || "-";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+         filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
     },
     {
         key: "total_amount",
@@ -119,13 +145,13 @@ export default function CustomerInvoicePage() {
 ];
     // Load dropdown data
     useEffect(() => {
-        ensureAreaLoaded();
-        ensureCompanyLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
+        // ensureAreaLoaded();
+        // ensureCompanyLoaded();
+        // ensureRegionLoaded();
+        // ensureRouteLoaded();
         ensureSalesmanLoaded();
         ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+    }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
     const [filters, setFilters] = useState({
         fromDate: new Date().toISOString().split("T")[0],
         toDate: new Date().toISOString().split("T")[0],
@@ -144,10 +170,17 @@ export default function CustomerInvoicePage() {
 
     const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
         try {
-            // setLoading(true);
-            // Pass selected format to the export API
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await exportInvoice({ format });
+            // Build params using same logic as filterBy
+            const params: Record<string, string> = {};
+            Object.keys(filters || {}).forEach((k) => {
+                const v = filters[k as keyof typeof filters];
+                if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                    params[k] = String(v);
+                }
+            });
+            params["format"] = format;
+            const response = await exportInvoice({ ...params, filter: filterPayload });
             const url = response?.url || response?.data?.url;
             if (url) {
                 await downloadFile(url);
@@ -166,29 +199,43 @@ export default function CustomerInvoicePage() {
     };
 
       const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
-        try {
-          setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          const response = await invoiceExportCollapse({ format });
-          if (response && typeof response === "object" && response.download_url) {
-            await downloadFile(response.download_url);
-            showSnackbar("File downloaded successfully ", "success");
-          } else {
-            showSnackbar("Failed to get download URL", "error");
-          }
-          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } catch (error) {
-          showSnackbar("Failed to download warehouse data", "error");
-          setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-        } finally {
-        }
+                try {
+                        setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                        // Build params using same logic as filterBy
+                        const params: Record<string, string> = {};
+                        Object.keys(filters || {}).forEach((k) => {
+                            let apiKey = k;
+                            if (k === "fromDate") apiKey = "from_date";
+                            if (k === "toDate") apiKey = "to_date";
+                            const v = filters[k as keyof typeof filters];
+                            if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                                params[apiKey] = String(v);
+                            }
+                        });
+                        params["format"] = format;
+                        const response = await invoiceExportCollapse({ ...params, filter: filterPayload });
+                        if (response && typeof response === "object" && response.download_url) {
+                                await downloadFile(response.download_url);
+                                showSnackbar("File downloaded successfully ", "success");
+                        } else {
+                                showSnackbar("Failed to get download URL", "error");
+                        }
+                        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                } catch (error) {
+                        showSnackbar("Failed to download warehouse data", "error");
+                        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                } finally {
+                }
       };
 
     const downloadPdf = async (uuid: string) => {
         try {
-            setLoading(true);
+            // setLoading(true);
             const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
             if (response && typeof response === 'object' && response.download_url) {
-                await downloadFile(response.download_url);
+                 const fileName = `invoice-${uuid}.pdf`;
+                await downloadPDFGlobal(response.download_url, fileName);
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully ", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -196,7 +243,7 @@ export default function CustomerInvoicePage() {
         } catch (error) {
             showSnackbar("Failed to download file", "error");
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 
@@ -277,18 +324,28 @@ export default function CustomerInvoicePage() {
             showSnackbar(String(message), "error");
         }
     };
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId, salesmanId]);
     // 🔹 Fetch Invoices
+
     const fetchInvoices = useCallback(async (
         page: number = 1,
         pageSize: number = 10
     ): Promise<listReturnType> => {
         try {
+            const params: any = {
+        page: page.toString(),
+        per_page: pageSize.toString(),
+      };
+              if (warehouseId) {
+                    params.warehouse_id = warehouseId;
+                }
+                if (salesmanId) {
+                    params.salesman_id = salesmanId;
+                }
             setLoading(true);
-            const result = await invoiceList({
-                page: page.toString(),
-                per_page: pageSize.toString(),
-            });
+            const result = await invoiceList(params);
 
             return {
                 data: Array.isArray(result.data) ? result.data : [],
@@ -308,26 +365,29 @@ export default function CustomerInvoicePage() {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, showSnackbar]);
+    }, [setLoading, showSnackbar, warehouseId, salesmanId]);
 
+    // setRefreshKey((prev) => prev + 1);
+     
     const filterBy = useCallback(
         async (
             payload: Record<string, string | number | null>,
-            pageSize: number
+            pageSize: number = 50,
+            pageNo?: number
         ): Promise<listReturnType> => {
             let result;
             setLoading(true);
+            setFilterPayload(payload);
             try {
-                const params: Record<string, string> = {};
-                Object.keys(payload || {}).forEach((k) => {
-                    const v = payload[k as keyof typeof payload];
-                    if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-                        params[k] = String(v);
-                    }
-                });
-                result = await invoiceList(params);
+                const body = {
+                    per_page: pageSize.toString(),
+                    current_page: (pageNo ?? 1).toString(),
+                    filter: payload
+                };
+                result = await invoiceGlobalFilter(body);
             } finally {
                 setLoading(false);
+                setColFilter(false);
             }
 
             if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -345,13 +405,69 @@ export default function CustomerInvoicePage() {
         [setLoading]
     );
 
+    //   const fetchInvoiceAccordingToGlobalFilter = useCallback(
+    //     async (
+    //       payload: Record<string, any>,
+    //       pageSize: number = 50,
+    //       pageNo: number = 1
+    //     ): Promise<listReturnType> => {
+    
+    //       try {
+    //         setLoading(true);
+    //         setFilterPayload(payload);
+    //         const body = {
+    //            per_page: pageSize.toString(),
+    //       current_page: pageNo.toString(),
+    //           filter: payload
+    //         }
+    //         const listRes = await invoiceGlobalFilter(body);
+    //        const pagination =
+    //         listRes.pagination?.pagination || listRes.pagination || {};
+    //       return {
+    //        data: listRes.data || [],
+    //     total: pagination.last_page || listRes.pagination?.last_page || 1,
+    //     totalRecords:
+    //       pagination.total || listRes.pagination?.total || 0,
+    //     currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+    //     pageSize: pagination.per_page || pageSize,
+    //       };
+    //         // fetchOrdersCache.current[cacheKey] = result;
+    //         // return listRes;
+    //       } catch (error: unknown) {
+    //         console.error("API Error:", error);
+    //         setLoading(false);
+    //         throw error;
+    //       }
+    //       finally{
+    //         setLoading(false);
+    //       }
+    //     },
+    //     [invoiceGlobalFilter, warehouseId, salesmanId]
+    //   );
+
     return (
         <div className="flex flex-col h-full">
             {/* 🔹 Table Section */}
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchInvoices, filterBy: filterBy },
+                    api: { list: fetchInvoices ,
+                        filterBy: filterBy,
+            //             filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+            //     if (colFilter) {
+            //       return filterBy(payload, pageSize);
+            //     } else {
+            //       let pageNo = 1;
+            //       if (payload && typeof payload.page === 'number') {
+            //         pageNo = payload.page;
+            //       } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+            //         pageNo = Number(payload.page);
+            //       }
+            //       const { page, ...restPayload } = payload || {};
+            //       return fetchInvoiceAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+            //     }
+            //   }, 
+            },
                     header: {
                         title: "Distributor's Invoices",
                         threeDot: [
@@ -411,7 +527,12 @@ export default function CustomerInvoicePage() {
                             },
                         ],
                         columnFilter: true,
-                        filterRenderer: FilterComponent,
+                       filterRenderer: (props) => (
+                                                                                                           <FilterComponent
+                                                                                                           currentDate={true}
+                                                                                                             {...props}
+                                                                                                           />
+                                                                                                         ),
                         searchBar: false,
                         actions: can("create") ? [
                             <SidebarBtn
@@ -438,6 +559,7 @@ export default function CustomerInvoicePage() {
                         },
                         {
                             icon: "lucide:download",
+                            showLoading: true,
                             onClick: (row: TableDataType) => downloadPdf(row.uuid),
                         },
                     ],

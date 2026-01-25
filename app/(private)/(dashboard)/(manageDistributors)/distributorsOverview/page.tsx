@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import Table from "@/app/components/customTable";
 import { Icon } from "@iconify-icon/react";
-import { warehouseStocksKpi, distributorStockOverview, warhouseStocksByFilter } from "@/app/services/allApi";
+import { warehouseStocksKpi, distributorStockOverview } from "@/app/services/allApi";
 import { CustomTableSkelton } from "@/app/components/customSkeleton";
 import Skeleton from "@mui/material/Skeleton";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
@@ -38,21 +38,21 @@ const itemColumns = [
     key: "stock_qty",
     label: "Stock Qty",
     showByDefault: true,
-    render: (row: any) => (row.stock_qty != null ? toInternationalQty(row.stock_qty) : "-"),
+    render: (row: any) => (typeof row.stock_qty === 'number' || (typeof row.stock_qty === 'string' && row.stock_qty !== '')) ? toInternationalQty(Number(row.stock_qty)) : '0',
     isSortable: true,
   },
   {
     key: "total_sold_qty",
     label: "Sold Qty",
     showByDefault: true,
-    render: (row: any) => (row.total_sold_qty != null ? toInternationalQty(row.total_sold_qty) : "-"),
+    render: (row: any) => (typeof row.total_sold_qty === 'number' || (typeof row.total_sold_qty === 'string' && row.total_sold_qty !== '')) ? toInternationalQty(Number(row.total_sold_qty)) : '0',
     isSortable: true,
   },
   {
     key: "purchase",
     label: "Purchase Qty",
     showByDefault: true,
-    render: (row: any) => (row.purchase != null ? toInternationalQty(row.purchase) : "-"),
+    render: (row: any) => (typeof row.purchase === 'number' || (typeof row.purchase === 'string' && row.purchase !== '')) ? toInternationalQty(Number(row.purchase)) : '0',
     isSortable: true,
   },
 ];
@@ -152,24 +152,9 @@ const OverallPerformance: React.FC = () => {
         id: it.item_id ?? it.id ?? undefined,
         item_code: it.item_code ?? it.item?.item_code ?? it.erp_code ?? "",
         item_name: it.item_name ?? it.item?.name ?? it.item?.item_name ?? "",
-        stock_qty:
-          typeof it.available_stock_qty === "number"
-            ? it.available_stock_qty
-            : it.available_stock_qty
-              ? Number(it.available_stock_qty)
-              : 0,
-        total_sold_qty:
-          typeof it.total_sales === "number"
-            ? it.total_sales
-            : it.total_sales
-              ? Number(it.total_sales)
-              : 0,
-        purchase:
-          typeof it.purchase_qty === "number"
-            ? it.purchase_qty
-            : it.purchase_qty
-              ? Number(it.purchase_qty)
-              : 0,
+        stock_qty: it.available_stock_qty !== undefined && it.available_stock_qty !== null && it.available_stock_qty !== '' ? Number(it.available_stock_qty) : 0,
+        total_sold_qty: it.total_sales !== undefined && it.total_sales !== null && it.total_sales !== '' ? Number(it.total_sales) : 0,
+        purchase: it.purchase_qty !== undefined && it.purchase_qty !== null && it.purchase_qty !== '' ? Number(it.purchase_qty) : 0,
         uoms: it.uoms ?? it.item?.uoms ?? [],
         health_flag: typeof it.health_flag === "number" ? it.health_flag : it.health_flag ? Number(it.health_flag) : 1,
         _raw: it,
@@ -251,13 +236,10 @@ const OverallPerformance: React.FC = () => {
                         try {
                           setLoading(true);
                           let topOrderRes;
+                          const params: any = {};
                           if (payload.day_filter) {
-                            topOrderRes = await warhouseStocksByFilter({
-                              warehouse_id: selectedWarehouse,
-                              date_filter: payload.day_filter
-                            });
-                          } else if (payload.from_date || payload.to_date) {
-                            const params: any = {};
+                            params.range = payload.day_filter;
+                          } 
                             if (payload.from_date) {
                               params.from_date = payload.from_date;
                             }
@@ -265,57 +247,12 @@ const OverallPerformance: React.FC = () => {
                               params.to_date = payload.to_date;
                             }
                             topOrderRes = await distributorStockOverview(selectedWarehouse, params);
-                          } else {
-                            topOrderRes = await distributorStockOverview(selectedWarehouse);
-                          }
-                          let lowCount = 0;
-                          if (topOrderRes && typeof topOrderRes.data.low_count !== 'undefined') {
-                            if (typeof topOrderRes.data.low_count === 'number') {
-                              lowCount = topOrderRes.data.low_count;
-                            } else if (!isNaN(Number(topOrderRes.data.low_count))) {
-                              lowCount = Number(topOrderRes.data.low_count);
-                            }
-                          }
-                          setStockLowQty({
-                            count: lowCount,
-                            items: []
-                          });
-                          const stocksRaw = Array.isArray(topOrderRes?.stocks)
-                            ? topOrderRes.stocks
-                            : Array.isArray(topOrderRes?.data?.items)
-                              ? topOrderRes.data.items
-                              : Array.isArray(topOrderRes?.data)
-                                ? topOrderRes.data
-                                : topOrderRes?.items
-                                  ? topOrderRes.items
-                                  : [];
-                          const stocksFromTopOrders = stocksRaw.map((it: any) => ({
-                            id: it.item_id ?? it.id ?? undefined,
-                            item_code: it.item_code ?? it.item?.item_code ?? it.erp_code ?? "",
-                            item_name: it.item_name ?? it.item?.name ?? it.item?.item_name ?? "",
-                            stock_qty:
-                              typeof it.available_stock_qty === "number"
-                                ? it.available_stock_qty
-                                : it.available_stock_qty
-                                  ? Number(it.available_stock_qty)
-                                  : 0,
-                            total_sold_qty:
-                              typeof it.total_sales === "number"
-                                ? it.total_sales
-                                : it.total_sales
-                                  ? Number(it.total_sales)
-                                  : 0,
-                            purchase:
-                              typeof it.purchase_qty === "number"
-                                ? it.purchase_qty
-                                : it.purchase_qty
-                                  ? Number(it.purchase_qty)
-                                  : 0,
-                            uoms: it.uoms ?? it.item?.uoms ?? [],
-                            health_flag: typeof it.health_flag === "number" ? it.health_flag : it.health_flag ? Number(it.health_flag) : 1,
-                            _raw: it,
-                          }));
-                          setTopOrders({ stocks: stocksFromTopOrders });
+                            setTopOrders({ stocks: topOrderRes?.data?.items });
+                            setStockLowQty({
+                              count: topOrderRes?.data?.low_count,
+                              items: []
+                            });
+                            setSelectedFilter(payload.day_filter || `${payload.from_date || ''}|${payload.to_date || ''}`);
                         } catch (err) {
                           console.error("Filter API error", err);
                         } finally {

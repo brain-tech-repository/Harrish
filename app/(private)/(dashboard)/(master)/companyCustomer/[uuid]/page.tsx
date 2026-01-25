@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-import RegionWatcher from "./areaOptions";
 import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
 import { Formik, Form, FormikHelpers } from "formik";
@@ -27,7 +25,6 @@ import StepperForm, {
   StepperStep,
 } from "@/app/components/stepperForm";
 import { useLoading } from "@/app/services/loadingContext";
-import { number } from "framer-motion";
 
 export type CompanyCustomerFormValues = {
   sap_code: string;
@@ -106,9 +103,17 @@ const validationSchema = Yup.object({
   region_id: Yup.string().required("Region is required."),
   area_id: Yup.string().required("Area is required."),
   payment_type: Yup.string().required("Payment Type is required."),
-  creditday: Yup.string().required("Credit Day is required."),
+  creditday: Yup.string().when('payment_type', (payment_type, schema) => 
+    (typeof payment_type === "string" && payment_type === '2')
+      ? schema.required("Credit Day is required.")
+      : schema.notRequired()
+  ),
   tin_no: Yup.string().required("TIN No is required."),
-  creditlimit: Yup.string().required("Credit Limit is required."),
+  creditlimit: Yup.string().when('payment_type', (payment_type, schema) => 
+    (typeof payment_type === "string" && payment_type === '2')
+      ? schema.required("Credit Limit is required.")
+      : schema.notRequired()
+  ),
   bank_guarantee_name: Yup.string().required("Guarantee Name is required."),
   bank_guarantee_amount: Yup.string().required("Guarantee Amount is required."),
 
@@ -182,6 +187,10 @@ export default function AddCompanyCustomer() {
     fetchAreaOptions,
     ensureAreaLoaded, ensureChannelLoaded, ensureCompanyTypeLoaded, ensureRegionLoaded, ensureAllCompanyTypesLoaded } = useAllDropdownListData();
 
+    // const [skeleton, setSkeleton] = useState({
+    //     region: false,
+    //     area: false,
+    //   });
   // Load dropdown data
   useEffect(() => {
     ensureAreaLoaded();
@@ -677,7 +686,14 @@ export default function AddCompanyCustomer() {
                   label="Region"
                   name="region_id"
                   value={values.region_id}
-                  onChange={(e) => setFieldValue("region_id", e.target.value)}
+                  onChange={(e) => {
+                    setFieldValue("region_id", e.target.value);
+                    setSkeleton((prev) => ({ ...prev, area_id: true }));
+                      fetchAreaOptions(e.target.value)
+                      .finally(() => {
+                        setSkeleton((prev) => ({ ...prev, area_id: false }));
+                      });
+                    }}
                   options={regionOptions}
                   error={touched.region_id && errors.region_id}
                 />
@@ -689,21 +705,10 @@ export default function AddCompanyCustomer() {
                   name="area_id"
                   value={values.area_id}
                   onChange={(e) => setFieldValue("area_id", e.target.value)}
-                  // keep enabled if we already have a value (edit mode) so it shows the current selection
-                  disabled={areaOptions.length === 0 && !values.area_id}
+                  disabled={areaOptions.length === 0 || !values.region_id}
                   showSkeleton={skeleton.area_id}
                   options={
-                    areaOptions && areaOptions.length > 0
-                      ? areaOptions
-                      : values.area_id
-                        ? // show the existing area_id value as an option when areaOptions haven't loaded yet
-                        [
-                          {
-                            value: values.area_id,
-                            label: `Selected Area (${values.area_id})`,
-                          },
-                        ]
-                        : [{ value: "", label: "No options" }]
+                    areaOptions
                   }
                   error={touched.area_id && errors.area_id}
                 />
@@ -721,7 +726,7 @@ export default function AddCompanyCustomer() {
               <div>
                 <InputFields
                   required
-                  label="Payment Type"
+                  label="Payment Terms"
                   name="payment_type"
                   type="radio"
                   value={values.payment_type}
@@ -733,9 +738,13 @@ export default function AddCompanyCustomer() {
                   error={touched.payment_type && errors.payment_type} 
                 />
               </div>
+              {values.payment_type === "2" && (
+                <>
               <div>
                 <InputFields
                   required
+                  type="number"
+                  integerOnly
                   label="Credit Day"
                   name="creditday"
                   value={values.creditday}
@@ -746,6 +755,8 @@ export default function AddCompanyCustomer() {
               <div>
                 <InputFields
                   required
+                  type="number"
+                  integerOnly
                   label="Credit Limit"
                   name="creditlimit"
                   value={values.creditlimit}
@@ -755,6 +766,8 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
+                type="number"
+                  integerOnly
                   label="Total Credit Limit"
                   name="totalcreditlimit"
                   value={values.totalcreditlimit}
@@ -772,11 +785,14 @@ export default function AddCompanyCustomer() {
                     setFieldValue("credit_limit_validity", e.target.value)
                   }
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   error={
                     touched.credit_limit_validity && errors.credit_limit_validity
                   }
                 />
               </div>
+              </>
+              )}
               <div>
                 <InputFields
                   required
@@ -792,6 +808,8 @@ export default function AddCompanyCustomer() {
               <div>
                 <InputFields
                   required
+                  type="number"
+                  integerOnly
                   label="Guarantee Amount"
                   name="bank_guarantee_amount"
                   value={values.bank_guarantee_amount}
@@ -803,7 +821,7 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
-                required
+                  required
                   label="Guarantee From"
                   name="bank_guarantee_from"
                   value={values.bank_guarantee_from}
@@ -816,12 +834,13 @@ export default function AddCompanyCustomer() {
               </div>
               <div>
                 <InputFields
-                required
+                  required
                   label="Guarantee To"
                   name="bank_guarantee_to"
                   value={values.bank_guarantee_to}
                   onChange={(e) => setFieldValue("bank_guarantee_to", e.target.value)}
                   type="date"
+                  min={values.bank_guarantee_from || new Date().toISOString().split('T')[0]}
                   error={touched.bank_guarantee_to && errors.bank_guarantee_to}
                 />
               </div>
@@ -883,13 +902,7 @@ export default function AddCompanyCustomer() {
           isSubmitting,
         }) => (
           <Form>
-            {/* Formik-aware watcher for region_id changes */}
-            <RegionWatcher
-              fetchAreaOptions={fetchAreaOptions}
-              setSkeleton={setSkeleton}
-              preserveExistingArea={isEditMode}
-              initialArea={initialValues.area_id}
-            />
+           
             <StepperForm
               steps={steps.map((step) => ({
                 ...step,

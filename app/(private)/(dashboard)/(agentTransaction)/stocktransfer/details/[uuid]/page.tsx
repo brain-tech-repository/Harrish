@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
+import Table from "@/app/components/customTable";
 
 const title = "Stock Transfer Details";
 const backBtnUrl = "/stocktransfer";
@@ -44,6 +45,21 @@ export default function ViewPage() {
         fetchTransferDetails();
     }, [uuid]);
 
+  const columns = [
+  { key: "item_name", label: "Item Name", showByDefault: true,render: (item: any) => `${item.erp_code} - ${item.item_name}` || "-" },
+  { key: "transfer_qty", label: "Transfer Qty", showByDefault: true },
+  {
+    key: "source_warehouse_stock",
+    label: "Source Stock",
+    showByDefault: true,
+  },
+  {
+    key: "destiny_warehouse_stock",
+    label: "Destination Stock",
+    showByDefault: true,
+  },
+];
+
     return (
         <>
             {/* HEADER */}
@@ -62,7 +78,7 @@ export default function ViewPage() {
 
             {/* SUMMARY CARDS */}
             <div className="flex flex-wrap gap-5">
-                <ContainerCard className="w-full lg:w-[350px]">
+                <ContainerCard className="w-full">
                     <KeyValueData
                         data={[
                             { key: "OSA Code", value: transferData?.osa_code },
@@ -93,13 +109,28 @@ export default function ViewPage() {
             </div>
 
             {/* ITEMS LIST */}
-            <ContainerCard className="mt-6">
-                <h3 className="text-lg font-semibold mb-4">
+            {/* <ContainerCard className="mt-6"> */}
+                {/* <h3 className="text-lg font-semibold mb-4">
                     Transfer Items
-                </h3>
+                </h3> */}
 
                 <div className="overflow-x-auto">
-                    <table className="w-full border border-gray-200 text-sm">
+                    {/* <table></table> */}
+                    <Table
+                            //  refreshKey={refreshKey}
+                             config={{
+                            //    api: { list: fetchOrders, filterBy: filterBy },
+                               header: {
+                                 title: "Transfer Items",
+                                
+                               },
+                               columns,
+                               
+                               pageSize: 50,
+                             }}
+                             data={transferData?.items}
+                           />
+                    {/* <table className="w-full border border-gray-200 text-sm">
                         <thead className="bg-gray-100">
                             <tr>
                                 <th className="p-2 border">Item Name</th>
@@ -145,9 +176,9 @@ export default function ViewPage() {
                                 </tr>
                             )}
                         </tbody>
-                    </table>
+                    </table> */}
                 </div>
-            </ContainerCard>
+            {/* </ContainerCard> */}
         </>
     );
 }

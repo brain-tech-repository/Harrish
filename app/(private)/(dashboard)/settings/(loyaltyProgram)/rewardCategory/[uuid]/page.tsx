@@ -2,7 +2,7 @@
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import Loading from "@/app/components/Loading";
-import { createRewardCategory,getRewardDetails ,updateReward} from "@/app/services/settingsAPI";
+import { createRewardCategory, getRewardDetails, updateReward } from "@/app/services/settingsAPI";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export default function AddEditRewardCategory() {
             giftType: data?.type,
           });
 
-       
+
         } catch (err) {
           showSnackbar("Failed to fetch route details", "error");
         } finally {
@@ -139,12 +139,13 @@ export default function AddEditRewardCategory() {
 
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
+        setSubmitting(false);
       } else {
+        router.push("/settings/rewardCategory");
         showSnackbar(
           isEditMode ? "Reward & Benefits updated successfully" : "Reward & Benefits added successfully",
           "success"
         );
-        router.push("/settings/rewardCategory");
       }
     } catch (err) {
       if (err instanceof yup.ValidationError) {
@@ -159,9 +160,10 @@ export default function AddEditRewardCategory() {
           isEditMode ? "Failed to update route" : "Failed to add route",
           "error"
         );
+        setSubmitting(false);
       }
     } finally {
-      setSubmitting(false);
+      router.push("/settings/rewardCategory");
     }
   };
 
@@ -194,7 +196,7 @@ export default function AddEditRewardCategory() {
             Reward & Benefits Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           
+
 
 
             {/* Route Name */}
@@ -228,7 +230,7 @@ export default function AddEditRewardCategory() {
             {/* Warehouse */}
             <div className="flex flex-col">
               <InputFields
-              min={1}
+                min={1}
                 required
                 type="number"
                 label="Points Rquired"
@@ -243,7 +245,7 @@ export default function AddEditRewardCategory() {
             </div>
             <div className="flex flex-col">
               <InputFields
-              min={1}
+                min={1}
                 required
                 type="number"
                 label="Stock Qty"
@@ -273,15 +275,15 @@ export default function AddEditRewardCategory() {
         </div>
       </div>
 
-   
+
 
       {/* Buttons */}
       <div className="flex justify-end gap-4 mt-6 pr-0">
         <button
           type="button"
           className={`px-6 py-2 rounded-lg border text-gray-700 hover:bg-gray-100 ${submitting
-              ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
-              : "border-gray-300"
+            ? "bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400"
+            : "border-gray-300"
             }`}
           onClick={() => router.push("/settings/rewardCategory")}
           disabled={submitting}

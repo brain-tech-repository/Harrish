@@ -4,6 +4,7 @@ import { JSX, useEffect, useState } from "react";
 import { ServiceTerritoryByUUID, serviceTerritoryExport } from "@/app/services/assetsApi";
 import { downloadFile } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 type Warehouse = {
     warehouse_id: number;
     warehouse_code: string;
@@ -38,7 +39,7 @@ type ServiceTerritoryData = {
     regions: Region[];
     technician?: Technician;
     comment_reject?: string | null;
-
+    request_step_id?: number | null;
 };
 
 interface ServiceTerritoryDetailsDrawerProps {
@@ -161,6 +162,11 @@ export default function ServiceTerritoryDetailsDrawer({ uuid, onClose }: Service
                     Download CSV
                 </button>
             </div>
+            <WorkflowApprovalActions
+                requestStepId={data?.request_step_id}
+                redirectPath={"/serviceTerritory"}
+                model="Service_Territory"
+            />
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">

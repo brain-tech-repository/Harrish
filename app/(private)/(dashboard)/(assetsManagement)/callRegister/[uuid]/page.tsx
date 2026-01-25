@@ -5,26 +5,138 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import { listReturnType } from "@/app/components/customTable";
 import InputFields from "@/app/components/inputFields";
 import StepperForm, { StepperStep, useStepperForm } from "@/app/components/stepperForm";
-import { genearateCode } from "@/app/services/allApi";
-import { addCallRegister, callRegisterGlobalSearch, callRegisterByUUID, updateCallRegister } from "@/app/services/assetsApi";
+import { genearateCode, saveFinalCode } from "@/app/services/allApi";
+import { addCallRegister, callRegisterByUUID, updateCallRegister, getTechicianList, serialNumberData, getCurrentCustomer } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import { Form, Formik, FormikValues } from "formik";
 import { useParams, useRouter } from "next/navigation";
 import { JSX, useCallback, useEffect, useState } from "react";
+import * as Yup from "yup";
+import {
+    ErrorMessage,
+    Form,
+    Formik,
+    FormikErrors,
+    FormikHelpers,
+    FormikTouched,
+} from "formik";
+const validationSchema = Yup.object({
+    ticket_type: Yup.string().required("Ticket Type is required"),
+    ticket_date: Yup.string().required("Ticket Date is required"),
+    chiller_serial_number: Yup.string().required("Chiller Serial Number is required"),
+    assets_category: Yup.string().required("Assets Category is required"),
+    model_number: Yup.string().required("Model Number is required"),
+    branding: Yup.string().required("Branding is required"),
+    current_outlet_name: Yup.string().required("Current Outlet Name is required"),
+    current_owner_name: Yup.string().required("Current Owner Name is required"),
+    current_warehouse: Yup.string().required("Current Warehouse is required"),
+    current_asm: Yup.string().required("Current ASM is required"),
+    current_rm: Yup.string().required("Current RM is required"),
+    current_road_street: Yup.string().required("Current Road Street is required"),
+    current_landmark: Yup.string().required("Current Landmark is required"),
+    current_town: Yup.string().required("Current Town is required"),
+    current_district: Yup.string().required("Current District is required"),
+    current_contact_no1: Yup.string().required("Current Contact No1 is required"),
+    technician_id: Yup.string().required("Technician ID is required"),
+    ctc_status: Yup.string().required("CTC Status is required"),
+    status: Yup.string().required("Status is required"),
+    sales_valume: Yup.string().required("Sales Valume is required"),
+    followup_status: Yup.string().required("Followup Status is required"),
+    nature_of_call: Yup.string().required("Nature of Call is required"),
+    follow_up_action: Yup.string().required("Follow Up Action is required"),
+});
 
+const stepSchemas = [
+
+    Yup.object().shape({
+        ticket_type: Yup.string().required("Ticket Type is required"),
+        ticket_date: Yup.string().required("Ticket Date is required"),
+        chiller_serial_number: Yup.string().required("Chiller Serial Number is required"),
+        assets_category: Yup.string().required("Assets Category is required"),
+        model_number: Yup.string().required("Model Number is required"),
+        branding: Yup.string().required("Branding is required"),
+    }),
+
+    Yup.object().shape({}),
+
+    Yup.object().shape({
+        current_outlet_name: Yup.string().required("Current Outlet Name is required"),
+        current_owner_name: Yup.string().required("Current Owner Name is required"),
+        current_warehouse: Yup.string().required("Current Warehouse is required"),
+        current_asm: Yup.string().required("Current ASM is required"),
+        current_rm: Yup.string().required("Current RM is required"),
+        current_road_street: Yup.string().required("Current Road Street is required"),
+        current_landmark: Yup.string().required("Current Landmark is required"),
+        current_town: Yup.string().required("Current Town is required"),
+        current_district: Yup.string().required("Current District is required"),
+        current_contact_no1: Yup.string().required("Current Contact No1 is required"),
+        technician_id: Yup.string().required("Technician ID is required"),
+        ctc_status: Yup.string().required("CTC Status is required"),
+        status: Yup.string().required("Status is required"),
+        sales_valume: Yup.string().required("Sales Valume is required"),
+        followup_status: Yup.string().required("Followup Status is required"),
+        nature_of_call: Yup.string().required("Nature of Call is required"),
+        follow_up_action: Yup.string().required("Follow Up Action is required"),
+    })
+]
+
+interface CallRegister {
+    ticket_type: string;
+    osa_code: string;
+    ticket_date: string;
+    chiller_serial_number: string;
+    assets_category: string;
+    model_number: string;
+    branding: string;
+    outlet_name: string;
+    owner_name: string;
+    street: string;
+    landmark: string;
+    town: string;
+    district: string;
+    contact_no1: string;
+    contact_no2: string;
+    current_outlet_name: string;
+    current_owner_name: string;
+    current_warehouse: string;
+    current_asm: string;
+    current_rm: string;
+    current_road_street: string;
+    current_landmark: string;
+    current_town: string;
+    current_district: string;
+    current_contact_no1: string;
+    current_contact_no2: string;
+    technician_id: string;
+    ctc_status: string;
+    status: string;
+    sales_valume: string;
+    followup_status: string;
+    nature_of_call: string;
+    follow_up_action: string;
+}
 
 
 export default function AddOrEditChiller() {
+    const [technicianOptions, setTechnicianOptions] = useState<{ value: string; label: string }[]>([]);
     const [codeMode] = useState<"auto" | "manual">("auto");
+    const [assignCusId, setAssignCusId] = useState("");
+    const [assetNoId, setAssetNoId] = useState("");
+    const [modelNoId, setModelNoId] = useState("");
+    const [brandId, setBrandId] = useState("");
+    const [distributorid, setDistributorId] = useState("");
+    const [asmId, setAsmId] = useState("");
+    const [rsmId, setRsmId] = useState("");
+
+    const [skeleton, setSkeleton] = useState(false);
     const {
-        vendorOptions,
-        manufacturerOptions,
-        onlyCountryOptions,
-        assetsTypeOptions,
-        assetsModelOptions,
+        agentCustomerOptions,
+        chillerOptions,
         brandingOptions,
+        ensureBrandingLoaded,
+        ensureChillerLoaded,
+        ensureAgentCustomerLoaded,
     } = useAllDropdownListData();
 
     const steps: StepperStep[] = [
@@ -44,9 +156,6 @@ export default function AddOrEditChiller() {
     const isEditMode = params?.uuid && params?.uuid !== "add";
     const chillerId = isEditMode ? String(params?.uuid) : null;
 
-    /* ----------------------------------------------------
-       INITIAL VALUES
-    ---------------------------------------------------- */
     const [chiller, setChiller] = useState({
         ticket_type: "",
         osa_code: "",
@@ -55,7 +164,7 @@ export default function AddOrEditChiller() {
         assets_category: "",
         model_number: "",
         chiller_code: "",
-        brand: "",
+        branding: "",
         outlet_code: "",
         outlet_name: "",
         owner_name: "",
@@ -86,6 +195,33 @@ export default function AddOrEditChiller() {
         follow_up_action: "",
     });
 
+
+    useEffect(() => {
+        ensureChillerLoaded();
+        ensureAgentCustomerLoaded();
+        ensureBrandingLoaded();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const response = await getTechicianList();
+                const techData = Array.isArray(response?.data)
+                    ? response.data
+                    : (response?.data?.data || []);
+
+                const options = techData.map((item: { id: string | number; osa_code: string; name: string }) => ({
+                    value: String(item.id),
+                    label: `${item.osa_code} - ${item.name}`,
+                }));
+
+                setTechnicianOptions(options);
+            } catch (error) {
+                showSnackbar("Failed to fetch technician data", "error");
+            }
+        })();
+    }, []);
+
     /* ----------------------------------------------------
        FETCH + PREFILL + AUTO CODE GENERATION
     ---------------------------------------------------- */
@@ -112,7 +248,7 @@ export default function AddOrEditChiller() {
                     assets_category: d.assets_category || "",
                     model_number: d.model_number || "",
                     chiller_code: d.chiller_code || "",
-                    brand: d.brand || "",
+                    branding: d.branding || "",
                     outlet_code: d.outlet_code || "",
                     outlet_name: d.outlet_name || "",
                     owner_name: d.owner_name || "",
@@ -134,103 +270,177 @@ export default function AddOrEditChiller() {
                     current_district: d.current_district || "",
                     current_contact_no1: d.current_contact_no1 || "",
                     current_contact_no2: d.current_contact_no2 || "",
-                    technician_id: d.technician_id || "",
-                    ctc_status: d.ctc_status || "",
+                    technician_id: String(d.technician_id || ""),
+                    ctc_status: String(d.ctc_status || ""),
                     status: String(d.status ?? "1"),
                     sales_valume: d.sales_valume || "",
                     followup_status: d.followup_status || "",
                     nature_of_call: d.nature_of_call || "",
                     follow_up_action: d.follow_up_action || "",
                 });
-
-            } else {
-                if (chiller.ticket_type) {
-                    const res = await genearateCode({ model_name: chiller.ticket_type });
-                    setChiller((prev) => ({ ...prev, osa_code: res?.code || "" }));
-                }
             }
         }
 
         fetchData();
-    }, [chiller.ticket_type]); // 👈 IMPORTANT DEPENDENCY
+    }, [isEditMode, chillerId]);
+
+    // Define stepFields to match each step's fields for validation
+    const stepFields = [
+        // Step 1: Basic Information
+        [
+            "ticket_type", "osa_code", "ticket_date", "chiller_serial_number", "assets_category", "model_number", "brand"
+        ],
+        // Step 2: Assign Customer Details
+        [
+            "outlet_name", "owner_name", "street", "landmark", "town", "district", "contact_no1", "contact_no2"
+        ],
+        // Step 3: Current Customer Details
+        [
+            "current_outlet_name", "current_owner_name", "current_warehouse", "current_asm", "current_rm", "current_road_street", "current_landmark", "current_town", "current_district", "current_contact_no1", "current_contact_no2", "technician_id", "ctc_status", "status", "sales_valume", "followup_status", "nature_of_call", "follow_up_action"
+        ]
+    ];
 
 
-    const fetchSerialNumber = useCallback(
-        async (
-            serial_number: string,
-        ): Promise<listReturnType> => {
-            try {
-                // setLoading(true);
-                const res = await callRegisterGlobalSearch({ serial_number: serial_number, });
-                // setLoading(false);
-                const data = res.data.map((item: any) => ({
-                    ...item,
-                }));
-                return { data, total: res.total, currentPage: 1, pageSize: data.length };
-
-            } catch (error) {
-                setLoading(false);
-                console.error(error);
-                throw error;
-            }
-        },
-        []
-    );
-
-    const handleSerialNumber = async (serial: string, setFieldValue: any) => {
-        setFieldValue("chiller_serial_number", serial);
-
-        if (serial.length < 3) return;
-
+    const fetchSerialNumber = async (
+        serial: string,
+        setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
+    ) => {
         try {
-            const res = await callRegisterGlobalSearch({ serial_number: serial });
+            setSkeleton(true);
+            const res = await serialNumberData({ serial_number: serial });
 
-            if (!res?.data?.length) {
-                showSnackbar("No record found for this serial number", "warning");
+            const d = res?.data;
+            if (!d) {
+                showSnackbar("No data found for this serial number", "warning");
                 return;
             }
 
-            const d = res.data[0];
+            // ✅ DO NOT touch chiller_serial_number here
 
-            // Ticket No
-            setFieldValue("chiller_code", d.chiller_code || "");
+            // ✅ Store IDs in state
+            setAssignCusId(res?.data?.customer?.id);
+            if (d.assets_category?.id) setAssetNoId(String(d.assets_category.id));
+            if (d.model_number?.id) setModelNoId(String(d.model_number.id));
+            if (d.brand?.id) setBrandId(String(d.brand.id));
 
-            // CATEGORY → show NAME but save ID
-            setFieldValue("assets_category", d.assets_category?.name || "");
-            setFieldValue("assets_category_id", d.assets_category?.id || "");
+            // ✅ Select fields → store IDs
+            setFieldValue("branding", String(d.brand?.id));
 
-            // MODEL NUMBER → show NAME but save ID
-            setFieldValue("model_number", d.model_number?.name || "");
-            setFieldValue("model_number_id", d.model_number?.id || "");
+            // ✅ Text fields
+            setFieldValue(
+                "assets_category",
+                `${d.assets_category?.osa_code} - ${d.assets_category?.name}`
+            );
+            setFieldValue(
+                "model_number",
+                `${d.model_number?.code} - ${d.model_number?.name}`
+            );
 
-            // BRANDING → show NAME but save ID
-            setFieldValue("brand", d.brand?.name || "");
-            setFieldValue("brand_id", d.brand?.id || "");
+            if (d.customer) {
+                setFieldValue(
+                    "outlet_name",
+                    `${d.customer?.osa_code} - ${d.customer?.name}`
+                );
+                setFieldValue("owner_name", d.customer?.owner_name || "");
+                setFieldValue("street", d.customer?.street || "");
+                setFieldValue("landmark", d.customer?.landmark || "");
+                setFieldValue("town", d.customer?.town || "");
+                setFieldValue("district", d.customer?.district || "");
+                setFieldValue("contact_no1", d.customer?.contact_no || "");
+                setFieldValue("contact_no2", d.customer?.contact_no2 || "");
+            }
 
-        } catch (error) {
-            console.error(error);
-            showSnackbar("Error fetching serial number details", "error");
+        } catch {
+            showSnackbar("Failed to fetch serial number details", "error");
+        } finally {
+            setSkeleton(false);
         }
     };
 
 
+    const fetchCurrentCustomer = async (
+        search: string,
+        setFieldValue: FormikHelpers<CallRegister>["setFieldValue"]
+    ) => {
+        // Set Asset Number (chiller_serial_number) input field
+
+        try {
+            setSkeleton(true);
+            const res = await getCurrentCustomer({ search: search });
+            setDistributorId(res?.data?.get_warehouse?.id);
+            setAsmId(res?.data?.get_warehouse?.area?.created_by?.id);
+            setRsmId(res?.data?.get_warehouse?.region?.created_by?.id);
+            const d = res
 
 
+            setFieldValue("current_owner_name", d.data.owner_name);
+            setFieldValue("current_warehouse", `${d.data.get_warehouse?.warehouse_code || ""} - ${d.data.get_warehouse?.warehouse_name || ""}`);
+            setFieldValue("current_asm", d.data?.get_warehouse?.area.created_by.username || "");
+            setFieldValue("current_rm", d.data?.get_warehouse?.region.created_by.username || "");
+            setFieldValue("current_road_street", d.data?.street || "");
+            setFieldValue("current_landmark", d.data?.landmark || "");
+            setFieldValue("current_town", d.data?.town || "");
+            setFieldValue("current_district", d.data?.district || "");
+            setFieldValue("current_contact_no1", d.data?.contact_no || "");
+            setFieldValue("current_contact_no2", d.data?.contact_no2 || "");
+            setSkeleton(false);
 
+        } catch (err) {
+            console.error(err);
+            showSnackbar("Failed to fetch serial number details", "error");
+        }
+    };
+
+    const handleNext = async (
+        values: CallRegister,
+        actions: FormikHelpers<CallRegister>
+    ) => {
+        try {
+            // Only validate if schema exists for the current step
+            const schema = stepSchemas[currentStep - 1];
+            if (schema) {
+                await schema.validate(values, { abortEarly: false });
+            }
+            markStepCompleted(currentStep);
+            nextStep();
+        } catch (err: unknown) {
+            if (err instanceof Yup.ValidationError) {
+                const errors: FormikErrors<CallRegister> = {};
+                const touched: FormikTouched<CallRegister> = {};
+                // Only include fields for the current step
+                const fields = stepFields[currentStep - 1];
+                err.inner.forEach((error) => {
+                    if (
+                        error.path &&
+                        Array.isArray(fields) &&
+                        fields.includes(error.path)
+                    ) {
+                        errors[error.path as keyof CallRegister] = error.message;
+                        touched[error.path as keyof CallRegister] = true;
+                    }
+                });
+                actions.setErrors(errors);
+                actions.setTouched(touched);
+            }
+            showSnackbar("Please fix validation errors before proceeding", "error");
+        }
+    };
 
     /* ----------------------------------------------------
          FINAL SUBMIT
       ---------------------------------------------------- */
     const handleSubmit = async (values: any) => {
+
         const payload = {
             ticket_type: values.ticket_type,
             osa_code: values.osa_code,
             ticket_date: values.ticket_date,
             chiller_serial_number: values.chiller_serial_number,
-            assets_category: values.assets_category,
-            model_number: values.model_number,
+            assets_category: String(assetNoId),
+            model_number: String(modelNoId),
             chiller_code: values.chiller_code,
-            brand: values.brand,
+            branding: values.branding,
+            assigned_customer_id: String(assignCusId),
 
             outlet_code: values.outlet_code,
             outlet_name: values.outlet_name,
@@ -245,9 +455,9 @@ export default function AddOrEditChiller() {
             current_outlet_code: values.current_outlet_code,
             current_outlet_name: values.current_outlet_name,
             current_owner_name: values.current_owner_name,
-            current_warehouse: values.current_warehouse,
-            current_asm: values.current_asm,
-            current_rm: values.current_rm,
+            current_warehouse: String(distributorid),
+            current_asm: String(asmId),
+            current_rm: String(rsmId),
             current_road_street: values.current_road_street,
             current_landmark: values.current_landmark,
             current_town: values.current_town,
@@ -273,6 +483,17 @@ export default function AddOrEditChiller() {
         if (res.error) {
             showSnackbar(res.data?.message || "Failed to save", "error");
         } else {
+            // After successful add, call saveFinalCode like vehicle add page
+            if (!isEditMode) {
+                try {
+                    await saveFinalCode({
+                        reserved_code: values.osa_code,
+                        model_name: chiller.ticket_type,
+                    });
+                } catch (e) {
+                    // optional: handle error or ignore
+                }
+            }
             showSnackbar(`Chiller ${isEditMode ? "updated" : "added"} successfully`, "success");
             router.push("/callRegister");
         }
@@ -282,10 +503,10 @@ export default function AddOrEditChiller() {
        RENDER STEP CONTENT
     ---------------------------------------------------- */
     const renderStepContent = (
-        values: FormikValues,
-        setFieldValue: (field: string, value: any) => void,
-        errors: FormikValues,
-        touched: FormikValues
+        values: CallRegister,
+        setFieldValue: FormikHelpers<CallRegister>["setFieldValue"],
+        errors: FormikErrors<CallRegister>,
+        touched: FormikTouched<CallRegister>
     ): JSX.Element | null => {
         switch (currentStep) {
             case 1:
@@ -293,6 +514,7 @@ export default function AddOrEditChiller() {
                     <ContainerCard>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <InputFields
+                                required
                                 label="Ticket Type"
                                 name="ticket_type"
                                 options={[
@@ -301,23 +523,32 @@ export default function AddOrEditChiller() {
                                     { value: "TR", label: "TR" }
                                 ]}
                                 value={values.ticket_type}
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const type = e.target.value;
                                     setFieldValue("ticket_type", type);
                                     setChiller((prev) => ({ ...prev, ticket_type: type }));
+
+                                    // Generate code for new additions only
+                                    if (!isEditMode && type) {
+                                        const res = await genearateCode({ model_name: type });
+                                        const generatedCode = res?.code || "";
+                                        setFieldValue("osa_code", generatedCode);
+                                        setChiller((prev) => ({ ...prev, osa_code: generatedCode }));
+                                    }
                                 }}
+                                error={touched.ticket_type && errors.ticket_type}
                             />
                             <InputFields
-                                // required
                                 label="Ticket Number"
                                 name="osa_code"
+                                showSkeleton={!!values.ticket_type && !values.osa_code}
                                 value={values.osa_code}
                                 disabled={codeMode === "auto"}
                                 onChange={(e) => setFieldValue("osa_code", e.target.value)}
-                                error={touched.osa_code && errors.osa_code}
                             />
 
                             <InputFields
+                                required
                                 label="Ticket Date"
                                 type="date"
                                 name="ticket_date"
@@ -325,51 +556,81 @@ export default function AddOrEditChiller() {
                                 min={new Date().toISOString().split("T")[0]}
                                 max={new Date().toISOString().split("T")[0]}
                                 onChange={(e) => setFieldValue("ticket_date", e.target.value)}
+                                error={touched.ticket_date && errors.ticket_date}
                             />
 
                             <InputFields
+                                required
+                                searchable
                                 label="Chiller Serial Number"
                                 name="chiller_serial_number"
                                 value={values.chiller_serial_number}
-                                onChange={(e) => handleSerialNumber(e.target.value, setFieldValue)}
+                                options={chillerOptions}
+                                onChange={(e) => {
+                                    const selectedValue = e.target.value;
+
+                                    // ✅ store ONLY option.value
+                                    setFieldValue("chiller_serial_number", selectedValue);
+
+                                    const selectedOption = chillerOptions.find(
+                                        (opt) => opt.value === selectedValue
+                                    );
+
+                                    // ✅ use value1 ONLY for API
+                                    if (selectedOption?.value1) {
+                                        fetchSerialNumber(selectedOption.value1, setFieldValue);
+                                    }
+                                }}
+                                error={touched.chiller_serial_number && errors.chiller_serial_number}
                             />
 
 
 
-                            <InputFields
+
+
+                            {/* <InputFields
                                 // required
                                 label="Chiller Code"
                                 name="chiller_code"
                                 value={values.chiller_code}
                                 onChange={(e) => setFieldValue("chiller_code", e.target.value)}
                             // error={touched.sap_code && errors.sap_code}
-                            />
+                            /> */}
 
                             <InputFields
-                                // required
+                                required
+                                disabled
                                 label="Asset Number"
                                 name="assets_category"
                                 value={values.assets_category}
+                                showSkeleton={skeleton}
+                                // options={assetsTypeOptions}
                                 onChange={(e) => setFieldValue("assets_category", e.target.value)}
-                            // error={touched.model_number && errors.model_number}
+                                error={touched.assets_category && errors.assets_category}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                disabled
                                 label="Model Number"
+                                showSkeleton={skeleton}
                                 name="model_number"
                                 value={values.model_number}
+                                // options={assetsModelOptions}
                                 onChange={(e) => setFieldValue("model_number", e.target.value)}
-                            // error={touched.model_number && errors.model_number}
+                                error={touched.model_number && errors.model_number}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                disabled
+                                showSkeleton={skeleton}
                                 label="Branding"
-                                name="brand"
-                                value={values.brand}
-                                onChange={(e) => setFieldValue("brand", e.target.value)}
-                            // error={touched.sap_code && errors.sap_code}
+                                name="branding"
+                                value={values.branding}
+                                options={brandingOptions}
+                                onChange={(e) => setFieldValue("branding", e.target.value)}
+                                error={touched.branding && errors.branding}
                             />
                         </div>
                     </ContainerCard>
@@ -381,83 +642,77 @@ export default function AddOrEditChiller() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                             <InputFields
-                                // required
-                                label="Outlet Code"
-                                name="outlet_code"
-                                value={values.outlet_code}
-                                onChange={(e) => setFieldValue("outlet_code", e.target.value)}
-                            />
-
-                            <InputFields
-                                // required
+                                searchable
+                                disabled
                                 label="outlet Name"
                                 name="outlet_name"
                                 value={values.outlet_name}
+                                // options={agentCustomerOptions}
                                 onChange={(e) => setFieldValue("outlet_name", e.target.value)}
-                            // error={touched.vender && errors.vender}
+                                error={touched.outlet_name && errors.outlet_name}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Owner Name"
                                 name="owner_name"
                                 value={values.owner_name}
                                 onChange={(e) => setFieldValue("owner_name", e.target.value)}
-                            // error={touched.manufacturer && errors.manufacturer}
+                                error={touched.owner_name && errors.owner_name}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Road/Street"
                                 name="road_street"
                                 value={values.street}
                                 onChange={(e) => setFieldValue("street", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.street && errors.street}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Landmark"
                                 name="landmark"
                                 value={values.landmark}
                                 onChange={(e) => setFieldValue("landmark", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.landmark && errors.landmark}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Village/Town"
                                 name="town"
                                 value={values.town}
                                 onChange={(e) => setFieldValue("town", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.town && errors.town}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="District"
                                 name="district"
                                 value={values.district}
                                 onChange={(e) => setFieldValue("district", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.district && errors.district}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Contact No1"
                                 name="contact_no1"
                                 value={values.contact_no1}
                                 onChange={(e) => setFieldValue("contact_no1", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.contact_no1 && errors.contact_no1}
                             />
 
                             <InputFields
-                                // required
+                                disabled
                                 label="Contact No2"
                                 name="contact_no2"
                                 value={values.contact_no2}
                                 onChange={(e) => setFieldValue("contact_no2", e.target.value)}
-                            // error={touched.country_id && errors.country_id}
+                                error={touched.contact_no2 && errors.contact_no2}
                             />
                         </div>
                     </ContainerCard>
@@ -467,179 +722,213 @@ export default function AddOrEditChiller() {
                     <ContainerCard>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                            <InputFields
-                                // required
-                                label="Outlet Code"
-                                name="current_outlet_code"
-                                value={values.current_outlet_code}
-                                onChange={(e) => setFieldValue("current_outlet_code", e.target.value)}
-                            // error={touched.branding && errors.branding}
-                            />
 
                             <InputFields
-                                // required
+                                required
+                                searchable
                                 label="Outlet Name"
                                 name="current_outlet_name"
                                 value={values.current_outlet_name}
-                                onChange={(e) =>
+                                options={agentCustomerOptions}
+                                onChange={(e) => {
                                     setFieldValue("current_outlet_name", e.target.value)
+                                    const selectedOption = agentCustomerOptions.find(opt => opt.value === e.target.value);
+                                    const valueToSend = selectedOption?.value1 || selectedOption?.label;
+                                    if (valueToSend) {
+                                        fetchCurrentCustomer(valueToSend, setFieldValue);
+                                    }
                                 }
-                            // error={touched.trading_partner_number && errors.trading_partner_number}
+                                }
+                                error={touched.current_outlet_name && errors.current_outlet_name}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 label="Owner Name"
                                 name="current_owner_name"
                                 value={values.current_owner_name}
                                 onChange={(e) => setFieldValue("current_owner_name", e.target.value)}
-                            // error={touched.capacity && errors.capacity}
+                                error={touched.current_owner_name && errors.current_owner_name}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                disabled
+                                showSkeleton={skeleton}
+                                searchable
                                 label="Distributors"
                                 name="current_warehouse"
                                 value={values.current_warehouse}
                                 onChange={(e) => setFieldValue("current_warehouse", e.target.value)}
-                            // error={touched.assets_type && errors.assets_type}
+                                error={touched.current_warehouse && errors.current_warehouse}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
+                                disabled
                                 label="Area Sales Manager"
                                 name="current_asm"
                                 value={values.current_asm}
                                 onChange={(e) => setFieldValue("current_asm", e.target.value)}
-                            // error={touched.manufacturing_year && errors.manufacturing_year}
+                                error={touched.current_asm && errors.current_asm}
                             />
 
                             <InputFields
-                                // required
+                                disabled
+                                showSkeleton={skeleton}
+                                required
                                 label="Regional Manager"
                                 name="current_rm"
                                 value={values.current_rm}
                                 onChange={(e) => setFieldValue("current_rm", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_rm && errors.current_rm}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
                                 label="Road/Street"
                                 name="current_road_street"
                                 value={values.current_road_street}
                                 onChange={(e) => setFieldValue("current_road_street", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_road_street && errors.current_road_street}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
                                 label="Landmark"
                                 name="current_landmark"
                                 value={values.current_landmark}
                                 onChange={(e) => setFieldValue("current_landmark", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_landmark && errors.current_landmark}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
                                 label="Village/Town"
                                 name="current_town"
                                 value={values.current_town}
                                 onChange={(e) => setFieldValue("current_town", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_town && errors.current_town}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
                                 label="District"
                                 name="current_district"
                                 value={values.current_district}
                                 onChange={(e) => setFieldValue("current_district", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_district && errors.current_district}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                showSkeleton={skeleton}
                                 label="Contact No1"
                                 name="current_contact_no1"
                                 value={values.current_contact_no1}
                                 onChange={(e) => setFieldValue("current_contact_no1", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.current_contact_no1 && errors.current_contact_no1}
                             />
 
                             <InputFields
-                                // required
+                                showSkeleton={skeleton}
                                 label="Contact No2"
                                 name="current_contact_no2"
                                 value={values.current_contact_no2}
                                 onChange={(e) => setFieldValue("current_contact_no2", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                searchable
                                 label="Technician Name"
                                 name="technician_id"
                                 value={values.technician_id}
+                                options={technicianOptions}
                                 onChange={(e) => setFieldValue("technician_id", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.technician_id && errors.technician_id}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 label="CTC Status"
                                 name="ctc_status"
                                 value={values.ctc_status}
+                                options={[
+                                    { value: "1", label: "Same Outlet" },
+                                    { value: "0", label: "Missmatch Outlet" },
+                                ]}
                                 onChange={(e) => setFieldValue("ctc_status", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.ctc_status && errors.ctc_status}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 label="Call Status"
                                 name="status"
                                 value={values.status}
+                                options={[
+                                    { value: "Pending", label: "Pending" },
+                                    { value: "In Progress", label: "In Progress" },
+                                    { value: "Closed By Technician", label: "Closed By Technician" },
+                                    { value: "Completed", label: "Completed" },
+                                    { value: "Cancelled", label: "Cancelled" },
+                                ]}
                                 onChange={(e) => setFieldValue("status", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.status && errors.status}
                             />
 
                             <InputFields
-                                // required
+                                required
+                                integerOnly
+                                type="number"
                                 label="Sales Volume(Last 3 Months)"
                                 name="sales_valume"
                                 value={values.sales_valume}
                                 onChange={(e) => setFieldValue("sales_valume", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.sales_valume && errors.sales_valume}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 label="Follow Up Status"
                                 name="followup_status"
+                                options={[
+                                    { value: "Assigned To Technician", label: "Assigned To Technician" },
+                                    { value: "Waiting For Technician To Attend", label: "Waiting For Technician To Attend" },
+                                    { value: "Reassigned To Technician", label: "Reassigned To Technician" },
+                                    { value: "Spare Approval Pending", label: "Spare Approval Pending" },
+                                    { value: "Spare Out Of Stock", label: "Spare Out Of Stock" },
+                                    { value: "Completed", label: "Completed" },
+                                ]}
                                 value={values.followup_status}
                                 onChange={(e) => setFieldValue("followup_status", e.target.value)}
-                            // error={touched.remarks && errors.remarks}
+                                error={touched.followup_status && errors.followup_status}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 type="textarea"
                                 label="Nature of Complaint"
                                 name="nature_of_call"
                                 value={values.nature_of_call}
                                 onChange={(e) => setFieldValue("nature_of_call", e.target.value)}
-                            // error={touched.status && errors.status}
+                                error={touched.nature_of_call && errors.nature_of_call}
                             />
 
                             <InputFields
-                                // required
+                                required
                                 type="textarea"
                                 label="Follow Up Action"
                                 name="follow_up_action"
                                 value={values.follow_up_action}
                                 onChange={(e) => setFieldValue("follow_up_action", e.target.value)}
-                            // error={touched.status && errors.status}
+                                error={touched.follow_up_action && errors.follow_up_action}
                             />
                         </div>
                     </ContainerCard>
@@ -665,7 +954,7 @@ export default function AddOrEditChiller() {
             {/* FORMIK */}
             <Formik
                 initialValues={chiller}
-                // validationSchema={validationSchema}
+                validationSchema={validationSchema}
                 onSubmit={handleSubmit}
                 enableReinitialize
             >
@@ -678,10 +967,12 @@ export default function AddOrEditChiller() {
                             }))}
                             currentStep={currentStep}
                             onBack={prevStep}
-                            onNext={() => {
-                                markStepCompleted(currentStep); // mark current step completed
-                                nextStep(); // go to next step
-                            }}
+                            onNext={() =>
+                                handleNext(values, {
+                                    setErrors,
+                                    setTouched,
+                                } as unknown as FormikHelpers<CallRegister>)
+                            }
                             onSubmit={handleSubmit}
                             showSubmitButton={isLastStep}
                             showNextButton={!isLastStep}

@@ -37,7 +37,7 @@ export default function Complaint() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [popupImages, setPopupImages] = useState<string[]>([]);
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -100,8 +100,8 @@ export default function Complaint() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
-
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
       // ✅ Use correct API and param name
       const res = await exportCmplaintFeedback({ format: fileType });
 
@@ -134,7 +134,8 @@ export default function Complaint() {
       console.error("Export error:", error);
       showSnackbar("Failed to export complaint feedback data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -202,14 +203,14 @@ export default function Complaint() {
 
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon:  threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv")
                   },
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx")
@@ -237,16 +238,19 @@ export default function Complaint() {
               { key: "created_at", label: "Date", render: (row) => formatDate(row.created_at) },
               { key: "complaint_title", label: "Title" },
               {
-                key: "merchendiser_name",
+                key: "merchendiser_code,merchendiser_name",
                 label: "Merchendiser",
+                render: (row) => `${row.merchendiser_code || ""} - ${row.merchendiser_name || ""}` || "-",
               },
               {
-                key: "customer_name",
+                key: "customer_code,customer_name",
                 label: "Customer",
+                render: (row) => `${row.customer_code || ""} - ${row.customer_name || ""}` || "-",
               },
               {
-                key: "item_name",
+                key: "item_code,item_name",
                 label: "Item",
+                render: (row) => `${row.item_code || ""} - ${row.item_name || ""}` || "-",
               },
               { key: "type", label: "Type" },
               { key: "complaint", label: "Complaint" },
@@ -283,7 +287,7 @@ export default function Complaint() {
                 },
               },
             ],
-            rowSelection: true,
+            // rowSelection: true,
             // rowActions: [
             //   {
             //     icon: "lucide:eye",
@@ -305,7 +309,6 @@ export default function Complaint() {
         />
       </div>
 
-      Image Preview Popup
       {popupImages.length > 0 && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black/60 z-50 "

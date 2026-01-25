@@ -68,7 +68,7 @@ export default function CustomerSubCategoryPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
         <h1 className="text-[20px] font-semibold text-[#181D27]">
-          Customer Sub-Category
+          Customer Sub Category
         </h1>
 
         {/* <div className="flex gap-[12px] relative">
@@ -106,7 +106,7 @@ export default function CustomerSubCategoryPage() {
       </div>
 
       {/* Table */}
-      <div className="h-[calc(100%-60px)]">
+      <div className="h-full">
         <Table
           config={{
             header: {
@@ -127,7 +127,7 @@ export default function CustomerSubCategoryPage() {
             localStorageKey: "customer-sub-category-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:edit-2",

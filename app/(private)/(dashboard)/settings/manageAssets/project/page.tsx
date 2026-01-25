@@ -73,7 +73,7 @@ export default function Page() {
                         localStorageKey: "branding-table",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
-                        rowSelection: true,
+                        // rowSelection: true,
                         rowActions: [
                             {
                                 icon: "lucide:edit-2",

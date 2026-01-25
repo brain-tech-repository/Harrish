@@ -101,7 +101,7 @@ export default function Roles() {
                     localStorageKey: "role-table",
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
                     rowActions: [
                         {
                             icon: "lucide:edit-2",

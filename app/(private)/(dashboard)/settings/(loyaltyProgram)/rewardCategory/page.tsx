@@ -299,7 +299,7 @@ export default function RewardCategory() {
                             pagination: true,
                         },
                         columns: columns,
-                        rowSelection: true,
+                        // rowSelection: true,
                         rowActions: [
                             {
                                 icon: "lucide:edit-2",

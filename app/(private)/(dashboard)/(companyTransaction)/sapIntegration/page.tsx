@@ -16,7 +16,7 @@ import { downloadFile } from "@/app/services/allApi";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { orderExportCollapse, orderExportHeader, orderList } from "@/app/services/companyTransaction";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 const columns = [
     { key: "created_at", label: "Order Date", showByDefault: true, render: (row: TableDataType) => <span className="">{formatWithPattern(new Date(row.created_at), "DD MMM YYYY", "en-GB").toLowerCase()}</span> },
     { key: "order_code", label: "Order Number", showByDefault: true, render: (row: TableDataType) => <span className="">{row.order_code}</span> },
@@ -76,32 +76,6 @@ const columns = [
 export default function CustomerInvoicePage() {
 
     const { can, permissions } = usePagePermissions();
-
-    const { customerSubCategoryOptions, companyOptions, salesmanOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions , ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
-
-
-
-  // Load dropdown data
-
-  useEffect(() => {
-
-    ensureAreaLoaded();
-
-    ensureChannelLoaded();
-
-    ensureCompanyLoaded();
-
-    ensureCustomerSubCategoryLoaded();
-
-    ensureRegionLoaded();
-
-    ensureRouteLoaded();
-
-    ensureSalesmanLoaded();
-
-    ensureWarehouseAllLoaded();
-
-  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
 
     const { showSnackbar } = useSnackbar();
 
@@ -196,12 +170,7 @@ export default function CustomerInvoicePage() {
             setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
-
-    useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [companyOptions, customerSubCategoryOptions, routeOptions, warehouseAllOptions, channelOptions, salesmanOptions, areaOptions, regionOptions]);
-
-    return (
+  return (
         <>
             <div className="flex flex-col h-full">
                 <Table
@@ -226,62 +195,14 @@ export default function CustomerInvoicePage() {
                                     onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                                 },
                             ],
-                            filterByFields: [
-                                {
-                                    key: "start_date",
-                                    label: "Start Date",
-                                    type: "date"
-                                },
-                                {
-                                    key: "end_date",
-                                    label: "End Date",
-                                    type: "date"
-                                },
-                                // {
-                                //     key: "company_id",
-                                //     label: "Company",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(companyOptions) ? companyOptions : [],
-                                // },
-                                // {
-                                //     key: "warehouse_id",
-                                //     label: "Warehouse",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                                // },
-                                // {
-                                //     key: "region_id",
-                                //     label: "Region",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(regionOptions) ? regionOptions : [],
-                                // },
-                                // {
-                                //     key: "sub_region_id",
-                                //     label: "Sub Region",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(areaOptions) ? areaOptions : [],
-                                // },
-                                // {
-                                //     key: "route_id",
-                                //     label: "Route",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(routeOptions) ? routeOptions : [],
-                                // },
-                                // {
-                                //     key: "salesman_id",
-                                //     label: "Sales Team",
-                                //     isSingle: false,
-                                //     multiSelectChips: true,
-                                //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                                // }
-                            ]
+filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
                         },
-                        rowSelection: true,
+                        // rowSelection: true,
                         footer: { nextPrevBtn: true, pagination: true },
                         columns,
                         rowActions: [

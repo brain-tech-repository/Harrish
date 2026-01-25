@@ -100,7 +100,7 @@ export  default function SpareCategory(){
                                                 },
                                   
                                               ],
-                                              rowSelection: true,
+                                              // rowSelection: true,
                                              rowActions: [
                                           
               {

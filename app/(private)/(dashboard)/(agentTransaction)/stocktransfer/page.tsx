@@ -15,29 +15,29 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { formatWithPattern } from "@/app/utils/formatDate";
 export default function StockTransferPage() {
     const { can, permissions } = usePagePermissions();
     const router = useRouter();
     const { setLoading } = useLoading();
     const { showSnackbar } = useSnackbar();
-
+    const [warehouseId, setWarehouseId] = useState<string>("");
+    const [warehouseId1, setWarehouseId1] = useState<string>("");
     const {
         regionOptions,
         warehouseOptions,
-        routeOptions,
-        channelOptions,
-        itemCategoryOptions,
-        customerSubCategoryOptions,
+        warehouseAllOptions,
+        ensureWarehouseAllLoaded,
         ensureRegionLoaded,
-        ensureWarehouseLoaded
+        ensureWarehouseLoaded,
     } = useAllDropdownListData();
 
     const [refreshKey, setRefreshKey] = useState(0);
     useEffect(() => {
         ensureRegionLoaded();
         ensureWarehouseLoaded();
-    }, [ensureRegionLoaded, ensureWarehouseLoaded]);
+        ensureWarehouseAllLoaded();
+    }, [ensureRegionLoaded, ensureWarehouseLoaded, ensureWarehouseAllLoaded]);
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -48,6 +48,9 @@ export default function StockTransferPage() {
     /* -------------------------------------------------------
        FETCH LIST (TABLE API)
     ------------------------------------------------------- */
+    useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [warehouseId,warehouseId1]);
     const fetchStockTransferList = useCallback(
         async (
             page: number = 1,
@@ -56,10 +59,17 @@ export default function StockTransferPage() {
             try {
                 setLoading(true);
 
-                const params = {
+                const params:any = {
                     page: String(page),
                     per_page: String(pageSize),
                 };
+                if (warehouseId) {
+                    params.source_warehouse = warehouseId;
+                }
+                if (warehouseId1) {
+                    params.destiny_warehouse = warehouseId1;
+                }
+
 
                 const res = await StockTransferList(params);
 
@@ -83,7 +93,7 @@ export default function StockTransferPage() {
                 setLoading(false);
             }
         },
-        [setLoading, showSnackbar]
+        [setLoading, showSnackbar,warehouseId]
     );
 
     /* -------------------------------------------------------
@@ -133,11 +143,11 @@ export default function StockTransferPage() {
             label: "Transfer Date",
             showByDefault: true,
             render: (row: TableDataType) => {
-                // Show only date part (YYYY-MM-DD)
-                const val = row.transfer_date;
-                if (!val) return "-";
-                // If value is a string like "2025-12-26 12:15:42.379966"
-                return String(val).split(" ")[0];
+               return formatWithPattern(
+                         new Date(row.transfer_date),
+                         "DD MMM YYYY",
+                         "en-GB",
+                       );
             },
         },
         {
@@ -148,6 +158,17 @@ export default function StockTransferPage() {
                 row.source_warehouse
                     ? `${row.source_warehouse.code} - ${row.source_warehouse.name}`
                     : "-",
+                     filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "source_warehouse",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
         },
         {
             key: "destiny_warehouse",
@@ -157,6 +178,17 @@ export default function StockTransferPage() {
                 row.destiny_warehouse
                     ? `${row.destiny_warehouse.code} - ${row.destiny_warehouse.name}`
                     : "-",
+                     filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "destiny_warehouse",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId1((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId1,
+    },
         },
         {
             key: "approval_status",
@@ -229,7 +261,7 @@ export default function StockTransferPage() {
                     localStorageKey: "stock-transfer-table",
                     footer: { pagination: true, nextPrevBtn: true },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
                     rowActions: [
                         {
                             icon: "lucide:eye",

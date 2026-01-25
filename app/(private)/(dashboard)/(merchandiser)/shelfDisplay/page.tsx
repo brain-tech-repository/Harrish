@@ -51,7 +51,7 @@ const dropdownDataList = [
 export default function ShelfDisplay() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [selectedRow, setSelectedRow] = useState<ShelfDisplayItem | null>(null);
@@ -71,7 +71,8 @@ export default function ShelfDisplay() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
       const res = await exportShelveData({ format: fileType });
 
@@ -110,7 +111,8 @@ export default function ShelfDisplay() {
       console.error("Export error:", error);
       showSnackbar("Failed to export Shelf Display data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -201,14 +203,14 @@ export default function ShelfDisplay() {
               title: "Shelf Display",
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon:  threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv")
                   },
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx")
@@ -253,7 +255,7 @@ export default function ShelfDisplay() {
                 render: (row: TableDataType) => formatDate(row.valid_to),
               },
             ],
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:eye",

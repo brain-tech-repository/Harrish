@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { downloadFile, exportVehicleData, vehicleGlobalSearch, vehicleListData, vehicleStatusUpdate,statusFilter } from "@/app/services/allApi";
+import { downloadFile, exportVehicleData, vehicleGlobalSearch, vehicleListData, vehicleStatusUpdate, statusFilter } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
@@ -49,7 +49,7 @@ interface DropdownItem {
 
 
 export default function VehiclePage() {
-  const { warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const { warehouseAllOptions, ensureWarehouseAllLoaded } = useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [statusFilterValue, setStatusFilterValue] = useState<string>("");
   const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
@@ -67,7 +67,7 @@ export default function VehiclePage() {
     }
   }, [permissions]);
 
-  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx:boolean }>({ csv: false, xlsx: false,xslx:false });
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
@@ -76,7 +76,7 @@ export default function VehiclePage() {
       // If clicking the same filter, clear it
       const newFilter = currentStatusFilter === status ? null : status;
       setCurrentStatusFilter(newFilter);
-      
+
       // Refresh the table with the new filter
       setRefreshKey((k) => k + 1);
     } catch (error) {
@@ -85,41 +85,41 @@ export default function VehiclePage() {
     }
   };
 
-const columns = [
-  { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
-  { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
-  { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
-  { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
-  { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => toInternationalNumber(row.opening_odometer, {maximumFractionDigits: 0}) || "-" },
-  {
-    key: "vehicle_type",
-    label: "Vehicle Type",
-    render: (row: TableDataType) => {
-      const value = row.vehicle_type;
-      if (value == null || value === "") return "-";
-      const strValue = String(value);
-      if (strValue === "1") return "Truck";
-      if (strValue === "2") return "Van";
-      if (strValue === "3") return "Bike";
-      if (strValue === "4") return "Tuktuk";
-      return strValue;
+  const columns = [
+    { key: "vehicle_code", label: "Vehicle Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.vehicle_code || "-"}</span>) },
+    { key: "number_plat", label: "Number Plate", render: (row: TableDataType) => row.number_plat || "-" },
+    { key: "vehicle_chesis_no", label: "Chassis Number", render: (row: TableDataType) => row.vehicle_chesis_no || "-" },
+    { key: "vehicle_brand", label: "Brand", render: (row: TableDataType) => row.vehicle_brand || "-" },
+    { key: "opening_odometer", label: "Odo Meter", render: (row: TableDataType) => toInternationalNumber(row.opening_odometer, { maximumFractionDigits: 0 }) || "-" },
+    {
+      key: "vehicle_type",
+      label: "Vehicle Type",
+      render: (row: TableDataType) => {
+        const value = row.vehicle_type;
+        if (value == null || value === "") return "-";
+        const strValue = String(value);
+        if (strValue === "1") return "Truck";
+        if (strValue === "2") return "Van";
+        if (strValue === "3") return "Bike";
+        if (strValue === "4") return "Tuktuk";
+        return strValue;
+      },
     },
-  },
-  { key: "capacity", label: "Capacity", render: (row: TableDataType) => toInternationalNumber(row.capacity, {maximumFractionDigits: 0}) || "-" },
-  {
-    key: "owner_type",
-    label: "Owner Type",
-    render: (row: TableDataType) => {
-      const value = row.owner_type;
-      if (value == null || value === "") return "-";
-      const strValue = String(value);
-      if (strValue === "0") return "Company Owned";
-      if (strValue === "1") return "Contractor";
-      return strValue;
+    { key: "capacity", label: "Capacity", render: (row: TableDataType) => toInternationalNumber(row.capacity, { maximumFractionDigits: 0 }) || "-" },
+    {
+      key: "owner_type",
+      label: "Owner Type",
+      render: (row: TableDataType) => {
+        const value = row.owner_type;
+        if (value == null || value === "") return "-";
+        const strValue = String(value);
+        if (strValue === "0") return "Company Owned";
+        if (strValue === "1") return "Contractor";
+        return strValue;
+      },
     },
-  },
-  {
-    key: "warehouse", label: "Distributor",render: (row: TableDataType) => {
+    {
+      key: "warehouse", label: "Distributor", render: (row: TableDataType) => {
         const wh = row.warehouse;
         let code = "";
         let name = "";
@@ -131,84 +131,84 @@ const columns = [
           name = wh;
         }
 
-        
-        return <>{code && name? code +" - "+name : "-"}</>;
+
+        return <>{code && name ? code + " - " + name : "-"}</>;
       },
       filter: {
-                isFilterable: true,
-                width: 320,
-                filterkey: "warehouse_id",
-                options: warehouseAllOptions,
-                onSelect: (selected: string | string[]) => {
-                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: warehouseId,
-              },
-  },
-  // { key: "ownerReference", label: "Owner Reference" },
-  // { key: "vehicleRoute", label: "Vehicle Route" },
-  { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
-  { key: "valid_from", label: "Valid From", render: (row: TableDataType) => formatWithPattern(new Date(row.valid_from), "DD MMM YYYY", "en-GB") || "-" },
-  { key: "valid_to", label: "Valid To", render: (row: TableDataType) => formatWithPattern(new Date(row.valid_to), "DD MMM YYYY", "en-GB") || "-" },
-  {
-    key: "status",
-    label: "Status",
-    render: (row: TableDataType) => (
-      <StatusBtn isActive={String(row.status) > "0"} />
-    ),
-    filterStatus: {
-      enabled: true,
-      onFilter: handleStatusFilter,
-      currentFilter: currentStatusFilter,
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: warehouseAllOptions,
+        onSelect: (selected: string | string[]) => {
+          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+      },
     },
-  },
-];
+    // { key: "ownerReference", label: "Owner Reference" },
+    // { key: "vehicleRoute", label: "Vehicle Route" },
+    { key: "description", label: "Description", render: (row: TableDataType) => row.description || "-" },
+    { key: "valid_from", label: "Valid From", render: (row: TableDataType) => formatWithPattern(new Date(row.valid_from), "DD MMM YYYY", "en-GB") || "-" },
+    { key: "valid_to", label: "Valid To", render: (row: TableDataType) => formatWithPattern(new Date(row.valid_to), "DD MMM YYYY", "en-GB") || "-" },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: TableDataType) => (
+        <StatusBtn isActive={String(row.status) > "0"} />
+      ),
+      filterStatus: {
+        enabled: true,
+        onFilter: handleStatusFilter,
+        currentFilter: currentStatusFilter,
+      },
+    },
+  ];
 
-useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [warehouseId, statusFilterValue, currentStatusFilter]);
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [warehouseId, statusFilterValue, currentStatusFilter]);
 
-  const fetchVehicles =  async (
-    
-      page: number = 1,
-      pageSize: number = 50
+  const fetchVehicles = async (
+
+    page: number = 1,
+    pageSize: number = 50
   ): Promise<listReturnType> => {
-      try {
-        // setLoading(true);
-        
-         // Build params with all filters
-         const params: any = {
-                page: page.toString(),
-                per_page: pageSize.toString(),
-            };
-            
-            // Add warehouse filter if selected
-            if (warehouseId) {
-                params.warehouse_id = warehouseId;
-            }
-            
-            // Add status filter if active (true=1, false=0)
-            if (currentStatusFilter !== null) {
-              params.status = currentStatusFilter ? "1" : "0";
-            }
-            
-        const listRes = await vehicleListData(params);
-        // setLoading(false);
-        return {
-          data: listRes.data || [],
-          total: listRes.pagination.totalPages,
-          currentPage: listRes.pagination.page,
-          pageSize: listRes.pagination.limit,
-        };
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
+    try {
+      // setLoading(true);
+
+      // Build params with all filters
+      const params: any = {
+        page: page.toString(),
+        per_page: pageSize.toString(),
+      };
+
+      // Add warehouse filter if selected
+      if (warehouseId) {
+        params.warehouse_id = warehouseId;
       }
-    };
-    
-  
+
+      // Add status filter if active (true=1, false=0)
+      if (currentStatusFilter !== null) {
+        params.status = currentStatusFilter ? "1" : "0";
+      }
+
+      const listRes = await vehicleListData(params);
+      // setLoading(false);
+      return {
+        data: listRes.data || [],
+        total: listRes.pagination.totalPages,
+        currentPage: listRes.pagination.page,
+        pageSize: listRes.pagination.limit,
+      };
+    } catch (error: unknown) {
+      console.error("API Error:", error);
+      setLoading(false);
+      throw error;
+    }
+  };
+
+
 
   const searchVehicle = useCallback(
     async (
@@ -240,7 +240,7 @@ useEffect(() => {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportVehicleData({ format,search: searchFilterValue,filter:{status:currentStatusFilter == false ? "0" : "1",warehouse_id: warehouseId} });
+      const response = await exportVehicleData({ format, search: searchFilterValue, filter: { status: currentStatusFilter == false ? "0" : "1", warehouse_id: warehouseId } });
       if (response && typeof response === 'object' && response.url) {
         await downloadFile(response.url);
         showSnackbar("File downloaded successfully", "success");
@@ -271,8 +271,8 @@ useEffect(() => {
       await vehicleStatusUpdate({ vehicle_ids: selectedRowsData, status });
       // Refresh vehicle list after 3 seconds
       // (async () => {
-        fetchVehicles();
-        setRefreshKey((k) => k + 1);
+      fetchVehicles();
+      setRefreshKey((k) => k + 1);
       // });
       showSnackbar("Vehicle status updated successfully", "success");
       // setLoading(false);
@@ -293,13 +293,13 @@ useEffect(() => {
               search: searchVehicle,
             },
             header: {
-               exportButton: {
+              exportButton: {
                 threeDotLoading: threeDotLoading,
                 show: true,
-                onClick: () => exportFile("xslx"), 
+                onClick: () => exportFile("xlsx"),
               },
               threeDot: [
-               
+
                 {
                   icon: "lucide:radio",
                   label: "Inactive",
@@ -342,7 +342,7 @@ useEffect(() => {
                     statusUpdate(ids, Number(1));
                   },
                 },
-              
+
               ],
               title: "Vehicle",
               searchBar: true,

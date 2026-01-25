@@ -263,7 +263,7 @@ export default function Tier() {
                             pagination: true,
                         },
                         columns: columns,
-                        rowSelection: true,
+                        // rowSelection: true,
                         rowActions: [
                             // {
                             //     icon: "lucide:eye",

@@ -12,8 +12,9 @@ import {
   capsCollectionByUuid,
   createCapsCollection,
   updateCapsCollection,
+  itemsForCaps
 } from "@/app/services/agentTransaction";
-import { agentCustomerList, genearateCode, getCompanyCustomers, itemGlobalSearch, itemList, warehouseListGlobalSearch, warehouseStockTopOrders } from "@/app/services/allApi";
+import { agentCustomerList, genearateCode, warehouseListGlobalSearch } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -119,6 +120,7 @@ interface ItemUOM {
   item_id: number;
   uom_type: string;
   name: string;
+  uom_name: string;
   price: string;
   is_stock_keeping?: boolean;
   upc?: string;
@@ -200,7 +202,7 @@ export default function AddEditCapsCollection() {
     try {
       let response;
       if (customerType === "1") {
-        response = await getCompanyCustomers({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
+        // response = await getCompanyCustomers({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
       } else {
         response = await agentCustomerList({ warehouse_id: warehouseId, search: searchText, per_page: "50" });
       }
@@ -236,7 +238,6 @@ export default function AddEditCapsCollection() {
     }
   };
 
-  // Fetch warehouse items using warehouseStockTopOrders API (same as order page)
   const fetchWarehouseItems = useCallback(async (warehouseId: string) => {
     if (!warehouseId) {
       setItemsOptions([]);
@@ -247,19 +248,17 @@ export default function AddEditCapsCollection() {
 
     try {
       setSkeleton(prev => ({ ...prev, item: true }));
-      
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
-      const stockRes = await warehouseStockTopOrders(warehouseId);
+      const stockRes = await itemsForCaps(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
-
       // Filter items with stock availability
       const filteredStocks = stocksArray.filter((stock: any) => {
-        return Number(stock.stock_qty) > 0;
+        return Number(stock.stock_qty ?? 1) > 0;
       });
 
       // Create items with UOM data map for easy access
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty?: string }> = {};
-      
+
       const processedItems = filteredStocks.map((stockItem: any) => {
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
           let price = uom.price;
@@ -269,8 +268,11 @@ export default function AddEditCapsCollection() {
           } else if (uom?.uom_type === "secondary") {
             price = stockItem.auom_pc_price || uom.price;
           }
-          return { 
-            ...uom, 
+          // Use uom.uom_name if uom.name is null
+          const label = uom.name ?? uom.uom_name ?? "";
+          return {
+            ...uom,
+            name: label,
             price,
             id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
             item_id: stockItem.item_id
@@ -283,7 +285,7 @@ export default function AddEditCapsCollection() {
           stock_qty: stockItem.stock_qty
         };
 
-        return { 
+        return {
           id: stockItem.item_id,
           name: stockItem.item_name,
           item_code: stockItem.item_code,
@@ -303,12 +305,11 @@ export default function AddEditCapsCollection() {
       // Create dropdown options
       const options = processedItems.map((item: any) => ({
         value: String(item.id),
-        label: `${item.erp_code || item.item_code || ''} - ${item.name || ''}`
+        label: `${item.erp_code || ''} - ${item.name || ''}`
       }));
 
       setItemsOptions(options);
       setSkeleton(prev => ({ ...prev, item: false }));
-      
       return options;
     } catch (error) {
       console.error("Error fetching warehouse items:", error);
@@ -386,7 +387,7 @@ export default function AddEditCapsCollection() {
                 uomOpts = selectedItem.uoms.map((uom) => {
                   const uu = uom as Record<string, unknown>;
                   return {
-                    value: String(uu['id'] ?? ""),
+                    value: String(uu['uom_id'] ?? ""),
                     label: String(uu['name'] ?? ""),
                     price: String(uu['price'] ?? "0"),
                   };
@@ -411,7 +412,7 @@ export default function AddEditCapsCollection() {
             setTableData(loadedRows);
           }
         } catch {
-          showSnackbar("Failed to fetch CAPS collection details", "error");
+          showSnackbar("Failed to fetch CAPS Master collection details", "error");
         } finally {
           setLoading(false);
         }
@@ -460,23 +461,7 @@ export default function AddEditCapsCollection() {
     setTableData((prev) => prev.filter((row) => row.id !== id));
   };
 
-  const fetchItem = async (searchTerm: string) => {
-    const res = await itemList({ name: searchTerm });
-    if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch items", "error");
-      setSkeleton({ ...skeleton, item: false });
-      return;
-    }
-    const data = res?.data || [];
-    setOrderData(data);
-    const options = data.map((item: { id: number; name: string; }) => ({
-      value: String(item.id),
-      label: item.name
-    }));
-    setItemsOptions(options);
-    setSkeleton({ ...skeleton, item: false });
-    return options;
-  };
+
 
   const codeGeneratedRef = useRef(false);
   const [code, setCode] = useState("");
@@ -514,11 +499,14 @@ export default function AddEditCapsCollection() {
         code: code || form.code,
         warehouse_id: parseInt(form.warehouse),
         customer: form.customer,
+        Contact_no : Number(customerContactNo),
         status: parseInt(form.status),
         details: validRows.map((r) => ({
           item_id: parseInt(r.item),
           uom_id: parseInt(r.uom),
           collected_quantity: parseFloat(r.collectQty),
+          price: Number(r.price),
+          total: Number(r.total),
           status: 1,
         })),
       };
@@ -562,7 +550,7 @@ export default function AddEditCapsCollection() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">
-            {isEditMode ? "Edit CAPS Master Collection" : "Add CAPS Master Collection"}
+            {isEditMode ? "Update CAPS Master Collection" : "Add CAPS Master Collection"}
           </h1>
         </div>
       </div>
@@ -683,11 +671,10 @@ export default function AddEditCapsCollection() {
                       const selectedOrder = orderData.find((order: FormData) => String(order.id) === value);
                       const itemUOMData = itemsWithUOM[value];
 
-                      // Priority 1: Use itemUOMData from itemsWithUOM (populated by warehouseStockTopOrders)
                       if (itemUOMData?.uoms && itemUOMData.uoms.length > 0) {
                         const uomOpts = itemUOMData.uoms.map((uom: ItemUOM) => ({
-                          value: String(uom.id ?? ""),
-                          label: String(uom.name ?? ""),
+                          value: String(uom.uom_id ?? ""),
+                          label: String(uom.name ?? uom.uom_name ?? ""),
                           price: String(uom.price ?? "0"),
                         }));
                         setRowUomOptions((prev) => ({ ...prev, [row.id]: uomOpts }));
@@ -710,7 +697,7 @@ export default function AddEditCapsCollection() {
                             price = selectedOrder.pricing?.buom_ctn_price || "-";
                           }
                           return {
-                            value: String(uom.id ?? ""),
+                            value: String(uom.uom_id ?? ""),
                             label: String(uom.name ?? ""),
                             price: String(price ?? "0"),
                           };
@@ -785,14 +772,14 @@ export default function AddEditCapsCollection() {
                 key: "price",
                 label: "Price",
                 render: (row) => (
-                  <span>{toInternationalNumber(parseFloat(row.price || "0"))}</span>
+                  <span>{toInternationalNumber((row.price || "0"),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 ),
               },
               {
                 key: "total",
                 label: "Total",
                 render: (row) => (
-                  <span>{toInternationalNumber(parseFloat(row.total || "0"))}</span>
+                  <span>{toInternationalNumber((row.total || "0"),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 ),
               },
               {
@@ -845,7 +832,8 @@ export default function AddEditCapsCollection() {
           </button>
           <SidebarBtn
             isActive={!submitting}
-            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update CAPS Collection" : "Create CAPS Collection")}
+            leadingIcon="mdi:check"
+            label={submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Collection" : "Create Collection")}
             onClick={handleSubmit}
             disabled={submitting || !form.warehouse || !form.customer || tableData.some(row => !row.item || !row.uom)}
           />

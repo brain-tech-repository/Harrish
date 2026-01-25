@@ -9,7 +9,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanUnloadList,unloadExportCollapse } from "@/app/services/agentTransaction";
+import { salesmanUnloadList,unloadExportCollapse, unloadGlobalFilter } from "@/app/services/agentTransaction";
 import { downloadFile } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
-
+import { formatWithPattern } from "@/app/utils/formatDate";
 export default function SalesmanUnloadPage() {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
@@ -35,30 +35,29 @@ const [threeDotLoading, setThreeDotLoading] = useState({
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+  const [warehouseId, setWarehouseId] = useState<string>();
+  const [routeId, setRouteId] = useState<string>();
+  const [salesmanId, setSalesmanId] = useState<string>();
+  const [filterPayload,setFilterPayload] = useState<any>();
   const {
-    regionOptions,
-    warehouseOptions,
+    
+    warehouseAllOptions,
+    salesmanOptions,
     routeOptions,
-    channelOptions,
-    itemCategoryOptions,
-    customerSubCategoryOptions,
-    ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, 
-    ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
+    ensureWarehouseAllLoaded,
+    ensureSalesmanLoaded,
+     ensureRouteLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
-    ensureChannelLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureItemCategoryLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded,
-     ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+   ensureWarehouseAllLoaded();
+   ensureRouteLoaded();
+   ensureSalesmanLoaded();
+   
+  }, [ensureRouteLoaded,ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const [isFiltered, setIsFiltered] = useState(false);
-
+  const [colFilter, setColFilter] = useState<boolean>(false);
   const [form, setForm] = useState({
     start_date: "",
     end_date: "",
@@ -98,6 +97,9 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     setRefreshKey((prev) => prev + 1);
   };
 
+       useEffect(() => {
+          setRefreshKey((k) => k + 1);
+      }, [ warehouseId, routeId,salesmanId]);
   // ✅ Fetch Data API (used by Table)
   const fetchSalesmanUnloadHeader = useCallback(
     async (
@@ -110,7 +112,15 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           per_page: pageSize.toString(),
           submit: "Filter",
         };
-
+           if (warehouseId) {
+                params.warehouse_id = String(warehouseId);
+            }
+            if (routeId) {
+                params.route_id = String(routeId);
+            }
+            if (salesmanId) {
+                params.salesman_id = String(salesmanId);
+            }
         if (form.start_date) params.start_date = form.start_date;
         if (form.end_date) params.end_date = form.end_date;
         if (form.region_id) params.region_id = form.region_id;
@@ -129,7 +139,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         return { data: [], total: 0, currentPage: 1, pageSize: 50 };
       }
     },
-    [setLoading, isFiltered, form]
+    [setLoading, isFiltered, form, showSnackbar,warehouseId,routeId,salesmanId]
   );
 
   const filterBy = useCallback(
@@ -139,6 +149,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     ): Promise<listReturnType> => {
       let result;
       setLoading(true);
+      setColFilter
       try {
         const params: Record<string, string> = {};
         Object.keys(payload || {}).forEach((k) => {
@@ -150,6 +161,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         result = await salesmanUnloadList(params);
       } finally {
         setLoading(false);
+        setColFilter(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -167,10 +179,58 @@ const [threeDotLoading, setThreeDotLoading] = useState({
     [setLoading]
   );
 
+        const fetchUnloadAccordingToGlobalFilter = useCallback(
+          async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+          ): Promise<listReturnType> => {
+      
+            try {
+              setLoading(true);
+              setFilterPayload(payload);
+              const body = {
+                per_page: pageSize.toString(),
+                current_page: pageNo.toString(),
+                filter: payload
+              }
+              const listRes = await unloadGlobalFilter(body);
+             const pagination =
+              listRes.pagination?.pagination || listRes.pagination || {};
+            return {
+              data: listRes.data || [],
+              total: pagination.last_page || listRes.pagination?.last_page || 1,
+              totalRecords:
+                pagination.total || listRes.pagination?.total || 0,
+              currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+              pageSize: pagination.per_page || pageSize,
+            };
+              // fetchOrdersCache.current[cacheKey] = result;
+              // return listRes;
+            } catch (error: unknown) {
+              console.error("API Error:", error);
+              setLoading(false);
+              throw error;
+            }
+            finally{
+                setLoading(false);
+            }
+          },
+          [unloadGlobalFilter, warehouseId, salesmanId]
+        );
+
 
   // ✅ Table Columns
   const columns: configType["columns"] = [
-    { key: "unload_date", label: "Unload Date" },
+    { key: "osa_code", label: "Code"},
+    { key: "unload_date", label: "Unload Date",render: (row: TableDataType) => {
+      return formatWithPattern(
+                new Date(row.unload_date),
+                "DD MMM YYYY",
+                "en-GB",
+              );
+            }
+    },
     { key: "unload_time", label: "Unload Time"},
     { key: "laod_date", label: "Load Date",showByDefault: false  },
     {
@@ -181,8 +241,18 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           typeof row.salesman === "string"
             ? JSON.parse(row.salesman)
             : row.salesman;
-        return obj?.name || "-";
+        return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                onSelect: (selected) => {
+                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: salesmanId,
+            },
     },
     {
       key: "warehouse",
@@ -194,6 +264,16 @@ const [threeDotLoading, setThreeDotLoading] = useState({
             : row.warehouse;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+       filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
     },
     {
       key: "route",
@@ -203,6 +283,16 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           typeof row.route === "string" ? JSON.parse(row.route) : row.route;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(routeOptions) ? routeOptions : [],
+                onSelect: (selected) => {
+                    setRouteId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: routeId,
+            },
     },
     { key: "Salesman_type", label: "Sales Team Role" },
     { key: "unload_no", label: "Unload No." },
@@ -223,7 +313,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
         try {
           setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-          const response = await unloadExportCollapse({ format });
+          const response = await unloadExportCollapse({ format , filter: filterPayload });
           if (response && typeof response === "object" && response.download_url) {
             await downloadFile(response.download_url);
             showSnackbar("File downloaded successfully ", "success");
@@ -240,16 +330,30 @@ const [threeDotLoading, setThreeDotLoading] = useState({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="gap-3 mb-4">
-        <h1 className="text-bold-700 text-lg font-semibold">Salesman Unload</h1>
-      </div>
+      {/* <div className="gap-3 mb-4">
+        <h1 className="text-bold-700 text-lg font-semibold">Sales Team Unload</h1>
+      </div> */}
 
       {/* 📋 Table Section with Dynamic Filters */}
       <Table
         refreshKey={refreshKey}
         config={{
-          api: { list: fetchSalesmanUnloadHeader, filterBy },
+          api: { list: fetchSalesmanUnloadHeader,  filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchUnloadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              },},
           header: {
+            title: "Sales Team Unload",
             searchBar: false,
             columnFilter: true,
             threeDot: [
@@ -266,7 +370,12 @@ const [threeDotLoading, setThreeDotLoading] = useState({
                onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
              },
            ],
-            filterRenderer: FilterComponent,
+            filterRenderer: (props) => (
+                                                                                                <FilterComponent
+                                                                                                currentDate={true}
+                                                                                                  {...props}
+                                                                                                />
+                                                                                              ),
 
             actions: can("create") ? [
               <SidebarBtn

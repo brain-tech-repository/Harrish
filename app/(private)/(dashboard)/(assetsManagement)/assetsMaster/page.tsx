@@ -99,6 +99,8 @@ const validateFilters = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
+  // const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -136,21 +138,17 @@ const searchChiller = useCallback(
       try {
         setLoading(true);
 
-        // 🔒 Guard clause
-        if (!columnName) {
-          return {
-            data: [],
-            currentPage: 0,
-            pageSize,
-            total: 0,
-          };
-        }
-
-        const res = await chillerList({
+        const payload: any = {
           query,
           per_page: pageSize.toString(),
-          [columnName]: query,
-        });
+        };
+
+        // 👇 only add column filter if it exists
+        if (columnName) {
+          payload[columnName] = query;
+        }
+
+        const res = await chillerList(payload);
 
         if (res?.error) {
           showSnackbar(
@@ -167,7 +165,6 @@ const searchChiller = useCallback(
           total: res?.pagination?.totalPages || 0,
         };
       } finally {
-        // ✅ always runs (success or error)
         setLoading(false);
       }
     },
@@ -176,7 +173,8 @@ const searchChiller = useCallback(
 
  const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
       const res = await assetsMasterExport({ format: fileType });
 
@@ -215,7 +213,8 @@ const searchChiller = useCallback(
       console.error("Export error:", error);
       showSnackbar("Failed to export Assets Master data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -445,14 +444,14 @@ const handleDownloadQR = async (row: TableDataType) => {
               title: "Assets Master",
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv");
                   },
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx");
@@ -460,6 +459,7 @@ const handleDownloadQR = async (row: TableDataType) => {
                 },
               ],
               searchBar: false,
+              // searchBar: false,
               columnFilter: true,
                 filterRenderer:filterAssest,
               actions: can("create") ? [
@@ -478,9 +478,7 @@ const handleDownloadQR = async (row: TableDataType) => {
 
             },
             localStorageKey: "assetsMasterTable",
-            table: {
-              height: 400
-            },
+            
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               {
@@ -583,7 +581,7 @@ const handleDownloadQR = async (row: TableDataType) => {
                     : "-",
               },
             ],
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:eye",

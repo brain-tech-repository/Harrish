@@ -415,7 +415,6 @@ export default function ExchangeAddEditPage() {
           value: String(item.id),
           label: `${item.erp_code || item.item_code || ''} - ${item.name || ''} (Stock: ${item.warehouse_stock})`
         }));
-        console.log("Fetched warehouse items:", options);
         setItemsOptions(options);
         setSkeleton(prev => ({ ...prev, item: false }));
         
@@ -1189,7 +1188,7 @@ export default function ExchangeAddEditPage() {
                         {
                           key: "Total",
                           label: "Total",
-                          render: (row) => <span>{toInternationalNumber(row.Total) || "0.00"}</span>,
+                          render: (row) => <span>{toInternationalNumber(row.Total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</span>,
                         },
                         {
                           key: "action",
@@ -1253,8 +1252,8 @@ export default function ExchangeAddEditPage() {
                         },
                         { key: "uom", label: "UOM", align: "center", render: (r) => <span>{r.uom}</span> },
                         { key: "quantity", label: "Quantity", align: "center", render: (r) => <span>{r.quantity}</span> },
-                        { key: "price", label: "Price", align: "right", render: (r) => <span>{toInternationalNumber(r.price) || "-"}</span> },
-                        { key: "total", label: "Total", align: "right", render: (r) => <span>{toInternationalNumber(r.total) || "-"}</span> },
+                        { key: "price", label: "Price", align: "right", render: (r) => <span>{toInternationalNumber(r.price,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}</span> },
+                        { key: "total", label: "Total", align: "right", render: (r) => <span>{toInternationalNumber(r.total,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}</span> },
                       ],
                     }}
                   />
@@ -1279,7 +1278,7 @@ export default function ExchangeAddEditPage() {
                   <button type="button" className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100" onClick={() => router.push("/distributorsExchange")}>
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Exchange..." : "Create Exchange"} disabled={isSubmitting} onClick={() => submitForm()} />
+                  <SidebarBtn leadingIcon="mdi:check" type="submit" isActive={true} label={isSubmitting ? "Creating Exchange..." : "Create Exchange"} disabled={isSubmitting} onClick={() => submitForm()} />
                 </div>
               </>
             );

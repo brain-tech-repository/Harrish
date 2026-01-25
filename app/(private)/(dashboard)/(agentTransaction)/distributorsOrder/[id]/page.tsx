@@ -1158,7 +1158,7 @@ export default function OrderAddEditPage() {
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search Distributor"
+                      placeholder="Select Distributor"
                       value={values.warehouse}
                       options={warehouseOptions}
                       searchable={true}
@@ -1295,7 +1295,7 @@ export default function OrderAddEditPage() {
                                   recalculateItem(Number(row.idx), "item_id", e.target.value)
                                 }}
                                 options={itemsOptions}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 disabled={!values.customer}
                                 error={err && err}
                               />
@@ -1472,7 +1472,7 @@ export default function OrderAddEditPage() {
                       ))}
                       <div className="font-semibold text-[#181D27] text-[18px] flex justify-between">
                         <span>Total</span>
-                        <span>{CURRENCY} {toInternationalNumber(Number(finalTotal))}</span>
+                        <span>{CURRENCY} {toInternationalNumber(Number(finalTotal),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   </div>
@@ -1488,7 +1488,7 @@ export default function OrderAddEditPage() {
                   >
                     Cancel
                   </button>
-                  <SidebarBtn type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
+                  <SidebarBtn  type="submit" isActive={true} label={isSubmitting ? "Creating Order..." : checkout==1?"Checkout":"Create Order"} disabled={isSubmitting || !values.warehouse || !values.customer || !itemData || (itemData.length === 1 && !itemData[0].item_name)} onClick={() => submitForm()} />
                 </div>
               </>
             );
@@ -1604,9 +1604,9 @@ setCheckout(2)
   return (
     <>
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/promotion">
+        {/* <Link href="/promotion">
           <Icon icon="lucide:arrow-left" width={22} />
-        </Link>
+        </Link> */}
         <h1 className="text-xl font-semibold">
           Promotion Setup
         </h1>
@@ -1619,7 +1619,9 @@ setCheckout(2)
         }))}
         currentStep={currentStep}
         onStepClick={() => {}}
-        onBack={prevStep}
+        close={true}
+        closeFunction={() => setOpenPromotion(false)}
+        onBack={() => prevStep()}
         onNext={handleNext}
         onSubmit={handleSubmit}
         showSubmitButton={isLastStep}
@@ -1681,7 +1683,7 @@ interface Props {
                                   value: row.id,
                                   label: row.item_name,
       }))}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 // disabled={!values.customer}
                                 // error={err && err}
                               />

@@ -58,7 +58,7 @@ export default function StockInStoreAddPage() {
     const router = useRouter();
     const { id } = useParams<{ id?: string }>();
     const isEditMode = Boolean(id && id !== "add");
-
+    const [isSubmitting, setSubmitting] = useState(false);
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
 
@@ -68,6 +68,7 @@ export default function StockInStoreAddPage() {
     const codeGeneratedRef = useRef(false);
 
     const [code, setCode] = useState("");
+    const [genCode, setGenCode] = useState("");
     const [itemData, setItemData] = useState<ItemRow[]>([
         { item_id: "", uom_id: "", capacity: "", UOM: [] },
     ]);
@@ -105,6 +106,7 @@ export default function StockInStoreAddPage() {
                     ...prev,
                     code: res.code,
                 }));
+                setGenCode(res.code);
             }
         })();
     }, [isEditMode]);
@@ -243,7 +245,7 @@ export default function StockInStoreAddPage() {
             await Yup.array().of(itemRowSchema).validate(itemData, {
                 abortEarly: false,
             });
-
+            setSubmitting(true);
             setLoading(true);
 
             const basePayload = {
@@ -260,7 +262,7 @@ export default function StockInStoreAddPage() {
 
             const payload = isEditMode
                 ? basePayload
-                : { ...basePayload, code };
+                : { ...basePayload, code: genCode };
 
             const res = isEditMode
                 ? await updateStockInStore(id as string, payload)
@@ -274,7 +276,7 @@ export default function StockInStoreAddPage() {
             // 🔥 FINAL CODE SAVE — ONLY ON ADD
             if (!isEditMode) {
                 await saveFinalCode({
-                    reserved_code: code,
+                    reserved_code: genCode,
                     model_name: "code",
                 });
             }
@@ -289,6 +291,7 @@ export default function StockInStoreAddPage() {
             showSnackbar("Something went wrong", "error");
         } finally {
             setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -308,7 +311,7 @@ export default function StockInStoreAddPage() {
                     onClick={() => router.back()}
                 />
                 <h1 className="text-lg font-semibold">
-                    {isEditMode ? "Edit" : "Add"} Stock In Store
+                    {isEditMode ? "Update" : "Add"} Stock In Store
                 </h1>
             </div>
 
@@ -348,6 +351,7 @@ export default function StockInStoreAddPage() {
                                     type="date"
                                     label="To"
                                     name="to"
+                                    min={values.from}
                                     value={values.to}
                                     onChange={handleChange}
                                 />
@@ -457,8 +461,10 @@ export default function StockInStoreAddPage() {
 
                             <div className="flex justify-end mt-6">
                                 <SidebarBtn
-                                    label="Submit"
+                                    label={isSubmitting ? "Submitting" :"Submit"}
                                     isActive
+                                    leadingIcon="mdi-check"
+                                    disabled={isSubmitting || !validationSchema.isValidSync(values) }
                                     onClick={submitForm}
                                 />
                             </div>

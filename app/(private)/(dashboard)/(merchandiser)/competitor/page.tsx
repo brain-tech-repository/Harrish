@@ -43,7 +43,7 @@ export default function Competitor() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [popupImages, setPopupImages] = useState<string[]>([]);
-
+  const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -90,8 +90,8 @@ export default function Competitor() {
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
-      setLoading(true);
-
+      // setLoading(true);
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
       // ✅ Use correct API and param name
       const res = await exportCompetitor({ format: fileType });
 
@@ -121,7 +121,9 @@ export default function Competitor() {
       console.error("Export error:", error);
       showSnackbar("Failed to export competitor data", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
+
+      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
       setShowExportDropdown(false);
     }
   };
@@ -176,14 +178,14 @@ export default function Competitor() {
               title: "Competitor Information",
               threeDot: [
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv")
                   },
                 },
                 {
-                  icon: "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx")
@@ -239,7 +241,7 @@ export default function Competitor() {
               { key: "notes", label: "Notes" },
             ],
 
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:eye",

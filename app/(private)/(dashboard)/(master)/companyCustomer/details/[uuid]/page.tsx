@@ -1,11 +1,12 @@
+
 "use client";
 
 import ContainerCard from "@/app/components/containerCard";
-import Table, { configType, TableDataType } from "@/app/components/customTable";
+import Table, { configType, listReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
-import { getCompanyCustomerById } from "@/app/services/allApi";
+import { downloadFileGlobal, getCompanyCustomerById, getCompanyCustomers, getCompanyCustomersPurchase } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -16,6 +17,14 @@ import { downloadFile } from "@/app/services/allApi";
 import Skeleton from "@mui/material/Skeleton";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import FilterComponent from "@/app/components/filterComponent";
+import { exportCustomerPurchaseOrder, exportPurposeOrderViewPdf } from "@/app/services/companyTransaction";
+import ExportDropdownButton from "@/app/components/ExportDropdownButton";
+import ItemCellWithPopup from "@/app/components/multipleDataPopUp";
+import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
+// Component to show first item and popup for remaining items
+
 interface CustomerItem {
   id: number;
   sap_code: string;
@@ -64,7 +73,11 @@ export default function ViewPage() {
   const uuid = Array.isArray(params?.uuid)
     ? params?.uuid[0] || ""
     : (params?.uuid as string) || "";
-
+    const [purchaseData, setPurchaseData] = useState<any>(null);
+  const [purchaseList, setPurchaseList] = useState<any>("");
+  const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
   const [customer, setCustomer] = useState<CustomerItem | null>(null);
   const [isChecked, setIsChecked] = useState(false);
   const { showSnackbar } = useSnackbar();
@@ -89,9 +102,11 @@ export default function ViewPage() {
             res.data?.message || "Unable to fetch company customer details",
             "error"
           );
+
           return;
         }
         setCustomer(res.data);
+        setPurchaseList(res.data.id);
       } catch {
         showSnackbar("Unable to fetch company customer details", "error");
       } finally {
@@ -103,35 +118,47 @@ export default function ViewPage() {
   }, [uuid, setLoading, showSnackbar]);
 
   const Columns: configType["columns"] = [
-    { key: "osa_code", label: "Code", showByDefault: true },
-    { key: "order_code", label: "Order Code", showByDefault: true },
-    { key: "delivery_code", label: "Delivery Code", showByDefault: true },
-    {
-      key: "warehouse_code", label: "Distributor", showByDefault: true, render: (row: TableDataType) => {
-        const code = row.warehouse_code || "";
-        const name = row.warehouse_name || "";
-        return `${code}${code && name ? " - " : ""}${name}`;
-      }
+    // { key: "osa_code", label: "Code", showByDefault: true },
+    { key: "order_code", label: "Order Code", showByDefault: true , render: (row: TableDataType) => <div className="cursor-pointer hover:text-red-500" onClick={() => {
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.order_code || "-"}</div> },
+    { key: "delivery_date", label: "Delivery Date", showByDefault: true,render: (row: TableDataType) => {
+      return  formatDate((row.delivery_date))
+                 
     },
+  },
+    // { key: "delivery_code", label: "Delivery Code", showByDefault: true },
+    // {
+    //   key: "warehouse_code", label: "Distributor", showByDefault: true, render: (row: TableDataType) => {
+    //     const code = row.warehouse_code || "";
+    //     const name = row.warehouse_name || "";
+    //     return `${code}${code && name ? " - " : "-"}${name}`;
+    //   }
+    // },
     {
-      key: "route_code", label: "Route", showByDefault: true, render: (row: TableDataType) => {
-        const code = row.route_code || "";
-        const name = row.route_name || "";
-        return `${code}${code && name ? " - " : ""}${name}`;
-      }
+      key: "item",
+      label: "Item",
+      showByDefault: true,
+      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" details={row.details} />
     },
-    {
-      key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
-        const code = row.customer_code || "";
-        const name = row.customer_name || "";
-        return `${code}${code && name ? " - " : ""}${name}`;
-      }
-    },
+
     {
       key: "salesman_code", label: "Sales Team", showByDefault: true, render: (row: TableDataType) => {
         const code = row.salesman_code || "";
         const name = row.salesman_name || "";
-        return `${code}${code && name ? " - " : ""}${name}`;
+        return `${code}${code && name ? " - " : "-"}${name}`;
+      }
+    },
+    {
+      key: "comment", label: "Comment", showByDefault: true
+    },
+    {
+      key: "sap_msg", label: "SAP Status", showByDefault: true
+    },
+    {
+      key: "total", label: "Total", showByDefault: true,render: (row: TableDataType) => {
+        return toInternationalNumber(row.total);
       }
     },
     //  { key: "action", label: "Action",sticky:"right", render: (row: TableDataType) => {
@@ -151,6 +178,70 @@ export default function ViewPage() {
     { key: "purchase", label: "Purchase" },
     { key: "creditNote", label: "Credit Note" },
   ];
+
+  const fetchCompanyCustomersPurchase = async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
+    // setLoading(true);
+
+    // Build params with all filters
+    const params: any = {
+      page: pageNo.toString(),
+      pageSize: pageSize.toString()
+    };
+
+    const res = await getCompanyCustomersPurchase({
+      customer_id: purchaseList,
+      ...params
+    });
+    setPurchaseData(res.data);
+    // setLoading(false);
+    if (res.error) {
+      showSnackbar(res.data.message || "Failed to fetch Purchase order", "error");
+      throw new Error(res.data.message);
+    }
+    return {
+      data: res.data || [],
+      pageSize: res?.pagination?.per_page || pageSize,
+      total: res?.pagination?.last_page || 1,
+      currentPage: res?.pagination?.current_page || 1,
+    }
+  };
+
+  const exportFile = async (uuid: string, format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await exportPurposeOrderViewPdf({ uuid, format }); // send proper body object
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFileGlobal(response.download_url, `purpose_order_${uuid}`);
+        // await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
+
+  const allInvoices = async (format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await exportCustomerPurchaseOrder({ customer_id: purchaseList, format }); // send proper body object
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showSnackbar("Failed to download data", "error");
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
 
   return (
     <>
@@ -293,15 +384,28 @@ export default function ViewPage() {
               <div className="flex flex-col h-full">
                 <Table
                   config={{
+                    api: {
+                      list: fetchCompanyCustomersPurchase,
+                    },
                     header: {
-                        filterRenderer: (props) => (
-                            <FilterComponent
-                            currentDate={true}
-                              {...props}
-                              onlyFilters={['from_date', 'to_date']}
-                            />
-                          ),
+
+                      filterRenderer: (props) => (
+                        <FilterComponent
+                          currentMonth={true}
+                          {...props}
+                          onlyFilters={['from_date', 'to_date']}
+                        />
+                      ),
                       searchBar: false,
+                      actions: [
+                        <ExportDropdownButton
+                          disabled={purchaseList?.length === 0}
+                          keyType="excel"
+                          threeDotLoading={threeDotLoading}
+                          exportReturnFile={allInvoices}
+                          uuid={uuid}
+                        />
+                      ],
                     },
                     showNestedLoading: true,
                     footer: { nextPrevBtn: true, pagination: true },
@@ -311,12 +415,13 @@ export default function ViewPage() {
                     columns: Columns,
                     rowSelection: false,
                     rowActions: [
-                      // {
-                      //     icon: "material-symbols:download",
-                      //     onClick: (data: TableDataType) => {
-                      //         exportFile(data.uuid, "csv"); // or "excel", "csv" etc.
-                      //     },
-                      // }
+                      {
+                        icon: "material-symbols:download",
+                        showLoading: true,
+                        onClick: (data: TableDataType) => 
+                          exportFile(data.uuid, "pdf")
+                        
+                      }
                     ],
                     pageSize: 50,
                   }}
@@ -332,13 +437,13 @@ export default function ViewPage() {
                 <Table
                   config={{
                     header: {
-                       filterRenderer: (props) => (
-                           <FilterComponent
-                           currentDate={true}
-                             {...props}
-                             onlyFilters={['from_date', 'to_date']}
-                           />
-                         ),
+                      filterRenderer: (props) => (
+                        <FilterComponent
+                          currentMonth={true}
+                          {...props}
+                          onlyFilters={['from_date', 'to_date']}
+                        />
+                      ),
                       searchBar: false,
                     },
                     showNestedLoading: true,
@@ -364,8 +469,13 @@ export default function ViewPage() {
             </ContainerCard>
           )}
         </div>
+        <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+          {selectedRow && <SideBarDetailPage title="Purchase Order" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+        </Drawer>
       </div>
     </>
   );
 }
+
+
 

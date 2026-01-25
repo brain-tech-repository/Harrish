@@ -193,7 +193,7 @@ export default function AddEditRouteVisit() {
     region: [] as string[],
     area: [] as string[],
     warehouse: [] as string[],
-    route: [] as string[],
+    route: "",
     company: [] as string[],
     days: [] as string[],
     from_date: "",
@@ -222,7 +222,7 @@ export default function AddEditRouteVisit() {
     region: yup.array().min(1, "At least one region is required"),
     area: yup.array().min(1, "At least one area is required"),
     warehouse: yup.array().min(1, "At least one warehouse is required"),
-    route: yup.array().min(1, "At least one route is required"),
+    route: yup.string().required("Route is required"),
     company: yup.array().min(1, "At least one company is required"),
     days: yup.array().min(1, "At least one day is required"),
     from_date: yup.string().required("From date is required"),
@@ -275,7 +275,7 @@ export default function AddEditRouteVisit() {
       region: yup.array().of(yup.string()).min(1, "At least one region is required"),
       area: yup.array().of(yup.string()).min(1, "At least one area is required"),
       warehouse: yup.array().of(yup.string()).min(1, "At least one warehouse is required"),
-      route: yup.array().of(yup.string()).min(1, "At least one route is required"),
+      route: yup.string().required("Route is required"),
       from_date: validationSchema.fields.from_date,
       to_date: validationSchema.fields.to_date,
       status: validationSchema.fields.status,
@@ -325,10 +325,11 @@ export default function AddEditRouteVisit() {
     try {
       const res = await getRouteVisitDetails(uuid);
 
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        const list = res.data;
-        const firstItem = list[0];
-        setHeaderUuid(firstItem.header?.uuid || "");
+      if (res?.data) {
+        const d = Array.isArray(res.data) ? res.data[0] : res.data;
+        setHeaderUuid(d.header?.uuid || "");
+
+        const routeId = res.data[0].route[0]?.id;
 
         // Format dates from "2025-10-31T00:00:00.000000Z" to "2025-10-31"
         const formatDate = (dateString: string) => {
@@ -336,28 +337,31 @@ export default function AddEditRouteVisit() {
           return dateString.split("T")[0];
         };
 
-        const backendStatus = firstItem.status;
+        const backendStatus = d.status;
         const statusValue = backendStatus === 0 ? "0" : "1";
 
-        // Step 1: Populate form from the first item
+        // Always set as arrays of string IDs
+        const toIdArray = (arr: any[] | undefined) => Array.isArray(arr) ? arr.map((x) => String(x.id)) : [];
+
         setForm({
-          salesman_type: firstItem.customer_type || "1",
-          merchandiser: firstItem?.merchandiser?.id ? String(firstItem.merchandiser?.id) : "",
-          region: firstItem.region?.map((r: any) => String(r.id)) || [],
-          area: firstItem.area?.map((a: any) => String(a.id)) || [],
-          warehouse: firstItem.warehouse?.map((w: any) => String(w.id)) || [],
-          route: firstItem.route?.map((r: any) => String(r.id)) || [],
-          company: firstItem.companies?.map((c: any) => String(c.id)) || [],
-          days: firstItem.days || [], // This is per-customer now, but we keep it for form compatibility if needed
-          from_date: formatDate(firstItem.from_date),
-          to_date: formatDate(firstItem.to_date),
+          salesman_type: d.customer_type || "1",
+          merchandiser: d?.merchandiser?.id ? String(d.merchandiser.id) : "",
+          region: toIdArray(d.region),
+          area: toIdArray(d.area),
+          warehouse: toIdArray(d.warehouse),
+          route: routeId ? String(routeId) : "",
+          company: toIdArray(d.companies),
+          days: d.days || [],
+          from_date: formatDate(d.from_date),
+          to_date: formatDate(d.to_date),
           status: statusValue,
         });
 
-        setSelectedCustomerType(firstItem.customer_type || "1");
+        setSelectedCustomerType(d.customer_type || "1");
 
         // Step 2: Extract all customers and their days
         const schedules: CustomerSchedules = {};
+        const list = Array.isArray(res.data) ? res.data : [res.data];
         list.forEach((item: any) => {
           if (item.customer && item.customer.id) {
             const days = item.days || [];
@@ -373,7 +377,6 @@ export default function AddEditRouteVisit() {
           }
         });
         setCustomerSchedules(schedules);
-
       } else {
         showSnackbar("Route visit not found", "error");
       }
@@ -400,7 +403,7 @@ export default function AddEditRouteVisit() {
 
       const salesmanType = form.salesman_type;
       const merchId = form.merchandiser;
-      const route_id = Array.isArray(form.route) && form.route.length > 0 ? form.route.join(",") : undefined;
+      const route_id = form.route;
 
       if (salesmanType === "2") {
         if (!merchId) {
@@ -471,7 +474,7 @@ export default function AddEditRouteVisit() {
         region: [],
         area: [],
         warehouse: [],
-        route: [],
+        route: "",
       }));
       return;
     }
@@ -514,7 +517,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.region.length) {
       setAreaOptions([]);
-      setForm((prev) => ({ ...prev, area: [], warehouse: [], route: [] }));
+      setForm((prev) => ({ ...prev, area: [], warehouse: [], route: "" }));
       return;
     }
 
@@ -549,7 +552,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.area.length) {
       setWarehouseOptions([]);
-      setForm((prev) => ({ ...prev, warehouse: [], route: [] }));
+      setForm((prev) => ({ ...prev, warehouse: [], route: "" }));
       return;
     }
 
@@ -584,7 +587,7 @@ export default function AddEditRouteVisit() {
   useEffect(() => {
     if (!form.warehouse.length) {
       setRouteOptions([]);
-      setForm((prev) => ({ ...prev, route: [] }));
+      setForm((prev) => ({ ...prev, route: "" }));
       return;
     }
 
@@ -640,11 +643,11 @@ export default function AddEditRouteVisit() {
           region: [],
           area: [],
           warehouse: [],
-          route: [],
+          route: "",
         }),
-        ...(field === "region" && { area: [], warehouse: [], route: [] }),
-        ...(field === "area" && { warehouse: [], route: [] }),
-        ...(field === "warehouse" && { route: [] }),
+        ...(field === "region" && { area: [], warehouse: [], route: "" }),
+        ...(field === "area" && { warehouse: [], route: "" }),
+        ...(field === "warehouse" && { route: "" }),
       }));
     }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -729,7 +732,7 @@ export default function AddEditRouteVisit() {
           region: form.region.join(","),
           area: form.area.join(","),
           warehouse: form.warehouse.join(","),
-          route: form.route.join(","),
+          route: [form.route],
           days: schedule.days.join(","),
           from_date: form.from_date,
           to_date: form.to_date,
@@ -789,6 +792,23 @@ export default function AddEditRouteVisit() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        function setFieldValue(field: string, value: any): void {
+          setForm((prev) => ({
+            ...prev,
+            [field]: value,
+            // Reset dependent fields when parent changes
+            ...(field === "company" && {
+              region: [],
+              area: [],
+              warehouse: [],
+              route: "",
+            }),
+            ...(field === "region" && { area: [], warehouse: [], route: "" }),
+            ...(field === "area" && { warehouse: [], route: "" }),
+            ...(field === "warehouse" && { route: "" }),
+          }));
+          if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+        }
         return (
           <div className="bg-white rounded-2xl shadow divide-y divide-gray-200 mb-6">
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -872,6 +892,7 @@ export default function AddEditRouteVisit() {
                 <InputFields
                   required
                   label="Company"
+                  searchable
                   value={form.company}
                   multiSelectChips={true}
                   onChange={(e) =>
@@ -891,6 +912,7 @@ export default function AddEditRouteVisit() {
               <div>
                 <InputFields
                   required
+                  searchable
                   disabled={form.company.length === 0}
                   label="Region"
                   value={form.region}
@@ -913,6 +935,7 @@ export default function AddEditRouteVisit() {
                 <div>
                   <InputFields
                     required
+                    searchable
                     disabled={form.region.length === 0}
                     label="Area"
                     multiSelectChips={true}
@@ -936,6 +959,7 @@ export default function AddEditRouteVisit() {
                 <div>
                   <InputFields
                     required
+                    searchable
                     disabled={form.area.length === 0 || areaOptions.length === 0}
                     label="Distributors"
                     multiSelectChips={true}
@@ -959,19 +983,16 @@ export default function AddEditRouteVisit() {
                 <div>
                   <InputFields
                     required
+                    searchable
+                    placeholder="Select Route"
                     disabled={form.warehouse.length === 0}
                     label="Route"
-                    multiSelectChips={true}
                     value={form.route}
                     onChange={(e) =>
-                      handleMultiSelectChange(
-                        "route",
-                        Array.isArray(e.target.value) ? e.target.value : []
-                      )
+                      setFieldValue("route", e.target.value)
                     }
                     showSkeleton={skeleton.route}
                     options={routeOptions}
-                    // isSingle={false}
                     error={errors.route}
                   />
                 </div>
@@ -1005,74 +1026,7 @@ export default function AddEditRouteVisit() {
                 <h3 className="text-lg font-medium text-gray-900">
                   Customer Schedule
                 </h3>
-                <div className="flex items-center gap-2">
-                  {/* Import Customer Button */}
-                  <SidebarBtn
-                    isActive={true}
-                    type="button"
-                    className="ml-2 cursor-pointer"
-                    buttonTw="px-4 py-2 min-h-10 bg-primary-600 text-white hover:bg-primary-700"
-                    label="Import Customer"
-                  />
-                  {/* Info Icon with Controlled Popover (fixed hooks) */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      className="p-2 cursor-pointer"
-                      title="Info"
-                      ref={infoButtonRef}
-                      onClick={() => setInfoPopoverOpen((v) => !v)}
-                    >
-                      <Icon icon="mdi:information-outline" width={22} className="text-gray-500" />
-                    </button>
-                    {infoPopoverOpen && (
-                      <div
-                        ref={infoPopoverRef}
-                        className="absolute right-0 mt-2 z-50 w-max max-w-lg px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded shadow-lg"
-                      >
-                        Download a{' '}
-                        <a
-                          className="text-blue-600 underline cursor-pointer"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                          onClick={async (e) => {
-                            setInfoPopoverOpen(false);
-                            try {
-                              const res = await dummyImport({format: 'csv'});
-                              await downloadFile(res.download_url);
-                              showSnackbar("CSV file downloaded successfully", "success");
-                            } catch (err) {
-                              showSnackbar("Failed to download CSV file", "error");
-                            }
-                          }}
-                        >
-                          sample csv file
-                        </a>{' '}
-                        or{' '}
-                        <a
-                          className="text-blue-600 underline cursor-pointer"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                          onClick={async (e) => {
-                            setInfoPopoverOpen(false);
-                            try {
-                              const res = await dummyImport({format: 'xlsx'});
-                              await downloadFile(res.download_url);
-                              showSnackbar("XLS file downloaded successfully", "success");
-                            } catch (err) {
-                              showSnackbar("Failed to download for file", "error");
-                            }
-                          }}
-                        >
-                          sample xls file
-                        </a>{' '}
-                        and compare it to your import file to ensure you have the file perfect for the import.
-                      </div>
-                    )}
-                  </div>
-                </div>
+
               </div>
               <Table
                 customers={customers}
@@ -1126,7 +1080,13 @@ export default function AddEditRouteVisit() {
         showSubmitButton={isLastStep}
         showNextButton={!isLastStep}
         nextButtonText="Save & Next"
-        submitButtonText={submitting ? "Submitting..." : "Submit"}
+        submitButtonText={submitting
+              ? isEditMode
+                ? "Updating..."
+                : "Submitting..."
+              : isEditMode
+                ? "Update"
+                : "Submit"}
       >
         {renderStepContent()}
       </StepperForm>

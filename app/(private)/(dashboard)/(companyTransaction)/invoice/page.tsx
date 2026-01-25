@@ -14,7 +14,7 @@ import { formatWithPattern } from "@/app/(private)/utils/date";
 import { invoiceExportHeader, invoiceList } from "@/app/services/companyTransaction";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 
 
 // 🔹 Table Columns
@@ -101,17 +101,7 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const { companyOptions, warehouseAllOptions, regionOptions, areaOptions, routeOptions, salesmanOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
-    // Load dropdown data
-    useEffect(() => {
-        ensureAreaLoaded();
-        ensureCompanyLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
-        ensureSalesmanLoaded();
-        ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+   
     const [filters, setFilters] = useState({
         fromDate: new Date().toISOString().split("T")[0],
         toDate: new Date().toISOString().split("T")[0],
@@ -241,66 +231,17 @@ export default function CustomerInvoicePage() {
                             },
                         ] : [],
                         columnFilter: true,
-                        filterByFields: [
-                            {
-                                key: "start_date",
-                                label: "Start Date",
-                                type: "date"
-                            },
-                            {
-                                key: "end_date",
-                                label: "End Date",
-                                type: "date"
-                            },
-                            // {
-                            //     key: "company_id",
-                            //     label: "Company",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(companyOptions) ? companyOptions : [],
-                            // },
-                            // {
-                            //     key: "warehouse_id",
-                            //     label: "Warehouse",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                            // },
-                            // {
-                            //     key: "region_id",
-                            //     label: "Region",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(regionOptions) ? regionOptions : [],
-                            // },
-                            // {
-                            //     key: "sub_region_id",
-                            //     label: "Sub Region",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(areaOptions) ? areaOptions : [],
-                            // },
-                            // {
-                            //     key: "route_id",
-                            //     label: "Route",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(routeOptions) ? routeOptions : [],
-                            // },
-                            // {
-                            //     key: "salesman_id",
-                            //     label: "Sales Team",
-                            //     isSingle: false,
-                            //     multiSelectChips: true,
-                            //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                            // }
-
-                        ],
+filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
                         searchBar: false
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
                     localStorageKey: "invoice-table",
                     rowActions: [
                         {

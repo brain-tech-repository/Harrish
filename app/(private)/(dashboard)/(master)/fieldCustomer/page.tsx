@@ -12,7 +12,7 @@ import { agentCustomerGlobalSearch, agentCustomerList, agentCustomerStatusUpdate
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { getPaymentType } from "../companyCustomer/details/[uuid]/page";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
@@ -146,14 +146,34 @@ export default function AgentCustomer() {
             key: "route",
             label: "Route",
             render: (row: TableDataType) => {
-                if (
-                    typeof row.route === "object" &&
-                    row.route !== null &&
-                    "route_name" in row.route
-                ) {
-                    return (row.route as { route_name?: string }).route_name || "-";
+                 const wh = row.route as
+                    | { route_code?: string; route_name?: string }
+                    | string
+                    | null
+                    | undefined;
+
+                // If getWarehouse is an object with proper fields
+                if (wh && typeof wh === "object") {
+                    const code = wh.route_code ?? "";
+                    const name = wh.route_name ?? "";
+
+                    // Show "-" if both missing
+                    return code || name ? `${code} - ${name}` : "-";
                 }
-                return typeof row.route === 'string' ? row.route : "-";
+
+                // If getWarehouse is a simple string
+                if (typeof wh === "string") return wh;
+
+                // Default fallback
+                return "-";
+                // if (
+                //     typeof row.route === "object" &&
+                //     row.route !== null &&
+                //     "route_name" in row.route
+                // ) {
+                //     return (row.route as { route_name?: string }).route_name || "-";
+                // }
+                // return typeof row.route === 'string' ? row.route : "-";
             },
             filter: {
                 isFilterable: true,
@@ -246,52 +266,56 @@ export default function AgentCustomer() {
         },
     ];
 
+    const lastCallRef = useRef<{ params: any, result: listReturnType } | null>(null);
     const fetchAgentCustomers = useCallback(
         async (
             page: number = 1,
             pageSize: number = 5
         ): Promise<listReturnType> => {
+            // Build params with all filters
+            const params: Record<string, string> = {
+                page: page.toString(),
+            };
+            if (selectedSubCategoryId) {
+                params.subcategory_id = String(selectedSubCategoryId);
+            }
+            if (warehouseId) {
+                params.warehouse_id= String(warehouseId);
+            }
+            if (channelId) {
+                params.outlet_channel_id = String(channelId);
+            }
+            if (customerCategoryId) {
+                params.category_id = String(customerCategoryId);
+            }
+            if (customerTypeId) {
+                params.customer_type = String(customerTypeId);
+            }
+            if (routeId) {
+                params.route_id = String(routeId);
+            }
+            // Add status filter if active (true=1, false=0)
+            if (currentStatusFilter !== null) {
+                params.status = currentStatusFilter ? "1" : "0";
+            }
+            // Debounce: Only call API if params changed
+            if (
+                lastCallRef.current &&
+                JSON.stringify(lastCallRef.current.params) === JSON.stringify(params)
+            ) {
+                return lastCallRef.current.result;
+            }
             try {
-                // setLoading(true);
-                
-                // Build params with all filters
-                const params: Record<string, string> = {
-                    page: page.toString(),
-                };
-                
-                if (selectedSubCategoryId) {
-                    params.subcategory_id = String(selectedSubCategoryId);
-                }
-                if (warehouseId) {
-                    params.warehouse = String(warehouseId);
-                }
-                if (channelId) {
-                    params.outlet_channel_id = String(channelId);
-                }
-                if (customerCategoryId) {
-                    params.category_id = String(customerCategoryId);
-                }
-                if (customerTypeId) {
-                    params.customer_type = String(customerTypeId);
-                }
-                if (routeId) {
-                    params.route_id = String(routeId);
-                }
-                
-                // Add status filter if active (true=1, false=0)
-                if (currentStatusFilter !== null) {
-                    params.status = currentStatusFilter ? "1" : "0";
-                }
                 const listRes = await agentCustomerList(params);
-                // setLoading(false);
-                return {
+                const result = {
                     data: Array.isArray(listRes.data) ? listRes.data : [],
                     total: listRes?.pagination?.totalPages || 1,
                     currentPage: listRes?.pagination?.page || 1,
                     pageSize: listRes?.pagination?.limit || pageSize,
                 };
+                lastCallRef.current = { params, result };
+                return result;
             } catch (error: unknown) {
-                // setLoading(false);
                 return {
                     data: [],
                     total: 1,
@@ -300,7 +324,7 @@ export default function AgentCustomer() {
                 };
             }
         },
-        [agentCustomerList,selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, setLoading, currentStatusFilter]
+        [selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, currentStatusFilter]
     );
 
     const exportfile = async (format: string) => {
@@ -384,7 +408,7 @@ export default function AgentCustomer() {
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [customerSubCategoryOptions, routeOptions, warehouseAllOptions, customerCategoryOptions,channelOptions, selectedSubCategoryId, warehouseId, channelId, customerTypeId,customerCategoryId,routeId, currentStatusFilter]);
+    }, [selectedSubCategoryId, warehouseId, channelId, customerTypeId, customerCategoryId, routeId, currentStatusFilter]);
 
     return (
         <>

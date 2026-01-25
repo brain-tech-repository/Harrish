@@ -17,14 +17,14 @@ import { useLoading } from "@/app/services/loadingContext";
 
 const columns = [
 
-    { key: "sub_category_code", label: "Sub Category Code",
+    { key: "sub_category_code,sub_category_name", label: "Sub Category",
         render: (row: TableDataType) => (
             <span className="font-semibold text-[#181D27] text-[14px]">
-                {row.sub_category_code}
+                {row.sub_category_code} - {row.sub_category_name}
             </span>
         ),
      },
-    { key: "sub_category_name", label: "Sub Category Name" },
+    { key: "category", label: "Category Name",render : (row: TableDataType) => row.category?.category_name },
     {
         key: "status",
         label: "Status",
@@ -166,7 +166,7 @@ export default function SubCategory() {
                 </Popup>
             )}
 
-            <div className="h-[calc(100%-60px)]">
+            <div className="h-full">
                 <Table
                     // data={categoryData}
                     refreshKey={refreshKey}
@@ -194,7 +194,7 @@ export default function SubCategory() {
                         localStorageKey: "item-sub-category-list",
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: columns,
-                        rowSelection: true,
+                        // rowSelection: true,
                         rowActions: [
                             {
                                 icon: "lucide:edit-2",

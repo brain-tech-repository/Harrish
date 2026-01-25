@@ -196,17 +196,28 @@ export default function WarehouseLocationInfo({
           <InputFields
             required
             label="Latitude"
-            type="number"
+            type="location"
+            value={
+                                            values.latitude && values.longitude
+                                                ? `${values.latitude},${values.longitude}`
+                                                : values.latitude || ""
+                                        }
+                                        onChange={(e) => {
+                                            // e.target.value is "lat,lng"
+                                            const [lat, lng] = (e.target.value || "").split(",");
+                                            setFieldValue("latitude", lat || "");
+                                            setFieldValue("longitude", lng || "");
+                                            // if (setFieldError) setFieldError("latitude", undefined);
+                                        }}
+                                        error={
+                                            touched?.latitude && errors?.latitude
+                                        }
             name="latitude"
-            value={values.latitude}
-            onChange={handleChange}
-            error={errors?.latitude && touched?.latitude ? errors.latitude : undefined}
+            // value={values.latitude}
+            // onChange={handleChange}
+            // error={errors?.latitude && touched?.latitude ? errors.latitude : undefined}
           />
-          {errors?.latitude && touched?.latitude && (
-            <span className="text-xs text-red-500 mt-1">
-              {/* {errors.latitude} */}
-            </span>
-          )}
+         
         </div>
         <div>
           <InputFields

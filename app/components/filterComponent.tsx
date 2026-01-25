@@ -6,12 +6,13 @@ import { FilterRendererProps } from "./customTable";
 type FilterComponentProps = FilterRendererProps & {
   onlyFilters?: string[]; // e.g. ['warehouse_id', 'company_id']
   currentDate?: boolean;
+  currentMonth?: boolean; // New prop to select current month range
   api?: (payload: any) => Promise<any>; // Optional API function to call on filter submit
   disabled?: boolean;
 };
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
-import { regionList, subRegionList, warehouseList, routeList } from "@/app/services/allApi";
+import { regionList, subRegionList, warehouseList, routeList, salesmanList } from "@/app/services/allApi";
 
 type DropdownOption = {
   value: string;
@@ -41,7 +42,10 @@ type Warehouse = {
 type Route = {
   id: number;
   route_name?: string;
+  route_code?: string;
   name?: string;
+  code?: string;
+  osa_code?: string;
 };
 
 type ApiResponse<T> = {
@@ -55,21 +59,41 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const {
     customerSubCategoryOptions,
     companyOptions,
+    
+    // fetchSalesmanByRouteOptions,
+    assetsModelOptions,
     ensureCompanyLoaded,
-    salesmanOptions,
+
     ensureSalesmanLoaded,
     channelOptions,
+    ensureAssetsModelLoaded
   } = useAllDropdownListData();
 
   useEffect(() => {
     ensureCompanyLoaded();
-    ensureSalesmanLoaded();
-  }, [ensureCompanyLoaded, ensureSalesmanLoaded]);
-  const { onlyFilters, currentDate, api } = filterProps;
+    // ensureSalesmanLoaded();
+    if(showFilter("model")){
+      ensureAssetsModelLoaded();
 
-  // Set default date for from_date and to_date to today if currentDate is true
+    };
+  }, [ensureCompanyLoaded, ensureAssetsModelLoaded]);
+  const { onlyFilters, currentDate, currentMonth, api } = filterProps;
+
+  // Set default date for from_date and to_date based on currentDate or currentMonth
   useEffect(() => {
-    if (currentDate) {
+    if (currentMonth) {
+      // Set to first and last day of current month
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      // First day
+      const firstDay = new Date(year, month, 2);
+      // Last day
+      const lastDay = new Date(year, month + 1, 1);
+      const firstDayStr = firstDay.toISOString().slice(0, 10);
+      const lastDayStr = lastDay.toISOString().slice(0, 10);
+      filterProps.setPayload((prev) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
+    } else if (currentDate) {
       const today = new Date().toISOString().slice(0, 10);
       if (!filterProps.payload.from_date) {
         filterProps.setPayload((prev) => ({ ...prev, from_date: today }));
@@ -78,12 +102,12 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         filterProps.setPayload((prev) => ({ ...prev, to_date: today }));
       }
     } else {
-      // If currentDate is false, clear the dates
+      // If neither, clear the dates
       filterProps.setPayload((prev) => ({ ...prev, from_date: "", to_date: "" }));
     }
-    // Only run on mount or when currentDate changes
+    // Only run on mount or when currentDate/currentMonth changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate]);
+  }, [currentDate, currentMonth]);
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,
@@ -96,6 +120,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const [areaOptions, setAreaOptions] = useState<DropdownOption[]>([]);
   const [warehouseOptions, setWarehouseOptions] = useState<DropdownOption[]>([]);
   const [routeOptions, setRouteOptions] = useState<DropdownOption[]>([]);
+  const [salesmanOptions, setSalesmanOptions] = useState<DropdownOption[]>([]);
 
   const {
     payload,
@@ -107,23 +132,41 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     isClearing,
   } = filterProps;
 
-  const onChangeArray = (key: string, value: any) => {
-    setPayload((prev) => ({ ...prev, [key]: value }));
-  };
+
+  // Always store these keys as arrays in the payload
+  const keysToArray = [
+    "area_id",
+    "region_id",
+    "warehouse_id",
+    "route_id",
+    "company_id",
+    "salesman_id",
+    "model",
+  ];
 
   const toArray = (v: any) => {
     if (Array.isArray(v)) return v;
-    if (typeof v === "string") return v.split(",").filter(Boolean);
+    if (typeof v === "string" && v.includes(",")) return v.split(",").filter(Boolean);
+    if (typeof v === "string" && v !== "") return [v];
     if (typeof v === "number") return [String(v)];
     return [];
   };
 
+  const onChangeArray = (key: string, value: any) => {
+    if (keysToArray.includes(key)) {
+      setPayload((prev) => ({ ...prev, [key]: toArray(value) }));
+    } else {
+      setPayload((prev) => ({ ...prev, [key]: value }));
+    }
+  } 
+
   const companyVal = toArray(payload.company_id);
   const regionVal = toArray(payload.region_id);
-  const areaVal = toArray(payload.sub_region_id);
+  const areaVal = toArray(payload.area_id);
   const warehouseVal = toArray(payload.warehouse_id);
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
+  const modelNumberVal = toArray(payload.model);
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -227,6 +270,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
       return;
     }
 
+
     const fetchRoutes = async () => {
         setSkeleton((prev) => ({ ...prev, route: true }));
       try {
@@ -240,7 +284,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         setRouteOptions(
           routeListData.map((r: Route) => ({
             value: String(r.id),
-            label: r.route_name || r.name || "",
+            label: `${r.route_code || r.code || ""} - ${r.route_name || r.name || ""}`,
           }))
         );
       } catch (err) {
@@ -249,13 +293,50 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
       }
         setSkeleton((prev) => ({ ...prev, route: false }));
     };
-
-    fetchRoutes();
+fetchRoutes();
   }, [warehouseVal.join(",")]);
+
+       useEffect(() => {
+    if (!areaVal.length) {
+      setSalesmanOptions([]);
+      return;
+    }
+    const fetchSalesman = async () => {
+        setSkeleton((prev) => ({ ...prev, salesteam: true }));
+      try {
+        const res: ApiResponse<{ data: Route[] } | Route[]> = await salesmanList({
+          route_id: routeVal.join(","),
+          dropdown:"true",
+        });
+        const routeListData =
+          (res as { data: Route[] })?.data || (res as Route[]) || [];
+
+        setSalesmanOptions(
+          routeListData.map((r: Route) => ({
+            value: String(r.id),
+            label: `${r.osa_code || r.code || ""} - ${r.route_name || r.name || ""}`,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch salesman list:", err);
+        setSalesmanOptions([]);
+      }
+        setSkeleton((prev) => ({ ...prev, salesteam: false }));
+    };
+
+    fetchSalesman();
+  }, [routeVal.join(",")]);
 
 
   // Helper to check if a filter should be shown
   const showFilter = (key: string) => {
+    // Only show day_filter if onlyFilters is provided and includes it
+    if (key === 'day_filter') {
+      return Array.isArray(onlyFilters) && onlyFilters.includes('day_filter');
+    }
+    if (key === 'model') {
+      return Array.isArray(onlyFilters) && onlyFilters.includes('model');
+    }
     if (!onlyFilters) return true;
     return onlyFilters.includes(key);
   };
@@ -263,6 +344,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Day Filter Dropdown */}
+       {showFilter("day_filter") && (
       <InputFields
         label="Day Filter"
         name="day_filter"
@@ -271,9 +353,9 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         options={[
           { value: "yesterday", label: "Yesterday" },
           { value: "today", label: "Today" },
-          { value: "last_3_days", label: "Last 3 Days" },
-          { value: "last_7_days", label: "Last 7 Days" },
-          { value: "last_month", label: "Last Month" },
+          { value: "3days", label: "Last 3 Days" },
+          { value: "7days", label: "Last 7 Days" },
+          { value: "lastmonth", label: "Last Month" },
         ]}
         value={
           Array.isArray(payload.day_filter)
@@ -288,6 +370,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           setPayload((prev) => ({ ...prev, day_filter: raw }));
         }}
       />
+       )}
       {/* Start Date */}
       {showFilter("from_date") && (
         <InputFields
@@ -348,9 +431,10 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
             onChangeArray("company_id", val);
             // reset downstream when parent changes
             onChangeArray("region_id", []);
-            onChangeArray("sub_region_id", []);
+            onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -375,17 +459,18 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("region_id", val);
-            onChangeArray("sub_region_id", []);
+            onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
       {/* Area */}
-      {showFilter("sub_region_id") && (
+      {showFilter("area_id") && (
         <InputFields
           label="Area"
-          name="sub_region_id"
+          name="area_id"
           type="select"
           searchable={true}
           isSingle={false}
@@ -401,9 +486,10 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("sub_region_id", val);
+            onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -429,6 +515,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               : [];
             onChangeArray("warehouse_id", val);
             onChangeArray("route_id", []);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -447,12 +534,14 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           value={routeVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
+            // fetchSalesmanByRouteOptions(raw)
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("route_id", val);
+            onChangeArray("salesman_id", []);
           }}
         />
       )}
@@ -477,6 +566,29 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("salesman_id", val);
+          }}
+        />
+      )}
+      {showFilter("model") && (
+        <InputFields
+          label="Model Number"
+          name="model"
+          type="select"
+          searchable={true}
+          isSingle={false}
+          multiSelectChips
+          // showSkeleton={skeleton.salesteam}
+          // disabled={disabled || routeVal.length === 0}
+          options={Array.isArray(assetsModelOptions) ? assetsModelOptions : []}
+          value={modelNumberVal as any}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            const val = Array.isArray(raw)
+              ? raw
+              : typeof raw === "string"
+              ? raw.split(",").filter(Boolean)
+              : [];
+            onChangeArray("model", val);
           }}
         />
       )}

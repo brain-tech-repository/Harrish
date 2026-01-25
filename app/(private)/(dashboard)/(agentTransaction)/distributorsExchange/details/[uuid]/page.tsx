@@ -18,6 +18,7 @@ import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 
 interface TableRow {
   id: string;
+  item:any;
   itemCode: string;
   itemName: string;
   UOM: string;
@@ -32,7 +33,9 @@ interface TableRow {
 }
 
 interface detail {
+  item:any;
   item_code?: string;
+  erp_code?: string;
   item_name?: string;
   uom_name?: string;
   item_quantity?: number | string;
@@ -99,7 +102,7 @@ export default function OrderDetailPage() {
           // Map invoices to table data
           const goodOptions = [
             { label: "Near By Expiry", value: "1" },
-            { label: "Package Issue", value: "1" },
+            { label: "Package Issue", value: "2" },
           ];
           const badOptions = [
             { label: "Damage", value: "3" },
@@ -131,8 +134,8 @@ export default function OrderDetailPage() {
                 index: number
               ) => ({
                 id: (index + 1).toString(),
-                itemCode: detail.item_code || "-",
-                itemName: detail.item_name || "-",
+                item: `${detail?.erp_code || ""} - ${detail.item_name || ""}` || "-",
+                // itemName: detail.item_name || "-",
                 UOM: detail.uom_name || "-",
                 Quantity: detail.item_quantity?.toString() || "0",
                 Price: toInternationalNumber(detail.item_price || "0"),
@@ -151,8 +154,7 @@ export default function OrderDetailPage() {
                 index: number
               ) => ({
                 id: (index + 1).toString(),
-                itemCode: detail.item_code || "-",
-                itemName: detail.item_name || "-",
+                item: `${detail?.erp_code || ""} - ${detail.item_name || ""}` || "-",
                 UOM: detail.uom_name || "-",
                 Quantity: detail.item_quantity?.toString() || "0",
                 Price: detail.item_price || "0",
@@ -293,8 +295,8 @@ export default function OrderDetailPage() {
           config={{
             columns: [
               { key: "id", label: "#", width: 60 },
-              { key: "itemCode", label: "Product Code" },
-              { key: "itemName", label: "Product Name", width: 250 },
+              { key: "item", label: "Item" },
+              // { key: "itemName", label: "Product Name", width: 250 },
               { key: "UOM", label: "UOM" },
               { key: "Quantity", label: "Quantity" },
               { key: "Price", label: "Price" },
@@ -311,8 +313,8 @@ export default function OrderDetailPage() {
           config={{
             columns: [
               { key: "id", label: "#", width: 60 },
-              { key: "itemCode", label: "Product Code" },
-              { key: "itemName", label: "Product Name", width: 250 },
+              { key: "item", label: "Item" },
+              // { key: "itemName", label: "Product Name", width: 250 },
               { key: "UOM", label: "UOM" },
               { key: "Quantity", label: "Quantity" },
               { key: "Price", label: "Price" },

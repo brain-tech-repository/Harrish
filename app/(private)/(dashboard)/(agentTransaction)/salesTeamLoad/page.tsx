@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse } from "@/app/services/agentTransaction";
+import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse,salesmanLoadPdf,loadGlobalFilter } from "@/app/services/agentTransaction";
 import { useRef } from "react";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -18,7 +18,11 @@ import { downloadFile } from "@/app/services/allApi";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
-
+import { formatWithPattern } from "@/app/utils/formatDate";
+import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
+import { downloadPDFGlobal } from "@/app/services/allApi";
+import OrderStatus from "@/app/components/orderStatus";
+// import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 interface SalesmanLoadRow {
   osa_code?: string;
   warehouse?: { code?: string; name?: string };
@@ -32,13 +36,13 @@ interface SalesmanLoadRow {
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { regionOptions, warehouseOptions, routeOptions, channelOptions, itemCategoryOptions,
-     customerSubCategoryOptions, ensureChannelLoaded, 
-     ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, 
-     ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
-
+  const {  warehouseAllOptions,salesmanOptions,ensureSalesmanLoaded, routeOptions, ensureRouteLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>();
+  const [routeId, setRouteId] = useState<string>();
+  const [salesmanId, setSalesmanId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [colFilter, setColFilter] = useState<boolean>(false);
+  const [filterPayload,setFilterPayload] = useState<any>();
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -48,18 +52,21 @@ export default function SalemanLoad() {
 
   // Load dropdown data
   useEffect(() => {
-    ensureChannelLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureItemCategoryLoaded();
-    ensureRegionLoaded();
     ensureRouteLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded,
-     ensureItemCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
-
-
+    ensureWarehouseAllLoaded();
+    ensureSalesmanLoaded();
+  }, [ ensureRouteLoaded, ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
 
   const columns: configType["columns"] = [
+    {
+      key:"osa_code",
+      label:"Code",
+    },
+    {
+      key:"created_at",
+      label:"Load Date",
+      render: (row: TableDataType) => formatDate(row?.created_at || "-")
+    },
     {
       key: "warehouse",
       label: "Distributor",
@@ -72,6 +79,16 @@ export default function SalemanLoad() {
             : s.warehouse?.name || "-";
         return `${s.warehouse?.code ?? ""} - ${shortName}`;
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
     },
     {
       key: "route",
@@ -80,6 +97,16 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return s.route?.code || "-";
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(routeOptions) ? routeOptions : [],
+                onSelect: (selected) => {
+                    setRouteId((prev) => prev === selected ? "" : (selected as string));
+                },
+                isSingle: false,
+                selectedValue: routeId,
+            },
     },
     {
       key: "salesman",
@@ -88,6 +115,16 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return `${s.salesman?.code ?? ""} - ${s.salesman?.name ?? ""}`;
       },
+      filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                onSelect: (selected) => {
+                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: salesmanId,
+            },
     },
     {
       key: "salesman_type", label: "Sales Team Type",
@@ -100,20 +137,21 @@ export default function SalemanLoad() {
       key: "project_type",
       label: "Sales Team Role",
       render: (row: TableDataType) => {
-       return `${(row as SalesmanLoadRow).project_type?.name ?? ""}`;
+       return `${(row as SalesmanLoadRow).project_type?.name ?? "-"}`;
       },
     },
+    // {
+    //     key: "approval_status",
+    //     label: "Approval Status",
+    //     render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+    // },
     {
-        key: "approval_status",
-        label: "Approval Status",
-        render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
-    },
-    {
-      key: "status",
+      key: "is_confirmed",
       label: "Status",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
-        return <StatusBtn isActive={!!s.status && Number(s.status) === 1} />;
+        return <OrderStatus order_flag={{ is_confirmed: row.is_confirmed }} />
+        // return row.is_confirmed == 1 ? 'Sales Team Accepted' : 'Waiting For Accept'
       },
     },
   ];
@@ -122,6 +160,7 @@ export default function SalemanLoad() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const [threeDotLoading, setThreeDotLoading] = useState({
+    pdf: false,
     csv: false,
     xlsx: false,
   });
@@ -129,6 +168,9 @@ export default function SalemanLoad() {
 
   // In-memory cache for salesmanLoadHeaderList API calls
   const salesmanLoadHeaderCache = useRef<{ [key: string]: any }>({});
+     useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [ warehouseId, routeId,salesmanId]);
 
   const fetchSalesmanLoadHeader = useCallback(
     async (
@@ -139,6 +181,16 @@ export default function SalemanLoad() {
         page: page.toString(),
         pageSize: pageSize.toString(),
       };
+     
+            if (warehouseId) {
+                params.warehouse_id = String(warehouseId);
+            }
+            if (routeId) {
+                params.route_id = String(routeId);
+            }
+            if (salesmanId) {
+                params.salesman_id = String(salesmanId);
+            }
       const cacheKey = JSON.stringify(params);
       if (salesmanLoadHeaderCache.current[cacheKey]) {
         const listRes = salesmanLoadHeaderCache.current[cacheKey];
@@ -151,7 +203,7 @@ export default function SalemanLoad() {
       }
       try {
         setLoading(true);
-        const listRes = await salesmanLoadHeaderList({});
+        const listRes = await salesmanLoadHeaderList(params);
         salesmanLoadHeaderCache.current[cacheKey] = listRes;
         setLoading(false);
         return {
@@ -171,7 +223,7 @@ export default function SalemanLoad() {
         };
       }
     },
-    [setLoading, showSnackbar]
+    [setLoading, showSnackbar, warehouseId, routeId,salesmanId]
   );
 
   // In-memory cache for filterBy API calls
@@ -182,6 +234,7 @@ export default function SalemanLoad() {
       payload: Record<string, string | number | null>,
       pageSize: number
     ): Promise<listReturnType> => {
+      setColFilter(true);
       const params: Record<string, string> = {};
       Object.keys(payload || {}).forEach((k) => {
         const v = payload[k as keyof typeof payload];
@@ -208,6 +261,7 @@ export default function SalemanLoad() {
         salesmanLoadHeaderFilterCache.current[cacheKey] = result;
       } finally {
         setLoading(false);
+        setColFilter(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -225,6 +279,46 @@ export default function SalemanLoad() {
     [setLoading]
   );
 
+        const fetchLoadAccordingToGlobalFilter = useCallback(
+          async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+          ): Promise<listReturnType> => {
+      
+            try {
+              setLoading(true);
+              setFilterPayload(payload);
+              const body = {
+                 per_page: pageSize.toString(),
+            current_page: pageNo.toString(),
+                filter: payload
+              }
+              const listRes = await loadGlobalFilter(body);
+             const pagination =
+              listRes.pagination?.pagination || listRes.pagination || {};
+            return {
+             data: listRes.data || [],
+          total: pagination.last_page || listRes.pagination?.last_page || 1,
+          totalRecords:
+            pagination.total || listRes.pagination?.total || 0,
+          currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+          pageSize: pagination.per_page || pageSize,
+            };
+              // fetchOrdersCache.current[cacheKey] = result;
+              // return listRes;
+            } catch (error: unknown) {
+              console.error("API Error:", error);
+              setLoading(false);
+              throw error;
+            }
+            finally{
+              setLoading(false);
+            }
+          },
+          [loadGlobalFilter, warehouseId, salesmanId]
+        );
+
   useEffect(() => {
     setLoading(true);
   }, [setLoading]);
@@ -236,10 +330,13 @@ export default function SalemanLoad() {
 
   const downloadPdf = async (uuid: string) => {
     try {
-      setLoading(true);
-      const response = await exportSalesmanLoadDownload({ uuid: uuid, format: "excel" });
+      // setLoading(true);
+      // setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
+      const response = await salesmanLoadPdf({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+         const fileName = `load-${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -247,7 +344,8 @@ export default function SalemanLoad() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
+      // setLoading(false);
     }
   };
 
@@ -256,7 +354,7 @@ export default function SalemanLoad() {
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportSalesmanLoad({ format });
+      const response = await exportSalesmanLoad({ format, filter: filterPayload });
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -274,7 +372,7 @@ export default function SalemanLoad() {
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
       try {
         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-        const response = await loadExportCollapse({ format });
+        const response = await loadExportCollapse({ format, filter: filterPayload });
         if (response && typeof response === "object" && response.download_url) {
           await downloadFile(response.download_url);
           showSnackbar("File downloaded successfully ", "success");
@@ -296,8 +394,21 @@ export default function SalemanLoad() {
         config={{
           api: {
             list: fetchSalesmanLoadHeader,
-            filterBy: filterBy,
+            filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchLoadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
           },
+        },
           header: {
             title: "Sales Team Load",
             searchBar: false,
@@ -316,7 +427,12 @@ export default function SalemanLoad() {
                 onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
               },
             ],
-            filterRenderer: FilterComponent,
+            filterRenderer: (props) => (
+                                                                                    <FilterComponent
+                                                                                    currentDate={true}
+                                                                                      {...props}
+                                                                                    />
+                                                                                  ),
             actions: can("create") ? [
               <SidebarBtn
                 key={0}
@@ -341,7 +457,8 @@ export default function SalemanLoad() {
               },
             },
             {
-              icon: "lucide:download",
+              icon: "material-symbols:download",
+              showLoading: true,
               onClick: (row: TableDataType) => downloadPdf(row.uuid),
             },
           ],

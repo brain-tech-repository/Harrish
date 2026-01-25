@@ -1,3 +1,21 @@
+// Utility to recursively lowercase all hrefs in the menu structure
+function lowercaseHrefs(data: SidebarDataType[]): SidebarDataType[] {
+  return data.map((sidebar) => ({
+    ...sidebar,
+    data: sidebar.data.map(lowercaseLinkData)
+  }));
+}
+
+function lowercaseLinkData(link: LinkDataType): LinkDataType {
+  const newLink: LinkDataType = {
+    ...link,
+    href: typeof link.href === 'string' ? link.href.toLowerCase() : link.href,
+  };
+  if (link.children && Array.isArray(link.children)) {
+    newLink.children = link.children.map(lowercaseLinkData);
+  }
+  return newLink;
+}
 import { IconifyIcon } from "@iconify-icon/react/dist/iconify.mjs";
 
 export type SidebarDataType = {
@@ -17,7 +35,7 @@ export type LinkDataType = {
   children?: LinkDataType[];
 };
 
-export const initialLinkData: SidebarDataType[] = [
+export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
   {
     data: [
       {
@@ -44,7 +62,7 @@ export const initialLinkData: SidebarDataType[] = [
           },
           {
             isActive: false,
-            href: "/routeVisit",
+            href: "/routevisit",
             label: "Route Visit Plan",
             leadingIcon: "icon-park-solid:plan",
             iconColor: "text-yellow-400",
@@ -606,8 +624,15 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "stash:person-duotone",
             iconColor: "text-cyan-500",
           },
+          {
+            isActive: false,
+            href: "/itemReport",
+            label: "Item Report",
+            leadingIcon: "raphael:package",
+            iconColor: "text-cyan-500",
+          },
         ],
       },
     ],
   },
-];
+]);

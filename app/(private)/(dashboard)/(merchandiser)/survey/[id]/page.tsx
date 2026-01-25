@@ -79,16 +79,27 @@ const generateSurveyQuestionCode = (): string => {
 //  Validation Schemas
 const stepSchemas = [
   Yup.object({
-    surveyName: Yup.string().required("Survey Name is required."),
-    // surveyCode: Yup.string().required("Survey Code is required."),
-    startDate: Yup.date()
-      .required("Start Date is required")
-      .typeError("Invalid date"),
-    endDate: Yup.date()
-      .required("End Date is required")
-      .typeError("Invalid date")
-      .min(Yup.ref("startDate"), "End Date cannot be before Start Date"),
-  }),
+                            surveyName: Yup.string().required("Survey Name is required."),
+                            // surveyCode: Yup.string().required("Survey Code is required."),
+                            startDate: Yup.date()
+                              .required("Start Date is required")
+                              .typeError("Invalid date"),
+                            endDate: Yup.date()
+                              .required("End Date is required")
+                              .typeError("Invalid date")
+                              .min(Yup.ref("startDate"), "End Date cannot be before Start Date"),
+                            survey_type: Yup.string().required("Survey Type is required."),
+                            merchendisher_id: Yup.array().when("survey_type", {
+                              is: (val: string) => val === "1",
+                              then: (schema) => schema.min(1, "At least one merchandiser is required."),
+                              otherwise: (schema) => schema,
+                            }),
+                            customer_id: Yup.array().when("survey_type", {
+                              is: (val: string) => val === "1",
+                              then: (schema) => schema.min(1, "At least one customer is required."),
+                              otherwise: (schema) => schema,
+                            }),
+                          }),
   Yup.object({
     question: Yup.string().required("Question is required"),
     questionType: Yup.string().required("Question type is required"),
@@ -124,6 +135,7 @@ type MerchandiserResponse = { id: number; name: string };
 type CustomerFromBackend = {
   id: number;
   customer_code: string;
+  osa_code: string;
   business_name: string;
   merchendisher_id?: string;
 };
@@ -253,7 +265,7 @@ export default function AddSurveyTabs() {
   };
 
   const formatCustomerLabel = (customer: CustomerFromBackend): string => {
-    return `${customer.customer_code || ""} - ${customer.business_name || ""}`;
+    return `${customer.osa_code || ""} - ${customer.business_name || ""}`;
   };
 
   // Fetch survey and questions when in edit mode
@@ -669,6 +681,7 @@ export default function AddSurveyTabs() {
 
               <div>
                 <InputFields
+                required
                   label="Survey Name"
                   name="surveyName"
                   value={values.surveyName}
@@ -679,6 +692,7 @@ export default function AddSurveyTabs() {
 
               <div>
                 <InputFields
+                required
                   label="Start Date"
                   type="date"
                   name="startDate"
@@ -690,16 +704,20 @@ export default function AddSurveyTabs() {
 
               <div>
                 <InputFields
+                required
                   label="End Date"
                   type="date"
                   name="endDate"
                   value={values.endDate}
+                  disabled={!values.startDate}
+                  min={values.startDate}
                   onChange={(e) => setFieldValue("endDate", e.target.value)}
                   error={formik.touched.endDate && formik.errors.endDate}
                 />
               </div>
               <div>
                 <InputFields
+                required
                   label="Survey Type"
                   type="select"
                   options={[
@@ -735,6 +753,13 @@ export default function AddSurveyTabs() {
                         setFieldValue("images", {});
                         fetchCustomers(selectedIds);
                       }}
+                      error={
+                        formik.touched.merchendisher_id
+                          ? Array.isArray(formik.errors.merchendisher_id)
+                            ? formik.errors.merchendisher_id[0]
+                            : formik.errors.merchendisher_id
+                          : undefined
+                      }
                     // error={
                     //   touched.merchendisher_ids &&
                     //   (Array.isArray(errors.merchendisher_ids)
@@ -771,12 +796,13 @@ export default function AddSurveyTabs() {
                         setFieldValue("customer_id", selectedIds);
                         setFieldValue("images", {});
                       }}
-                    // error={
-                    //   touched.customer_ids &&
-                    //   (Array.isArray(errors.customer_ids)
-                    //     ? errors.customer_ids[0]
-                    //     : errors.customer_ids)
-                    // }
+                   error={
+                        formik.touched.customer_id
+                          ? Array.isArray(formik.errors.customer_id)
+                            ? formik.errors.customer_id[0]
+                            : formik.errors.customer_id
+                          : undefined
+                      }
                     />
                   </div>
                 </>
@@ -853,7 +879,8 @@ export default function AddSurveyTabs() {
                     <SidebarBtn
                       type="button"
                       leadingIcon="mdi:check"
-                      label="Create Survey"
+                      disabled={formik.isSubmitting}
+                      label={formik.isSubmitting ? "Creating Survey..." : "Create Survey"}
                       labelTw="hidden sm:block"
                       isActive
                       onClick={() => handleCreateSurvey(values, formik)}
@@ -960,6 +987,7 @@ export default function AddSurveyTabs() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div className="md:col-span-2">
                           <InputFields
+                          required
                             width="max-w-full"
                             label="Question"
                             name={`question_${index}`}
@@ -978,13 +1006,13 @@ export default function AddSurveyTabs() {
                                 return copy;
                               });
                             }}
+                            error={questionErrors[index].question}
                           />
-                          {questionErrors[index]?.question && (
-                            <div className="text-sm text-red-600 mt-1">{questionErrors[index].question}</div>
-                          )}
+                          
                         </div>
                         <div>
                           <InputFields
+                          required
                             label="Question Type"
                             name={`questionType_${index}`}
                             value={q.questionType}
@@ -1008,10 +1036,11 @@ export default function AddSurveyTabs() {
                               value: type,
                               label: type.replace(/\b\w/g, (c) => c.toUpperCase()),
                             }))}
+                            error={questionErrors[index]?.questionType}
                           />
-                          {questionErrors[index]?.questionType && (
+                          {/* {questionErrors[index]?.questionType && (
                             <div className="text-sm text-red-600 mt-1">{questionErrors[index].questionType}</div>
-                          )}
+                          )} */}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-3 ps-163">
@@ -1183,7 +1212,7 @@ export default function AddSurveyTabs() {
         <Link href="/survey">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
-        <h1 className="text-xl font-semibold">{isEditMode ? "Update Survey" : "Add New Survey"}</h1>
+        <h1 className="text-xl font-semibold">{isEditMode ? "Update Survey" : "Add Survey"}</h1>
       </div>
 
       <Formik enableReinitialize initialValues={initialValues} validationSchema={stepSchemas[0]} onSubmit={() => { }}>

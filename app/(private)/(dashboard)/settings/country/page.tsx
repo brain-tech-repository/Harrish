@@ -110,7 +110,7 @@ export default function Country() {
 
   return (
     <>
-      <div className="h-[calc(100%-60px)] pb-[22px]">
+      <div className="h-full">
         <Table
           refreshKey={refreshKey}
           config={{
@@ -135,7 +135,7 @@ export default function Country() {
             localStorageKey: "country-table-settings",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:edit-2",

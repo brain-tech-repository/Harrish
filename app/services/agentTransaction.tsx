@@ -964,3 +964,76 @@ export const deliveryExportCollapse = async ( params?: Params) => {
     return handleError(error);
   }
 };
+
+export const salesmanLoadPdf = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/load/exportall`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const orderGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/orders/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const deliveryGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/agent-delivery/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const invoiceGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/invoices/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const loadGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/load/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const itemsForCaps = async (id:string, params?: Params) => {
+  try {
+    const res = await API.get(`api/settings/warehouse-stocks/itemsbasedwarehouse/${id}`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const unloadGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/unload/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const returnGlobalFilter = async ( body?: Object) => {
+  try {
+    const res = await API.post(`/api/agent_transaction/returns/globalFilter`,body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

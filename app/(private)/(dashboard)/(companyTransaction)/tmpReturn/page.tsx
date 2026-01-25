@@ -7,8 +7,6 @@ import Table, {
   TableDataType,
 } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import { downloadFile } from "@/app/services/allApi";
 import {
   returnExportCollapse,
   returnList,
@@ -17,7 +15,7 @@ import {
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useLoading } from "@/app/services/loadingContext";
-
+import FilterComponent from "@/app/components/filterComponent";
 const columns = [
   { key: "return_code", label: "Return Code", showByDefault: true },
   {
@@ -189,20 +187,14 @@ export default function CustomerInvoicePage() {
               //       onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
               //     },
               //   ],
-              filterByFields: [
-                {
-                  key: "start_date",
-                  label: "Start Date",
-                  type: "date",
-                },
-                {
-                  key: "end_date",
-                  label: "End Date",
-                  type: "date",
-                },
-              ],
+filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
             },
-            rowSelection: false,
+            // rowSelection: false,
             footer: { nextPrevBtn: true, pagination: true },
             columns,
             rowActions: [

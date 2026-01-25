@@ -11,6 +11,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { formatDate } from "../../../(master)/salesTeam/details/[uuid]/page";
 
 interface ChillerRequest {
     id: number;
@@ -103,6 +104,14 @@ const columns = [
     {
         key: "warehouse",
         label: "Distributors",
+        render: (data: TableDataType) => {
+            // Try to get warehouse from first details entry if available
+            if (Array.isArray(data.details) && data.details.length > 0 && data.details[0].warehouse) {
+                const wh = data.details[0].warehouse;
+                return `${wh.warehouse_code || ''} - ${wh.warehouse_name || ''}`;
+            }
+            return "-";
+        },
     },
     {
         key: "created_user",
@@ -111,9 +120,7 @@ const columns = [
     {
         key: "created_at",
         label: "Created Date",
-        render: (data: any) => (
-            <p>{new Date(data.created_at).toLocaleDateString() || "-"}</p>
-        )
+        render: (data: any) => formatDate(data.created_at)
     },
     {
         key: "status",
@@ -140,22 +147,7 @@ export default function CustomerInvoicePage() {
         region: "",
         routeCode: "",
     });
-    const {
-        warehouseAllOptions,
-        routeOptions,
-        regionOptions,
-        areaOptions,
-        assetsModelOptions
-        , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
-    useEffect(() => {
-        ensureAreaLoaded();
-        ensureAssetsModelLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
-        ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
-
+   
     const [refreshKey, setRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -163,68 +155,75 @@ export default function CustomerInvoicePage() {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
 
-    const fetchIRO = useCallback(
-        async (
-            page: number = 1,
-            pageSize: number = 50,
-            appliedFilters: Record<string, any> = {}
-        ): Promise<listReturnType> => {
-            try {
-                setLoading(true);
-
-                const result = await iroList({
-                    ...appliedFilters,
-                });
-
-                const mapped =
-                    result?.count?.headers?.map((h: any) => {
-                        const crfCount = Array.isArray(h.details) ? h.details.length : 0;
-
+        const fetchIRO = useCallback(
+            async (
+                page: number = 1,
+                pageSize: number = 20,
+                appliedFilters: Record<string, any> = {}
+            ): Promise<listReturnType> => {
+                try {
+                    setLoading(true);
+    
+                    const result = await iroList({
+                        current_page: page.toString(),
+                        per_page: pageSize.toString(),
+                        ...appliedFilters,
+                    });
+    
+                    if (result?.data && result?.pagination) {
+                        const totalPages = Math.ceil(result.pagination.total / result.pagination.per_page);
                         return {
-                            id: h.id,
-                            uuid: h.uuid,
-                            osa_code: `${h.osa_code} (${crfCount} CRF)`,
-                            warehouse: h.warehouse_id,
-                            created_at: h.created_at,
-                            status: h.status,
-                            created_user: h.created_user,
+                            data: Array.isArray(result.data) ? result.data : [],
+                            total: totalPages, // total number of PAGES, not records
+                            currentPage: result.pagination.current_page,
+                            pageSize: result.pagination.per_page,
                         };
-                    }) || [];
+                    }
+    
+                    if (Array.isArray(result)) {
+                        return {
+                            data: result,
+                            total: result.length,
+                            currentPage: page,
+                            pageSize: pageSize,
+                        };
+                    }
+    
+                    // Handle object response without pagination
+                    if (result?.data) {
+                        return {
+                            data: Array.isArray(result.data) ? result.data : [],
+                            total: result?.pagination?.total || (Array.isArray(result.data) ? result.data.length : 0),
+                            currentPage: result?.pagination?.current_page || page,
+                            pageSize: result?.pagination?.per_page || pageSize,
+                        };
+                    }
+    
+                    // Fallback
+                    console.warn("⚠️ Unexpected response structure");
+                    return {
+                        data: [],
+                        total: 0,
+                        currentPage: 1,
+                        pageSize: pageSize,
+                    };
+                } catch (error) {
+                    // console.error("❌ Error fetching installation reports:", error);
+                    showSnackbar("Failed to fetch installation report list", "error");
+    
+                    return {
+                        data: [],
+                        total: 1,
+                        currentPage: 1,
+                        pageSize: pageSize,
+                    };
+                } finally {
+                    setLoading(false);
+                }
+            },
+            [setLoading, showSnackbar]
+        );
 
-                return {
-                    data: mapped,
-                    total: mapped.length,
-                    currentPage: 1,
-                    pageSize: mapped.length,
-                };
-
-            } catch (error) {
-                console.error(error);
-                showSnackbar("Failed to fetch IRO list", "error");
-
-                return {
-                    data: [],
-                    total: 0,
-                    currentPage: 1,
-                    pageSize: 0,
-                };
-
-            } finally {
-                setLoading(false);
-            }
-        },
-        [setLoading, showSnackbar]
-    );
-
-    useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [
-        routeOptions,
-        warehouseAllOptions,
-        areaOptions,
-        regionOptions,
-        assetsModelOptions
-    ]);
 
     return (
         <div className="flex flex-col h-full">
@@ -239,13 +238,13 @@ export default function CustomerInvoicePage() {
                     },
                     footer: { nextPrevBtn: true, pagination: true },
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
 
-                    localStorageKey: "invoice-table",
                     rowActions: [
                         {
                             icon: "lucide:eye",
                             onClick: (row: TableDataType) => {
+                                console.log(row);
                                 router.push(`/chillerInstallation/iro/view/${row.id}`);
                             },
                         },

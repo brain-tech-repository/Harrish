@@ -102,7 +102,7 @@ export  default function SubCategory(){
                                                 },
                                   
                                               ],
-                                              rowSelection: true,
+                                              // rowSelection: true,
                                              rowActions: [
                                           
               {

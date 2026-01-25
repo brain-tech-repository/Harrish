@@ -13,16 +13,16 @@ import { useLoading } from "@/app/services/loadingContext";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import { returnList, agentReturnExport, exportReturneWithDetails,returnExportCollapse } from "@/app/services/agentTransaction";
+import { returnList, agentReturnExport, exportReturneWithDetails,returnExportCollapse, returnGlobalFilter } from "@/app/services/agentTransaction";
 import StatusBtn from "@/app/components/statusBtn2";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { downloadFile } from "@/app/services/allApi";
 import toInternationalNumber, { FormatNumberOptions } from "@/app/(private)/utils/formatNumber";
-import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import FilterComponent from "@/app/components/filterComponent";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { downloadPDFGlobal } from "@/app/services/allApi";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 const dropdownDataList = [
     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
     // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
@@ -32,16 +32,57 @@ const dropdownDataList = [
 ];
 
 // 🔹 Table Columns
-const columns = [
+
+
+export default function CustomerInvoicePage() {
+    const { can, permissions } = usePagePermissions();
+    const { showSnackbar } = useSnackbar();
+    const { setLoading } = useLoading();
+    const router = useRouter();
+    const [colFilter, setColFilter] = useState<boolean>(false);
+    const [filterPayload,setFilterPayload] = useState<any>();
+    const { warehouseAllOptions, salesmanOptions,ensureWarehouseAllLoaded,ensureSalesmanLoaded } = useAllDropdownListData();
+    const [warehouseId, setWarehouseId] = useState("");
+    const [salesmanId, setSalesmanId] = useState("");
+    const [isExporting, setIsExporting] = useState(false);
+    const [returnCode, setReturnCode] = useState("");
+    const [filters, setFilters] = useState({
+        fromDate: new Date().toISOString().split("T")[0],
+        toDate: new Date().toISOString().split("T")[0],
+        region: "",
+        routeCode: "",
+    });
+     const [threeDotLoading, setThreeDotLoading] = useState({
+    csv: false,
+    xlsx: false,
+  });
+
+    useEffect(() => {
+    ensureSalesmanLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+
+  const columns = [
     { key: "osa_code", label: "Code", showByDefault: true },
     { key: "order_code", label: "Order Code", showByDefault: true },
-    { key: "delivery_code", label: "Delivery Code", showByDefault: true },
+    // { key: "delivery_code", label: "Delivery Code", showByDefault: true },
     {
         key: "warehouse_code", label: "Distributor", showByDefault: true, render: (row: TableDataType) => {
             const code = row.warehouse_code || "";
             const name = row.warehouse_name || "";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+    },
     },
     {
         key: "route_code", label: "Route", showByDefault: true, render: (row: TableDataType) => {
@@ -62,7 +103,18 @@ const columns = [
             const code = row.salesman_code || "";
             const name = row.salesman_name || "";
             return `${code}${code && name ? " - " : "-"}${name}`;
-        }
+        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "salesman_id",
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected: string | string[]) => {
+            setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+    },
     },
     {
         key: "total", label: "Amount", showByDefault: true, render: (row: TableDataType) => {
@@ -95,23 +147,6 @@ const columns = [
     // },
 ];
 
-export default function CustomerInvoicePage() {
-    const { can, permissions } = usePagePermissions();
-    const { showSnackbar } = useSnackbar();
-    const { setLoading } = useLoading();
-    const router = useRouter();
-    const [isExporting, setIsExporting] = useState(false);
-    const [filters, setFilters] = useState({
-        fromDate: new Date().toISOString().split("T")[0],
-        toDate: new Date().toISOString().split("T")[0],
-        region: "",
-        routeCode: "",
-    });
-     const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
-
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -121,31 +156,34 @@ export default function CustomerInvoicePage() {
         }
     }, [permissions]);
     const [showDropdown, setShowDropdown] = useState(false);
-    const { warehouseOptions, salesmanOptions, routeOptions, agentCustomerOptions , ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
 
   // Load dropdown data
-  useEffect(() => {
-    ensureAgentCustomerLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAgentCustomerLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
+
     const handleChange = (name: string, value: string) => {
         setFilters((prev) => ({ ...prev, [name]: value }));
     };
-
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId, salesmanId]);
     // 🔹 Fetch Invoices
     const fetchInvoices = useCallback(async (
         page: number = 1,
-        pageSize: number = 10
+        pageSize: number = 50
     ): Promise<listReturnType> => {
         try {
             setLoading(true);
-            const result = await returnList({}
-                // page: page.toString(),
-                // per_page: pageSize.toString(),
-            );
-
+             let params: any = {
+          limit: pageSize.toString(),
+          page: page.toString(),
+        };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
+        if (salesmanId) {
+            params.salesman_id = salesmanId;
+        }
+            const result = await returnList(params);
+            setReturnCode(result.data.osa_code);
             return {
                 data: Array.isArray(result.data) ? result.data : [],
                 total: result?.pagination?.totalPages || 1,
@@ -164,7 +202,7 @@ export default function CustomerInvoicePage() {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, showSnackbar]);
+    }, [setLoading, showSnackbar, warehouseId, salesmanId]);
 
     // 🔹 Search Invoices (Mock)
     const searchInvoices = useCallback(async (): Promise<searchReturnType> => {
@@ -187,6 +225,7 @@ export default function CustomerInvoicePage() {
             pageSize: number
         ): Promise<listReturnType> => {
             let result;
+            setColFilter(true);
             setLoading(true);
             try {
                 const params: Record<string, string> = {};
@@ -199,6 +238,7 @@ export default function CustomerInvoicePage() {
                 result = await returnList(params);
             } finally {
                 setLoading(false);
+                setColFilter(false);
             }
 
             if (result?.error) throw new Error(result.data?.message || "Filter failed");
@@ -216,12 +256,52 @@ export default function CustomerInvoicePage() {
         [setLoading]
     );
 
+      const fetchReturnsAccordingToGlobalFilter = useCallback(
+        async (
+          payload: Record<string, any>,
+          pageSize: number = 50,
+          pageNo: number = 1
+        ): Promise<listReturnType> => {
+    
+          try {
+            setLoading(true);
+            setFilterPayload(payload);
+            const body = {
+              per_page: pageSize.toString(),
+              current_page: pageNo.toString(),
+              filter: payload
+            }
+            const listRes = await returnGlobalFilter(body);
+           const pagination =
+            listRes.pagination?.pagination || listRes.pagination || {};
+          return {
+            data: listRes.data || [],
+            total: pagination.last_page || listRes.pagination?.last_page || 1,
+            totalRecords:
+              pagination.total || listRes.pagination?.total || 0,
+            currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
+            pageSize: pagination.per_page || pageSize,
+          };
+            // fetchOrdersCache.current[cacheKey] = result;
+            // return listRes;
+          } catch (error: unknown) {
+            console.error("API Error:", error);
+            setLoading(false);
+            throw error;
+          }
+          finally{
+              setLoading(false);
+          }
+        },
+        [returnGlobalFilter, warehouseId, salesmanId]
+      );
+
     const exportFile = async (format: string) => {
         if (isExporting) return; // Prevent multiple clicks
         setIsExporting(true);
         setLoading(true);
         try {
-            const response = await agentReturnExport({ format });
+            const response = await agentReturnExport({ format ,filter:filterPayload });
             if (response && typeof response === 'object' && response.download_url) {
                 await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully ", "success");
@@ -238,7 +318,7 @@ export default function CustomerInvoicePage() {
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await returnExportCollapse({ format });
+      const response = await returnExportCollapse({ format ,filter:filterPayload });
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -254,10 +334,12 @@ export default function CustomerInvoicePage() {
   };
     const downloadPdf = async (uuid: string) => {
         try {
-            setLoading(true);
+            // setLoading(true);
             const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
             if (response && typeof response === 'object' && response.download_url) {
-                await downloadFile(response.download_url);
+                const fileName = `return-${returnCode}.pdf`;
+                await downloadPDFGlobal(response.download_url, fileName);
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully ", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -265,7 +347,7 @@ export default function CustomerInvoicePage() {
         } catch (error) {
             showSnackbar("Failed to download file", "error");
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 
@@ -275,7 +357,20 @@ export default function CustomerInvoicePage() {
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchInvoices, search: searchInvoices, filterBy: filterBy, },
+                    api: { list: fetchInvoices, search: searchInvoices, filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                if (colFilter) {
+                  return filterBy(payload, pageSize);
+                } else {
+                  let pageNo = 1;
+                  if (payload && typeof payload.page === 'number') {
+                    pageNo = payload.page;
+                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                    pageNo = Number(payload.page);
+                  }
+                  const { page, ...restPayload } = payload || {};
+                  return fetchReturnsAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                }
+              }, },
                     header: {
                         title: "Distributor's Return",
                         columnFilter: true,
@@ -307,7 +402,12 @@ export default function CustomerInvoicePage() {
                                 }
                             },
                         ],
-                            filterRenderer: FilterComponent,
+                           filterRenderer: (props) => (
+                                                                                                               <FilterComponent
+                                                                                                               currentDate={true}
+                                                                                                                 {...props}
+                                                                                                               />
+                                                                                                             ),
                             wholeTableActions: [
                             <div key={0} className="flex gap-[12px] relative">
                                 <DismissibleDropdown
@@ -373,6 +473,7 @@ export default function CustomerInvoicePage() {
                         },
                         {
                             icon: "lucide:download",
+                            showLoading: true,
                             onClick: (row: TableDataType) => downloadPdf(row.uuid),
                         },
                     ],

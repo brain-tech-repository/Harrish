@@ -158,7 +158,7 @@ export default function Category() {
                             localStorageKey: "item_category",
                             footer: { nextPrevBtn: true, pagination: true },
                             columns,
-                            rowSelection: true,
+                            // rowSelection: true,
                             rowActions: [
                                 {
                                     icon: "lucide:edit-2",

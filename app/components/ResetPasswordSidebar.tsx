@@ -50,10 +50,16 @@ const ResetPasswordSidebar: React.FC<ResetPasswordSidebarProps> = ({
       if (res?.error) {
         showSnackbar(res?.message || "Failed to update password","error");
       } else {
-        // Optionally show a toast here
+        showSnackbar("Password updated successfully", "success");
+        // Logout user after password change
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          setTimeout(() => {
+            window.location.href = "/login";
+          }, 1000);
+        }
         onClose();
       }
-      showSnackbar("Password updated successfully", "success");
     } catch (err: any) {
       showSnackbar(err?.message || "Failed to update password","error");
     } finally {

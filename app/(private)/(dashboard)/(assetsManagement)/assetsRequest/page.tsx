@@ -23,12 +23,14 @@ import {
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
+  assetrequestGlobalFilter
 } from "@/app/services/assetsApi";
 import { AssestRequestFilter } from "@/app/services/allApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadFile } from "@/app/services/allApi";
-
+import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
   { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
@@ -42,14 +44,30 @@ interface LocalTableDataType {
   contact_number?: string;
   customer?: string;
   warehouse?: string;
-  outlet?: string;
+  outlet?: { code: string; name: string };
   salesman?: string;
   machine_number?: string;
   asset_number?: string;
-  model?: string;
+  model?: { code: string; name: string };
   brand?: string;
+  approval_status?: string;
   status?: number | string;
 }
+
+const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
+  1: "Sales Team Requested",
+  2: "Area Sales Manager Accepted",
+  3: "Area Sales Manager Rejected",
+  4: "Chiller Officer Accepted",
+  5: "Chiller Officer Rejected",
+  6: "Completed",
+  7: "Chiller Manager Rejected",
+  8: "Sales/Key Manager Rejected",
+  9: "Refused by Customer",
+  10: "Fridge Manager Accepted",
+  11: "Fridge Manager Rejected",
+};
+
 
 export default function Page() {
   const { can, permissions } = usePagePermissions();
@@ -60,13 +78,18 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
+  const { warehouseAllOptions, ensureWarehouseAllLoaded } =
+    useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>("");
   const [threeDotLoading, setThreeDotLoading] = useState({
     csv: false,
     xlsx: false,
   });
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [colFilter, setColFilter] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  useEffect(() => {
+    ensureWarehouseAllLoaded();
+  }, [ensureWarehouseAllLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -243,6 +266,80 @@ const filterBy = useCallback(
       // setLoading(false);
     }
   };
+
+
+
+
+    const columns=[
+              // Essential Information
+              {
+                key: "created_at",
+                label: "Date", render: (data: TableDataType) => formatDate(data.created_at),
+              },
+              {
+                key: "osa_code",
+                label: "OSA Code",
+              },
+              {
+                key: "warehouse",
+                label: "Distributor",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "warehouse"),
+                 filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
+              },
+
+              {
+                key: "customer",
+                label: "Customer",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "customer"),
+              },
+              {
+                key: "owner_name",
+                label: "Owner Name",
+              },
+
+              // Combined Relationship Fields
+
+              {
+                key: "contact_number",
+                label: "Contact Number",
+              },
+
+              {
+                key: "outlet",
+                label: "Outlet",
+                render: (data: TableDataType) =>
+                  data.outlet?.name || "-",
+              },
+              {
+                key: "model",
+                label: "Model",
+                render: (data: TableDataType) =>
+                  renderNestedField(data, "model", "name"),
+              },
+              {
+                key: "approval_status",
+                label: "Approval Status",
+              },
+
+              {
+                key: "status",
+                label: "Status",
+                render: (data: TableDataType) =>
+                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
+              },
+            ];
 
   return (
     <>

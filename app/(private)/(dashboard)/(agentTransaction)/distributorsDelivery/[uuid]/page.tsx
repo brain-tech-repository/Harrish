@@ -11,6 +11,7 @@ import KeyValueData from "@/app/components/keyValueData";
 import InputFields from "@/app/components/inputFields";
 import AutoSuggestion from "@/app/components/autoSuggestion";
 import {
+  applyPromotion,
   genearateCode,
   getAllActiveWarehouse,
   itemGlobalSearch,
@@ -32,6 +33,10 @@ import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { toTitleCase } from "@/app/(private)/utils/text";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import StepperForm, { useStepperForm } from "@/app/components/stepperForm";
+import { Link } from "lucide-react";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
 
 interface FormData {
   id: number;
@@ -241,6 +246,10 @@ export default function DeliveryAddEditPage() {
       is_promotional: false,
     },
   ]);
+  const [openPromotion, setOpenPromotion] = useState(false);
+  const [promotions, setPromotions] = useState([]);
+  const [selectedPromotionsItems, setSelectedPromotionsItems] = useState([]);
+  const [checkout,setCheckout]=useState(1);
 
   // Track used quantities per item to calculate remaining stock
   const [usedQuantities, setUsedQuantities] = useState<Record<string, { secondary: number; primary: number }>>({});
@@ -261,7 +270,7 @@ export default function DeliveryAddEditPage() {
     if (!itemInfo) return 0;
 
     const totalStock = Number(itemInfo.stock_qty || 0);
-    
+   
     // Calculate quantities used by other rows
     let usedSecondaryQty = 0;
     let usedPrimaryQty = 0;
@@ -324,17 +333,17 @@ export default function DeliveryAddEditPage() {
         } catch (e: any) {
           if (e?.message) partialErrors["Quantity"] = e.message;
         }
-        
+       
         // Additional stock validation
         if (rowData?.item_id && rowData?.available_stock && rowData?.Quantity) {
           const availableStock = Number(rowData.available_stock);
           const requestedQuantity = Number(rowData.Quantity);
-          
+         
           if (requestedQuantity > availableStock) {
             partialErrors["Quantity"] = `Quantity cannot exceed available stock (${Math.floor(availableStock)})`;
           }
         }
-        
+       
         if (Object.keys(partialErrors).length === 0) {
           // clear errors for this row
           setItemErrors((prev) => {
@@ -347,12 +356,12 @@ export default function DeliveryAddEditPage() {
         }
       } else {
         await itemRowSchema.validate(toValidate, { abortEarly: false });
-        
+       
         // Additional stock validation
         if (rowData?.item_id && rowData?.available_stock && rowData?.Quantity) {
           const availableStock = Number(rowData.available_stock);
           const requestedQuantity = Number(rowData.Quantity);
-          
+         
           if (requestedQuantity > availableStock) {
             const validationErrors: Record<string, string> = {};
             validationErrors["Quantity"] = `Quantity cannot exceed available stock (${Math.floor(availableStock)})`;
@@ -360,7 +369,7 @@ export default function DeliveryAddEditPage() {
             return;
           }
         }
-        
+       
         // clear errors for this row
         setItemErrors((prev) => {
           const copy = { ...prev };
@@ -392,7 +401,7 @@ export default function DeliveryAddEditPage() {
 
     try {
       setSkeleton(prev => ({ ...prev, item: true }));
-      
+     
       // Fetch warehouse stocks - this API returns all needed data including pricing and UOMs
       const stockRes = await warehouseStockTopOrders(warehouseId);
       const stocksArray = stockRes.data?.stocks || stockRes.stocks || [];
@@ -414,7 +423,7 @@ export default function DeliveryAddEditPage() {
 
       // Create items with UOM data map for easy access
       const itemsUOMMap: Record<string, { uoms: ItemUOM[], stock_qty: string }> = {};
-      
+     
       const processedItems = filteredStocks.map((stockItem: any) => {
         // Process UOMs with pricing from warehouseStockTopOrders response
         const item_uoms = stockItem?.uoms ? stockItem.uoms.map((uom: any) => {
@@ -425,10 +434,10 @@ export default function DeliveryAddEditPage() {
           } else if (uom?.uom_type === "secondary") {
             price = stockItem.buom_ctn_price || "-";
           }
-          return { 
-            ...uom, 
+          return {
+            ...uom,
             price,
-            id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+            id: uom.uom_id || `${stockItem.item_id}_${uom.uom_type}`,
             item_id: stockItem.item_id
           };
         }) : [];
@@ -439,7 +448,7 @@ export default function DeliveryAddEditPage() {
           stock_qty: stockItem.stock_qty
         };
 
-        return { 
+        return {
           id: stockItem.item_id,
           name: stockItem.item_name,
           item_code: stockItem.item_code,
@@ -464,7 +473,7 @@ export default function DeliveryAddEditPage() {
 
       setItemsOptions(options);
       setSkeleton(prev => ({ ...prev, item: false }));
-      
+     
       return options;
     } catch (error) {
       console.error("Error fetching warehouse items:", error);
@@ -547,7 +556,7 @@ export default function DeliveryAddEditPage() {
           ? String(selectedOrder.id || value)
           : value;
         item.item_name = selectedOrder?.name ?? "";
-        
+       
         // Build UOM options with correct pricing from warehouse stock
         if (selectedOrder?.item_uoms) {
           item.UOM = selectedOrder.item_uoms.map((uom: any) => {
@@ -562,7 +571,7 @@ export default function DeliveryAddEditPage() {
             }
             return {
               label: uom.name,
-              value: uom.id.toString(),
+              value: uom.uom_id.toString(),
               price: String(price),
               uom_type: uom.uom_type,
             };
@@ -570,12 +579,12 @@ export default function DeliveryAddEditPage() {
         } else {
           item.UOM = [];
         }
-        
+       
         // Set first UOM as default
         item.uom_id = selectedOrder?.item_uoms?.[0]?.id
           ? String(selectedOrder.item_uoms[0].id)
           : "";
-        
+       
         // Set price based on first UOM with warehouse pricing
         if (selectedOrder?.item_uoms?.[0]) {
           const firstUom = selectedOrder.item_uoms[0];
@@ -591,23 +600,23 @@ export default function DeliveryAddEditPage() {
         } else {
           item.Price = "";
         }
-        
+       
         item.Quantity = "1";
-        
+       
         // Set available stock from warehouse based on first UOM
         if ((selectedOrder as any)?.warehouse_stock && selectedOrder?.item_uoms?.[0]) {
           const firstUom = selectedOrder.item_uoms[0];
           const uomType = firstUom.uom_type || 'primary';
           const upc = Number(firstUom.upc || 1);
           const totalStock = Number((selectedOrder as any).warehouse_stock || 0);
-          
+         
           // Calculate available stock for the first UOM
           const availableStock = calculateAvailableStock(item.item_id, uomType, upc, index);
           item.available_stock = String(availableStock);
         } else {
           item.available_stock = "";
         }
-        
+       
         // persist a readable label
         const computedLabel = selectedOrder
           ? `${selectedOrder.item_code ?? selectedOrder.erp_code ?? ""}${
@@ -627,7 +636,7 @@ export default function DeliveryAddEditPage() {
         }
       }
     }
-    
+   
     // If user changes UOM, update price and available stock based on warehouse pricing
     if (field === "uom_id" && value) {
       item.uom_id = value;
@@ -635,16 +644,16 @@ export default function DeliveryAddEditPage() {
       if (selectedUOM?.price) {
         item.Price = selectedUOM.price;
       }
-      
+     
       // Calculate available stock for this UOM type
       if (item.item_id && selectedUOM) {
         const uomType = selectedUOM.uom_type || 'primary';
-        const upc = Number(selectedUOM.uom_type === 'secondary' ? 
+        const upc = Number(selectedUOM.uom_type === 'secondary' ?
           (orderData.find((o: any) => String(o.id) === item.item_id)?.item_uoms?.find((u: any) => u.id === Number(value))?.upc || 1) : 1);
-        
+       
         const availableStock = calculateAvailableStock(item.item_id, uomType, upc, index);
         item.available_stock = String(availableStock);
-        
+       
         // Reset quantity if it exceeds available stock
         if (Number(item.Quantity) > availableStock) {
           item.Quantity = String(Math.min(Number(item.Quantity), availableStock));
@@ -693,6 +702,7 @@ export default function DeliveryAddEditPage() {
         Total: "0.00",
         available_stock: "",
         is_promotional: false,
+        isPromotion: false,
       },
     ]);
   };
@@ -715,6 +725,8 @@ export default function DeliveryAddEditPage() {
           Total: "",
           available_stock: "",
           is_promotional: false,
+          isPromotion: false,
+
         },
       ]);
       return;
@@ -768,7 +780,8 @@ export default function DeliveryAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
-        is_promotional: item.is_promotional ?? false,
+        is_promotional: item.isPrmotion ?? false,
+        isPrmotion: item.isPrmotion??false,
       })),
     };
   };
@@ -798,7 +811,38 @@ export default function DeliveryAddEditPage() {
 
       formikHelpers.setSubmitting(true);
       const payload = generatePayload(values);
-      const res = await createDelivery(payload);
+
+      let promotionPayload = convertOrderPayload(payload)
+
+       const promotionRes = await applyPromotion(promotionPayload);
+            if(checkout == 1)
+            {
+            if (promotionRes?.data?.itemPromotionInfo.length > 0) {
+             
+              // setPromotions(data);
+             let filteredItemData = itemData.filter((item, index) => {
+                return item.is_promotional == false;
+              })
+              setItemData([...filteredItemData]);
+              setPromotions(promotionRes?.data?.itemPromotionInfo);
+               setOpenPromotion(true);
+              setCheckout(2);
+     
+            }
+            else{
+     
+     
+              setCheckout(2);
+             
+            }
+
+           
+
+          }
+
+          if(checkout == 2)
+          {
+             const res = await createDelivery(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Delivery", "error");
         console.error("Create Delivery error:", res);
@@ -814,6 +858,14 @@ export default function DeliveryAddEditPage() {
         showSnackbar("Delivery created successfully", "success");
         router.push("/distributorsDelivery");
       }
+          }
+
+
+     
+
+
+
+
     } catch (err) {
       console.error(err);
       showSnackbar("Failed to submit order", "error");
@@ -841,7 +893,8 @@ export default function DeliveryAddEditPage() {
     const res = await agentOrderList({
       warehouse_id: values.warehouse,
       delivery_date: values.delivery_date,
-      query: search || "",
+      query: search,
+      dropdown:"true",
       no_delivery: "true",
       per_page: "10",
     });
@@ -1025,7 +1078,7 @@ export default function DeliveryAddEditPage() {
             //   if (errors && Object.keys(errors).length > 0) {
             //     console.warn("Formik validation errors:", errors);
             //   }
-          
+         
             // }, [errors]);
 
             return (
@@ -1044,7 +1097,7 @@ export default function DeliveryAddEditPage() {
                       required
                       label="Distributor"
                       name="warehouse"
-                      placeholder="Search Distributor"
+                      placeholder="Select Distributor"
                       value={values.warehouse}
                       options={warehouseOptions}
                       showSkeleton={warehouseOptions.length === 0}
@@ -1067,6 +1120,7 @@ export default function DeliveryAddEditPage() {
                             Vat: "",
                             Total: "",
                             is_promotional: false,
+                            isPromotion: false,
                           }]);
                           setSkeleton((prev) => ({ ...prev, order_code: true }));
                           (async () => {
@@ -1113,6 +1167,7 @@ export default function DeliveryAddEditPage() {
                           Vat: "",
                           Total: "",
                           is_promotional: false,
+                          isPromotion: false,
                         }]);
                         (async () => {
                           await fetchAgentDeliveries(
@@ -1164,7 +1219,7 @@ export default function DeliveryAddEditPage() {
                             const selectedUomId = d.uom_id ? String(d.uom_id) : "";
                             const UOMOptions = uomsArr.map((uom: any) => ({
                               label: uom.name ?? "",
-                              value: uom.id !== undefined ? String(uom.id) : (uom.uom_id !== undefined ? String(uom.uom_id) : ""),
+                              value: uom.uom_id !== undefined ? String(uom.uom_id) : (uom.uom_id !== undefined ? String(uom.uom_id) : ""),
                               price: String(uom.price ?? ""),
                             }));
                             // If the selected UOM is not in the options, add it
@@ -1230,6 +1285,7 @@ export default function DeliveryAddEditPage() {
                                     Vat: "",
                                     Total: "",
                                     is_promotional: false,
+                                    isPromotion: false,
                                   },
                                 ]
                           );
@@ -1318,7 +1374,7 @@ export default function DeliveryAddEditPage() {
                               <InputFields
                                 label=""
                                 name={`item_id_${row.idx}`}
-                                placeholder="Search item"
+                                placeholder="Select item"
                                 value={row.item_id}
                                 options={itemsOptions}
                                 searchable={true}
@@ -1360,6 +1416,7 @@ export default function DeliveryAddEditPage() {
                                 }
                                 showSkeleton={Boolean(itemLoading[idx]?.uom)}
                                 onChange={(e) => {
+                                 
                                   // Just recalculate with new UOM ID
                                   // The recalculateItem function will handle price update
                                   recalculateItem(
@@ -1383,48 +1440,22 @@ export default function DeliveryAddEditPage() {
                           const err = itemErrors[idx]?.Quantity;
                           const currentItem = itemData[idx];
                           const availableStock = currentItem?.available_stock;
-                          
                           return (
                             <div className={`${availableStock ? "pt-5" : ""}`}>
                               <InputFields
                                 label=""
                                 type="number"
                                 name="Quantity"
-                                // integerOnly={true}
                                 placeholder="Enter Qty"
                                 value={row.Quantity}
-                                disabled={currentItem?.is_promotional === true ||  !row.uom_id || !values.order_code}
+                                disabled={currentItem?.is_promotional === true || !row.uom_id || !values.order_code || currentItem?.isPrmotion == true}
                                 onChange={(e) => {
-                                  const raw = (e.target as HTMLInputElement)
-                                    .value;
+                                  const raw = (e.target as HTMLInputElement).value;
                                   const intPart = raw.split(".")[0];
-                                  let sanitized =
-                                    intPart === ""
-                                      ? ""
-                                      : String(
-                                          Math.max(
-                                            0,
-                                            parseInt(intPart, 10) || 0
-                                          )
-                                        );
-                                  
-                                  // Enforce max stock limit
-                                  if (availableStock && sanitized) {
-                                    const maxStock = Math.floor(Number(availableStock));
-                                    const inputValue = parseInt(sanitized, 10);
-                                    if (inputValue > maxStock) {
-                                      sanitized = String(maxStock);
-                                    }
-                                  }
-                                  
-                                  recalculateItem(
-                                    Number(row.idx),
-                                    "Quantity",
-                                    sanitized
-                                  );
+                                  let sanitized = intPart === "" ? "" : String(Math.max(0, parseInt(intPart, 10) || 0));
+                                  recalculateItem(Number(row.idx), "Quantity", sanitized);
                                 }}
                                 min={1}
-                                max={availableStock ? Math.floor(Number(availableStock)) : undefined}
                                 integerOnly={true}
                                 error={err && err}
                               />
@@ -1464,7 +1495,7 @@ export default function DeliveryAddEditPage() {
                           ) {
                             return (
                               <span
-                                
+                               
                               >
                                 0.00
                               </span>
@@ -1638,7 +1669,7 @@ export default function DeliveryAddEditPage() {
                       >
                         <span>Total</span>
                         <span>
-                          {CURRENCY} {toInternationalNumber(Number(finalTotal))}
+                          {CURRENCY} {toInternationalNumber(Number(finalTotal),{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1670,12 +1701,14 @@ export default function DeliveryAddEditPage() {
                   >
                     Cancel
                   </button>
+                  {/* Disable submit if any item qty > available stock */}
                   <SidebarBtn
                     type="submit"
                     isActive={true}
                     label={
-                      isSubmitting ? "Creating Delivery..." : "Create Delivery"
+                      checkout == 1 ? "Checkout" : isSubmitting ? "Creating Delivery..." : "Create Delivery"
                     }
+                    leadingIcon="mdi:check"
                     disabled={
                       isSubmitting ||
                       !values.warehouse ||
@@ -1683,7 +1716,16 @@ export default function DeliveryAddEditPage() {
                       !values.order_code ||
                       !values.salesman_id ||
                       !itemData ||
-                      itemData.some((item) => !item.item_id)
+                      itemData.some((item, idx) => {
+                        if (!item.item_id || !item.uom_id || !itemsWithUOM[item.item_id]) return false;
+                        const itemUOMData = itemsWithUOM[item.item_id];
+                        const uomInfo = itemUOMData.uoms.find(u => String(u.uom_id) === String(item.uom_id));
+                        if (!uomInfo) return false;
+                        const upc = Number(uomInfo.upc || "1");
+                        const uomType = uomInfo.uom_type || "primary";
+                        const availableStockNum = calculateAvailableStock(item.item_id, uomType, upc, idx);
+                        return Number(item.Quantity) > Number(availableStockNum);
+                      })
                     }
                     onClick={() => submitForm()}
                   />
@@ -1693,6 +1735,285 @@ export default function DeliveryAddEditPage() {
           }}
         </Formik>
       </ContainerCard>
+
+        <Dialog
+              open={openPromotion}
+              onClose={()=>setOpenPromotion(false)}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+             
+            >
+              <DialogContent>
+                {/* <DialogContentText id="alert-dialog-description"> */}
+                 <PromotionStepper setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
+                {/* </DialogContentText> */}
+              </DialogContent>
+             
+            </Dialog>
     </div>
   );
 }
+type ConvertedOrder = {
+  customer_id: number;
+  warehouse_id: number;
+  items: {
+    item_id: number;
+    item_uom_id: number;
+    item_qty: number;
+  }[];
+};
+export function convertOrderPayload(order: any): ConvertedOrder {
+  return {
+    customer_id: order.customer_id,
+    warehouse_id: order.warehouse_id,
+    items: order.details.map((detail:any) => ({
+      item_id: detail.item_id,
+      item_uom_id: detail.uom_id,
+      item_qty: detail.quantity,
+    })),
+  };
+}
+
+type PromotionItems = {
+  id: number;
+  item_code: string;
+  item_name: string;
+  item_uom_id: string;
+  name: string;
+};
+
+type Promotion = {
+  id: number;
+  name: string;
+  bundle_combination: string;
+  promotion_type: string;
+  FocQty: number;
+  promotion_items: PromotionItems[];
+};
+
+type ResultItem = PromotionItems & {
+  focQty: number;
+};
+
+function getPromotionItemsByIndex(
+  promotions: Promotion[],
+  itemIds: number[]
+): ResultItem[] {
+  const result: ResultItem[] = [];
+
+  itemIds.forEach((itemId, index) => {
+    const promotion = promotions[index];
+    if (!promotion) return;
+
+    const matchedItem = promotion.promotion_items.find(
+      (item) => item.id === itemId
+    );
+
+    if (matchedItem) {
+      result.push({
+        ...matchedItem,
+        focQty: promotion.FocQty,
+      });
+    }
+  });
+
+  return result;
+}
+
+
+ function PromotionStepper({setCheckout, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
+  const { showSnackbar } = useSnackbar();
+
+  /** 🔹 Convert promotions → steps */
+  const steps: any[] = promotions.map((promo:any, index:any) => ({
+    id: index + 1,
+    label: promo.name,
+  }));
+
+  const {
+    currentStep,
+    nextStep,
+    prevStep,
+    isLastStep,
+    markStepCompleted,
+    isStepCompleted,
+  } = useStepperForm(steps.length);
+
+  const handleNext = () => {
+    markStepCompleted(currentStep);
+    nextStep();
+  };
+
+  const handleSubmit = () => {
+
+    let result = getPromotionItemsByIndex(promotions,selectedPromotionsItems)
+
+    result.map((item:any)=>{
+      itemData.push({
+      item_id: item.id,
+      item_name: `${item.item_code}-${item.item_name}`,
+      item_label: `${item.item_code}-${item.item_name}`,
+      UOM: [{
+        value: item.item_uom_id,
+        label: item.name,
+      }],
+      uom_id: item.item_uom_id,
+      Quantity: item.focQty,
+      Price: "0.00",
+      Excise: "0",
+      Discount: "0",
+      Net: "0",
+      Vat: "0",
+      Total: "0.00",
+      available_stock: "",
+      isPrmotion: true,
+      isPrmotional: true,
+
+    })
+    })
+      //  itemData.pop()
+       setItemData([...itemData]);
+
+   
+    // recalculateItem(Number(itemData.length), "item_id", selectedPromotionsItems[0])
+setOpenPromotion(false);
+setCheckout(2)
+    // showSnackbar("All promotions processed successfully", "success");
+  };
+
+
+
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-4">
+        {/* <Link href="/promotion">
+          <Icon icon="lucide:arrow-left" width={22} />
+        </Link> */}
+        <h1 className="text-xl font-semibold">
+          Promotion Setup
+        </h1>
+      </div>
+
+      <StepperForm
+        steps={steps.map((step) => ({
+          ...step,
+          isCompleted: isStepCompleted(step.id),
+        }))}
+        currentStep={currentStep}
+        onStepClick={() => {}}
+        onBack={prevStep}
+        onNext={handleNext}
+        close={true}
+        closeFunction={() => setOpenPromotion(false)}
+        onSubmit={handleSubmit}
+        showSubmitButton={isLastStep}
+        showNextButton={!isLastStep}
+        nextButtonText="Save & Next"
+        submitButtonText="Finish"
+      >
+        <RenderStepContent promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} setSelectedPromotionsItems={setSelectedPromotionsItems} setPromotions={setPromotions} currentStep={currentStep} promotionItems={promotions.promotion_items}/>
+      </StepperForm>
+    </>
+  );
+}
+
+
+
+interface PromotionItem {
+  id: number;
+  item_code: string;
+  item_name: string;
+  item_uom_id: string;
+  name: any;
+}
+
+interface Props {
+  promotionItems: PromotionItem[];
+  qtyData: Record<number, string>;
+ 
+  setQtyData: (idx: number, value: string) => void;
+}
+
+ function PromotionItemsQtyTable({
+  selectedItems, setSelectedItems, promotions, setPromotions, currentStep, selectedPromotionsItems, setSelectedPromotionsItems,
+  promotionItems,
+}: any) {
+  const [qtyData, setQtyData] = useState<any>(0);
+  const [selects, setSelects] = useState<any>("");
+
+  useEffect(() => {
+    const selectedItemId = selectedPromotionsItems[currentStep - 1] || "";
+    setSelects(selectedItemId);
+  }, [currentStep, selectedPromotionsItems]);
+                          // const options = JSON.parse(row.UOM ?? "[]");
+
+
+  return (
+    <div style={{height:"300px"}}>
+       <InputFields
+                                label=""
+                                name={`item_id`}
+                                value={selects}
+                                searchable={true}
+                                onChange={(e) => {
+                                  setSelects(e.target.value);    
+                                  selectedPromotionsItems[currentStep - 1] = e.target.value;
+                                  setSelectedPromotionsItems([...selectedPromotionsItems]);  
+
+                                }}
+                                options={promotionItems.map((row:any, idx:any) => ({
+                                  value: row.id,
+                                  label: row.item_name,
+      }))}
+                                placeholder="Select item"
+                                // disabled={!values.customer}
+                                // error={err && err}
+                              />
+                              <div className="mt-4">
+                              <InputFields
+                                label="Quantity"
+                                type="number"
+                                name="Quantity"
+                                placeholder="Enter Qty"
+                                value={promotions[currentStep - 1]?.FocQty}
+                                onChange={(e) => {
+                                   
+                                }}
+                               disabled={true}
+                              />
+                             
+                              </div>
+                               <div>
+                              <InputFields
+                                label="Uom"
+                                value={promotionItems[0]?.name}
+                                placeholder="Select UOM"
+                                width="max-w-[150px]"
+                                onChange={()=>{}}
+                                disabled={true}
+                              />
+                            </div>
+
+    </div>
+  );
+}
+
+    const RenderStepContent = ({promotions,selectedPromotionsItems,setSelectedPromotionsItems,setPromotions,currentStep,promotionItems}:any) => {
+    const promotion = promotions[currentStep - 1];
+  const [selectedItems, setSelectedItems] = useState<any>(selectedPromotionsItems[currentStep - 1]);
+   
+
+    return (
+      <ContainerCard>
+
+        <PromotionItemsQtyTable selectedItems={selectedItems} setSelectedItems={setSelectedItems} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} setSelectedPromotionsItems={setSelectedPromotionsItems} setPromotions={setPromotions} currentStep={currentStep} promotionItems={promotion.promotion_items}/>
+       
+         
+        {/* <h2 className="mb-4 text-lg font-semibold">
+          {promotion?.name}
+        </h2> */}
+
+     
+      </ContainerCard>
+    );
+  };

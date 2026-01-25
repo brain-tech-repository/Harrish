@@ -21,15 +21,11 @@ import * as yup from "yup";
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 
 export default function AddInstallationReportPage() {
-    const { regionOptions, ensureRegionLoaded } = useAllDropdownListData();
 
-    // Load dropdown data
-    useEffect(() => {
-        ensureRegionLoaded();
-    }, [ensureRegionLoaded]);
+  
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
-
+    const [submitting, setSubmitting] = useState(false);
     const [loadingBtr, setLoadingBtr] = useState(false);
     const [loadingIRO, setLoadingIRO] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -284,6 +280,7 @@ export default function AddInstallationReportPage() {
     // ✅ SUBMIT
     const handleSubmit = async () => {
         try {
+            setSubmitting(true);
             await validationSchema.validate(form, { abortEarly: false });
 
             if (selectedRows.length === 0) {
@@ -329,11 +326,13 @@ export default function AddInstallationReportPage() {
                     if (e.path) formErrors[e.path] = e.message;
                 });
                 setErrors(formErrors);
-                showSnackbar("Please fix the form errors", "warning");
+                // showSnackbar("Please fix the form errors", "warning");
             } else {
                 console.error("❌ Submission error:", err);
                 showSnackbar("Failed to add installation report", "error");
             }
+        }finally {
+            setSubmitting(false);
         }
     };
 
@@ -443,6 +442,7 @@ export default function AddInstallationReportPage() {
                     value={warehouseName}
                     disabled
                     onChange={() => { }}
+                    // error={errors.warehouse_id}
                 />
 
                 <InputFields
@@ -556,8 +556,10 @@ export default function AddInstallationReportPage() {
                 </button>
 
                 <SidebarBtn
-                    label="Submit"
+                leadingIcon="mdi:check"
+                    label={submitting ? "Submitting..." : "Submit"}
                     isActive
+                    disabled={submitting}
                     onClick={handleSubmit}
                 />
             </div>

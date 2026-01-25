@@ -53,12 +53,12 @@ export default function ViewPage() {
     const pointsColumns = [
         { key: "osa_code", label: "Code", render: (row: TableDataType) => <span className="font-semibold text-[#181D27] text-[14px]">{(row as any).osa_code || "-"}</span> },
         { key: "activity_date", label: "Date", render: (row: TableDataType) => formatWithPattern(new Date((row as any).activity_date), "DD MMM YYYY", "en-GB") },
+        { key: "document_code", label: "Invoice No.", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{(row as any).document_code || "-"}</span>) },
+        { key: "document_date", label: "Invoice Date", render: (row: TableDataType) => formatWithPattern(new Date((row as any).document_date), "DD MMM YYYY", "en-GB") },
         { key: "activity_type", label: "Activity Type", render: (row: TableDataType) => ((row as any).activity_type || "-") },
         { key: "incooming_point", label: "Incoming Point", render: (row: TableDataType) => toInternationalNumber((row as any).incooming_point ?? "-") },
         { key: "outgoing_point", label: "Outgoing Point", render: (row: TableDataType) => toInternationalNumber((row as any).outgoing_point ?? "-") },
         { key: "adjustment_point", label: "Adjustment Point", render: (row: TableDataType) => toInternationalNumber((row as any).adjustment_point ?? "-") },
-        { key: "document_code", label: "Invoice No.", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{(row as any).document_code || "-"}</span>) },
-        { key: "document_date", label: "Invoice Date", render: (row: TableDataType) => formatWithPattern(new Date((row as any).document_date), "DD MMM YYYY", "en-GB") },
         { key: "closing_point", label: "Closing Point", render: (row: TableDataType) => toInternationalNumber((row as any).closing_point ?? "-") },
     ];
 

@@ -148,10 +148,10 @@ export default function ViewPage() {
         </ContainerCard>
 
         {/* 🔹 Right Detailed Info */}
-        <div className="w-full flex flex-col gap-[20px]">
+        <div className="w-full flex flex-col ">
           {/* Tabs */}
           <ContainerCard
-            className="w-full flex gap-[4px] overflow-x-auto"
+            className="w-full flex gap-[2px] overflow-x-auto"
             padding="5px"
           >
             {tabList.map((tab, index) => (
@@ -166,7 +166,7 @@ export default function ViewPage() {
           </ContainerCard>
 
           {activeTab === "info" && (
-            <ContainerCard className="w-full mb-[20px] ">
+            <ContainerCard className="w-full  ">
               <KeyValueData
                 title="Vehicle Information"
                 data={[
@@ -182,7 +182,7 @@ export default function ViewPage() {
           )}
 
           {activeTab === "base" && (
-            <ContainerCard className="w-full mb-[20px]">
+            <ContainerCard className="w-full">
               <KeyValueData
                 title="Vehicle Base"
                 data={[

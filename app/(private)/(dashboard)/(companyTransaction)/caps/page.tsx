@@ -19,7 +19,7 @@ import {
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import ApprovalStatus from "@/app/components/approvalStatus";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 const columns = [
   { key: "osa_code", label: "Code", showByDefault: true },
   {
@@ -186,18 +186,12 @@ export default function CapsPage() {
               //       onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
               //     },
               //   ],
-              filterByFields: [
-                {
-                  key: "start_date",
-                  label: "Start Date",
-                  type: "date",
-                },
-                {
-                  key: "end_date",
-                  label: "End Date",
-                  type: "date",
-                },
-              ],
+              filterRenderer: (props) => (
+                                                                                                                <FilterComponent
+                                                                                                                currentDate={true}
+                                                                                                                  {...props}
+                                                                                                                />
+                                                                                                              ),
               actions: can("create") ? [
                 <SidebarBtn
                   key={1}

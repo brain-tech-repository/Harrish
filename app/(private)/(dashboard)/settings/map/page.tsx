@@ -130,7 +130,7 @@ export default function SalesMapGoogle() {
           <TextField
             fullWidth
             size="small"
-            placeholder="Search salesman..."
+            placeholder="Search sales team..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

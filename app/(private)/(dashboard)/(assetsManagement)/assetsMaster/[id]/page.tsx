@@ -22,7 +22,7 @@ const validationSchema = Yup.object({
   serial_number: Yup.string().required("Serial Number is required"),
   model_number: Yup.string().required("Model Number is required"),
   assets_category: Yup.string().required("Assets Category is required"),
-  sap_code: Yup.string().required("SAP Code is required"),
+  sap_code: Yup.string().required("ERP Code is required"),
 
   acquisition: Yup.date().required("Acquisition date is required"),
   vender: Yup.string().required("Vendor is required"),
@@ -219,7 +219,7 @@ export default function AddOrEditChiller() {
         actions.setErrors(errors);
         actions.setTouched(touched);
       }
-      showSnackbar("Please correct highlighted errors", "error");
+      // showSnackbar("Please correct highlighted errors", "error");
     }
   };
 
@@ -390,6 +390,8 @@ export default function AddOrEditChiller() {
 
               <InputFields
                 required
+                integerOnly
+                type="number"
                 label="Trading Partner Number"
                 name="trading_partner_number"
                 value={values.trading_partner_number}
@@ -401,6 +403,8 @@ export default function AddOrEditChiller() {
 
               <InputFields
                 required
+                integerOnly
+                type="number"
                 label="Capacity"
                 name="capacity"
                 value={values.capacity}
@@ -433,6 +437,7 @@ export default function AddOrEditChiller() {
                   { value: "2023", label: "2023" },
                   { value: "2024", label: "2024" },
                   { value: "2025", label: "2025" },
+                  { value: "2026", label: "2026" },
                 ]}
                 value={values.manufacturing_year}
                 onChange={(e) => setFieldValue("manufacturing_year", e.target.value)}
@@ -474,7 +479,7 @@ export default function AddOrEditChiller() {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Update Assets Master" : "Add New Assets Master"}
+          {isEditMode ? "Update Assets Master" : "Add Assets Master"}
         </h1>
       </div>
 
@@ -485,7 +490,7 @@ export default function AddOrEditChiller() {
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ values, setFieldValue, errors, touched, handleSubmit, setErrors, setTouched }) => (
+        {({ values, setFieldValue, errors, touched, handleSubmit, setErrors, setTouched, isSubmitting }) => (
           <Form>
             <StepperForm
               steps={steps.map((step) => ({
@@ -504,7 +509,13 @@ export default function AddOrEditChiller() {
               showSubmitButton={isLastStep}
               showNextButton={!isLastStep}
               nextButtonText="Save & Next"
-              submitButtonText="Submit"
+              submitButtonText={
+                isSubmitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : isEditMode
+                    ? "Update"
+                    : "Submit"
+              }
             >
               {renderStepContent(values, setFieldValue, errors, touched)}
             </StepperForm>

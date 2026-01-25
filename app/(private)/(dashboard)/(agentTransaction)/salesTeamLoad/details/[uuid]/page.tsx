@@ -21,7 +21,7 @@ import { useEffect, useState, RefObject, useRef } from "react";
 import PrintButton from "@/app/components/printButton";
 import { downloadFile } from "@/app/services/allApi";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
-
+import TabBtn from "@/app/components/tabBtn";
 interface CustomerItem {
   id: number;
   uuid: string;
@@ -36,7 +36,7 @@ interface CustomerItem {
     id: number;
     uuid: string;
     osa_code: string;
-    item: { id: number; code: string; name: string };
+    item: { id: number;erp_code:string; code: string; name: string };
     uom_name: string;
     qty: number;
     price: string;
@@ -56,9 +56,13 @@ export default function ViewPage() {
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
   const [loading, setLoadingState] = useState<boolean>(false);
-
+  const [activeTab, setActiveTab] = useState("overview");
   const title = `Load #${customer?.osa_code || "-"}`;
 
+  const tabList = [
+        { key: "overview", label: "Overview" },
+        { key: "items", label: "Load Items" },
+    ];
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -85,14 +89,14 @@ export default function ViewPage() {
   // ✅ Table config
   const columns: configType["columns"] = [
     { key: "item", label: "Item" },
+    { key: "uom", label: "UOM" },
     { key: "qty", label: "Quantity" },
-    { key: "price", label: "Price" },
   ];
 
   // ✅ Prepare table data
   const tableData =
     customer?.details?.map((detail) => ({
-      item: detail.item ? `${detail.item.code} - ${detail.item.name}` : "-",
+      item: detail.item ? `${detail.item.erp_code} - ${detail.item.name}` : "-",
       uom: detail.uom_name || "-",
       qty: detail.qty?.toString() ?? "-",
       price: detail.price ?? "-",
@@ -100,6 +104,12 @@ export default function ViewPage() {
 
   const targetRef = useRef<HTMLDivElement | null>(null);
 
+  const onTabClick = async (idx: number) => {
+        // ensure index is within range and set the corresponding tab key
+        if (typeof idx !== "number") return;
+        if (typeof tabList === "undefined" || idx < 0 || idx >= tabList.length) return;
+        setActiveTab(tabList[idx].key);
+    };
   return (
     <>
       {/* ---------- Header ---------- */}
@@ -142,13 +152,32 @@ export default function ViewPage() {
               </div>
             </div>
 
+
+
             <hr className="border-gray-200 my-5" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-6">
-              {/* ---------- Left Side (Details) ---------- */}
-              <div className="lg:col-span-1">
-                <KeyValueData
-                  data={[
+             <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+                            {tabList.map((tab, index) => (
+                                <div key={index}>
+                                    <TabBtn
+                                        label={tab.label}
+                                        isActive={activeTab === tab.key}
+                                        onClick={() => onTabClick(index)}
+                                    />
+                                </div>
+                            ))}
+                        </ContainerCard>
+{activeTab === "overview" && (
+                <div className="m-auto">
+                    <div className="flex flex-wrap gap-x-[20px]">
+                        <div className="mb-4">
+                        </div>
+                        <div className="flex flex-col gap-6 w-full md:flex-row md:gap-6">
+                            <div className="flex-1 w-full">
+                                <ContainerCard className="w-full h-full">
+                                    <KeyValueData
+                                        title="Overview"
+                                         data={[
                     {
                       key: "Distributor",
                       value:
@@ -177,41 +206,35 @@ export default function ViewPage() {
                         : "-",
                     },
                   ]}
-                />
-              </div>
+                                    />
+                                  
+                                </ContainerCard>
+                            </div>
+                          
+                        </div>
+                    </div>
+                </div>
+            )}
 
-              {/* ---------- Right Side (Table) ---------- */}
-              <div className="lg:col-span-2 w-full">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                  Load Items
-                </h3>
-                <Table data={tableData} config={{ columns }} />
-              </div>
 
-              {/* <div className="lg:col-span-2 w-full">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                  Load Items
-                </h3>
-                <Table data={tableData} config={{ columns }} />
-              </div> */}
-            </div>
-            {/* ---------- Right Side (Table) ---------- */}
+            {activeTab === "items" && (
+                // <ContainerCard >
+
+                <div className="flex flex-col h-full">
+                    <Table data={tableData} config={{ columns }} />
+                 
+                </div>
+
+                // </ContainerCard>
+            )}
           </div>
 
-          {/* ---------- Footer Buttons ---------- */}
-          {/* <div className="flex flex-wrap justify-end gap-4 pt-4 border-t border-gray-200 mt-6">
-          <SidebarBtn
-            leadingIcon="lucide:download"
-            leadingIconSize={20}
-            label="Download"
-            onClick={handleDownload}
-          />*/}
 
-          <div  className="flex flex-wrap justify-end gap-4 pt-4 print:hidden">
+          {/* <div  className="flex flex-wrap justify-end gap-4 pt-4 print:hidden">
             <PrintButton
               targetRef={targetRef as unknown as RefObject<HTMLElement>}
             />
-          </div>
+          </div> */}
         </ContainerCard>
       </div>
     </>

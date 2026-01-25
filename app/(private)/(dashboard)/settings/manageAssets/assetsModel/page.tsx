@@ -95,7 +95,7 @@ export default function Page() {
             localStorageKey: "assets-model-number-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
-            rowSelection: true,
+            // rowSelection: true,
             api: {
               list: async (pageNo: number, pageSize: number) => {
                 try {

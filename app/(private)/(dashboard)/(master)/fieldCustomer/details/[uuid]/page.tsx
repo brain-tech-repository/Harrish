@@ -7,7 +7,7 @@ import Table, { configType, listReturnType, searchReturnType, TableDataType } fr
 import StatusBtn from "@/app/components/statusBtn2";
 import TabBtn from "@/app/components/tabBtn";
 import { exportAllInvoices, agentCustomerReturnExport, exportSpecificCustomerReturn, exportInvoice, exportOrderInvoice, getAgentCustomerByReturnId, getAgentCustomerBySalesId, invoiceList } from "@/app/services/agentTransaction";
-import { agentCustomerById, downloadFile } from "@/app/services/allApi";
+import { agentCustomerById, downloadFile, downloadPDFGlobal } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
@@ -20,6 +20,8 @@ import Overview from "./overview";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import Skeleton from "@mui/material/Skeleton";
 import FilterComponent from "@/app/components/filterComponent";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 export interface AgentCustomerDetails {
     id: string;
     uuid: string;
@@ -64,7 +66,12 @@ const tabs = ["Overview", "Sales", "Market Return"];
 
 
 export default function CustomerDetails() {
-    const router = useRouter();
+    const router = useRouter(); 
+      const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+      const [selectedReturnRow, setSelectedReturnRow] = useState<TableDataType | null>(null);
+    const [showReturnDrawer, setShowReturnDrawer] = useState(false);
+    
     const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
     const [activeTab, setActiveTab] = useState("Overview");
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
@@ -154,6 +161,20 @@ export default function CustomerDetails() {
 
         }}><Icon icon="material-symbols:download" /></div>)
     }
+
+const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
+        const [smallLoading, setSmallLoading] = useState(false)
+
+        return <Icon 
+            icon={smallLoading ? "eos-icons:three-dots-loading" : "material-symbols:download"} 
+            className="cursor-pointer" 
+            onClick={async () => {
+                setSmallLoading(true);
+                await exportFile(row.uuid, "pdf");
+                setSmallLoading(false);
+            }} />
+    }
+
     function convertDate(input: string) {
         const [dd, mm, yy] = input.split("-");
 
@@ -163,13 +184,15 @@ export default function CustomerDetails() {
         return `${fullYear}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
     }
 
-    const columns: configType["columns"] = [
+    const salesColumns: configType["columns"] = [
+        { key: "invoice_code", label: "Invoice Code" , render: (row: TableDataType) => <div className="cursor-pointer hover:text-red-500" onClick={() => {
+               setSelectedRow(row);
+               setShowDrawer(true);
+           }}>{row.invoice_code || "-"}</div> 
+        },
         { key: "invoice_date", label: "Date", render: (row: TableDataType) => formatDate(row.invoice_date) },
         { key: "invoice_time", label: "Time" },
-        {
-            key: "invoice_code",
-            label: "Invoice Number"
-        },
+       
         {
             key: "salesman_name",
             label: "Sales Team"
@@ -185,16 +208,28 @@ export default function CustomerDetails() {
         { key: "total_amount", label: "Invoice Total", render: (row: TableDataType) => toInternationalNumber(row.total_amount) },
         // {
         //     key: "action", label: "Action", sticky: "right", render: (row: TableDataType) => {
-
-
-        //         return (<IconComponentData2 row={row} />)
+        //         return (<ExportDownloadButton row={row} />)
         //     }
-        // }
-
+        // },
+        // rowActions: [
+        //         {
+        //             icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
+        //             onClick: (data: TableDataType) => {
+        //                 exportFile(data.uuid, "pdf");
+        //             },
+        //         }
+        //     ],
     ];
 
     const returnColumns: configType["columns"] = [
-        { key: "osa_code", label: "Code", showByDefault: true },
+        { key: "osa_code", label: "Code", showByDefault: true, render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedReturnRow(row);
+                setShowReturnDrawer(true);
+            }}>{row.osa_code || "-"}</span>
+        ) },
+        // { key: "osa_code", label: "Code", showByDefault: true },
         { key: "order_code", label: "Order Code", showByDefault: true },
         { key: "delivery_code", label: "Delivery Code", showByDefault: true },
         {
@@ -211,13 +246,13 @@ export default function CustomerDetails() {
                 return `${code}${code && name ? " - " : ""}${name}`;
             }
         },
-        {
-            key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
-                const code = row.customer_code || "";
-                const name = row.customer_name || "";
-                return `${code}${code && name ? " - " : ""}${name}`;
-            }
-        },
+        // {
+        //     key: "customer_code", label: "Customer", showByDefault: true, render: (row: TableDataType) => {
+        //         const code = row.customer_code || "";
+        //         const name = row.customer_name || "";
+        //         return `${code}${code && name ? " - " : ""}${name}`;
+        //     }
+        // },
         {
             key: "salesman_code", label: "Sales Team", showByDefault: true, render: (row: TableDataType) => {
                 const code = row.salesman_code || "";
@@ -357,10 +392,11 @@ export default function CustomerDetails() {
 
     const exportFile = async (uuid: string, format: string) => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
             const response = await exportInvoice({ uuid, format }); // send proper body object
             if (response && typeof response === "object" && response.download_url) {
-                await downloadFile(response.download_url);
+                await downloadPDFGlobal(response.download_url, 'invoice' );
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -369,7 +405,7 @@ export default function CustomerDetails() {
             console.error(error);
             showSnackbar("Failed to download data", "error");
         } finally {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
 
@@ -443,12 +479,13 @@ export default function CustomerDetails() {
         [setLoading]
     );
 
-    const exportReturn = async (uuid: string, format: string) => {
+    const exportReturn = async (uuid: string) => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await exportSpecificCustomerReturn({ uuid, format });
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            const response = await exportSpecificCustomerReturn({ uuid, format:"pdf" });
             if (response && typeof response === 'object' && response.download_url) {
-                await downloadFile(response.download_url);
+                await downloadPDFGlobal(response.download_url, 'return');
+                // await downloadFile(response.download_url);
                 showSnackbar("File downloaded successfully", "success");
             } else {
                 showSnackbar("Failed to get download URL", "error");
@@ -456,7 +493,7 @@ export default function CustomerDetails() {
         } catch (error) {
             showSnackbar("Failed to download vehicle data", "error");
         } finally {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            // setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         }
     };
 
@@ -464,7 +501,7 @@ export default function CustomerDetails() {
         <>
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
-                <div className="flex items-center gap-[16px]">
+                <div className="flex items-center gap-[16px] cursor-pointer">
                     <Icon
                         icon="lucide:arrow-left"
                         width={24}
@@ -567,7 +604,7 @@ export default function CustomerDetails() {
                                     ],
                                     filterRenderer: (props) => (
                                         <FilterComponent
-                                            currentDate={true}
+                                            currentMonth={true}
                                             {...props}
                                             onlyFilters={['from_date', 'to_date']}
                                         />
@@ -576,17 +613,18 @@ export default function CustomerDetails() {
                                 },
                                 showNestedLoading: true,
                                 footer: { nextPrevBtn: true, pagination: true },
-                                columns: columns,
+                                columns: salesColumns,
                                 table: {
                                     height: 500,
                                 },
                                 rowSelection: false,
                                 rowActions: [
                                     {
-                                        icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "material-symbols:download",
-                                        onClick: (data: TableDataType) => {
-                                            exportFile(data.uuid, "pdf");
-                                        },
+                                        icon: "lucide:download",
+                                        showLoading: true,
+                                        onClick: (data: TableDataType) => 
+                                            exportFile(data.uuid, "pdf")
+                                        
                                     }
                                 ],
                                 pageSize: 50,
@@ -601,7 +639,7 @@ export default function CustomerDetails() {
 
             {activeTab === "Market Return" ? (<ContainerCard >
 
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full w-full overflow-x-auto">
                     <Table
                         config={{
                             api: {
@@ -613,7 +651,7 @@ export default function CustomerDetails() {
                             header: {
                                 filterRenderer: (props) => (
                                     <FilterComponent
-                                        currentDate={true}
+                                        currentMonth={true}
                                         {...props}
                                         onlyFilters={['from_date', 'to_date']}
                                     />
@@ -629,27 +667,36 @@ export default function CustomerDetails() {
                                     />
                                 ],
                             },
-                            showNestedLoading: true,
                             footer: { nextPrevBtn: true, pagination: true },
+                             rowActions: [
+                                {
+                                    icon:  "lucide:download",
+                                    showLoading: true,
+                                    onClick: (data: TableDataType) => 
+                                        exportReturn(data.uuid)
+                                    
+                                }
+                            ],
                             columns: returnColumns,
                             table: {
                                 height: 500,
                             },
                             rowSelection: false,
-                            rowActions: [
-                                {
-                                    icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "material-symbols:download",
-                                    onClick: (data: TableDataType) => {
-                                        exportReturn(data.uuid, "csv");
-                                    },
-                                }
-                            ],
+                           
                             pageSize: 50,
                         }}
                     />
                 </div>
 
             </ContainerCard>) : ""}
+             <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                      {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                    </Drawer>
+                    {selectedReturnRow && (
+             <Drawer anchor="right" open={showReturnDrawer} onClose={() => { setShowReturnDrawer(false) }} className="p-2" >
+                      {selectedReturnRow && <SideBarDetailPage title="Return" data={selectedReturnRow} onClose={() => setShowReturnDrawer(false)} />}
+                    </Drawer>
+                    )}
         </>
     );
 }

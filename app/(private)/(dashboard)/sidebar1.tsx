@@ -128,12 +128,12 @@ export default function Sidebar({
         toggleFullscreen();
       },
     },
-    {
-      type: "icon",
-      href: "",
-      label: "Notifications",
-      icon: "lucide:bell",
-    },
+    // {
+    //   type: "icon",
+    //   href: "",
+    //   label: "Notifications",
+    //   icon: "lucide:bell",
+    // },
     {
       type: "icon",
       href: "/settings",
@@ -179,7 +179,7 @@ export default function Sidebar({
           {/* logo */}
           <div className="flex items-center justify-center w-full h-[40px]">
             <Image
-              src="/logoWhite.png"
+              src="/logowhite2.png"
               className="p-[10px] cursor-pointer"
               width={152}
               height={222}

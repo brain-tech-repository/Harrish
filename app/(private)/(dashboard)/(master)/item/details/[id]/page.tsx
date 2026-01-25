@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { itemById, itemReturn, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport } from "@/app/services/allApi";
+import { itemById, itemPurchase, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal,exportAllPO } from "@/app/services/allApi";
 import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
@@ -18,6 +18,10 @@ import Image from "next/image";
 import { tabList } from "./tablelist";
 import FilterComponent from "@/app/components/filterComponent";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
+import { formatDate } from "../../../salesTeam/details/[uuid]/page";
+import { exportPurposeOrderViewPdf } from "@/app/services/companyTransaction";
+import Drawer from "@mui/material/Drawer";
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 interface Item {
   id?: number;
   erp_code?: string;
@@ -78,12 +82,15 @@ interface UOM {
 // ];
 
 export default function Page() {
-  const [uomList, setUomList] = useState<Item[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [returnData, setRetrunData] = useState<any[]>([]);
   const [salesData, setSalesData] = useState<any[]>([]);
   const [itemId, setItemId] = useState("");
   // const { id, tabName } = useParams();
+   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
+     const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
+        const [showPODrawer, setShowPODrawer] = useState(false);
   const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; pdf: boolean }>({ csv: false, xlsx: false, pdf: false });
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -192,7 +199,7 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await itemReturn(String(item?.id), { from_date: params?.from_date, to_date: params?.to_date });
+        result = await itemPurchase({ item_id: String(item?.id), from_date: params?.from_date, to_date: params?.to_date });
       } finally {
         setLoading(false);
       }
@@ -214,10 +221,12 @@ export default function Page() {
 
   const downloadSalesPdf = async (uuid: string) => {
     try {
-      setLoading(true);
+      // setLoading(true);
       const response = await exportOrderInvoice({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        const fileName = `sales-${uuid}.pdf`;
+        await downloadPDFGlobal(response.download_url, fileName);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -225,15 +234,16 @@ export default function Page() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
   const downloadPdf = async (uuid: string) => {
     try {
-      setLoading(true);
-      const response = await exportReturneWithDetails({ uuid: uuid, format: "pdf" });
+      // setLoading(true);
+      const response = await exportPurposeOrderViewPdf({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-        await downloadFile(response.download_url);
+        await downloadPDFGlobal(response.download_url, `return.pdf`);
+        // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
       } else {
         showSnackbar("Failed to get download URL", "error");
@@ -241,15 +251,16 @@ export default function Page() {
     } catch (error) {
       showSnackbar("Failed to download file", "error");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
   const exportReturnFile = async (id: string, format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await itemAllReturnExport({ item_id: itemId, format }); // send proper body object
+      const response = await exportAllPO({ item_id: itemId, format }); // send proper body object
       if (response && typeof response === "object" && response.download_url) {
+        // await downloadPDFGlobal(response.download_url, `item-return-${id}`);
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
       } else {
@@ -339,9 +350,10 @@ export default function Page() {
             </div>
             </ContainerCard>
         </div> */}
+      </div>
 
         {/* Right Side - Description, Tabs, and Tab Content */}
-        <div className="flex-1 flex flex-col gap-y-[5px]">
+        {/* <div className="flex-1 flex flex-col gap-y-[5px]"> */}
           {/* {item?.description && (
             <ContainerCard className="w-full">
               <h3 className="text-lg font-semibold mb-3">Description</h3>
@@ -352,7 +364,10 @@ export default function Page() {
           )} */}
 
           {/* Tabs */}
-          <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+         <ContainerCard
+                         className="w-full flex gap-[4px] overflow-x-auto"
+                         padding="5px"
+                     >
             {tabList.map((tab, index) => (
               <div key={index}>
                 <TabBtn
@@ -440,6 +455,8 @@ export default function Page() {
             })
           )}
           {activeTab === "sales" && (
+            <ContainerCard >
+             <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
@@ -463,7 +480,7 @@ export default function Page() {
                 header: {
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -481,30 +498,43 @@ export default function Page() {
                 footer: { nextPrevBtn: true, pagination: true },
                 rowActions: [
                   {
-                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
+                    icon:  "lucide:download",
+                    showLoading: true,
                     onClick: (row: TableDataType) => downloadSalesPdf(row.header_uuid),
                   },
                 ],
                 table: {
-                  height: "400px"
-                },
+                                    height: 400,
+                                },
                 columns: [
-                  { key: "invoice_code", label: "Invoice Code" },
-                  { key: "item_name", label: "Item Name", render: (row: TableDataType) => <>{row.item_code ? row.item_code : ""}{row.item_code && row.item_name ? " - " : ""}{row.item_name ? row.item_name : ""}</> },
-                  { key: "name", label: "UOM" },
-                  { key: "quantity", label: "Quantity", render: (row: TableDataType) => <>{toInternationalNumber(row.quantity, { maximumFractionDigits: 0 })}</> },
-                  { key: "itemvalue", label: "Price", render: (row: TableDataType) => <>{toInternationalNumber(row.itemvalue)}</> }
+                   { key: "invoice_code", label: "Code", render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.invoice_code || "-"}</span>
+        ) },
+                  { key: "invoice_date", label: "Invoice Date",render: (row: TableDataType) => <>{formatDate(row.invoice_date)}</> },
+                  { key: "warehouse_code,warehouse_name", label: "Distributor",render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</> },
+                  { key: "route_code,route_name", label: "Route",render: (row: TableDataType) => <>{row?.route_code} - {row?.route_name}</> },
+                  { key: "salesman_code,salesman_name", label: "Sales Team",render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</> },
+                  { key: "total", label: "Total",render: (row: TableDataType) => <>{toInternationalNumber(row?.total)}</> },
                 ],
                 pageSize: 50
               }}
             />
+            </div>
+            </ContainerCard>
           )}
           {activeTab === "return" && (
+            <ContainerCard >
+            
+                            <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
                   list: async (page: number = 1, pageSize: number = 50) => {
-                    const res = await itemReturn(String(item?.id), { page: page.toString(), per_page: pageSize.toString() });
+                    const res = await itemPurchase( { item_id: String(item?.id), page: page.toString(), limit: pageSize.toString() });
                     if (res.error) {
                       // showSnackbar(res.data?.message || "Unable to fetch Return data", "error");
                       throw new Error(res.data?.message || "Unable to fetch Return data");
@@ -512,9 +542,9 @@ export default function Page() {
                     setRetrunData(res.data);
                     return {
                       data: res.data || [],
-                      total: res.pagination?.totalPages || 1,
-                      currentPage: res.pagination?.page || 1,
-                      pageSize: res.pagination?.pageSize || pageSize,
+                      total: res.meta?.totalPages || 1,
+                      currentPage: res.meta?.page || 1,
+                      pageSize: res.meta?.limit || pageSize,
                     };
 
                   },
@@ -523,7 +553,7 @@ export default function Page() {
                 header: {
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -541,28 +571,46 @@ export default function Page() {
                 rowActions: [
 
                   {
-                    icon: threeDotLoading.pdf ? "eos-icons:three-dots-loading" : "lucide:download",
-                    onClick: (row: TableDataType) => downloadPdf(row.header_uuid),
+                    icon: "lucide:download",
+                    showLoading: true,
+                    onClick: (row: TableDataType) => downloadPdf(row.uuid),
                   },
                 ],
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
-                  height: "400px"
+                  height: "400px",
+                  maxWidth: "1320px",
                 },
                 columns: [
-                  { key: "header_code", label: "Return Code" },
-                  { key: "item_name", label: "Item Name", render: (row: TableDataType) => <>{row.item_code ? row.item_code : ""}{row.item_code && row.item_name ? " - " : ""}{row.item_name ? row.item_name : ""}</> },
-                  // { key: "uom_id", label: "UOM", render: (row: TableDataType) => <>{ (typeof row?.uom_id === "object" && (row?.uom_id as {name: string})?.name) ?? row?.uom ?? row.uom_id}</>},
-                  { key: "name", label: "UOM" },
-                  { key: "item_quantity", label: "Quantity" },
-                  { key: "item_price", label: "Price", render: (row: TableDataType) => <>{toInternationalNumber(row.item_price)}</> }
+                   { key: "order_code", label: "Code", render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedPORow(row);
+                setShowPODrawer(true);
+            }}>{row.order_code || "-"}</span>
+        ) },
+                  { key: "delivery_date", label: "Delivery Date",render: (row: TableDataType) => <>{formatDate(row.delivery_date)}</> },
+                  { key: "customer_code,customer_name", label: "Customer" ,render: (row: TableDataType) => <>{row?.customer_code} - {row?.customer_name}</>},
+                  { key: "salesman_code,salesman_name", label: "Sales Team" ,render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</>},
+                  { key: "total", label: "Total", render: (row: TableDataType) => <>{toInternationalNumber(row.total)}</> },
+                  // { key: "sap_msg", label: "SAP Status" }
                 ],
                 pageSize: 50
               }}
             />
+            </div>
+            </ContainerCard>
           )}
-        </div>
-      </div>
+        {/* </div> */}
+          <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                                    {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                                  </Drawer>
+                                  
+                                    <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
+                                                              {selectedPORow && <SideBarDetailPage title="Purchase Order" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
+                                                            </Drawer>
+                                                            
+
     </>
   );
 }

@@ -109,7 +109,7 @@ export default function StepKeyValue({ keyCombo, keyValue, setKeyValue, location
             {keyCombo.Location && (
               <div className="mb-4">
                 <div className="mb-2 text-base font-medium">
-                  {keyCombo.Location}
+                  {keyCombo.Location === "Warehouse" ? "Distributor" : keyCombo.Location}
                   <span className="text-red-500 ml-1">*</span>
                 </div>
                 <InputFields

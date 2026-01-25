@@ -51,6 +51,7 @@ export default function CompanyCustomers() {
   const { can, permissions } = usePagePermissions();
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
+  const [searchFilterValue, setSearchFilterValue] = useState<string>("");
 
   // Refresh table when permissions load
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function CompanyCustomers() {
       // If clicking the same filter, clear it
       const newFilter = currentStatusFilter === status ? null : status;
       setCurrentStatusFilter(newFilter);
-      
+
       // Refresh the table with the new filter
       setRefreshKey((k) => k + 1);
     } catch (error) {
@@ -86,18 +87,18 @@ export default function CompanyCustomers() {
 
   const fetchCompanyCustomers = async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
     // setLoading(true);
-    
+
     // Build params with all filters
     const params: any = {
       page: pageNo.toString(),
       pageSize: pageSize.toString()
     };
-    
+
     // Add status filter if active (true=1, false=0)
     if (currentStatusFilter !== null) {
       params.status = currentStatusFilter ? "1" : "0";
     }
-    
+
     const res = await getCompanyCustomers(params);
     // setLoading(false);
     if (res.error) {
@@ -117,6 +118,7 @@ export default function CompanyCustomers() {
     // setLoading(true);
     const res = await companyCustomersGlobalSearch({ query: searchQuery, pageSize: pageSize.toString(), page: page.toString() });
     // setLoading(false);
+    setSearchFilterValue(searchQuery);
     if (res.error) {
       showSnackbar(res.data.message || "Failed to fetch search results", "error");
       throw new Error(res.data.message);
@@ -190,7 +192,7 @@ export default function CompanyCustomers() {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }))
-      const response = await exportCompanyCustomerData({ format });
+      const response = await exportCompanyCustomerData({ format, search: searchFilterValue, filter: { status: currentStatusFilter == false ? "0" : "1" } });
       if (response && typeof response === 'object' && response.url) {
         await downloadFile(response.url);
         showSnackbar("File downloaded successfully ", "success");

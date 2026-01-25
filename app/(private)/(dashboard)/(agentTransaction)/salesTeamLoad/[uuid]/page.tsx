@@ -104,6 +104,8 @@ export default function AddEditSalesmanLoad() {
     project_type: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Track per-row errors for PCS and CSE
+  const [rowQtyErrors, setRowQtyErrors] = useState<{ [key: string]: { pcs?: string; cse?: string } }>({});
   const [refreshKey, setRefreshKey] = useState(0);
   const [itemData, setItemData] = useState<TableDataType[]>([]);
   const [isItemsLoaded, setIsItemsLoaded] = useState(false);
@@ -215,7 +217,7 @@ export default function AddEditSalesmanLoad() {
 
               return {
                 id: stockItem.item_id,
-                item_code: stockItem.item_code,
+                erp_code: stockItem.erp_code,
                 name: stockItem.item_name,
                 cse_qty: "",
                 pcs_qty: "",
@@ -271,33 +273,73 @@ export default function AddEditSalesmanLoad() {
       [field]: value.replace(/[^0-9]/g, ''), // allow only numbers
     };
     setItemData(updated);
-  };
 
-  const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
-    const updated = [...itemData];
+    // Validation logic
     const row = updated[index];
-    const pcs_upc = getUpc(row.uom, 'primary');
-    const cse_upc = getUpc(row.uom, 'secondary');
+    const secondary_upc = getUpc(row.uom, 'secondary');
     const availableStock = getAvailableStock(row);
-    let pcs_qty = Number(row.pcs_qty || 0);
-    let cse_qty = Number(row.cse_qty || 0);
-
-    // Clamp values so total does not exceed available stock
-    let total = pcs_qty * pcs_upc + cse_qty * cse_upc;
-    if (total > availableStock) {
-      if (field === 'pcs_qty') {
-        pcs_qty = Math.max(0, Math.floor((availableStock - cse_qty * cse_upc) / pcs_upc));
+    const pcs_qty = Number(field === 'pcs_qty' ? value : row.pcs_qty || 0);
+    const cse_qty = Number(field === 'cse_qty' ? value : row.cse_qty || 0);
+    const maxCseQty = secondary_upc > 0 ? Math.floor(availableStock / secondary_upc) : 0;
+    const remainingPcs = Math.max(0, availableStock - cse_qty * secondary_upc);
+    let errorMsg = '';
+    let newRowErrors = { ...(rowQtyErrors[index] || {}) };
+    if (field === 'pcs_qty') {
+      if (pcs_qty > remainingPcs) {
+        errorMsg = 'Entered qty is greater than stock';
+        newRowErrors.pcs = errorMsg;
       } else {
-        cse_qty = Math.max(0, Math.floor((availableStock - pcs_qty * pcs_upc) / cse_upc));
+        newRowErrors.pcs = '';
+      }
+    } else if (field === 'cse_qty') {
+      if (cse_qty > maxCseQty) {
+        errorMsg = 'Entered qty is greater than stock';
+        newRowErrors.cse = errorMsg;
+      } else {
+        newRowErrors.cse = '';
       }
     }
-    updated[index] = {
-      ...row,
-      pcs_qty: pcs_qty ? pcs_qty.toString() : '',
-      cse_qty: cse_qty ? cse_qty.toString() : '',
-    };
-    setItemData(updated);
+    setRowQtyErrors((prev) => ({ ...prev, [index]: newRowErrors }));
   };
+
+  // const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
+  //   const updated = [...itemData];
+  //   const row = updated[index];
+  //   const pcs_upc = getUpc(row.uom, 'primary');
+  //   const cse_upc = getUpc(row.uom, 'secondary');
+  //   const availableStock = getAvailableStock(row);
+  //   let pcs_qty = Number(row.pcs_qty || 0);
+  //   let cse_qty = Number(row.cse_qty || 0);
+
+  //   if (field === 'cse_qty') {
+  //     // Clamp cse_qty so it doesn't exceed available stock
+  //     const maxCseQty = cse_upc > 0 ? Math.floor(availableStock / cse_upc) : 0;
+  //     if (cse_qty > maxCseQty) cse_qty = maxCseQty;
+  //     // After cse_qty is set, calculate remaining for pcs
+  //     const remainingForPcs = availableStock - (cse_qty * cse_upc);
+  //     // If user hasn't entered pcs_qty or it's 0, set it to remainingForPcs
+  //     if (!row.pcs_qty || Number(row.pcs_qty) === 0) {
+  //       pcs_qty = Math.max(0, remainingForPcs);
+  //     } else {
+  //       // If user entered a value, clamp it
+  //       pcs_qty = Math.max(0, Math.min(pcs_qty, remainingForPcs));
+  //     }
+  //   } else if (field === 'pcs_qty') {
+  //     // Clamp pcs_qty so it doesn't exceed available stock minus cse_qty * cse_upc
+  //     const remainingForPcs = availableStock - (cse_qty * cse_upc);
+  //     pcs_qty = Math.max(0, Math.min(pcs_qty, remainingForPcs));
+  //     // Optionally, clamp cse_qty if needed (not strictly necessary)
+  //     const maxCseQty = cse_upc > 0 ? Math.floor(availableStock / cse_upc) : 0;
+  //     if (cse_qty > maxCseQty) cse_qty = maxCseQty;
+  //   }
+
+  //   updated[index] = {
+  //     ...row,
+  //     pcs_qty: pcs_qty ? pcs_qty.toString() : '',
+  //     cse_qty: cse_qty ? cse_qty.toString() : '',
+  //   };
+  //   setItemData(updated);
+  // };
 
 
 
@@ -321,6 +363,39 @@ export default function AddEditSalesmanLoad() {
   // useEffect(() => {
   //   fetchItem("");
   // }, []);
+const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
+  const updated = [...itemData];
+  const row = updated[index];
+
+  const secondary_upc = getUpc(row.uom, 'secondary');
+  const availableStock = getAvailableStock(row);
+
+  let pcs_qty = Number(row.pcs_qty || 0);
+  let cse_qty = Number(row.cse_qty || 0);
+
+  // Clamp CSE to its own max
+  const maxCseQty = secondary_upc > 0 ? Math.floor(availableStock / secondary_upc) : 0;
+  if (cse_qty > maxCseQty) cse_qty = maxCseQty;
+
+  if (field === 'pcs_qty') {
+    // Only clamp PCS to allowed max, do NOT change CSE
+    const remainingPcs = Math.max(0, availableStock - cse_qty * secondary_upc);
+    if (pcs_qty > remainingPcs) pcs_qty = remainingPcs;
+    // Do NOT change cse_qty
+  } else if (field === 'cse_qty') {
+    // Clamp CSE to max, and clamp PCS to remaining
+    const remainingPcs = Math.max(0, availableStock - cse_qty * secondary_upc);
+    if (pcs_qty > remainingPcs) pcs_qty = remainingPcs;
+  }
+
+  updated[index] = {
+    ...row,
+    cse_qty: cse_qty ? cse_qty.toString() : '',
+    pcs_qty: pcs_qty ? pcs_qty.toString() : '',
+  };
+
+  setItemData(updated);
+};
 
   const [code, setCode] = useState("");
   useEffect(() => {
@@ -430,33 +505,64 @@ export default function AddEditSalesmanLoad() {
       setErrors({});
       setSubmitting(true);
 
-      let validItems = itemData.filter((i) => (i.cse_qty && Number(i.cse_qty) > 0) || (i.pcs_qty && Number(i.pcs_qty) > 0));
+
+      // Always generate details for items with any qty entered in BOX (cse_qty) or OUT (pcs_qty)
+      const validItems = itemData.filter((i) => {
+        const cseQty = Number(i.cse_qty || 0);
+        const pcsQty = Number(i.pcs_qty || 0);
+        return cseQty > 0 || pcsQty > 0;
+      });
 
       if (validItems.length === 0) {
         showSnackbar("Please add at least one item with quantity", "error");
         setSubmitting(false);
         return;
       }
-      const details: any = validItems.flatMap((singleItems: any) => {
-        if (!Array.isArray(singleItems.uom)) return [];
-        return singleItems.uom.flatMap((singleUom: any) => {
-          const name = singleUom.name?.toUpperCase?.() || "";
-          const uomType = singleUom.uom_type?.toUpperCase?.() || "";
-          const isPcs = name.includes("PCS") || uomType.includes("OUT");
-          const qty = isPcs ? singleItems.pcs_qty : singleItems.cse_qty;
 
-          if (qty && Number(qty) > 0) {
-            return [{
+      // Only generate details for the correct UOM type: if OUT (pcs_qty) is filled, only include the UOM with type 'primary' or name containing 'OUT' or 'PCS'.
+      // If BOX (cse_qty) is filled, only include the UOM with type 'secondary' or name containing 'BOX' or 'CSE'.
+      const details = validItems.flatMap((singleItems: any) => {
+        if (!Array.isArray(singleItems.uom)) return [];
+        const cseQty = Number(singleItems.cse_qty || 0);
+        const pcsQty = Number(singleItems.pcs_qty || 0);
+        let detailsArr: any[] = [];
+        if (cseQty > 0) {
+          // Find the UOM for cse_qty (BOX)
+          const cseUom = singleItems.uom.find((u: any) => {
+            const name = (u.name || '').toUpperCase();
+            const type = (u.uom_type || '').toUpperCase();
+            return type === 'SECONDARY' || name.includes('BOX') || name.includes('CSE');
+          });
+          if (cseUom) {
+            detailsArr.push({
               item_id: Number(singleItems.id),
-              qty: Number(qty),
-              uom: singleUom.uom_id ?? singleUom.id ?? singleUom.uom?.id,
-            }];
+              qty: cseQty,
+              uom: cseUom.uom_id ?? cseUom.id ?? cseUom.uom?.id,
+              type: 'cse_qty',
+            });
           }
-          return [];
-        });
+        }
+        if (pcsQty > 0) {
+          // Find the UOM for pcs_qty (OUT)
+          const pcsUom = singleItems.uom.find((u: any) => {
+            const name = (u.name || '').toUpperCase();
+            const type = (u.uom_type || '').toUpperCase();
+            return type === 'PRIMARY' || name.includes('OUT') || name.includes('PCS');
+          });
+          if (pcsUom) {
+            detailsArr.push({
+              item_id: Number(singleItems.id),
+              qty: pcsQty,
+              uom: pcsUom.uom_id ?? pcsUom.id ?? pcsUom.uom?.id,
+              type: 'pcs_qty',
+            });
+          }
+        }
+        return detailsArr;
       });
 
       const payload: any = {
+        osa_code: code,
         salesman_type: Number(form.salesman_type),
         warehouse_id: Number(form.warehouse),
         route_id: Number(form.route),
@@ -478,13 +584,13 @@ export default function AddEditSalesmanLoad() {
       if (res?.error) {
         showSnackbar(res.data?.message || "Failed to submit form", "error");
       } else {
+        router.push("/salesTeamLoad");
         showSnackbar(
           isEditMode
             ? "Sales Team Load updated successfully"
             : "Sales Team Load added successfully",
           "success"
         );
-        router.push("/salesTeamLoad");
       }
     } catch (err) {
       if (err instanceof yup.ValidationError) {
@@ -556,7 +662,7 @@ export default function AddEditSalesmanLoad() {
           </div>
           <div className="flex flex-col items-end">
             <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">
-              Sales Team Load
+              Load
             </span>
             <span className="text-primary text-[14px] tracking-[10px]">
               #{code}
@@ -643,7 +749,7 @@ export default function AddEditSalesmanLoad() {
             label="Sales Team"
             name="salesman"
             value={form.salesman}
-            disabled={form.salesman_type === "6" ? !form.warehouse : !form.route || form.salesman_type === "2" ? !form.warehouse : false}
+            disabled={!form.warehouse || (form.salesman_type !== "6" && !form.route)}
             searchable={true}
             options={
               form.salesman_type === "6"
@@ -670,13 +776,12 @@ export default function AddEditSalesmanLoad() {
                 key: "item",
                 label: "Items",
                 render: (row: TableDataType) => {
-                  const currentItem = itemData.find((item) => item.id === row.id);
                   return (
                     <span>
-                      {row.item_code && row.name
-                        ? `${row.item_code} - ${row.name}`
-                        : row.item_code
-                          ? row.item_code
+                      {row.erp_code && row.name
+                        ? `${row.erp_code} - ${row.name}`
+                        : row.erp_code
+                          ? row.erp_code
                           : row.name
                             ? row.name
                             : "-"}
@@ -696,63 +801,165 @@ export default function AddEditSalesmanLoad() {
                   return <span>{stockQty !== undefined ? stockQty : "0"}</span>;
                 },
               },
-              {
-                key: "cse_qty",
-                label: "Secondary",
-                render: (row) => {
-                  const pcs_upc = getUpc(row.uom, 'primary');
-                  const cse_upc = getUpc(row.uom, 'secondary');
-                  const availableStock = getAvailableStock(row);
-                  const pcs_qty = Number(row.pcs_qty || 0);
-                  const maxCseQty = cse_upc > 0 ? Math.floor((availableStock - pcs_qty * pcs_upc) / cse_upc) : 0;
-                  return (
-                    <InputFields
-                      label=""
-                      type="number"
-                      name="cse_qty"
-                      value={row.cse_qty}
-                      min={0}
-                      max={maxCseQty}
-                      disabled={!row.uom || row.uom.length === 0}
-                      trailingElement={
-                        <span className="text-sm text-gray-500">{maxCseQty}  {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'secondary')?.name}</span>
-                      }
-                      onChange={(e) => handleQtyInput(Number(row.idx), 'cse_qty', e.target.value)}
-                      onBlur={() => handleQtyBlur(Number(row.idx), 'cse_qty')}
-                    />
-                  );
-                },
-              },
+              // {
+              //   key: "cse_qty",
+              //   label: "Secondary",
+              //   render: (row) => {
+              //     const pcs_upc = getUpc(row.uom, 'primary');
+              //     const cse_upc = getUpc(row.uom, 'secondary');
+              //     const availableStock = getAvailableStock(row);
+              //     const pcs_qty = Number(row.pcs_qty || 0);
+              //     // Clamp cse_qty so total does not exceed available stock
+              //     const maxCseQty = cse_upc > 0 ? Math.floor((availableStock - pcs_qty * pcs_upc) / cse_upc) : 0;
+              //     const value = Math.max(0, Math.min(Number(row.cse_qty || 0), maxCseQty));
+              //     return (
+              //       <InputFields
+              //         label=""
+              //         type="number"
+              //         integerOnly
+              //         name="cse_qty"
+              //         value={String(value)}
+              //         min={0}
+              //         max={maxCseQty}
+              //         disabled={!row.uom || row.uom.length === 0}
+              //         trailingElement={
+              //           <span className="text-sm text-gray-500">{maxCseQty}  {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'secondary')?.name}</span>
+              //         }
+              //         onChange={(e) => {
+              //           let val = e.target.value.replace(/[^0-9]/g, '');
+              //           let num = Number(val);
+              //           if (num > maxCseQty) num = maxCseQty;
+              //           handleQtyInput(Number(row.idx), 'cse_qty', num.toString());
+              //         }}
+              //         onBlur={() => handleQtyBlur(Number(row.idx), 'cse_qty')}
+              //       />
+              //     );
+              //   },
+              // },
+{
+  key: "cse_qty",
+  label: "Secondary",
+  render: (row) => {
+    const secondary_upc = getUpc(row.uom, 'secondary');
+    const availableStock = getAvailableStock(row);
+    const maxCseQty = secondary_upc > 0 ? Math.floor(availableStock / secondary_upc) : 0;
+    const idx = row.idx;
+    const errorMsg = rowQtyErrors[idx]?.cse;
 
+    return (
+      <div>
+        <InputFields
+          type="number"
+          integerOnly
+          value={row.cse_qty || ''}
+          min={0}
+          // max={maxCseQty} // Remove max to allow any value
+          trailingElement={
+            <span className="text-sm text-gray-500">
+              {maxCseQty}{' '}
               {
-                key: "pcs_qty",
-                label: "Primary",
-                render: (row) => {
-                  const pcs_upc = getUpc(row.uom, 'primary');
-                  const cse_upc = getUpc(row.uom, 'secondary');
-                  const availableStock = getAvailableStock(row);
-                  const cse_qty = Number(row.cse_qty || 0);
-                  const maxPcsQty = pcs_upc > 0 ? Math.floor((availableStock - cse_qty * cse_upc) / pcs_upc) : 0;
-                  return (
-                    <InputFields
-                      label=""
-                      type="number"
-                      name="pcs_qty"
-                      value={row.pcs_qty}
-                      min={0}
-                      max={maxPcsQty}
-                      disabled={!row.uom || row.uom.length === 0}
-                      trailingElement={
-                        <span className="text-sm text-gray-500">{maxPcsQty} {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'primary')?.name}</span>
-                      }
-                      onChange={(e) => handleQtyInput(Number(row.idx), 'pcs_qty', e.target.value)}
-                      onBlur={() => handleQtyBlur(Number(row.idx), 'pcs_qty')}
-                    />
-                  );
-                },
-              },
+                row.uom?.find(
+                  (u: any) => u.uom_type === 'secondary'
+                )?.name
+              }
+            </span>
+          }
+          onChange={(e) =>
+            handleQtyInput(Number(row.idx), 'cse_qty', e.target.value)
+          }
+          error={errorMsg}
+        />
+        
+      </div>
+    );
+  },
+},
+{
+  key: "pcs_qty",
+  label: "Primary",
+  render: (row) => {
+    const secondary_upc = getUpc(row.uom, 'secondary');
+    const availableStock = getAvailableStock(row);
+    const secondaryQty = secondary_upc > 0 ? Math.floor(availableStock / secondary_upc) : 0;
+    const primaryQty = availableStock - (secondaryQty * secondary_upc);
+    const idx = row.idx;
+    const errorMsg = rowQtyErrors[idx]?.pcs;
+
+    return (
+      <div>
+        <InputFields
+          type="number"
+          integerOnly
+          value={row.pcs_qty || ''}
+          min={0}
+          // max={primaryQty} // Remove max to allow any value
+          trailingElement={
+            <span className="text-sm text-gray-500">
+              {primaryQty} {
+                row.uom?.find(
+                  (u: any) => u.uom_type === 'primary'
+                )?.name
+              } 
+            </span>
+          }
+          onChange={(e) =>
+            handleQtyInput(Number(row.idx), 'pcs_qty', e.target.value)
+          }
+          error={errorMsg}
+        />
+        {/* {errorMsg && (
+          <div style={{ color: 'red', fontSize: 12 }}>{errorMsg}</div>
+        )} */}
+      </div>
+    );
+  },
+}
+
+
+              // {
+              //   key: "pcs_qty",
+              //   label: "Primary",
+              //   render: (row) => {
+              //     const pcs_upc = getUpc(row.uom, 'primary');
+              //     const cse_upc = getUpc(row.uom, 'secondary');
+              //     const availableStock = getAvailableStock(row);
+              //     const cse_qty = Number(row.cse_qty || 0);
+              //     // Calculate remaining pcs after cse_qty is filled
+              //     const usedByCse = cse_qty * cse_upc;
+              //     const remainingPcs = Math.max(0, availableStock - usedByCse);
+              //     // Clamp pcs_qty so total does not exceed available stock
+              //     const maxPcsQty = pcs_upc > 0 ? Math.floor(remainingPcs / pcs_upc) : 0;
+              //     const value = Math.max(0, Math.min(Number(row.pcs_qty || 0), maxPcsQty));
+              //     // Show the actual remaining pcs after cse_qty is filled (not maxPcsQty)
+              //     const displayPcs = pcs_upc > 0 ? remainingPcs - (maxPcsQty * pcs_upc) : remainingPcs;
+              //     return (
+              //       <InputFields
+              //         label=""
+              //         type="number"
+              //         integerOnly
+              //         name="pcs_qty"
+              //         value={String(value)}
+              //         min={0}
+              //         max={maxPcsQty}
+              //         disabled={!row.uom || row.uom.length === 0}
+              //         trailingElement={
+              //           <span className="text-sm text-gray-500">
+              //             {displayPcs} {row.uom?.find((u: { uom_type: string; name: string }) => u.uom_type === 'primary')?.name}
+              //           </span>
+              //         }
+              //         onChange={(e) => {
+              //           let val = e.target.value.replace(/[^0-9]/g, '');
+              //           let num = Number(val);
+              //           if (num > maxPcsQty) num = maxPcsQty;
+              //           handleQtyInput(Number(row.idx), 'pcs_qty', num.toString());
+              //         }}
+              //         onBlur={() => handleQtyBlur(Number(row.idx), 'pcs_qty')}
+              //       />
+              //     );
+              //   },
+              // },
             ],
-            pageSize: itemData.length > 0 ? itemData.length : 10
+            pageSize: itemData.length > 0 ? itemData.length : 100000
           }}
         />
 
@@ -777,14 +984,22 @@ export default function AddEditSalesmanLoad() {
             className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
             // onClick={() => router.push("/selesTeamLoad")}
             onClick={() => router.back()}
+            
 
           >
             Cancel
           </button>
           <SidebarBtn
             isActive={true}
+            leadingIcon="mdi:check"
             label={submitting ? "Creating Load..." : "Create Load"}
             onClick={handleSubmit}
+            disabled={
+              submitting || !form.salesman ||
+              Object.values(rowQtyErrors).some(
+                (err) => (err && (err.pcs || err.cse))
+              )
+            }
           />
         </div>
       </ContainerCard>

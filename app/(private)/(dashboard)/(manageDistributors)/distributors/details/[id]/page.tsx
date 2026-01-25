@@ -24,7 +24,7 @@ import FilterComponent from "@/app/components/filterComponent";
 import {  exportReturneWithDetails } from "@/app/services/agentTransaction";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import { CustomTableSkelton } from "@/app/components/customSkeleton";
-
+import { SideBarDetailPage } from "@/app/components/sideDrawer";
 interface Item {
     id: string;
     sap_id: string;
@@ -79,10 +79,15 @@ export default function ViewPage() {
     const { customerSubCategoryOptions, channelOptions, warehouseOptions, routeOptions } = useAllDropdownListData();
     const [routeId, setRouteId] = useState<string>("");
     const [refreshKey, setRefreshKey] = useState(0);
+     const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+        const [showDrawer, setShowDrawer] = useState(false);
+         const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
+            const [showPODrawer, setShowPODrawer] = useState(false);
     const [stockData, setStockData] = useState<TableDataType[]>([]);
     const [salesData, setSalesData] = useState<TableDataType[]>([]);
     const [returnData, setReturnData] = useState<TableDataType[]>([]);
     const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
+    const [threeDotLoadingReturn, setThreeDotLoadingReturn] = useState<{ csv: boolean; xlsx: boolean }>({ csv: false, xlsx: false });
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [UUIDAgentCustomer, setUUIDAgentCustomer] = useState<string>("");
@@ -257,16 +262,23 @@ export default function ViewPage() {
     
 
     const salesColumns: configType["columns"] = [
-        {
-            key: "invoice_code",
-            label: "Invoice Number",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.invoice_code ? data.invoice_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
+         { key: "invoice_code", label: "Code",showByDefault: true, render: (row: TableDataType) => (
+                    <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedRow(row);
+                        setShowDrawer(true);
+                    }}>{row.invoice_code || "-"}</span>
+                ) },
+        // {
+        //     key: "invoice_code",
+        //     label: "Invoice Number",
+        //     render: (data: TableDataType) => (
+        //         <span className="font-semibold text-[#181D27] text-[14px]">
+        //             {data.invoice_code ? data.invoice_code : "-"}
+        //         </span>
+        //     ),
+        //     showByDefault: true,
+        // },
         {
             key: "invoice_date",
             label: "Invoice Date",
@@ -329,16 +341,13 @@ export default function ViewPage() {
 
     ];
     const returnColumns: configType["columns"] = [
-        {
-            key: "osa_code",
-            label: "Code",
-            render: (data: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                    {data.osa_code ? data.osa_code : "-"}
-                </span>
-            ),
-            showByDefault: true,
-        },
+        { key: "osa_code", label: "Code", showByDefault:true, render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedPORow(row);
+                setShowPODrawer(true);
+            }}>{row.osa_code || "-"}</span>
+        ) },
         // {
         //     key: "return_date",
         //     label: "Return Date",
@@ -367,14 +376,14 @@ export default function ViewPage() {
             showByDefault: true,
         },
 
-        {
-            key: "warehouse_code,warehouse_name",
-            label: "Distributor",
-            render: (row: TableDataType) => {
-                return row.warehouse_code && row.warehouse_name ? `${row.warehouse_code} - ${row.warehouse_name}` : "-";
-            },
-            showByDefault: true,
-        },
+        // {
+        //     key: "warehouse_code,warehouse_name",
+        //     label: "Distributor",
+        //     render: (row: TableDataType) => {
+        //         return row.warehouse_code && row.warehouse_name ? `${row.warehouse_code} - ${row.warehouse_name}` : "-";
+        //     },
+        //     showByDefault: true,
+        // },
         {
             key: "route_code",
             label: "Route",
@@ -1218,7 +1227,7 @@ export default function ViewPage() {
 
         const exportReturnFile = async (uuid: string, format: string) => {
             try {
-                setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+                setThreeDotLoadingReturn((prev) => ({ ...prev, [format]: true }));
                 const response = await exportReturnByWarehouse({ warehouse_id:uuid, format,from_date: params?.start_date, to_date: params?.end_date }); // send proper body object
                 if (response && typeof response === "object" && response.download_url) {
                     await downloadFile(response.download_url);
@@ -1230,7 +1239,7 @@ export default function ViewPage() {
                 console.error(error);
                 showSnackbar("Failed to download data", "error");
             } finally {
-                setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+                setThreeDotLoadingReturn((prev) => ({ ...prev, [format]: false }));
             }
         };
         const exportSalesFile = async (uuid: string, format: string) => {
@@ -1490,7 +1499,7 @@ export default function ViewPage() {
                                 config={{
                                     api: {
                                         list: (...args) => salesByAgentCustomer(...args, UUIDAgentCustomer),
-                                        filterBy: (...args) => filterBySales(...args, UUIDAgentCustomer)
+                                        filterBy: (payload, pageSize) => filterBySales(payload, pageSize, UUIDAgentCustomer)
                                     },
                                     header: {
                                         filterByFields: [
@@ -1581,7 +1590,6 @@ export default function ViewPage() {
                                                     warehouse_id: warehouseId,
                                                     date_filter: filterValue,
                                                 });
-                                                console.log("Filter API response:", res);
                                                 // Accept either `stocks` or `data` array from the API; fallback to empty array
                                                 const apiStocks = Array.isArray(res?.stocks)
                                                     ? res!.stocks
@@ -1696,7 +1704,7 @@ export default function ViewPage() {
                                                             ],
                                 filterRenderer: (props) => (
                                                                         <FilterComponent
-                                                                        currentDate={true}
+                                                                        currentMonth={true}
                                                                           {...props}
                                                                           onlyFilters={['from_date', 'to_date']}
                                                                         />
@@ -1737,14 +1745,14 @@ export default function ViewPage() {
                                                                 <ExportDropdownButton
                                                                 disabled={returnData?.length === 0}
                                                                    keyType="excel"
-                                                                    threeDotLoading={threeDotLoading}
+                                                                    threeDotLoading={threeDotLoadingReturn}
                                                                     exportReturnFile={exportReturnFile}
                                                                     uuid={warehouseId}
                                                                 />
                                                             ],
                                 filterRenderer: (props) => (
                                                                         <FilterComponent
-                                                                        currentDate={true}
+                                                                        currentMonth={true}
                                                                           {...props}
                                                                           onlyFilters={['from_date', 'to_date']}
                                                                         />
@@ -1768,6 +1776,14 @@ export default function ViewPage() {
 
                 // </ContainerCard>
             )}
+
+             <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                                                {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                                              </Drawer>
+                                              
+                                                <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
+                                                                          {selectedPORow && <SideBarDetailPage title="Return" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
+                                                                        </Drawer>
         </>
     );
 }

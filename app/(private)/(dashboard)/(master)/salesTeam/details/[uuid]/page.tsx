@@ -19,11 +19,11 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { exportInvoice, exportOrderInvoice } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import Skeleton from "@mui/material/Skeleton";
-import Drawer from "@mui/material/Drawer";
 import ExportDropdownButton from "@/app/components/ExportDropdownButton";
 import ImageThumbnail from "@/app/components/ImageThumbnail";
 import Map from "@/app/components/map";
-
+import {SideBarDetailPage} from "@/app/components/sideDrawer";
+import Drawer from "@mui/material/Drawer";
 interface Salesman {
   id?: string | number;
   uuid?: string;
@@ -74,6 +74,7 @@ interface Salesman {
 const IconComponentData = ({ row }: { row: TableDataType }) => {
   const [smallLoading, setSmallLoading] = useState(false)
   const { showSnackbar } = useSnackbar();
+  
   const [salesData, setSalesData] = useState<any[]>([]);
   const exportFile = async (uuid: string, format: string) => {
     try {
@@ -155,7 +156,8 @@ export function formatDate(dateString: string) {
 }
 
 export default function Page() {
-
+    const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+    const [showDrawer, setShowDrawer] = useState(false);
   const { id, tabName }: any = useParams();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -182,13 +184,15 @@ export default function Page() {
 
 
   const columns: configType["columns"] = [
+     { key: "invoice_code", label: "Code", render: (row: TableDataType) => (
+            <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                e.stopPropagation();
+                setSelectedRow(row);
+                setShowDrawer(true);
+            }}>{row.invoice_code || "-"}</span>
+        ) },
     { key: "invoice_date", label: "Date", render: (row: TableDataType) => row.invoice_date ? formatDate(row.invoice_date) : "-" },
     { key: "invoice_time", label: "Time" },
-    {
-      key: "invoice_code",
-      label: "Invoice Number",
-      // render: (row: TableDataType) => (row as any).invoice_number || (row as any).invoice_code || "-"
-    },
     {
       key: "customer_id",
       label: "Customer",
@@ -550,7 +554,7 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState("overview");
   const tabList = [
     { key: "overview", label: "Overview" },
-    { key: "attendence", label: "Attendence" },
+    { key: "attendence", label: "Attendance" },
     { key: "sales", label: "Sales" },
     // { key: "order", label: "Purchase Order" },
   ];
@@ -993,7 +997,7 @@ export default function Page() {
                   searchBar: false,
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -1052,7 +1056,7 @@ export default function Page() {
                   searchBar: false,
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -1099,7 +1103,7 @@ export default function Page() {
                   searchBar: false,
                   filterRenderer: (props) => (
                     <FilterComponent
-                      currentDate={true}
+                      currentMonth={true}
                       {...props}
                       onlyFilters={['from_date', 'to_date']}
                     />
@@ -1150,7 +1154,13 @@ export default function Page() {
           />
         </div>
       </Drawer>
+
+
       <br />
+
+       <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+                            {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+                          </Drawer>
     </>
   );
 }

@@ -12,6 +12,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { formatDate } from "../../../(master)/salesTeam/details/[uuid]/page";
 
 
 // ✅ TYPE FOR INSTALLATION REPORT API ITEM
@@ -46,29 +47,21 @@ const columns = [
         render: (row: any) => <p>{row.iro_code || "-"}</p>,
     },
     {
-        key: "warehouse_code",
-        label: "Warehouse Code",
-        render: (row: any) => <p>{row.warehouse_code || "-"}</p>,
+        key: "warehouse_code,warehouse_name",
+        label: "Distributor",
+        render: (row: any) => <p>{row.warehouse_code || ""} - {row.warehouse_name || ""}</p>,
     },
+   
     {
-        key: "warehouse_name",
-        label: "Warehouse Name",
-        render: (row: any) => <p>{row.warehouse_name || "-"}</p>,
+        key: "salesman_code,salesman_name",
+        label: "Sales Team",
+        render: (row: any) => <p>{row.salesman_code || ""} - {row.salesman_name || ""}</p>,
     },
-    {
-        key: "salesman_code",
-        label: "Salesman Code",
-        render: (row: any) => <p>{row.salesman_code || "-"}</p>,
-    },
-    {
-        key: "salesman_name",
-        label: "Salesman Name",
-        render: (row: any) => <p>{row.salesman_name || "-"}</p>,
-    },
+    
     {
         key: "schedule_date",
         label: "Schedule Date",
-        render: (row: any) => <p>{row.schedule_date || "-"}</p>,
+        render: (row: any) => <p>{formatDate(row.schedule_date || "-")}</p>,
     },
     {
         key: "count",
@@ -181,9 +174,9 @@ export default function BulkTransferListPage() {
 
 
     // Refresh table when dropdown options load
-    useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions]);
+    // useEffect(() => {
+    //     setRefreshKey((k) => k + 1);
+    // }, [warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions]);
 
 
     return (
@@ -253,7 +246,7 @@ export default function BulkTransferListPage() {
 
                     columns,
 
-                    rowSelection: true,
+                    // rowSelection: true,
                     // rowActions: [
                     //     {
                     //         icon: "lucide:eye",

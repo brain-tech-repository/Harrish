@@ -29,6 +29,8 @@ interface StepperFormProps {
   nextButtonText?: string;
   submitButtonText?: string;
   className?: string;
+  close?: boolean;
+  closeFunction?: any;
 }
 
 export default function StepperForm({
@@ -47,12 +49,13 @@ export default function StepperForm({
   nextButtonText = "Save & Next",
   submitButtonText = "Submit",
   className = "",
+  close= false,
+  closeFunction
 }: StepperFormProps) {
   const isLastStep = currentStep === steps.length;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setLoading } = useLoading();
   const router = useRouter();
-
   // Keyboard shortcuts: Ctrl+ArrowLeft for Back, Ctrl+ArrowRight for Next
   useEffect(() => {
     const isEditableTarget = (el: EventTarget | null) => {
@@ -133,10 +136,10 @@ export default function StepperForm({
   const handleSubmit = async () => {
     onNext && onNext();
     setIsSubmitting(true);
-    setLoading(true);
+    // setLoading(true);
     if (onSubmit) {
       await onSubmit();
-      setLoading(false);
+      // setLoading(false);
 
       setTimeout(() => {
         setIsSubmitting(false);
@@ -194,8 +197,13 @@ export default function StepperForm({
             if (isSubmitting) return;
             // If we're on the first step, treat this as a cancel and go back in history
             if (currentStep === 1) {
+              if(close){
+                closeFunction()
+                return;
+              }else{
               router.back();
               return;
+              }
             }
             // Otherwise call provided onBack handler
             if (onBack) onBack();

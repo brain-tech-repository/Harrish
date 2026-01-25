@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
+import { formatWithPattern } from "@/app/utils/formatDate";
 interface Payment {
   id: number;
   uuid: string;
@@ -41,7 +42,6 @@ interface Payment {
 export default function PaymentListPage() {
   const { can, permissions } = usePagePermissions();
   const [selectedPayment, setSelectedPayment] = useState<string>("");
-  const { warehouseOptions, salesmanOptions, routeOptions, regionOptions, areaOptions, companyOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,15 +52,6 @@ export default function PaymentListPage() {
     }
   }, [permissions]);
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureCompanyLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
 
   const columns: configType["columns"] = [
     { key: "osa_code", label: "OSA Code", },
@@ -70,7 +61,14 @@ export default function PaymentListPage() {
     { key: "account_number", label: "Account Number", },
     { key: "amount", label: "Amount", },
     { key: "recipt_no", label: "Receipt Number", },
-    { key: "recipt_date", label: "Receipt Date", },
+    { key: "recipt_date", label: "Receipt Date",render: (row: TableDataType) => {
+      return formatWithPattern(
+                new Date(row.recipt_date),
+                "DD MMM YYYY",
+                "en-GB",
+              );
+            }
+    },
     {
       key: "Agent_bank_name",
       label: "Agent Bank",
@@ -135,11 +133,81 @@ export default function PaymentListPage() {
     return Object.entries(params).sort().map(([k, v]) => `${k}:${v}`).join("|");
   };
 
+  // Memoize initial API result so it only loads once per mount/refreshKey
+  const [initialPaymentData, setInitialPaymentData] = useState<listReturnType | null>(null);
+  const [initialPaymentParams, setInitialPaymentParams] = useState<{ page: number, pageSize: number }>({ page: 1, pageSize: 50 });
+
+  useEffect(() => {
+    // Only fetch once per refreshKey
+    const fetchInitial = async () => {
+      const params = { page: initialPaymentParams.page, limit: initialPaymentParams.pageSize };
+      const cacheKey = getCacheKey(params);
+      if (paymentCache.current[cacheKey]) {
+        const listRes = paymentCache.current[cacheKey];
+        if (listRes?.status === "success" || listRes?.success === true) {
+          setInitialPaymentData({
+            data: Array.isArray(listRes.data) ? listRes.data : [],
+            total:
+              listRes?.pagination?.totalPages ||
+              listRes?.pagination?.totalRecords ||
+              1,
+            currentPage: listRes?.pagination?.page || initialPaymentParams.page,
+            pageSize: listRes?.pagination?.limit || initialPaymentParams.pageSize,
+          });
+        } else {
+          setInitialPaymentData({
+            data: [],
+            total: 1,
+            currentPage: initialPaymentParams.page,
+            pageSize: initialPaymentParams.pageSize,
+          });
+        }
+        return;
+      }
+      try {
+        setLoading(true);
+        const listRes = await allPaymentList(params);
+        paymentCache.current[cacheKey] = listRes;
+        if (listRes?.status === "success" || listRes?.success === true) {
+          setInitialPaymentData({
+            data: Array.isArray(listRes.data) ? listRes.data : [],
+            total:
+              listRes?.pagination?.totalPages ||
+              listRes?.pagination?.totalRecords ||
+              1,
+            currentPage: listRes?.pagination?.page || initialPaymentParams.page,
+            pageSize: listRes?.pagination?.limit || initialPaymentParams.pageSize,
+          });
+        } else {
+          setInitialPaymentData({
+            data: [],
+            total: 1,
+            currentPage: initialPaymentParams.page,
+            pageSize: initialPaymentParams.pageSize,
+          });
+        }
+      } catch {
+        setInitialPaymentData({
+          data: [],
+          total: 1,
+          currentPage: initialPaymentParams.page,
+          pageSize: initialPaymentParams.pageSize,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitial();
+  }, [refreshKey, setLoading]);
+
+  // Table expects a function, so wrap the memoized result
   const fetchPayments = useCallback(
-    async (
-      page: number = 1,
-      pageSize: number = 50
-    ): Promise<listReturnType> => {
+    async (page: number = 1, pageSize: number = 50): Promise<listReturnType> => {
+      // Only return memoized data if params match
+      if (page === initialPaymentParams.page && pageSize === initialPaymentParams.pageSize && initialPaymentData) {
+        return initialPaymentData;
+      }
+      // Otherwise, fetch and cache as before
       const params = { page, limit: pageSize };
       const cacheKey = getCacheKey(params);
       if (paymentCache.current[cacheKey]) {
@@ -171,7 +239,6 @@ export default function PaymentListPage() {
         setLoading(true);
         const listRes = await allPaymentList(params);
         paymentCache.current[cacheKey] = listRes;
-        setLoading(false);
         if (listRes?.status === "success" || listRes?.success === true) {
           return {
             data: Array.isArray(listRes.data) ? listRes.data : [],
@@ -195,7 +262,6 @@ export default function PaymentListPage() {
           };
         }
       } catch (error: unknown) {
-        setLoading(false);
         console.error("Error fetching payment data:", error);
         showSnackbar("Error fetching payment data", "error");
         return {
@@ -204,10 +270,10 @@ export default function PaymentListPage() {
           currentPage: page,
           pageSize: pageSize,
         };
+      } finally {
+        setLoading(false);
       }
-    },
-    [setLoading, showSnackbar]
-  );
+    }, [initialPaymentData, initialPaymentParams, setLoading, showSnackbar]);
 
   useEffect(() => {
     setLoading(true);
@@ -237,9 +303,6 @@ export default function PaymentListPage() {
     }
   }
 
-  useEffect(() => {
-    setRefreshKey(k => k + 1);
-  }, [companyOptions, regionOptions, areaOptions, warehouseOptions, routeOptions, salesmanOptions]);
 
   return (
     <>
@@ -285,7 +348,7 @@ export default function PaymentListPage() {
             localStorageKey: "payment-table",
             footer: { nextPrevBtn: true, pagination: true },
             columns,
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               // {
               //   icon: "lucide:edit-2",

@@ -12,57 +12,21 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
-type WarehouseRow = TableDataType & {
-  id?: string;
-  uuid?: string;
-  code?: string;
-  warehouseName?: string;
-  tin_no?: string;
-  ownerName?: string;
-  owner_email?: string;
-  ownerContact?: string;
-  warehouse_type?: string;
-  business_type?: string;
-  warehouse_manager?: string;
-  warehouse_manager_contact?: string;
-  district?: string;
-  street?: string;
-  branch_id?: string;
-  town_village?: string;
-  region?: { code?: string; name?: string; region_name?: string; }
-  location?: { code?: string; name?: string; location_code?: string; location_name?: string; }
-  company?: { company_code?: string; company_name?: string };
-  city?: string;
-  landmark?: string;
-  latitude?: string;
-  longitude?: string;
-  threshold_radius?: string;
-  device_no?: string;
-  is_branch?: string;
-  p12_file?: string;
-  is_efris?: string;
-  agreed_stock_capital?: string;
-  deposite_amount?: string;
-  phoneNumber?: string;
-  address?: string;
-  status?: string | boolean | number;
-  company_customer_id?: { customer_name: string };
-  region_id?: { region_name: string };
-  area?: { code?: string; area_code?: string; area_name?: string; name: string };
-};
-
 
 
 export default function Warehouse() {
-  const { regionOptions,ensureRegionLoaded,areaOptions,ensureAreaLoaded  } = useAllDropdownListData();
+  const {warehouseOptions, ensureWarehouseLoaded, salesmanOptions, ensureSalesmanLoaded, regionOptions,ensureRegionLoaded,areaOptions,ensureAreaLoaded  } = useAllDropdownListData();
+    const [warehouseId, setWarehouseId] = useState<string>();
   const { can, permissions } = usePagePermissions("/distributors");
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [searchFilter, setSearchFilter] = useState("");
   useEffect(() => {
+    ensureSalesmanLoaded();
+    ensureWarehouseLoaded();
     ensureRegionLoaded();
     ensureAreaLoaded();
-  }, [ensureRegionLoaded, ensureAreaLoaded]);
+  }, [ensureSalesmanLoaded, ensureWarehouseLoaded, ensureRegionLoaded, ensureAreaLoaded]);
 
   const [areaId, setAreaId] = useState<string>("");
   const [regionId, setRegionId] = useState<string>("");
@@ -98,7 +62,19 @@ export default function Warehouse() {
   const columns = [
   // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
   // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
-  { key: "warehouse_name", label: "Distributors Name", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-" },
+  { key: "warehouse_name", label: "Distributors Name", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-", 
+    filter: {
+          isFilterable: true,
+          width: 320,
+          filterkey: "warehouse_id",
+          options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+          onSelect: (selected: string | string[]) => {
+              setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+          },
+          isSingle: false,
+          selectedValue: warehouseId,
+      },
+   },
   { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
   { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
   // { key: "owner_email", label: "Owner Email", render: (row: WarehouseRow) => row.owner_email || "-" },
@@ -204,7 +180,7 @@ export default function Warehouse() {
 
   useEffect(() => {
         setRefreshKey((k) => k + 1);
-    }, [regionId, areaId, currentStatusFilter]);
+    }, [warehouseId, regionId, areaId, currentStatusFilter]);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   type TableRow = TableDataType & { id?: string };
@@ -264,6 +240,9 @@ export default function Warehouse() {
           per_page: pageSize.toString(),
         };
         
+        if (warehouseId) {
+          params.warehouse_id = warehouseId;
+        }
         if (regionId) {
           params.region_id = regionId;
         }
@@ -289,7 +268,7 @@ export default function Warehouse() {
         throw new Error(String(error));
       }
     },
-    [areaId, regionId, currentStatusFilter]
+    [warehouseId, areaId, regionId, currentStatusFilter]
   );
 
   const searchWarehouse = useCallback(
@@ -306,6 +285,7 @@ export default function Warehouse() {
           per_page: pageSize.toString(),
           page: page.toString(),
         });
+        setSearchFilter(query);
         //  setLoading(false);
         return {
           data: listRes.data || [],
@@ -319,14 +299,14 @@ export default function Warehouse() {
         throw error;
       }
     },
-    []
+    [warehouseId, areaId, regionId, currentStatusFilter]
   );
 
 
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportWarehouseData({ format });
+      const response = await exportWarehouseData({ format, search: searchFilter,filters:{ area_id: areaId, region_id: regionId, status: currentStatusFilter === null ? undefined : (currentStatusFilter ? "1" : "0") }});
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");

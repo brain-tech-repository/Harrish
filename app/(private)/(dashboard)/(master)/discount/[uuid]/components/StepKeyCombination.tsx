@@ -69,7 +69,7 @@ export default function StepKeyCombination({ keyCombo, setKeyCombo }: Props) {
                 <CustomCheckbox
                   key={optionIndex}
                   id={option.label + index}
-                  label={option.label}
+                  label={option.label === "Warehouse" ? "Distributor" : option.label}
                   checked={option.isSelected}
                   onChange={() => onKeySelect(index, optionIndex)}
                 />

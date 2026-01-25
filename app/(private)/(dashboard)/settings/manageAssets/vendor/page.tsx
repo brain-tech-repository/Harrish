@@ -104,7 +104,7 @@ export default function ShelfDisplay() {
               },
 
             ],
-            rowSelection: true,
+            // rowSelection: true,
             rowActions: [
               // {
               //   icon: "lucide:eye",

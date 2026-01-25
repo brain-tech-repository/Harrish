@@ -19,7 +19,7 @@ import {
 } from "@/app/services/companyTransaction";
 import { toInternationalNumber } from "@/app/(private)/utils/formatNumber";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 // const dropdownDataList = [
 //     // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
 //     // { icon: "lucide:download", label: "Download QR Code", iconWidth: 20 },
@@ -147,30 +147,7 @@ export default function CustomerInvoicePage() {
     csv: false,
     xlsx: false,
   });
-  const {
-    customerSubCategoryOptions,
-    companyOptions,
-    salesmanOptions,
-    agentCustomerOptions,
-    channelOptions,
-    warehouseAllOptions,
-    routeOptions,
-    regionOptions,
-    areaOptions,
-    ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
-  // Load dropdown data
-  useEffect(() => {
-    ensureAgentCustomerLoaded();
-    ensureAreaLoaded();
-    ensureChannelLoaded();
-    ensureCompanyLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAgentCustomerLoaded, ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded]);
+  
 
   const fetchDelivery = useCallback(
     async (
@@ -262,19 +239,6 @@ export default function CustomerInvoicePage() {
     }
   };
 
-  useEffect(() => {
-    setRefreshKey((k) => k + 1);
-  }, [
-    customerSubCategoryOptions,
-    routeOptions,
-    warehouseAllOptions,
-    channelOptions,
-    companyOptions,
-    salesmanOptions,
-    agentCustomerOptions,
-    regionOptions,
-    areaOptions,
-  ]);
 
   return (
     <div
@@ -310,66 +274,16 @@ export default function CustomerInvoicePage() {
                 onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
               },
             ],
-            filterByFields: [
-              {
-                key: "start_date",
-                label: "Start Date",
-                type: "date",
-              },
-              {
-                key: "end_date",
-                label: "End Date",
-                type: "date",
-              },
-              //   {
-              //     key: "company_id",
-              //     label: "Company",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(companyOptions) ? companyOptions : [],
-              //   },
-              //   {
-              //     key: "warehouse_id",
-              //     label: "Warehouse",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(warehouseAllOptions)
-              //       ? warehouseAllOptions
-              //       : [],
-              //   },
-              //   {
-              //     key: "region_id",
-              //     label: "Region",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(regionOptions) ? regionOptions : [],
-              //   },
-              //   {
-              //     key: "sub_region_id",
-              //     label: "Sub Region",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(areaOptions) ? areaOptions : [],
-              //   },
-              //   {
-              //     key: "route_id",
-              //     label: "Route",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(routeOptions) ? routeOptions : [],
-              //   },
-              //   {
-              //     key: "salesman_id",
-              //     label: "Sales Team",
-              //     isSingle: false,
-              //     multiSelectChips: true,
-              //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-              //   },
-            ],
+filterRenderer: (props) => (
+                                                                                                  <FilterComponent
+                                                                                                  currentDate={true}
+                                                                                                    {...props}
+                                                                                                  />
+                                                                                                ),
           },
           footer: { nextPrevBtn: true, pagination: true },
           columns,
-          rowSelection: true,
+          // rowSelection: true,
           localStorageKey: "invoice-table",
           rowActions: [
             {

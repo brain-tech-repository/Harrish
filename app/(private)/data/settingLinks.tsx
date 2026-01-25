@@ -6,6 +6,24 @@ export type SidebarDataType = {
   data: LinkDataType[];
 };
 
+function lowercaseHrefs(data: SidebarDataType[]): SidebarDataType[] {
+  return data.map((sidebar) => ({
+    ...sidebar,
+    data: sidebar.data.map(lowercaseLinkData)
+  }));
+}
+
+function lowercaseLinkData(link: LinkDataType): LinkDataType {
+  const newLink: LinkDataType = {
+    ...link,
+    href: typeof link.href === 'string' ? link.href.toLowerCase() : link.href,
+  };
+  if (link.children && Array.isArray(link.children)) {
+    newLink.children = link.children.map(lowercaseLinkData);
+  }
+  return newLink;
+}
+
 export type LinkDataType = {
   isActive: boolean;
   href: string;
@@ -16,7 +34,7 @@ export type LinkDataType = {
   children?: LinkDataType[];
 };
 
-export const initialLinkData: SidebarDataType[] = [
+export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
   {
     data: [
       {
@@ -90,6 +108,7 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "lucide:user",
             iconColor: "text-green-500",
           },
+          ...(process.env.NODE_ENV === "development" ? [
           {
             isActive: false,
             href: "/settings/manageCompany/salesman-type",
@@ -111,6 +130,7 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:theme-light-dark",
             iconColor: "text-green-500",
           },
+        ] : []),
         ],
       },
       {
@@ -173,6 +193,7 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "tabler:building-warehouse",
             iconColor: "text-violet-500",
           },
+          ...(process.env.NODE_ENV === "development" ? [
           {
             isActive: false,
             href: "/settings/location",
@@ -180,6 +201,7 @@ export const initialLinkData: SidebarDataType[] = [
             leadingIcon: "mdi:earth",
             iconColor: "text-green-500",
           },
+        ] : []),
         ],
       },
       {
@@ -245,6 +267,7 @@ export const initialLinkData: SidebarDataType[] = [
 
         ],
       },
+      ...(process.env.NODE_ENV === "development" ? [
       {
         isActive: false,
         href: "/settings/bank",
@@ -259,6 +282,7 @@ export const initialLinkData: SidebarDataType[] = [
         leadingIcon: "tabler:building-warehouse",
         iconColor: "text-green-500",
       },
+
       {
         isActive: false,
         href: "/settings/promotionTypes",
@@ -266,6 +290,7 @@ export const initialLinkData: SidebarDataType[] = [
         leadingIcon: "hugeicons:promotion",
         iconColor: "text-green-500",
       },
+      ] : []),
       {
         isActive: false,
         href: "/settings/globalSetting",
@@ -280,13 +305,13 @@ export const initialLinkData: SidebarDataType[] = [
         leadingIcon: "wpf:approval",
         iconColor: "text-green-500",
       },
-      // {
-      //   isActive: false,
-      //   href: "/settings/processFlow",
-      //   label: "Process Flow",
-      //   leadingIcon: "uil:process",
-      //   iconColor: "text-green-500",
-      // },
+      {
+        isActive: false,
+        href: "/settings/processFlow",
+        label: "Process Flow",
+        leadingIcon: "uil:process",
+        iconColor: "text-green-500",
+      },
       {
         isActive: false,
         href: "#",
@@ -368,8 +393,8 @@ export const initialLinkData: SidebarDataType[] = [
         leadingIcon: "pepicons-pop:map",
         // trailingIcon: "mdi-light:chevron-right",
         iconColor: "text-yellow-400",
-       
+
       }
     ],
   },
-];
+]);

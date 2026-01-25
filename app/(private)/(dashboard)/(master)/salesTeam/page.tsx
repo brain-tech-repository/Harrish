@@ -20,7 +20,7 @@ import {
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import ItemCellWithPopup from "@/app/components/multipleDataPopUp";
 const SalesmanPage = () => {
   const { can, permissions } = usePagePermissions();
   const { setLoading } = useLoading();
@@ -42,14 +42,15 @@ const SalesmanPage = () => {
     }
   }, [permissions]);
 
-  const { warehouseOptions, routeOptions , ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+  const { salesmanOptions, warehouseOptions, routeOptions , ensureSalesmanLoaded, ensureRouteLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
+    ensureSalesmanLoaded();
     ensureRouteLoaded();
     ensureWarehouseLoaded();
-  }, [ensureRouteLoaded, ensureWarehouseLoaded]);
-  const [warehouseId, setWarehouseId] = useState<string>("");
+  }, [ensureSalesmanLoaded, ensureRouteLoaded, ensureWarehouseLoaded]);
+  const [warehouseId, setWarehouseId] = useState<string>();
   const [routeId, setRouteId] = useState<string>("");
 
   const handleStatusFilter = async (status: boolean) => {
@@ -140,7 +141,7 @@ const exportFile = async (format: string) => {
   const fetchSalesman = useCallback(
     async (
       page: number = 1,
-      pageSize: number = 50
+      pageSize: number = 50,
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
@@ -149,6 +150,9 @@ const exportFile = async (format: string) => {
         const params: any = {
           page: page.toString(),
         };
+        if (warehouseId) {
+            params.warehouse_id = warehouseId;
+        }
         
         // Add status filter if active (true=1, false=0)
         if (currentStatusFilter !== null) {
@@ -169,7 +173,7 @@ const exportFile = async (format: string) => {
         throw error;
       }
     },
-    [currentStatusFilter]
+    [warehouseId, currentStatusFilter]
   );
 
   const columns = [
@@ -181,6 +185,17 @@ const exportFile = async (format: string) => {
           {row.osa_code} - {row.name}
         </span>
       ),
+      // filter: {
+      //     isFilterable: true,
+      //     width: 320,
+      //     filterkey: "salesteam_id",
+      //     options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+      //     onSelect: (selected: string | string[]) => {
+      //         setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+      //     },
+      //     isSingle: false,
+      //     selectedValue: warehouseId,
+      // },
     },
     {
       key: "salesman_type",
@@ -193,30 +208,41 @@ const exportFile = async (format: string) => {
         return obj?.salesman_type_name || "-";
       },
     },
+    {
+      key: "warehouse",
+      label: "Distributor",
+      render: (row: TableDataType) => {
+        // Accepts array or single object
+        const warehouses = Array.isArray(row.warehouses)
+          ? row.warehouses
+          : row.warehouse
+            ? [row.warehouse]
+            : [];
+        return (
+          <ItemCellWithPopup
+          title="Distributors List"
+            details={warehouses.map((w: any) => ({
+              erp_code: w.warehouse_code,
+              item_name: w.warehouse_name,
+            }))}
+          />
+        );
+      },
+      filter: {
+        isFilterable: true,
+        isSingle: false,
+        width: 320,
+        options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+        onSelect: (selected: string | string[]) => {
+          setWarehouseId((prev) => prev === selected ? "" : (selected as string));
+        },
+        selectedValue: warehouseId,
+      },
+      showByDefault: true,
+    },
 
     { key: "designation", label: "Designation" },
-    // {
-    //       key: "warehouse",
-    //       label: "Warehouse",
-    //       render: (row: TableDataType) =>
-    //           typeof row.warehouse === "object" &&
-    //           row.warehouse !== null &&
-    //           "warehouse_name" in row.warehouse
-    //               ? (row.warehouse as { warehouse_name?: string })
-    //                     .warehouse_name || "-"
-    //               : "-",
-    //               filter: {
-    //                   isFilterable: true,
-    //                   width: 320,
-    //                   options: Array.isArray(warehouseOptions) ? warehouseOptions : [], // [{ value, label }]
-    //                   onSelect: (selected: string | string[]) => {
-    //                       setWarehouseId((prev) => prev === selected ? "" : (selected as string));
-    //                   },
-    //                   selectedValue: warehouseId,
-    //               },
-
-    //       showByDefault: true,
-    //   },
+  
     //   {
     //       key: "route",
     //       label: "Route",
@@ -257,6 +283,10 @@ const exportFile = async (format: string) => {
       },
     },
   ];
+
+  useEffect(() => {
+        setRefreshKey((k) => k + 1);
+    }, [warehouseId, currentStatusFilter]);
 
   return (
     <>

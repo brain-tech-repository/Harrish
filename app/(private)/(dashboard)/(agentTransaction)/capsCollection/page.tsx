@@ -21,7 +21,7 @@ import FilterComponent from "@/app/components/filterComponent";
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const { warehouseOptions, salesmanOptions, routeOptions, regionOptions, areaOptions, companyOptions, ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
+  const {  warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -31,16 +31,11 @@ export default function SalemanLoad() {
       setRefreshKey((prev) => prev + 1);
     }
   }, [permissions]);
-
+  const [warehouseId, setWarehouseId] = useState<string>("");
   // Load dropdown data
   useEffect(() => {
-    ensureAreaLoaded();
-    ensureCompanyLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseLoaded();
-  }, [ensureAreaLoaded, ensureCompanyLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseLoaded]);
+    ensureWarehouseAllLoaded();
+  }, [ ensureWarehouseAllLoaded]);
   const columns: configType["columns"] = [
     { key: "code", label: "Code" },
     // { key: "date", label: "Collection Date" },
@@ -49,7 +44,18 @@ export default function SalemanLoad() {
         const code = row.warehouse_code || "-";
         const name = row.warehouse_name || "-";
         return `${code}${code && name ? " - " : ""}${name}`;
-      }
+      },
+       filter: {
+            isFilterable: true,
+            width: 320,
+            filterkey: "warehouse_id",
+            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+            onSelect: (selected: string | string[]) => {
+                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+            },
+            isSingle: false,
+            selectedValue: warehouseId,
+        },
     },
     {
       key: "customer",
@@ -90,11 +96,64 @@ export default function SalemanLoad() {
     return Object.entries(params).sort().map(([k, v]) => `${k}:${v}`).join("|");
   };
 
+  // Memoize initial API result so it only loads once per mount/refreshKey
+  const [initialCapsData, setInitialCapsData] = useState<listReturnType | null>(null);
+  const [initialCapsParams, setInitialCapsParams] = useState<{ page: number, pageSize: number }>({ page: 1, pageSize: 50 });
+
+useEffect(() => {
+        setRefreshKey((k) => k + 1);
+      }, [warehouseId]);
+  useEffect(() => {
+    // Only fetch once per refreshKey
+    const fetchInitial = async () => {
+      const params:any = { page: initialCapsParams.page.toString(), per_page: initialCapsParams.pageSize.toString() };
+      // Pass warehouseId in params if set
+      if (warehouseId) {
+        params.warehouse_id = warehouseId;
+      }
+      const cacheKey = getCacheKey(params);
+      if (capsCollectionCache.current[cacheKey]) {
+        const listRes = capsCollectionCache.current[cacheKey];
+        setInitialCapsData({
+          data: Array.isArray(listRes.data) ? listRes.data : [],
+          total: listRes?.pagination?.totalPages || 1,
+          currentPage: listRes?.pagination?.page || 1,
+          pageSize: listRes?.pagination?.limit || initialCapsParams.pageSize,
+        });
+        return;
+      }
+      try {
+        setLoading(true);
+        const listRes = await capsCollectionList(params);
+        capsCollectionCache.current[cacheKey] = listRes;
+        setInitialCapsData({
+          data: Array.isArray(listRes.data) ? listRes.data : [],
+          total: listRes?.pagination?.totalPages || 1,
+          currentPage: listRes?.pagination?.page || 1,
+          pageSize: listRes?.pagination?.limit || initialCapsParams.pageSize,
+        });
+      } catch {
+        setInitialCapsData({
+          data: [],
+          total: 1,
+          currentPage: 1,
+          pageSize: 5,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitial();
+  }, [refreshKey, setLoading, warehouseId]);
+
+  // Table expects a function, so wrap the memoized result
   const fetchSalesmanLoadHeader = useCallback(
-    async (
-      page: number = 1,
-      pageSize: number = 50
-    ): Promise<listReturnType> => {
+    async (page: number = 1, pageSize: number = 50): Promise<listReturnType> => {
+      // Only return memoized data if params match
+      if (page === initialCapsParams.page && pageSize === initialCapsParams.pageSize && initialCapsData) {
+        return initialCapsData;
+      }
+      // Otherwise, fetch and cache as before
       const params = { page: page.toString(), per_page: pageSize.toString() };
       const cacheKey = getCacheKey(params);
       if (capsCollectionCache.current[cacheKey]) {
@@ -110,7 +169,6 @@ export default function SalemanLoad() {
         setLoading(true);
         const listRes = await capsCollectionList(params);
         capsCollectionCache.current[cacheKey] = listRes;
-        setLoading(false);
         return {
           data: Array.isArray(listRes.data) ? listRes.data : [],
           total: listRes?.pagination?.totalPages || 1,
@@ -118,15 +176,16 @@ export default function SalemanLoad() {
           pageSize: listRes?.pagination?.limit || pageSize,
         };
       } catch (error: unknown) {
-        setLoading(false);
         return {
           data: [],
           total: 1,
           currentPage: 1,
           pageSize: 5,
         };
+      } finally {
+        setLoading(false);
       }
-    }, [setLoading]);
+    }, [initialCapsData, initialCapsParams, setLoading]);
 
   const exportListFile = async (format: string) => {
     try {
@@ -200,7 +259,7 @@ export default function SalemanLoad() {
   ) => {
     try {
       if (!dataOrIds || dataOrIds.length === 0) {
-        showSnackbar("No CAPS Collection selected", "error");
+        showSnackbar("No CAPS Master Collection selected", "error");
         return;
       }
 
@@ -213,7 +272,7 @@ export default function SalemanLoad() {
         const data = dataOrIds as TableRow[];
         const selectedRow = selectedRowOrStatus as number[] | undefined;
         if (!selectedRow || selectedRow.length === 0) {
-          showSnackbar("No CAPS Collection selected", "error");
+          showSnackbar("No CAPS MasterCollection selected", "error");
           return;
         }
         selectedRowsData = data
@@ -225,7 +284,7 @@ export default function SalemanLoad() {
         // otherwise treat dataOrIds as an array of UUIDs
         const ids = dataOrIds as (string | number)[];
         if (ids.length === 0) {
-          showSnackbar("No CAPS Collection selected", "error");
+          showSnackbar("No CAPS Master Collection selected", "error");
           return;
         }
         selectedRowsData = ids;
@@ -233,7 +292,7 @@ export default function SalemanLoad() {
       }
 
       if (selectedRowsData.length === 0) {
-        showSnackbar("No CAPS Collection selected", "error");
+        showSnackbar("No CAPS Master Collection selected", "error");
         return;
       }
 
@@ -241,15 +300,15 @@ export default function SalemanLoad() {
 
       // Check if response has error
       if (response?.error || response?.message?.includes("error") || response?.errors) {
-        const errorMessage = response?.message || response?.data?.message || "Failed to update CAPS Collection status";
+        const errorMessage = response?.message || response?.data?.message || "Failed to update CAPS Master Collection status";
         showSnackbar(errorMessage, "error");
         return;
       }
 
       setRefreshKey((k) => k + 1);
-      showSnackbar("CAPS Collection status updated successfully", "success");
+      showSnackbar("CAPS Master Collection status updated successfully", "success");
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || "Failed to update CAPS Collection status";
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to update CAPS Master Collection status";
       showSnackbar(errorMessage, "error");
     }
   };
@@ -302,10 +361,6 @@ export default function SalemanLoad() {
     [setLoading]
   );
 
-  useEffect(() => {
-    setRefreshKey(k => k + 1);
-  }, [companyOptions, regionOptions, areaOptions, warehouseOptions, routeOptions, salesmanOptions]);
-
   return (
     <div className="flex flex-col h-full">
       <Table
@@ -332,7 +387,12 @@ export default function SalemanLoad() {
               },
             ],
             columnFilter: true,
-            filterRenderer: FilterComponent,
+            filterRenderer: (props) => (
+                                                                                                <FilterComponent
+                                                                                                currentDate={true}
+                                                                                                  {...props}
+                                                                                                />
+                                                                                              ),
             searchBar: false,
             actions: can("create") ? [
               <SidebarBtn

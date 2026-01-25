@@ -59,12 +59,12 @@ export default function Page() {
       {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
         <h1 className="text-[20px] font-semibold text-[#181D27]">
-          Manufacturer List
+          Manufacturer
         </h1>
       </div>
 
       {/* Table */}
-      <div className="h-[calc(100%-60px)]">
+      <div className="h-full">
         <Table
           config={{
             header: {
@@ -85,7 +85,7 @@ export default function Page() {
             localStorageKey: "manufacturer-list-table", // renamed for clarity
             footer: { nextPrevBtn: true, pagination: true },
             columns,
-            rowSelection: true,
+            // rowSelection: true,
             api: {
               list: async (pageNo: number, pageSize: number) => {
                 try {

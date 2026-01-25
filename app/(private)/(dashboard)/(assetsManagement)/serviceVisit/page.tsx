@@ -16,6 +16,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useEffect } from "react";
+import ApprovalStatus from "@/app/components/approvalStatus";
 
 // ✅ SERVICE VISIT ROW TYPE
 interface ServiceVisitRow {
@@ -80,6 +81,8 @@ export default function ServiceVisit() {
     const router = useRouter();
     const [showExportDropdown, setShowExportDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+
 
     // Refresh table when permissions load
     useEffect(() => {
@@ -125,16 +128,7 @@ export default function ServiceVisit() {
                 render: (r: any) => (r as ServiceVisitRow).cabin_temperature || "-",
             },
 
-            {
-                key: "work_status",
-                label: "Work Status",
-                render: (r: any) => (
-                    <StatusBtn
-                        isActive={(r as ServiceVisitRow).work_status === "completed"}
-                    />
-                ),
-            },
-
+           
             { key: "work_done_type", label: "Work Done Type" },
             { key: "spare_request", label: "Spare Request" },
             { key: "technical_behavior", label: "Tech Behavior" },
@@ -148,6 +142,21 @@ export default function ServiceVisit() {
 
             { key: "comment", label: "Comment" },
             { key: "cts_comment", label: "CTS Comment" },
+             {
+                key: "work_status",
+                label: "Work Status",
+                render: (r: any) => (
+                    <StatusBtn
+                        isActive={(r as ServiceVisitRow).work_status === "completed"}
+                    />
+                ),
+            },
+
+            {
+                key: "approval_status",
+                label: "Approval Status",
+                render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
+            },
         ],
         []
     );
@@ -199,7 +208,8 @@ export default function ServiceVisit() {
 
     const handleExport = async (fileType: "csv" | "xlsx") => {
         try {
-            setLoading(true);
+            // setLoading(true);
+            setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
             const res = await serviceVisitExport({ format: fileType });
 
@@ -238,7 +248,8 @@ export default function ServiceVisit() {
             console.error("Export error:", error);
             showSnackbar("Failed to export Assets Master data", "error");
         } finally {
-            setLoading(false);
+            // setLoading(false);
+            setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
             setShowExportDropdown(false);
         }
     };
@@ -262,14 +273,14 @@ export default function ServiceVisit() {
                         title: "Service Visit",
                         threeDot: [
                             {
-                                icon: "gala:file-document",
+                                icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                 label: "Export CSV",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     handleExport("csv");
                                 },
                             },
                             {
-                                icon: "gala:file-document",
+                                icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                                 label: "Export Excel",
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     handleExport("xlsx");
@@ -291,7 +302,7 @@ export default function ServiceVisit() {
                     },
 
                     columns,
-                    rowSelection: true,
+                    // rowSelection: true,
 
                     rowActions: [
                         {

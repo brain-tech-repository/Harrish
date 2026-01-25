@@ -7,7 +7,7 @@ import CustomCheckbox from "./customCheckbox";
 import Radio from "@mui/material/Radio";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import RadioGroup from "@mui/material/RadioGroup";
-
+import { LocationPicker } from "./LocationInput";
 export type Option = {
   value: string;
   label: string;
@@ -43,7 +43,8 @@ type Props = {
   | "number"
   | "textarea"
   | "contact"
-  | "contact2";
+  | "contact2"
+  | "location";
   /** If provided, used to determine whether the date was changed compared to original value */
   originalValue?: string | null;
   id?: string;
@@ -118,6 +119,8 @@ export default function InputFields({
   onSearchChange,
   ...props
 }: Props) {
+  // Fix: Always call useState for location picker, regardless of type
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [dropdownProperties, setDropdownProperties] = useState({
     width: "0",
     top: "0",
@@ -180,7 +183,14 @@ export default function InputFields({
   ) => {
     return (e: React.KeyboardEvent) => {
       if (e.key === "ArrowDown") {
-        e.preventDefault();
+      let lat = "";
+      let lng = "";
+      if (typeof value === "string" && value.includes(",")) {
+        [lat, lng] = value.split(",");
+      } else if (typeof value === "object" && value !== null && "lat" in value && "lng" in value) {
+        lat = String((value as { lat: unknown }).lat);
+        lng = String((value as { lng: unknown }).lng);
+      }
 
         // Open dropdown if not already open
         if (!isDropdownOpen && setDropdownOpen) {
@@ -528,6 +538,56 @@ export default function InputFields({
   };
 
   function renderField() {
+    // Special handling for 'location' type: label + icon, then read-only input below
+    if (type === "location") {
+      let lat = "";
+      let lng = "";
+      if (typeof value === "string" && value.includes(",")) {
+        [lat, lng] = value.split(",");
+      } else if (typeof value === "object" && value !== null && "lat" in value && "lng" in value) {
+        lat = (value as { lat: string; lng: string }).lat;
+        lng = (value as { lat: string; lng: string }).lng;
+      }
+      return (
+        <div className="flex flex-col w-full">
+          <div className="flex items-center mb-1.5">
+            <span className="text-sm font-medium text-gray-700 flex items-center">
+              {label} {required && <span className="text-red-500 ml-1">*</span>}
+              <button
+                type="button"
+                aria-label="Pick location"
+                className="ml-1 p-0 bg-transparent border-0 cursor-pointer align-middle"
+                style={{ lineHeight: 1, display: "inline-flex", alignItems: "center" }}
+                onClick={() => setLocationPickerOpen(true)}
+              >
+                <span role="img" aria-label="location" style={{ fontSize: 20, color: "#1976d2", marginLeft: 2 }}>📍</span>
+              </button>
+            </span>
+          </div>
+          <input
+            type="text"
+            className="box-border border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] pl-3 pr-3 mt-0 text-gray-900 placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100 border-gray-300"
+            value={lat || ""}
+            readOnly
+            placeholder={label}
+          />
+          {locationPickerOpen && typeof window !== "undefined" && (
+            <LocationPicker
+              open={locationPickerOpen}
+              onClose={() => setLocationPickerOpen(false)}
+              onSave={(newLat, newLng) => {
+                setLocationPickerOpen(false);
+                if (typeof onChange === "function") {
+                  onChange({ target: { value: `${newLat},${newLng}`, name } });
+                }
+              }}
+              initialLat={lat}
+              initialLng={lng}
+            />
+          )}
+        </div>
+      );
+    }
     switch (type) {
       case "radio":
         return (
@@ -758,7 +818,7 @@ export default function InputFields({
                           )}
                           <input
                             type="text"
-                            placeholder={placeholder ? placeholder : label ? `Search ${label}` : "Search"}
+                            placeholder={placeholder ? placeholder : label ? `Select ${label}` : "Select"}
                             onChange={(e) => {
                               const v = (e.target as HTMLInputElement).value;
                               setSearch(v);
@@ -1698,18 +1758,23 @@ export default function InputFields({
   return (
     <div className={`flex flex-col gap-[6px] min-w-0 ${width} relative`}>
       {showSkeleton && (
-        <div className="absolute h-[90px] w-full rounded-[5px] bg-white z-40 flex flex-col gap-[5px]">
-          {label && <Skeleton variant="rounded" width={"50%"} height={"20%"} />}
-          <Skeleton variant="rounded" width={"100%"} height={"60%"} />
-          {error && (
-            <Skeleton variant="rounded" width={"100%"} height={"20%"} />
-          )}
+        <div className="absolute h-[90px] w-full rounded-[5px] z-40 flex flex-col gap-[5px]">
+          {label && <div style={{ width: "50%", height: "20%"}} />}
+          <div className="bg-white flex flex-col w-full gap-[5px] h-[68px]">
+            <Skeleton variant="rounded" width={"100%"} height={"70%"} />
+            {error && (
+              <Skeleton variant="rounded" width={"100%"} height={"20%"} />
+            )}
+          </div>
         </div>
       )}
-      <label htmlFor={id ?? name} className="text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+      {/* Hide the default label if type is 'location' */}
+      {type !== "location" && (
+        <label htmlFor={id ?? name} className="text-sm font-medium text-gray-700">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
       <div className="relative">
         {renderField()}
         {type !== "radio" && error && (

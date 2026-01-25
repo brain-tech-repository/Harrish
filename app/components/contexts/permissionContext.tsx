@@ -4,6 +4,18 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 import { getRoleById } from "@/app/services/allApi";
 import { LinkDataType } from "../../(private)/data/dashboardLinks";
 
+function toLowerCaseDeep(data: any): any {
+  if (Array.isArray(data)) {
+    return data.map(toLowerCaseDeep);
+  } else if (data && typeof data === 'object') {
+    return Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, toLowerCaseDeep(v)])
+    );
+  } else if (typeof data === 'string') {
+    return data.toLowerCase();
+  }
+  return data;
+}
 type PermissionContextType = {
   filteredMenu: LinkDataType[] | null;
   settingsMenu: LinkDataType[] | null;
