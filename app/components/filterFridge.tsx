@@ -231,6 +231,7 @@ const applyFilterApi = async () => {
     if (regionVal.length) filterPayload.region_id = regionVal;
     if (areaVal.length) filterPayload.area_id = areaVal;
     if (warehouseVal.length) filterPayload.warehouse_id = warehouseVal;
+    if (routeVal.length) filterPayload.route_id = routeVal;
     // if (modelVal.length) filterPayload.model_id = modelVal;
     // if (statusVal.length) filterPayload.status = statusVal;
 
@@ -480,7 +481,7 @@ const applyFilterApi = async () => {
               : [];
             onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
-            // onChangeArray("route_id", []);
+             onChangeArray("route_id", []);
           }}
         />
       )}
@@ -506,7 +507,7 @@ const applyFilterApi = async () => {
               ? raw.split(",").filter(Boolean)
               : [];
             onChangeArray("warehouse_id", val);
-            // onChangeArray("route_id", []);
+            onChangeArray("route_id", []);
           }}
           />
           {/* {isDistributorMissing && (
@@ -516,19 +517,19 @@ const applyFilterApi = async () => {
     )} */}
           </div>
 )}
-      {/* Route */}
-      {/* {showFilter("status") && (
+
+{showFilter("route_id") && (
         <InputFields
-          label="Status"
-          name="status"
+          label="Route"
+          name="route_id"
           type="select"
           searchable={true}
           isSingle={false}
           multiSelectChips
-          showSkeleton={skeleton.statusname}
-          // disabled={disabled || warehouseVal.length === 0}
-          options={Array.isArray(statusOptions) ? statusOptions : []}
-          value={statusVal as any}
+          showSkeleton={skeleton.route}
+          disabled={disabled || warehouseVal.length === 0}
+          options={Array.isArray(routeOptions) ? routeOptions : []}
+          value={routeVal as any}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
             const val = Array.isArray(raw)
@@ -536,34 +537,12 @@ const applyFilterApi = async () => {
               : typeof raw === "string"
               ? raw.split(",").filter(Boolean)
               : [];
-            onChangeArray("status", val);
+            onChangeArray("route_id", val);
           }}
         />
-      )} */}
-      {/* Sales Team */}
-      {/* {showFilter("model_id") && (
-        <InputFields
-          label="Model No"
-          name="model_id"
-          type="select"
-          searchable={true}
-          isSingle={false}
-          multiSelectChips
-          showSkeleton={skeleton.modelname}
-          // disabled={disabled || routeVal.length === 0}
-          options={Array.isArray(modelOptions) ? modelOptions : []}
-          value={modelVal as any}
-          onChange={(e) => {
-            const raw = (e as any)?.target?.value ?? e;
-            const val = Array.isArray(raw)
-              ? raw
-              : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
-            onChangeArray("model_id", val);
-          }}
-        />
-      )} */}
+      )}
+
+      
       {/* Buttons */}
       <div className="col-span-2 flex justify-end gap-2 mt-2">
         <SidebarBtn

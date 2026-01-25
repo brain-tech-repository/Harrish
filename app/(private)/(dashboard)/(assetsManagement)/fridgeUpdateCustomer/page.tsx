@@ -292,13 +292,32 @@ const filterBy = useCallback(
                             { key: "created_at", label: "Date", render: (row: TableDataType) =>
                                  formatDate(row.created_at) },
 
-                             {
+//                              {
+//   key: "warehouse",
+//   label: "Distributor",
+//   render: (row: TableDataType) => {
+//     return row?.warehouse?.name || "-";
+//   },
+// }  ,  
+
+{
   key: "warehouse",
   label: "Distributor",
   render: (row: TableDataType) => {
-    return row?.warehouse?.name || "-";
+    const { name, code } = row?.warehouse || {};
+    if (!name) return "-";
+    return code ? `${name} (${code})` : name;
   },
-}  ,  
+}
+,
+
+
+
+
+
+
+
+
                                  
                             { key: "agent", label: "Agent" },
                             { key: "area_manager", label: "Area Manager" },
