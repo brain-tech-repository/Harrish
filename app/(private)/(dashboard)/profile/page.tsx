@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "@/app/components/smartLink";
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useFormik } from "formik";

@@ -223,6 +223,7 @@ const exportFile = async (format: string) => {
         return (
           <ItemCellWithPopup
           title="Distributors List"
+          title1="Distributors"
             details={warehouses.map((w: any) => ({
               erp_code: w.warehouse_code,
               item_name: w.warehouse_name,

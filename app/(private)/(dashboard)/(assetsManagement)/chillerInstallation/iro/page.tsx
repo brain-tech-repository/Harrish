@@ -66,6 +66,15 @@ const hasChillerRequest = (data: TableDataType): data is TableDataType & { chill
         data.chiller_request !== null && typeof data.chiller_request === 'object';
 };
 
+const Status = [
+    { label: "Waiting For Creating IR", value: "0" },
+    { label: "IR Created", value: "1" },
+    { label: "Technician Accepted", value: "2" },
+    { label: "Technician Rejected", value: "3" },
+    { label: "Reschedule By Technician", value: "4" },
+    { label: "Request For Close", value: "5" },
+    { label: "Closed", value: "6" },
+]
 const renderNestedField = (
     data: TableDataType,
     field: string,
@@ -100,6 +109,11 @@ const columns = [
     {
         key: "osa_code",
         label: "OSA Code",
+        render: (data: TableDataType) => {
+            const count = Array.isArray(data.details) ? data.details.length : 0;
+            // Show OSA code and count together
+            return `${data.osa_code || "-"} (${count} CRF)`;
+        },
     },
     {
         key: "warehouse",
@@ -125,9 +139,10 @@ const columns = [
     {
         key: "status",
         label: "Status",
-        render: (data: any) => (
-            <StatusBtn isActive={data.status === 1} />
-        )
+        render: (data: any) => {
+            const statusObj = Status.find(s => String(s.value) === String(data.status));
+            return statusObj ? statusObj.label : "-";
+        }
     },
 
 ];

@@ -62,7 +62,7 @@ export function SideBarDetailPage({ data, onClose, title }: { data?: any; onClos
         Net: String(detail.net ?? detail.net_total ?? "0"),
         Vat: String(detail.vat ?? "0"),
         preVat: String(detail.pre_vat ?? "0"),
-        Total: String(detail.total ?? deliveryData?.total ?? "0"),
+        Total: String(detail.total || detail.item_total || deliveryData?.total || deliveryData?.item_total || "0"),
       }))
     : [];
 

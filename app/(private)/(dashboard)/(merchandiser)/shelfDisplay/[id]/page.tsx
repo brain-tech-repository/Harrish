@@ -355,6 +355,7 @@ export default function ShelfDisplay() {
           {/* Merchandiser */}
           <InputFields
             required
+            multiSelectChips
             width="max-w-[500px]"
             label="Merchandiser"
             name="merchendiser_ids"
@@ -381,6 +382,7 @@ export default function ShelfDisplay() {
           {/* Customers */}
           <InputFields
             required
+            multiSelectChips
             width="max-w-[500px]"
             label="Customers"
             name="customer_ids"
@@ -403,7 +405,7 @@ export default function ShelfDisplay() {
       </ContainerCard>
     );
   };
-
+  if (loading) return <Loading />;
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
@@ -413,9 +415,7 @@ export default function ShelfDisplay() {
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Shelf" : "Add Shelf"}</h1>
       </div>
 
-      {loading ? (
-        <Loading />
-      ) : (
+      
         <Formik
           enableReinitialize
           initialValues={initialValues}
@@ -447,7 +447,6 @@ export default function ShelfDisplay() {
             </Form>
           )}
         </Formik>
-      )}
     </div>
   );
 }

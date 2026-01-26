@@ -413,14 +413,8 @@ export default function CustomerInvoicePage() {
                 if (colFilter) {
                   return filterBy(payload, pageSize);
                 } else {
-                  let pageNo = 1;
-                  if (payload && typeof payload.page === 'number') {
-                    pageNo = payload.page;
-                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
-                    pageNo = Number(payload.page);
-                  }
-                  const { page, ...restPayload } = payload || {};
-                  return fetchOrdersAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+                  
+                  return fetchOrdersAccordingToGlobalFilter( payload, pageSize);
                 }
               },
             },

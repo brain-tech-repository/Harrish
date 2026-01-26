@@ -355,8 +355,73 @@ export default function Page() {
               // ] : [],
             },
             footer: { nextPrevBtn: true, pagination: true },
-            columns,
-            // rowSelection: true,
+            columns: [
+              // Essential Information
+              {
+                key: "date",
+                label: "Date",
+                render: (data: TableDataType) => formatDate(data.created_at),
+              },
+              {
+                key: "osa_code",
+                label: "OSA Code",
+              },
+               {
+                key: "warehouse",
+                label: "Distributor",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "warehouse"),
+              },
+              {
+                key: "customer",
+                label: "Customer",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "customer"),
+              },
+             
+              {
+                key: "contact_number",
+                label: "Contact Number",
+              },
+
+              // Combined Relationship Fields
+              {
+                key: "salesman",
+                label: "Sales Team",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "salesman"),
+              },
+             
+              {
+                key: "outlet",
+                label: "Outlet",
+                render: (data: TableDataType) =>
+                  data.outlet.name,
+              },
+
+             
+              {
+                key: "asset_number",
+                label: "Asset Number",
+              },
+ {
+                key: "model",
+                label: "Model Number",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "model"),
+              },
+
+
+
+              // Status
+               {
+                key: "status",
+                label: "Status",
+                render: (data: TableDataType) =>
+                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
+              },
+            ],
+            rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:eye",

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import SidebarBtn from "./dashboardSidebarBtn";
 import Table from './customTable';
 
-export default function ItemCellWithPopup({ details,title }: { details: any[],title?:string }) {
+export default function ItemCellWithPopup({ details,title,title1 }: { details: any[],title?:string,title1?:string }) {
   const [showPopup, setShowPopup] = useState(false);
   if (!details || details.length === 0) return "-";
   const first = details[0];
@@ -13,7 +13,7 @@ export default function ItemCellWithPopup({ details,title }: { details: any[],ti
     const columns = [
         {
             key: 'item',
-            label: 'Item',
+            label: title1,
             render: (row: any) => (
                 <span>{`${row.erp_code || ""}${row.erp_code && row.item_name ? " - " : ""}${row.item_name || ""}`}</span>
             ),

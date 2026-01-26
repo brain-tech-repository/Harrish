@@ -24,9 +24,10 @@ type planogramfData = {
   images?: string[];
 };
 
-export const OverviewTab = () => {
+export const OverviewTab = ({data}:{data:any}) => {
+  const planogramData = data;
   const { uuid }:any = useParams<{ uuid: string }>();
-  const [planogramData, setShelfData] = useState<planogramfData | null>(null);
+  // const [planogramData, setShelfData] = useState<planogramfData | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageObjects, setImageObject] = useState<
     { shelf_id: number; image: string }[]
@@ -45,27 +46,27 @@ export const OverviewTab = () => {
     setImageModal(null);
   };
 
-  useEffect(() => {
-    if (!uuid) return;
+  // useEffect(() => {
+  //   if (!uuid) return;
 
-    const fetchPlanogramfData = async () => {
-      try {
-        setLoading(true);
-        const response = await getPlanogramById(uuid);
-        const data = response?.data?.data || response?.data;
+  //   const fetchPlanogramfData = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const response = await getPlanogramById(uuid);
+  //       const data = response?.data?.data || response?.data;
 
-        setImages(data?.images || []);
-        setShelfData(data);
-      } catch (error) {
-        console.error("Error fetching planogram data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       setImages(data?.images || []);
+  //       setShelfData(data);
+  //     } catch (error) {
+  //       console.error("Error fetching planogram data:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
 
-    fetchPlanogramfData();
-  }, [uuid]);
+  //   fetchPlanogramfData();
+  // }, [uuid]);
 
 
   const getFileView = (files?: string[]) =>
@@ -92,9 +93,9 @@ export const OverviewTab = () => {
 
 
 
-  if (loading) return <Loading />;
-  if (!planogramData)
-    return <div className="text-red-500">No shelf data available</div>;
+  // if (loading) return <Loading />;
+  // if (!planogramData)
+  //   return <div className="text-red-500">No shelf data available</div>;
 
   return (
     <>
@@ -136,7 +137,7 @@ export const OverviewTab = () => {
 
           {planogramData?.images && planogramData.images.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {planogramData.images.map((img, index) => (
+              {planogramData.images.map((img: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => openImageModal(planogramData.images!, index)}

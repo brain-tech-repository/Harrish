@@ -197,7 +197,7 @@ useEffect(() => {
         showSnackbar("Failed to get download URL", "error");
       }
     } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
+      showSnackbar("Failed to download distributor data", "error");
     } finally {
     }
   };

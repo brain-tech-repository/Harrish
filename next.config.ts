@@ -360,6 +360,7 @@ const nextConfig: NextConfig = {
       // loyaltyProgram
       { source: '/customerloyaltypoints/add', destination: '/customerLoyaltyPoints/add' },
       { source: '/customerloyaltypoints/:uuid', destination: '/customerLoyaltyPoints/:uuid' },
+      { source: '/customerloyaltypoints/details/:uuid', destination: '/customerLoyaltyPoints/details/:uuid' },
       { source: '/customerloyaltypoints', destination: '/customerLoyaltyPoints' },
 
       { source: '/pointsadjustment/add', destination: '/pointsAdjustment/add' },
@@ -448,6 +449,7 @@ const nextConfig: NextConfig = {
 
       { source: '/shelfdisplay/add', destination: '/shelfDisplay/add' },
       { source: '/shelfdisplay/:uuid', destination: '/shelfDisplay/:uuid' },
+      { source: '/shelfdisplay/view/:uuid', destination: '/shelfDisplay/view/:uuid' },
       { source: '/shelfdisplay', destination: '/shelfDisplay' },
 
       { source: '/stockinstore/add', destination: '/stockinstore/add' },

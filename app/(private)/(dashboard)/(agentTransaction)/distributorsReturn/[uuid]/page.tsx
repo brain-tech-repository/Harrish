@@ -852,7 +852,7 @@ export default function OrderAddEditPage() {
             onClear={() => setForm((prev) => ({ ...prev, route: "", route_name: "", customer: "", customer_name: "" }))}
             error={errors.route}
             disabled={!form.warehouse}
-            noOptionsMessage={!form.warehouse ? "Please select a warehouse first" : "No routes found"}
+            noOptionsMessage={!form.warehouse ? "Please select a Distributor first" : "No routes found"}
           />
 
           <AutoSuggestion

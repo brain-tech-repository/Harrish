@@ -140,7 +140,7 @@ export default function ViewPage() {
       key: "item",
       label: "Item",
       showByDefault: true,
-      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" details={row.details} />
+      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" title1="Items" details={row.details} />
     },
 
     {

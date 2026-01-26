@@ -621,7 +621,7 @@ export default function AddEditCapsCollection() {
               onClear={() => handleChange("customer", "")}
               error={errors.customer}
               disabled={!form.warehouse}
-              noOptionsMessage={!form.warehouse ? "Please select a warehouse first" : "No customers found"}
+              noOptionsMessage={!form.warehouse ? "Please select a distributor first" : "No customers found"}
             />
             
           </div>

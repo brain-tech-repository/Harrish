@@ -1355,6 +1355,7 @@ export default function InputFields({
             autoComplete="off"
             className={`border h-[44px] w-full rounded-md shadow-[0px_1px_2px_0px_#0A0D120D] px-3 py-1 mt-0 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold ${error ? "border-red-500" : "border-gray-300"
               }`}
+            multiple={props.multiple}
             {...props}
           />
         );
