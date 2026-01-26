@@ -32,6 +32,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import * as Yup from "yup";
 // import { CustomTableSkelton } from "@/app/components/customSkeleton";
 import Skeleton from "@mui/material/Skeleton";
+import Link from "@/app/components/smartLink";
 
 interface User {
   name: string;
@@ -1310,9 +1311,9 @@ export default function UserAddEdit() {
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <div className="cursor-pointer" onClick={() => router.back()}>
+          <Link href="/settings/user" back>
             <Icon icon="lucide:arrow-left" width={24} />
-          </div>
+          </Link>
           <h1 className="text-xl font-semibold text-gray-900">
             {isEditMode ? "Update User" : "Add User"}
           </h1>

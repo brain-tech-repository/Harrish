@@ -25,6 +25,7 @@ import StepperForm, {
   StepperStep,
 } from "@/app/components/stepperForm";
 import { useLoading } from "@/app/services/loadingContext";
+import Link from "@/app/components/smartLink";
 
 export type CompanyCustomerFormValues = {
   sap_code: string;
@@ -876,9 +877,9 @@ export default function AddCompanyCustomer() {
   return (
     <>
       <div className="flex align-middle items-center gap-3 text-gray-900 mb-6">
-        <div className="cursor-pointer" onClick={() => router.back()}>
+        <Link href="/companyCustomer" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold text-gray-900">
           {isEditMode ? "Update" : "Add"} Company Customer
         </h1>

@@ -24,6 +24,7 @@ import {
 } from "@/app/services/assetsApi";
 
 import { genearateCode, saveFinalCode } from "@/app/services/allApi";
+import Link from "@/app/components/smartLink";
 
 /* -------------------- VALIDATION -------------------- */
 const validationSchema = Yup.object({
@@ -291,9 +292,9 @@ useEffect(() => {
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="../spareMenu" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Spare Menu" : "Add Spare Menu"}
         </h1>

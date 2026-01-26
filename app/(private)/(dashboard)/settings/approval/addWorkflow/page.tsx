@@ -446,7 +446,7 @@ fetchUsersList();
     return (
         <>
             <div className="flex items-center gap-2 mb-4">
-                <Link href="/settings/approval">
+                <Link href="/settings/approval" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold text-gray-900 mb-1">Create Approval Flow</h1>

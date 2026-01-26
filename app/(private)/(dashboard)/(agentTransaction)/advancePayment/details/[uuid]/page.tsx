@@ -107,7 +107,7 @@ const PaymentDetails = () => {
       />
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href={backBtnUrl} className="text-gray-600 hover:text-gray-900">
+        <Link href={backBtnUrl} back className="text-gray-600 hover:text-gray-900">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">

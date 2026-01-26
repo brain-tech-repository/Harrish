@@ -1662,7 +1662,7 @@ export default function AddPricing() {
   return (
     <div className="">
       <div className="flex items-center gap-2">
-        <Link href="/pricing">
+        <Link href="/pricing" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold text-gray-900 mb-1">

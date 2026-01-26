@@ -8,6 +8,7 @@ import Table from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import Logo from "@/app/components/logo";
+import Link from "@/app/components/smartLink";
 import { addExchange, invoiceList, returnType, reasonList } from "@/app/services/agentTransaction";
 import {
   agentCustomerGlobalSearch,
@@ -890,7 +891,8 @@ export default function ExchangeAddEditPage() {
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Icon icon="lucide:arrow-left" className="curosor-pointer" width={24} onClick={() => router.back()} />
+          <Link href="/distributorsExchange" back>
+          <Icon icon="lucide:arrow-left" className="curosor-pointer" width={24} /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">Add Exchange</h1>
         </div>
       </div>

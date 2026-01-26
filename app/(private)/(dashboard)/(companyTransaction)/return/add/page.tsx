@@ -18,6 +18,7 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import { companyCustomersGlobalSearch, genearateCode, returnWarehouseStock, saveFinalCode } from "@/app/services/allApi";
 import { invoiceBatch, returnCreate } from "@/app/services/companyTransaction";
 import { isValidDate } from "@/app/utils/formatDate";
+import Link from "@/app/components/smartLink";
 
 interface FormData {
   item_id: number,
@@ -870,12 +871,10 @@ export default function PurchaseOrderAddEditPage() {
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Icon
+          <Link href="/return" back><Icon
             icon="lucide:arrow-left"
             width={24}
-            className="cursor-pointer"
-            onClick={() => router.back()}
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Add Return
           </h1>

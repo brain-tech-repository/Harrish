@@ -416,7 +416,7 @@ export default function AddInstallationReportPage() {
     return (
         <>
             <div className="flex items-center gap-4 mb-6">
-                <Link href="/chillerInstallation/installationReport">
+                <Link href="/chillerInstallation/installationReport" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold">Add Installation Report</h1>

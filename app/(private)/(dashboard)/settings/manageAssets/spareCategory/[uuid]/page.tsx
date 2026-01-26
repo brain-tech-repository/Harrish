@@ -13,6 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 import ContainerCard from "@/app/components/containerCard";
 import Loading from "@/app/components/Loading";
+import Link from "@/app/components/smartLink";
 
 /* ---------------- VALIDATION ---------------- */
 const validationSchema = Yup.object({
@@ -140,9 +141,9 @@ export default function AddEditSpare() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="/settings/manageAssets/spareCategory" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Spare Category" : "Add Spare Category"}
         </h1>

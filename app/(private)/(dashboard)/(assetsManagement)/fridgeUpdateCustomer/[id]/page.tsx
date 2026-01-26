@@ -31,6 +31,7 @@ import { channelList } from "@/app/services/allApi";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Loading from "@/app/components/Loading";
+import Link from "@/app/components/smartLink";
 
 // File validation helper
 const FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
@@ -1335,9 +1336,9 @@ export default function AddCompanyWithStepper() {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <div onClick={() => router.back()}>
+                    <Link href="/fridgeUpdateCustomer" back>
                         <Icon icon="lucide:arrow-left" width={24} />
-                    </div>
+                    </Link>
                     <h1 className="text-xl font-semibold text-gray-900">
                         {isEditMode ? "Update Fridge Update Customer" : "Add New Fridge Update Customer"}
                     </h1>

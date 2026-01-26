@@ -396,7 +396,7 @@ export default function AddEditWarehouse() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-          <Link href="/distributors">
+          <Link href="/distributors" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

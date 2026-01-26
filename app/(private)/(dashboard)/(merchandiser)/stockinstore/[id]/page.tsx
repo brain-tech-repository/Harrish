@@ -21,6 +21,7 @@ import {
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import Link from "@/app/components/smartLink";
 
 interface ItemRow {
     item_id: string;
@@ -304,12 +305,10 @@ export default function StockInStoreAddPage() {
     return (
         <div className="flex flex-col">
             <div className="flex items-center gap-3 mb-5">
-                <Icon
+                <Link href="/stockinstore" back><Icon
                     icon="lucide:arrow-left"
                     width={22}
-                    className="cursor-pointer"
-                    onClick={() => router.back()}
-                />
+                /></Link>
                 <h1 className="text-lg font-semibold">
                     {isEditMode ? "Update" : "Add"} Stock In Store
                 </h1>

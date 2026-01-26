@@ -237,7 +237,7 @@ export default function AddRoute() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/chillerInstallation/bulkTransfer">
+        <Link href="/chillerInstallation/bulkTransfer" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">Add Bulk Transfer</h1>

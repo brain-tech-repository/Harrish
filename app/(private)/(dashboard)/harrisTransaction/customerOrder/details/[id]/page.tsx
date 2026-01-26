@@ -12,6 +12,7 @@ import { useState } from "react";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import InputFields from "@/app/components/inputFields"; // ✅ Added InputField for consistency
+import Link from "@/app/components/smartLink";
 
 const dropdownDataList = [
   { icon: "humbleicons:radio", label: "Mark as Pending", iconWidth: 20 },
@@ -68,12 +69,11 @@ export default function OrderDetailPage() {
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/harrisTransaction/customerOrder" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
             Order Details {orderId}
           </h1>

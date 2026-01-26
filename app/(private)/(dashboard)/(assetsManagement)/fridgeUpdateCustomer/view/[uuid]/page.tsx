@@ -155,7 +155,7 @@ export default function ViewPage() {
     return (
         <>
             <div className="flex items-center gap-4 mb-6">
-                <Link href="/fridgeUpdateCustomer">
+                <Link href="/fridgeUpdateCustomer" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">{title}</h1>

@@ -15,6 +15,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import PrintButton from "@/app/components/printButton";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Link from "@/app/components/smartLink";
 
 interface TableRow {
   id: string;
@@ -181,12 +182,12 @@ export default function OrderDetailPage() {
     <>
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/distributorsExchange" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
           />
+          </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
             Exchange Details
           </h1>

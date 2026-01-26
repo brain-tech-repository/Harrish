@@ -21,6 +21,7 @@ import {
     FormikHelpers,
     FormikTouched,
 } from "formik";
+import Link from "@/app/components/smartLink";
 const validationSchema = Yup.object({
     ticket_type: Yup.string().required("Ticket Type is required"),
     ticket_date: Yup.string().required("Ticket Date is required"),
@@ -943,9 +944,9 @@ export default function AddOrEditChiller() {
         <div>
             {/* HEADER */}
             <div className="flex items-center gap-4 mb-6">
-                <div onClick={() => router.back()}>
+                <Link href="/callRegister" back>
                     <Icon icon="lucide:arrow-left" width={24} />
-                </div>
+                </Link>
                 <h1 className="text-xl font-semibold">
                     {isEditMode ? "Update Call Register" : "Add Call Register"}
                 </h1>
