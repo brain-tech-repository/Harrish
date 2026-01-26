@@ -9,7 +9,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import Image from "next/image";
 import {  downloadPDFGlobal } from '@/app/services/allApi';
 import { iframeDownload } from "@/app/utils/iframeDownload";
-import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence, allItemInvoiceExport} from "@/app/services/allApi";
+import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence, salesmanAllInvoiceExport} from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "next/link";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
@@ -699,7 +699,7 @@ export default function Page() {
   const exportReturnFile = async (uuid: string, format: string) => {
     try {
         setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-        const response = await allItemInvoiceExport(uuid, { format: format }); // send proper body object
+        const response = await salesmanAllInvoiceExport(uuid, { format }); // send proper body object
         if (response && typeof response === "object" && response.data.download_url) {
             await downloadFile(response.data.download_url);
             showSnackbar("File downloaded successfully", "success");
