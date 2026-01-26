@@ -8,10 +8,10 @@ const page = () => {
           title='Customer Report Dashboard' 
           titleNearExport="Customer Report"
           apiEndpoints={{
-            filters: 'http://172.16.6.205:8004/api/filters',
-            dashboard: 'http://172.16.6.205:8004/api/customer-sales-dashboard',
-            table: 'http://172.16.6.205:8004/api/table',
-            export: 'http://172.16.6.205:8004/api/download-customer-sales'
+            filters: 'http://172.16.6.205:8001/api/customer-report-filters',
+            dashboard: 'http://172.16.6.205:8001/api/customer-sales-dashboard',
+            table: 'http://172.16.6.205:8001/api/customer-sales-table',
+            export: 'http://172.16.6.205:8001/api/customer-sales-export'
           }}
           reportType="customer"
         />

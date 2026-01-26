@@ -11,10 +11,9 @@ interface SmartBackLinkProps {
 export default function Link({ href, children, ...props }: SmartBackLinkProps) {
   const router = useRouter();
 
-  function handleClick(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) {
-    if(window.history.length <= 2) router.push(href);
+  function handleClick(event: React.MouseEvent<HTMLSpanElement, MouseEvent>) {
     event.preventDefault();
-    router.back();
+    router.push(href);
   }
 
   return (
