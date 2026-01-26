@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ContainerCard from "@/app/components/containerCard";
-import { getPlanogramById } from "@/app/services/merchandiserApi";
+// import { getPlanogramById } from "@/app/services/merchandiserApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { useParams } from "next/navigation";
@@ -31,58 +31,17 @@ type ShelfData = {
   merchandisers?: Merchandiser[];
 };
 
-export const CustomerData = () => {
-  const { uuid }:any = useParams<{ uuid?: string }>();
-  const { showSnackbar } = useSnackbar();
-  const { setLoading } = useLoading();
-
-  const [shelfData, setShelfData] = useState<ShelfData | null>(null);
-  const [loading, setLocalLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchShelfData = async () => {
-      if (!uuid) return;
-      setLocalLoading(true);
-      setLoading(true);
-
-      try {
-        const res = await getPlanogramById(String(uuid));
-        const data = res?.data?.data || res?.data;
-
-        if (!data) {
-          showSnackbar("Unable to fetch Planogram details", "error");
-          return;
-        }
-
-        const transformedData: ShelfData = {
-          customers: data.customers || [],
-          merchandisers: data.merchendishers || [],
-        };
-
-        setShelfData(transformedData);
-      } catch (error) {
-        console.error("Error fetching Planogram data:", error);
-        showSnackbar("Unable to fetch Planogram details", "error");
-      } finally {
-        setLocalLoading(false);
-        setLoading(false);
-      }
-    };
-
-    fetchShelfData();
-  }, [uuid, showSnackbar, setLoading]);
-
-  if (loading || !shelfData) return <Loading />;
+export const CustomerData = ({data}:{data:any}) => {
+  const item = data;
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
-      {/* --- Merchandisers Section --- */}
       <div className="flex-1">
         <ContainerCard>
           <h1 className="text-lg font-semibold text-gray-800 mb-3">
             Merchandiser Information
           </h1>
-          {shelfData.merchandisers && shelfData.merchandisers.length > 0 ? (
+          {item?.merchendishers && item?.merchendishers.length > 0 ? (
             <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50 text-gray-700 font-semibold">
                 <tr>
@@ -91,14 +50,14 @@ export const CustomerData = () => {
                 </tr>
               </thead>
               <tbody>
-                {shelfData.merchandisers.map((item, index) => (
+                {item?.merchendishers.map((merchandiser: Merchandiser, index: number) => (
                   <tr
                     key={index}
                     className="border-b-gray-300 border-b last:border-b-0 hover:bg-gray-50 transition"
                   >
-                    <td className="px-4 text-left py-3">{item?.osa_code || "-"}</td>
+                    <td className="px-4 text-left py-3">{merchandiser?.osa_code || "-"}</td>
                     <td className="px-4 text-right py-3">
-                      {item?.name || "-"}
+                      {merchandiser?.name || "-"}
                     </td>
                   </tr>
                 ))}
@@ -118,7 +77,7 @@ export const CustomerData = () => {
           <h1 className="text-lg font-semibold text-gray-800 mb-3">
             Customer Information
           </h1>
-          {shelfData.customers && shelfData.customers.length > 0 ? (
+          {item?.customers && item.customers.length > 0 ? (
             <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50 text-gray-700 font-semibold">
                 <tr>
@@ -129,16 +88,16 @@ export const CustomerData = () => {
                 </tr>
               </thead>
               <tbody>
-                {shelfData.customers.map((item, index) => (
+                {item?.customers.map((customer: Customer, index: number) => (
                   <tr
                     key={index}
                     className="border-b-gray-300 border-b last:border-b-0 hover:bg-gray-50 transition"
                   >
                     <td className="px-4 text-left py-3">
-                      {item?.osa_code || "-"}
+                      {customer?.osa_code || "-"}
                     </td>
                     <td className="px-4 text-right py-3">
-                      {item?.business_name || "-"}
+                      {customer?.business_name || "-"}
                     </td>
                   </tr>
                 ))}

@@ -62,18 +62,18 @@ export default function Warehouse() {
   const columns = [
   // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
   // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
-  { key: "warehouse_name", label: "Distributors Name", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-", 
-    filter: {
-          isFilterable: true,
-          width: 320,
-          filterkey: "warehouse_id",
-          options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-          onSelect: (selected: string | string[]) => {
-              setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-          },
-          isSingle: false,
-          selectedValue: warehouseId,
-      },
+  { key: "warehouse_name", label: "Distributors", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-", 
+    // filter: {
+    //       isFilterable: true,
+    //       width: 320,
+    //       filterkey: "warehouse_id",
+    //       options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+    //       onSelect: (selected: string | string[]) => {
+    //           setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+    //       },
+    //       isSingle: false,
+    //       selectedValue: warehouseId,
+    //   },
    },
   { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
   { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
@@ -240,9 +240,9 @@ export default function Warehouse() {
           per_page: pageSize.toString(),
         };
         
-        if (warehouseId) {
-          params.warehouse_id = warehouseId;
-        }
+        // if (warehouseId) {
+        //   params.warehouse_id = warehouseId;
+        // }
         if (regionId) {
           params.region_id = regionId;
         }

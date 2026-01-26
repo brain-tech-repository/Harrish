@@ -201,12 +201,12 @@ export default function CampaignPage() {
               {
                 key: "merchandiser",
                 label: "Merchandiser",
-                render: (row) => row?.merchandiser?.name ?? "-",
+                render: (row) => `${row?.merchandiser?.osa_code ?? ""} - ${row?.merchandiser?.name ?? ""}`,
               },
               {
                 key: "customer",
                 label: "Customer",
-                render: (row) => row?.customer?.owner_name ?? "-",
+                render: (row) => `${row?.customer?.customer_code ?? ""} - ${row?.customer?.owner_name ?? "-"}`,
               },
               {
                 key: "feedback",

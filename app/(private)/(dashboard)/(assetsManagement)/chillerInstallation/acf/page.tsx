@@ -429,7 +429,7 @@ export default function CustomerInvoicePage() {
                         filterBy:fetchAssetAccordingToGlobalFilter
                     },
                     header: {
-                        title: "Approve Chiller Request",
+                        title: "Approve CRF Request",
                         columnFilter: true,
                         searchBar: false,
                         
@@ -469,7 +469,8 @@ export default function CustomerInvoicePage() {
                                                 showSnackbar(res.message || "Failed to add ACF", "error");
                                             } else {
                                                 showSnackbar(res.message || "ACF added successfully", "success");
-                                                setRefreshKey(k => k + 1);
+                                                // Force refresh after a short delay to ensure state update
+                                                setTimeout(() => setRefreshKey(k => k + 1), 200);
                                             }
                                         } catch (error) {
                                             showSnackbar("Failed to add ACF", "error");

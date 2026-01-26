@@ -14,6 +14,7 @@ import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useEffect } from "react";
 import { surveyExport } from "@/app/services/assetsApi";
+import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 
 interface SurveyItem {
   id: number;
@@ -158,11 +159,11 @@ export default function Survey() {
 
   // ✅ Table Columns
   const columns = [
-    { key: "survey_code", label: "Survey Code" },
-    { key: "survey_name", label: "Survey Name" },
+    { key: "survey_code", label: "Survey",render: (row: TableDataType) => `${row.survey_code || ""} - ${row.survey_name || ""}`  },
+    // { key: "survey_name", label: "Survey Name" },
     { key: "survey_type", label: "Survey Type" },
-    { key: "start_date", label: "Start Date" },
-    { key: "end_date", label: "End Date" },
+    { key: "start_date", label: "Start Date",render : (row: TableDataType) => formatDate(row.start_date)  },
+    { key: "end_date", label: "End Date",render : (row: TableDataType) => formatDate(row.end_date) },
     {
       key: "status",
       label: "Status",

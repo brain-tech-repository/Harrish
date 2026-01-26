@@ -97,7 +97,7 @@ export default function ImagePreviewModal({
                 <button
                   type="button"
                   onClick={prevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 p-2 rounded-full shadow"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 p-2 rounded-full shadow cursor-pointer"
                 >
                   <Icon
                     icon="mdi:chevron-left"
@@ -109,7 +109,7 @@ export default function ImagePreviewModal({
                 <button
                   type="button"
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 p-2 rounded-full shadow"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 p-2 rounded-full shadow cursor-pointer"
                 >
                   <Icon
                     icon="mdi:chevron-right"
