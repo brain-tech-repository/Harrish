@@ -32,7 +32,6 @@ export default function AddEditSpare() {
   const router = useRouter();
   const params = useParams();
 
-  /* -------- UUID HANDLING -------- */
   const uuid =
     typeof params.uuid === "string" ? params.uuid : String(params.uuid);
 
@@ -42,13 +41,17 @@ export default function AddEditSpare() {
   const [localLoading, setLocalLoading] = useState(false);
   const codeGeneratedRef = useRef(false);
 
+  /* ---------------- FORM STATE ---------------- */
+  const [initialData, setInitialData] = useState({
+    osa_code: "",
+    spare_category_name: "",
+    status: 1,
+  });
+
   /* ---------------- FORM ---------------- */
   const formik = useFormik({
-    initialValues: {
-      osa_code: "",
-      spare_category_name: "",
-      status: 1,
-    },
+    enableReinitialize: true, // ✅ IMPORTANT
+    initialValues: initialData,
     validationSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       setLoading(true);
@@ -74,14 +77,16 @@ export default function AddEditSpare() {
         }
 
         showSnackbar(
-          isEditMode ? "Spare Category updated successfully" : "Spare Category added successfully",
+          isEditMode
+            ? "Spare updated successfully"
+            : "Spare added successfully",
           "success"
         );
 
         if (isAddMode) {
           await saveFinalCode({
             reserved_code: values.osa_code,
-            model_name: "spare",
+            model_name: "spa_cat",
           });
         }
 
@@ -99,13 +104,13 @@ export default function AddEditSpare() {
   /* ---------------- LOAD DATA ---------------- */
   useEffect(() => {
     const loadData = async () => {
-      // EDIT MODE → fetch by UUID
+      // EDIT MODE
       if (isEditMode) {
         setLocalLoading(true);
         try {
           const res = await spareByID(uuid);
           if (res?.data) {
-            formik.setValues({
+            setInitialData({
               osa_code: res.data.osa_code ?? "",
               spare_category_name: res.data.spare_category_name ?? "",
               status: res.data.status ?? 1,
@@ -118,19 +123,26 @@ export default function AddEditSpare() {
         }
       }
 
-      // ADD MODE → generate code
+      // ADD MODE → GENERATE CODE
       if (isAddMode && !codeGeneratedRef.current) {
         codeGeneratedRef.current = true;
         try {
-          const res = await genearateCode({ model_name: "spare" });
+          const res = await genearateCode({ model_name: "spa_cat" });
           if (res?.code) {
-            formik.setFieldValue("osa_code", res.code);
+            setInitialData({
+              osa_code: res.code,
+              spare_category_name: "",
+              status: 1,
+            });
           }
         } catch {
           showSnackbar("Failed to generate spare code", "error");
         }
       }
     };
+       
+  
+    
 
     loadData();
   }, [uuid]);
@@ -138,7 +150,6 @@ export default function AddEditSpare() {
   /* ---------------- UI ---------------- */
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <div onClick={() => router.back()} className="cursor-pointer">
           <Icon icon="lucide:arrow-left" width={24} />
@@ -163,7 +174,6 @@ export default function AddEditSpare() {
                   value={formik.values.osa_code}
                   onChange={formik.handleChange}
                   disabled
-                  error={formik.touched.osa_code && formik.errors.osa_code}
                 />
 
                 <InputFields

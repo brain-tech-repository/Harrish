@@ -82,6 +82,7 @@ export const deleteServiceTypes = async (uuid: string) => {
 
 // Chiller
 export const chillerList = async (params?: Params) => {
+  console.log("Params in chillerList:", params);
   try {
     const res = await API.get("/api/assets/chiller/list_chillers", {
       params: params,
@@ -228,7 +229,7 @@ export const deleteVendor = async (uuid: string) => {
 // chiller Request
 export const chillerRequestList = async (params: Params) => {
   try {
-    const res = await API.get(`/api/assets/chiller-request/list`, {
+    const res = await API.post(`/api/assets/chiller-request/list`, {
       params: params,
     });
     return res.data;
@@ -351,7 +352,7 @@ export const addChillerRequest = async (formData: FormData) => {
 
 export const fridgeUpdateCustomerList = async (params: any) => {
   try {
-    const res = await API.get(`/api/assets/fridge-customer-update/list`, {
+    const res = await API.post(`/api/assets/fridge-customer-update/list`, {
       params: params,
     });
     return res.data;
@@ -1016,7 +1017,7 @@ export const spareMenu = async (body: object) => {
 export const spareNameByID = async (uuid: string, params?: Params) => {
 
   try {
-    const res = await API.get(`/api/settings/spare/show/${uuid}`, {
+    const res = await API.get(`/api/assets/spare/show/${uuid}`, {
       params: params,
     });
     return res.data;

@@ -47,8 +47,10 @@ export default function CustomerInvoicePage() {
         csv: false,
         xlsx: false,
     });
-    const {  salesmanOptions, warehouseAllOptions, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-    const [colFilter, setColFilter] = useState<boolean>(false);
+    const { customerSubCategoryOptions, companyOptions, salesmanOptions, agentCustomerOptions, channelOptions, warehouseAllOptions, routeOptions, regionOptions, areaOptions, ensureAgentCustomerLoaded,
+         ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, ensureCustomerSubCategoryLoaded, 
+         ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+
     // Load dropdown data
     useEffect(() => {
         ensureSalesmanLoaded();
@@ -146,7 +148,7 @@ export default function CustomerInvoicePage() {
                 result = await deliveryGlobalFilter(body);
             } finally {
                 setLoading(false);
-                setColFilter(false);
+                // setColFilter(false);
             }
 
             if (result?.error) throw new Error(result.data?.message || "Filter failed");

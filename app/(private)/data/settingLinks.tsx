@@ -369,17 +369,18 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
+           
           {
             isActive: false,
-            href: "/settings/manageAssets/spareMenu",
-            label: "Spare Menu",
+            href: "/settings/manageAssets/spareSubCategory",
+            label: "Spare Sub Category",
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
           {
             isActive: false,
-            href: "/settings/manageAssets/spareSubCategory",
-            label: "Spare SubCategory",
+            href: "/settings/manageAssets/spareMenu",
+            label: "Spare",
             leadingIcon: "mdi:map",
             iconColor: "text-yellow-400",
           },
