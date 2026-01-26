@@ -34,6 +34,7 @@ import {
 } from "@/app/services/assetsApi";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Link from "@/app/components/smartLink";
 
 // File validation helper
 const FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
@@ -1556,9 +1557,9 @@ export default function AddServiceVisitStepper() {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <div onClick={() => router.back()}>
+                    <Link href="/serviceVisit" back>
                         <Icon icon="lucide:arrow-left" width={24} />
-                    </div>
+                    </Link>
                     <h1 className="text-xl font-semibold text-gray-900">
                         {isEditMode ? "Update Service Visit" : "Add Service Visit"}
                     </h1>

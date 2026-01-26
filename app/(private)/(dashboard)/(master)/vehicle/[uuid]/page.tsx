@@ -675,7 +675,7 @@ export default function AddEditVehicleWithStepper() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Link href="/vehicle">
+        <Link href="/vehicle" back={true}>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="mb-[4px] text-xl font-semibold text-gray-900">

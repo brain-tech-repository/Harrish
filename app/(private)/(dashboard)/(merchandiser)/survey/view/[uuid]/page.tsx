@@ -200,7 +200,7 @@ export default function Page() {
     <>
       {/* Back Button + Title */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">Survey Details</h1>

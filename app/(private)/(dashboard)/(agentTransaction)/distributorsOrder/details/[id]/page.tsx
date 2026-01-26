@@ -38,6 +38,7 @@ import { camelToTitleCase } from "@/app/(private)/utils/text";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import { generatePdfFromElement } from "@/app/utils/generateDeliveryPdf";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+import Link from "@/app/components/smartLink";
 const columns = [
   { key: "index", label: "#" },
   {
@@ -312,12 +313,14 @@ const exportFile = async () => {
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/distributorsOrder" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
             onClick={() => router.push("/distributorsOrder")}
             className="cursor-pointer"
           />
+          </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Distributor&apos;s Orders Details #{data?.order_code || "-"}
           </h1>

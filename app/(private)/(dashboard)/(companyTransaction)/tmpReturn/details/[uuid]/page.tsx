@@ -18,6 +18,7 @@ import { downloadFile } from "@/app/services/allApi";
 import { purchaseOrderById, tempReturnByUUID, exportTempReturnViewPdf } from "@/app/services/companyTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import Link from "@/app/components/smartLink";
 
 const columns = [
     { key: "index", label: "#" },
@@ -176,12 +177,10 @@ export default function OrderDetailPage() {
             {/* ---------- Header ---------- */}
             <div className="flex justify-between items-center mb-[20px]">
                 <div className="flex items-center gap-[16px]">
-                    <Icon
+                    <Link href="/tmpReturn" back><Icon
                         icon="lucide:arrow-left"
                         width={24}
-                        onClick={() => router.push("/tmpReturn")}
-                        className="cursor-pointer"
-                    />
+                    /></Link>
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
                         Temporary Return
                     </h1>

@@ -142,7 +142,7 @@ export default function AddShelfDisplay() {
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/settings/submenu">
+        <Link href="/settings/submenu" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Submenu" : "Add New Submenu"}</h1>

@@ -495,7 +495,11 @@ export default function AddPricing() {
                 if (currentStep > 1) {
                   prevStep();
                 } else {
-                  router.push("/promotion");
+                  if (typeof window !== "undefined" && window.history.length <= 2) {
+                    router.push("/promotion");
+                  } else {
+                    router.back();
+                  }
                 }
               }}
               className="p-1 rounded-full hover:bg-gray-100"

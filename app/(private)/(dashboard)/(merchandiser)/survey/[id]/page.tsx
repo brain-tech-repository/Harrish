@@ -1224,7 +1224,7 @@ export default function AddSurveyTabs() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/survey">
+        <Link href="/survey" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Survey" : "Add Survey"}</h1>

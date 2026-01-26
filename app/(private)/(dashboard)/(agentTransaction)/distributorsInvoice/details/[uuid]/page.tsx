@@ -21,6 +21,7 @@ import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { generatePdfFromElement } from "@/app/utils/generateDeliveryPdf";
 import { downloadPDFGlobal } from "@/app/services/allApi";
+import Link from "@/app/components/smartLink";
 // const CURRENCY = localStorage.getItem("country") || "";
 
 interface DeliveryDetail {
@@ -274,12 +275,13 @@ export default function OrderDetailPage() {
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/distributorsInvoice" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
             onClick={() => router.push("/distributorsInvoice")}
             className="cursor-pointer"
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Invoice Details
           </h1>

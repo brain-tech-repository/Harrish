@@ -903,7 +903,7 @@ export default function CapsAddPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href={backBtnUrl}>
+          <Link href={backBtnUrl} back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900 mb-1">

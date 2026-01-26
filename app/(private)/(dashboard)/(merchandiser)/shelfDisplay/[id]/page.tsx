@@ -409,7 +409,7 @@ export default function ShelfDisplay() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/shelfDisplay">
+        <Link href="/shelfDisplay" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Shelf" : "Add Shelf"}</h1>

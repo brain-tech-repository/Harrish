@@ -1109,17 +1109,15 @@ export default function OrderAddEditPage() {
   return (
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
+        <Link href={"distributorsOrder"} back className="flex items-center gap-[16px]">
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Add Distributor&apos;s Orders
           </h1>
-        </div>
+        </Link>
       </div>
 
       <ContainerCard className="rounded-[10px] scrollbar-none">

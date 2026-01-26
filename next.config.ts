@@ -593,6 +593,10 @@ const nextConfig: NextConfig = {
       { source: '/settings/manageassets/project/:uuid', destination: '/settings/manageAssets/project/:uuid' },
       { source: '/settings/manageassets/project', destination: '/settings/manageAssets/project' },
 
+      { source: '/settings/manageassets/sparemenu/add', destination: '/settings/manageAssets/spareMenu/add' },
+      { source: '/settings/manageassets/sparemenu/:uuid', destination: '/settings/manageAssets/spareMenu/:uuid' },
+      { source: '/settings/manageassets/sparemenu', destination: '/settings/manageAssets/spareMenu' },
+      
       { source: '/settings/manageassets/sparecategory/add', destination: '/settings/manageAssets/spareCategory/add' },
       { source: '/settings/manageassets/sparecategory/:uuid', destination: '/settings/manageAssets/spareCategory/:uuid' },
       { source: '/settings/manageassets/sparecategory', destination: '/settings/manageAssets/spareCategory' },

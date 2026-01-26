@@ -14,7 +14,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 // Type definitions for the ACF API response
 interface ChillerRequest {
     id: number;
@@ -242,7 +242,7 @@ export default function CustomerInvoicePage() {
     return (
         <>
         <div className="flex items-center gap-4 mb-6">
-                <Link href="/chillerInstallation/iro">
+                <Link href="/chillerInstallation/iro" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">Installation Request Order Details</h1>

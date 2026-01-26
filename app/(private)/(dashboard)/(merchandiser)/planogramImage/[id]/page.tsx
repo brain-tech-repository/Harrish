@@ -143,7 +143,7 @@ export default function Page() {
   return(
     <div className={isEditMode && parsedId === null ? "hidden" : "w-full h-full p-4"}>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/merchandiser/planogramImage">
+        <Link href="/merchandiser/planogramImage" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Planogram Image" : "Add Planogram Image"}</h1>

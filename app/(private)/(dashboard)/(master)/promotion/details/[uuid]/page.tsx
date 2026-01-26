@@ -11,6 +11,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import Loading from "@/app/components/Loading";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Link from "@/app/components/smartLink";
 
 export default function PromotionDetailsPage() {
   const params = useParams();
@@ -125,9 +126,9 @@ export default function PromotionDetailsPage() {
   return (
     <div className="pb-10 bg-[#F9FAFB] min-h-screen">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="p-2 rounded-lg bg-white border border-[#E9EAEB] hover:bg-gray-50 transition-all cursor-pointer shadow-sm">
+        <Link href="/promotion" back className="p-2 rounded-lg bg-white border border-[#E9EAEB] hover:bg-gray-50 transition-all cursor-pointer shadow-sm">
           <Icon icon="lucide:arrow-left" width={20} />
-        </button>
+        </Link>
         <div>
           <h1 className="text-2xl font-bold text-[#181D27]">Promotion Details</h1>
           <p className="text-sm text-gray-500">View configuration and scope for this promotional campaign</p>

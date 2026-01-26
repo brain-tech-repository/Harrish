@@ -17,6 +17,7 @@ import ContainerCard from "@/app/components/containerCard";
 import Loading from "@/app/components/Loading";
 import Category from "../../../promotionTypes/page";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Link from "@/app/components/smartLink";
 const validationSchema = Yup.object().shape({
   spare_subcategory_name: Yup.string()
     .trim()
@@ -161,9 +162,9 @@ export default function AddEditSub() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="/settings/manageAssets/spareSubCategory" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Sub" : "Add Sub"}
         </h1>

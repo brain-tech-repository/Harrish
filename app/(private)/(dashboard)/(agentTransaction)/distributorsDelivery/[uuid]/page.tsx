@@ -34,9 +34,9 @@ import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { toTitleCase } from "@/app/(private)/utils/text";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import StepperForm, { useStepperForm } from "@/app/components/stepperForm";
-import { Link } from "lucide-react";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
+import Link from "@/app/components/smartLink";
 
 interface FormData {
   id: number;
@@ -987,12 +987,12 @@ export default function DeliveryAddEditPage() {
             items-center gap-[16px]
           "
         >
+          <Link href="/distributorsDelivery" back >
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
           />
+          </Link>
           <h1
             className="
               flex

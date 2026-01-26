@@ -22,6 +22,7 @@ import {
   orderListByUUID,
   exportDeliveryViewPdf,
 } from "@/app/services/companyTransaction";
+import Link from "@/app/components/smartLink";
 
 const columns = [
   { key: "index", label: "#" },
@@ -225,14 +226,11 @@ export default function OrderDetailPage() {
             items-center gap-[16px]
           "
         >
+          <Link href="/delivery" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.push("/delivery")}
-            className="
-              cursor-pointer
-            "
-          />
+          /></Link>
           <h1
             className="
               flex

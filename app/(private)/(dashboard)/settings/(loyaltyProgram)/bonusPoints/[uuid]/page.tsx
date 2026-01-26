@@ -216,7 +216,7 @@ export default function AddEditTier() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/settings/bonusPoints">
+          <Link href="/settings/bonusPoints" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

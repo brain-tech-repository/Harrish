@@ -18,6 +18,7 @@ import { agentOrderExport } from "@/app/services/agentTransaction";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 import { orderListByUUID, exportOrderViewPdf } from "@/app/services/companyTransaction";
+import Link from "@/app/components/smartLink";
 
 const columns = [
   { key: "index", label: "#" },
@@ -162,12 +163,11 @@ export default function OrderDetailPage() {
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/order" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.push("/order")}
-            className="cursor-pointer"
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Order #{data?.order_code || "-"}
           </h1>

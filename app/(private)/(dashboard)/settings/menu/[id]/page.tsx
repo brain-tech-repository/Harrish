@@ -114,7 +114,7 @@ export default function AddShelfDisplay() {
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/settings/menu">
+        <Link href="/settings/menu" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Menu" : "Add New Menu"}</h1>

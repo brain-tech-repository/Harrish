@@ -141,7 +141,7 @@ export default function AddEditExpenseType() {
     <div className="w-full h-full overflow-x-hidden p-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/settings/manageCompany/expenseType">
+          <Link href="/settings/manageCompany/expenseType" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

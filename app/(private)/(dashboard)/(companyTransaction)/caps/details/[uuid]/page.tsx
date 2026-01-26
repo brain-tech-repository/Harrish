@@ -18,6 +18,7 @@ import { downloadFile } from "@/app/services/allApi";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Link from "@/app/components/smartLink";
 
 const baseColumns = [
     { key: "index", label: "#" },
@@ -158,12 +159,12 @@ export default function CapsDetailPage() {
             {/* ---------- Header ---------- */}
             <div className="flex justify-between items-center mb-[20px]">
                 <div className="flex items-center gap-[16px]">
+                    <Link href={backBtnUrl} back>
                     <Icon
                         icon="lucide:arrow-left"
                         width={24}
-                        onClick={() => router.push(backBtnUrl)}
-                        className="cursor-pointer"
                     />
+                    </Link>
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
                         Caps Deposit 
                     </h1>

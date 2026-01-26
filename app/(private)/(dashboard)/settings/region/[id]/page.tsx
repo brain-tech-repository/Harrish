@@ -149,7 +149,7 @@ export default function AddEditRegion() {
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/settings/region">
+        <Link href="/settings/region" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">
