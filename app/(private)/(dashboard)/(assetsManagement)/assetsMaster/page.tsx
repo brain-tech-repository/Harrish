@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import BorderIconButton from "@/app/components/borderIconButton";
@@ -13,11 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { assetsMasterExport, chillerList, deleteChiller, deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-import { AssestMasterfilter, AssetMasterStatus, AssestMasterModel, assestMasterQR, downloadQR } from "@/app/services/allApi";
-
-import { generateAssetLabelPdfDirect } from "./utils/util";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import filterAssest from "@/app/components/filterAssest";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 
 const dropdownDataList = [
@@ -31,76 +27,7 @@ export default function ShelfDisplay() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [warehouses, setWarehouses] = useState([0].map(() => ({ label: "", value: "" })));
-  const [modelNumberOptions, setModelNumberOptions] = useState<any[]>([]);
-const {
-    customerSubCategoryOptions,
-    companyOptions,
-    salesmanOptions,
-    channelOptions,
-    warehouseAllOptions,
-    routeOptions,
-    regionOptions,
-    areaOptions,
-    ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded, 
-    ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, 
-    ensureSalesmanLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
-
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureChannelLoaded();
-    ensureCompanyLoaded();
-    ensureCustomerSubCategoryLoaded();
-    ensureRegionLoaded();
-    ensureRouteLoaded();
-    ensureSalesmanLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureChannelLoaded, ensureCompanyLoaded,
-     ensureCustomerSubCategoryLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureSalesmanLoaded,
-      ensureWarehouseAllLoaded]);
-
-  const [filters, setFilters] = useState({
-   id: "",
-   code:"",
-   name:"",
-    
-   
-  });
- const [isFiltered, setIsFiltered] = useState(false);
-  const [tableFilters, setTableFilters] = useState<any>({});
-  const fetchWarehouses = async () => {
-  const res = await AssestMasterfilter();
-
-setWarehouses(
-  Array.isArray(res?.data)
-    ? res.data.map((w: any) => ({
-        label: w.warehouse_name,
-        value: w.id,
-      }))
-    : []
-);}
-const validateFilters = () => {
-    if (!filters.id && !filters.code && !filters.name) {
-      showSnackbar("Please select at least one filter", "warning");
-      return false;
-    }
-    return true;
-  };
- const handleFilter = () => {
-    if (!validateFilters()) return;
-    setIsFiltered(true);
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  // ✅ Reset Filter
-  const handleReset = () => {
-    setFilters({ id: "", code: "", name: "" });
-    setIsFiltered(false);
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  // const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
+  const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
 
 
   // Refresh table when permissions load
@@ -111,26 +38,30 @@ const validateFilters = () => {
   }, [permissions]);
 
   const router = useRouter();
-  const PATH = `/assetsMaster/details/`;
   const { showSnackbar } = useSnackbar();
-   const [threeDotLoading, setThreeDotLoading] = useState({
-    csv: false,
-    xlsx: false,
-  });
-  const paramsRoute = useParams();
-  
-  
-  
-  
-const labelRef = useRef<HTMLDivElement>(null);
-const [filterState, setFilterState] = useState<{
-  company?: any;
-  region?: any;
-  area?: any;
-  distributor?: any;
-}>({});
-const uuid = paramsRoute?.uuid as string;
-const searchChiller = useCallback(
+
+  const fetchServiceTypes = useCallback(
+    async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+      setLoading(true);
+      const res = await chillerList({
+        page: pageNo.toString(),
+        per_page: pageSize.toString(),
+      });
+      setLoading(false);
+      if (res.error) {
+        showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
+        throw new Error("Unable to fetch the Chillers");
+      } else {
+        return {
+          data: res.data || [],
+          currentPage: res?.pagination?.page || 0,
+          pageSize: res?.pagination?.limit || 10,
+          total: res?.pagination?.totalPages || 0,
+        };
+      }
+    }, []
+  )
+  const searchChiller = useCallback(
     async (
       query: string,
       pageSize: number = 10,
@@ -172,7 +103,8 @@ const searchChiller = useCallback(
     []
   );
 
- const handleExport = async (fileType: "csv" | "xlsx") => {
+
+  const handleExport = async (fileType: "csv" | "xlsx") => {
     try {
       // setLoading(true);
       setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
@@ -221,225 +153,20 @@ const searchChiller = useCallback(
   };
 
 
-  // useEffect(() => {
-  //   setLoading(true);
-  // }, [])
-  // ########################################################
-  //  const fetchServiceTypes = useCallback(
-  //   async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
-  //     setLoading(true);
-  //     const res = await chillerList({
-  //       page: pageNo.toString(),
-  //       per_page: pageSize.toString(),
-  //     });
-  //     setLoading(false);
-  //     if (res.error) {
-  //       showSnackbar(res.data.message || "failed to fetch the Chillers", "error");
-  //       throw new Error("Unable to fetch the Chillers");
-  //     } else {
-  //       return {
-  //         data: res.data || [],
-  //         currentPage: res?.pagination?.page || 0,
-  //         pageSize: res?.pagination?.limit || 10,
-  //         total: res?.pagination?.totalPages || 0,
-  //       };
-  //     }
-  //   }, []
-  // )
-
-const fetchServiceTypes = useCallback(
-  async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+  useEffect(() => {
     setLoading(true);
-
-    const res = await chillerList({
-      page: pageNo.toString(),
-      per_page: pageSize.toString(),
-      ...tableFilters,   // ✅ filters yahin se aayenge
-    });
-
-    setLoading(false);
-
-    if (res.error) {
-      showSnackbar(res.data.message || "failed to fetch", "error");
-      throw new Error("fetch failed");
-    }
-
-    return {
-      data: res.data || [],
-      //  list: res?.data ?? [],
-      currentPage: res?.pagination?.page || 0,
-      pageSize: res?.pagination?.limit || 10,
-      total: res?.pagination?.totalPages || 0,
-    };
-  },
-  [tableFilters]   // 🔥 important
-);
-
-
-
-
-
-
-
-
-
-
-
-//  const filterBy = useCallback(
-//     async (payload: Record<string, string | number | null>, pageSize = 10) => {
-//       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
-
-//       const res = await chillerList(finalPayload);
-
-//       return {
-//         data: res?.data || [],
-//         total: res?.pagination?.totalPages || 0,
-//         currentPage: res?.pagination?.page || 0,
-//         pageSize: res?.pagination?.limit || pageSize,
-//       };
-//     },
-//     [tableFilters]  // dependency array
-//   );
-
-// const filterBy = useCallback(
-//   async (payload: Record<string, any>, pageSize = 10) => {
-//     setTableFilters(payload);  // ✅ bas state set
-
-//     return {
-//       data: [],
-//       total: 0,
-//       currentPage: 0,
-//       pageSize,
-//     };
-//   },
-//   []
-// );
-
-
-const filterBy = useCallback(
-    async (payload: Record<string, string | number | null>, pageSize = 10) => {
-       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
-      setTableFilters(payload);
-
-      const res = await   AssetMasterStatus(finalPayload);
-
-      return {
-        data: res?.data || [],
-        total: res?.pagination?.totalPages || 0,
-        currentPage: res?.pagination?.page || 0,
-        pageSize: res?.pagination?.limit || pageSize,
-      };
-    },
-    [tableFilters]  // dependency array
-  );
-
-
-
-
-
-
-
-
-// const filterBy = useCallback(
-//           async (
-//               payload: Record<string, string | number | null>,
-//               pageSize: number
-//           ): Promise<listReturnType> => {
-//               console.log("payload", payload);
-//               let result;
-//               try {
-//                   const params: Record<string, string> = { per_page: pageSize.toString() };
-//                   Object.keys(payload || {}).forEach((k) => {
-//                       const v = payload[k as keyof typeof payload];
-//                       if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-//                           params[k] = String(v);
-//                       }
-//                   });
-
-//                   result = await chillerList(params);
-                   
-
-//               } catch (error) {
-//                   throw new Error(String(error));
-//               }
-  
-//               if (result?.error) throw new Error(result.data?.message || "Filter failed");
-//               else {
-//                   const pagination = result.pagination?.pagination || result.pagination || {};
-//                   const rows = result?.data || [];
-//                   return {
-//                       data: rows.map((item: any) => ({
-//         uuid: item.uuid,
-//         from_warehouse: item.from_warehouse?.warehouse_name || "-",
-//         to_warehouse: item.to_warehouse?.warehouse_name || "-",
-//         transfer_date: item.transfer_date || item.created_at || null,
-//       })),
-//                       total: pagination.totalPages || result.pagination?.totalPages || 0,
-//                       totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
-//                       currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-//                       pageSize: pagination.limit || pageSize,
-//                   };
-//               }
-//           }, []);
-  
- const fetchAssetsTransferList = useCallback(
-  async (page = 1, pageSize = 50): Promise<listReturnType> => {
-    const response = await chillerList({
-      ...filters,
-      // page,
-      // limit: pageSize,
-    });
-
-    const rows = response?.data || [];
-
-    return {
-      data: rows.map((item: any) => ({
-        uuid: item.uuid,
-        from_warehouse: item.from_warehouse?.warehouse_name || "-",
-        to_warehouse: item.to_warehouse?.warehouse_name || "-",
-        transfer_date: item.transfer_date || item.created_at || null,
-      })),
-      total: response?.pagination?.total || 0,
-      currentPage: response?.pagination?.page || page,
-      pageSize: response?.pagination?.limit || pageSize,
-    };
-  },
-  [filters]
-);
-    
-// ################################################################################
-
-
-const handleDownloadQR = async (row: TableDataType) => {
-    console.log("Downloading QR for row:", row);
-    try {
-      setLoading(true);
-      await generateAssetLabelPdfDirect(row, row.osa_code || row.uuid);
-      showSnackbar("Asset QR PDF downloaded successfully", "success");
-    } catch (error) {
-      console.error("Download QR error:", error);
-      showSnackbar("Failed to download QR code", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-
+  }, [])
 
   return (
     <>
       {/* Table */}
-      <div  className="flex flex-col h-full">
+      <div className="flex flex-col h-full">
         <Table
           refreshKey={refreshKey}
           config={{
             api: {
-              
               list: fetchServiceTypes,
-              // search: searchChiller,
-              filterBy: filterBy,
+              search: searchChiller
             },
             header: {
               title: "Assets Master",
@@ -460,9 +187,7 @@ const handleDownloadQR = async (row: TableDataType) => {
                 },
               ],
               searchBar: false,
-              // searchBar: false,
               columnFilter: true,
-                filterRenderer:filterAssest,
               actions: can("create") ? [
                 <SidebarBtn
                   key="name"
@@ -472,11 +197,7 @@ const handleDownloadQR = async (row: TableDataType) => {
                   labelTw="hidden lg:block"
                   isActive
                 />,
-                
               ] : [],
-               
-
-
             },
             localStorageKey: "assetsMasterTable",
             
@@ -598,12 +319,12 @@ const handleDownloadQR = async (row: TableDataType) => {
                   router.push(`/assetsMaster/view/${data.uuid}`);
                 },
               },
-              {
-                icon: "lucide:download",
-                showLoading:true,
-                onClick: (row: TableDataType) => handleDownloadQR(row),
+              // {
+              //   icon: "lucide:download",
+              //   showLoading:true,
+              //   onClick: (row: TableDataType) => handleDownloadQR(row),
                 
-              },
+              // },
               
   
 
@@ -617,9 +338,7 @@ const handleDownloadQR = async (row: TableDataType) => {
             pageSize: 10,
           }}
         />
-      
-
       </div>
-</>
+    </>
   );
-} 
+}
