@@ -218,7 +218,7 @@ export default function CustomerInvoicePage() {
             }
             setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } catch (error) {
-            showSnackbar("Failed to download warehouse data", "error");
+            showSnackbar("Failed to download distributor data", "error");
             setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } finally {
         }
@@ -235,7 +235,7 @@ export default function CustomerInvoicePage() {
           }
           setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } catch (error) {
-          showSnackbar("Failed to download warehouse data", "error");
+          showSnackbar("Failed to download distributor data", "error");
           setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
         } finally {
         }

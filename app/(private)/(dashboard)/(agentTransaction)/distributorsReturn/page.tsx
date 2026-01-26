@@ -309,7 +309,7 @@ useEffect(() => {
                 showSnackbar("Failed to get download URL", "error");
             }
         } catch (error) {
-            showSnackbar("Failed to download warehouse data", "error");
+            showSnackbar("Failed to download Distributor data", "error");
         } finally {
             setIsExporting(false);
             setLoading(false);
@@ -327,7 +327,7 @@ useEffect(() => {
       }
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } catch (error) {
-      showSnackbar("Failed to download warehouse data", "error");
+      showSnackbar("Failed to download Distributor data", "error");
       setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
     } finally {
     }

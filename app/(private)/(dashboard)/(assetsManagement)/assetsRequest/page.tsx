@@ -387,13 +387,27 @@ const filterBy = useCallback(
             columns: [
               // Essential Information
               {
+                key: "date",
+                label: "Date",
+                render: (data: TableDataType) => formatDate(data.created_at),
+              },
+              {
                 key: "osa_code",
                 label: "OSA Code",
               },
-              {
-                key: "owner_name",
-                label: "Owner Name",
+               {
+                key: "warehouse",
+                label: "Distributor",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "warehouse"),
               },
+              {
+                key: "customer",
+                label: "Customer",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "customer"),
+              },
+             
               {
                 key: "contact_number",
                 label: "Contact Number",
@@ -401,70 +415,39 @@ const filterBy = useCallback(
 
               // Combined Relationship Fields
               {
-                key: "customer",
-                label: "Customer",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "customer"),
-              },
-              {
-                key: "warehouse",
-                label: "Distributor",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "warehouse"),
-              },
-              {
-                key: "outlet",
-                label: "Outlet",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "outlet"),
-              },
-              {
                 key: "salesman",
                 label: "Sales Team",
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "salesman"),
               },
-
-              // Key Chiller Detailss
+             
               {
-                key: "machine_number",
-                label: "Machine No",
+                key: "outlet",
+                label: "Outlet",
+                render: (data: TableDataType) =>
+                  data.outlet.name,
               },
+
+             
               {
                 key: "asset_number",
-                label: "Asset No",
+                label: "Asset Number",
               },
  {
                 key: "model",
-                label: "Model",
+                label: "Model Number",
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "model"),
               },
 
 
 
-              // {
-              //   key: "model",
-              //   label: "Model",
-              // },
-              {
-                key: "brand",
-                label: "Brand",
-              },
-
               // Status
-              {
+               {
                 key: "status",
                 label: "Status",
-                render: (data: TableDataType) => (
-                  <StatusBtn
-                    isActive={
-                      data.status && data.status.toString() === "1"
-                        ? true
-                        : false
-                    }
-                  />
-                ),
+                render: (data: TableDataType) =>
+                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
               },
             ],
             rowSelection: true,

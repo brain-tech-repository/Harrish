@@ -18,6 +18,7 @@ import { AssestMasterfilter, AssetMasterStatus, AssestMasterModel, assestMasterQ
 import { generateAssetLabelPdfDirect } from "./utils/util";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import filterAssest from "@/app/components/filterAssest";
+import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
 
 const dropdownDataList = [
   { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
@@ -482,7 +483,7 @@ const handleDownloadQR = async (row: TableDataType) => {
             footer: { nextPrevBtn: true, pagination: true },
             columns: [
               {
-                key: "osa_code", label: "OSA Code",
+                key: "osa_code", label: "Asset Code",
                 render: (row: TableDataType) => (
                   <span className="font-semibold text-[#181D27] text-[14px]">
                     {row.osa_code}
@@ -491,6 +492,7 @@ const handleDownloadQR = async (row: TableDataType) => {
               },
               {
                 key: "sap_code", label: "SAP Code",
+                showByDefault: false,
                 render: (row: TableDataType) => (
                   <span className="font-semibold text-[#181D27] text-[14px]">
                     {row.sap_code}
@@ -516,7 +518,14 @@ const handleDownloadQR = async (row: TableDataType) => {
   key: "warehouse",
   label: "Distributor",
   render: (row: TableDataType) => {
-    return row?.warehouse?.name || "-";
+    return `${row?.warehouse?.code || ""} - ${row?.warehouse?.warehouse_name || ""}`;
+  },
+}  ,  
+                             {
+  key: "customer",
+  label: "Customer",
+  render: (row: TableDataType) => {
+    return `${row?.customer?.code || ""} - ${row?.customer?.name || ""}`;
   },
 }  ,  
 
@@ -533,7 +542,7 @@ const handleDownloadQR = async (row: TableDataType) => {
 
               { key: "serial_number", label: "Serial Number" },
               {
-                key: "assets_category", label: "Assests Category Name", render: (data: TableDataType) =>
+                key: "assets_category", label: "Asset number", render: (data: TableDataType) =>
                   typeof data.assets_category === "object" && data.assets_category !== null
                     ? `${(data.assets_category as { name?: string }).name || ""}`
                     : "-",
@@ -544,38 +553,38 @@ const handleDownloadQR = async (row: TableDataType) => {
                     ? `${(data.model_number as { name?: string }).name || ""}`
                     : "-",
               },
-              { key: "acquisition", label: "Acquisition" },
-              {
-                key: "vendor", label: "Vendor", render: (data: TableDataType) =>
-                  typeof data.vendor === "object" && data.vendor !== null
-                    ? `${(data.vendor as { name?: string }).name || ""}`
-                    : "-",
-              },
-              {
-                key: "manufacturer", label: "Manufacturer", render: (data: TableDataType) =>
-                  typeof data.manufacturer === "object" && data.manufacturer !== null
-                    ? `${(data.manufacturer as { name?: string }).name || ""}`
-                    : "-",
-              },
+              { key: "acquisition", label: "Acquisition", render: (data: TableDataType) => formatDate(data.acquisition) },
+              // {
+              //   key: "vendor", label: "Vendor", render: (data: TableDataType) =>
+              //     typeof data.vendor === "object" && data.vendor !== null
+              //       ? `${(data.vendor as { name?: string }).name || ""}`
+              //       : "-",
+              // },
+              // {
+              //   key: "manufacturer", label: "Manufacturer", render: (data: TableDataType) =>
+              //     typeof data.manufacturer === "object" && data.manufacturer !== null
+              //       ? `${(data.manufacturer as { name?: string }).name || ""}`
+              //       : "-",
+              // },
               {
                 key: "country", label: "Country", render: (data: TableDataType) =>
                   typeof data.country === "object" && data.country !== null
                     ? `${(data.country as { name?: string }).name || ""}`
                     : "-",
               },
-              {
-                key: "branding", label: "Branding", render: (data: TableDataType) =>
-                  typeof data.branding === "object" && data.branding !== null
-                    ? `${(data.branding as { name?: string }).name || ""}`
-                    : "-",
-              },
+              // {
+              //   key: "branding", label: "Branding", render: (data: TableDataType) =>
+              //     typeof data.branding === "object" && data.branding !== null
+              //       ? `${(data.branding as { name?: string }).name || ""}`
+              //       : "-",
+              // },
               { key: "assets_type", label: "Assets Type" },
-              { key: "trading_partner_number", label: "Trading Partner No." },
+              // { key: "trading_partner_number", label: "Trading Partner No." },
               { key: "capacity", label: "Capacity" },
-              { key: "manufacturing_year", label: "Manufacturing Year" },
-              { key: "remarks", label: "Remarks" },
+              { key: "manufacturing_year", label: "Year" },
+              // { key: "remarks", label: "Remarks" },
               {
-                key: "status", label: "Status", render: (data: TableDataType) =>
+                key: "status", label: "Status",showByDefault:true, render: (data: TableDataType) =>
                   typeof data.status === "object" && data.status !== null
                     ? `${(data.status as { name?: string }).name || ""}`
                     : "-",
@@ -591,6 +600,7 @@ const handleDownloadQR = async (row: TableDataType) => {
               },
               {
                 icon: "lucide:download",
+                showLoading:true,
                 onClick: (row: TableDataType) => handleDownloadQR(row),
                 
               },

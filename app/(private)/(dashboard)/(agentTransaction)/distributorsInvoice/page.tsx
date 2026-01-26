@@ -222,7 +222,7 @@ export default function CustomerInvoicePage() {
                         }
                         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
                 } catch (error) {
-                        showSnackbar("Failed to download warehouse data", "error");
+                        showSnackbar("Failed to download distributo invoice", "error");
                         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
                 } finally {
                 }
