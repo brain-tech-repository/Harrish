@@ -7,7 +7,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { acfList, addAcf, crfExport, assetrequestGlobalFilter } from "@/app/services/assetsApi";
+import { acfList, addAcf, assetrequestGlobalFilter } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import InputFields from "@/app/components/inputFields";
 // import { Icon } from "lucide-react";
 import { Icon } from "@iconify-icon/react";
+import chillerFilter from "@/app/components/chillerFilter";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import FilterComponent from "@/app/components/filterComponent";
 
@@ -124,7 +125,6 @@ const renderCombinedField = (data: TableDataType, field: string) => {
 
 
 export default function CustomerInvoicePage() {
-    const { can, permissions } = usePagePermissions();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const router = useRouter();
@@ -137,6 +137,7 @@ export default function CustomerInvoicePage() {
             confirmPassword: "",
         },
         onSubmit: (values) => {
+            console.log(values);
         },
     });
     const [colFilter, setColFilter] = useState(false);
@@ -158,26 +159,18 @@ export default function CustomerInvoicePage() {
         regionOptions,
         areaOptions,
         assetsModelOptions
-        , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded} = useAllDropdownListData();
 
-    // Load dropdown data
-    useEffect(() => {
-        ensureAreaLoaded();
-        ensureAssetsModelLoaded();
-        ensureRegionLoaded();
-        ensureRouteLoaded();
-        ensureWarehouseAllLoaded();
-    }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
+  // Load dropdown data
+  useEffect(() => {
+    ensureAreaLoaded();
+    ensureAssetsModelLoaded();
+    ensureRegionLoaded();
+    ensureRouteLoaded();
+    ensureWarehouseAllLoaded();
+  }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
-
-    // Refresh table when permissions load
-    useEffect(() => {
-        if (permissions.length > 0) {
-            setRefreshKey((prev) => prev + 1);
-        }
-    }, [permissions]);
-
     const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -264,7 +257,7 @@ export default function CustomerInvoicePage() {
                 };
             }
         },
-        [refreshKey],
+        [],
     );
 
 
@@ -422,7 +415,9 @@ export default function CustomerInvoicePage() {
         <div className="flex flex-col h-full">
             {/* 🔹 Table Section */}
             <Table
+             
                 refreshKey={refreshKey}
+                 
                 config={{
                     api: {
                         // list: filterBy,
@@ -430,6 +425,7 @@ export default function CustomerInvoicePage() {
                     },
                     header: {
                         title: "Approve Chiller Request",
+                        //  filterRenderer:chillerFilter,
                         columnFilter: true,
                         searchBar: false,
                         
@@ -441,22 +437,19 @@ export default function CustomerInvoicePage() {
                             />
                         ),
                         actionsWithData: (data: TableDataType[], selectedRow?: number[]) => {
-                            // if (!can("create")) return [];
                             // gets the ids of the selected rows with type narrowing
                             const ids = selectedRow
                                 ?.map((index) => {
                                     const row = data[index];
-                                    // if (hasChillerRequest(row)) {
-                                    return row.id;
-                                    // }
-                                    // return null;
+                                    if (hasChillerRequest(row)) {
+                                        return row.chiller_request.id;
+                                    }
+                                    return null;
                                 })
                                 .filter((id): id is number => id !== null);
 
-
                             return [
                                 <SidebarBtn
-                                    disabled={!ids || ids.length === 0}
                                     key="key-companu-customer-with-data"
                                     onClick={async () => {
                                         if (!ids || ids.length === 0) {
@@ -495,6 +488,7 @@ export default function CustomerInvoicePage() {
                                 label: "Selected Rows",
                                 onClick: (data, selectedRow) => {
                                     const rows = selectedRow?.map(i => data[i]) || [];
+                                    console.log('Selected rows:', rows);
                                     setSelectedRowsData(rows);
                                     setSidebarRefreshKey(k => k + 1);
                                     setShowSidebar(true);

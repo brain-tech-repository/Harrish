@@ -14,15 +14,19 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
+import filterRequest from "@/app/components/filterRequest";
+
 import {
   assetsRequestExport,
+
   chillerRequestGlobalSearch,
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
   assetrequestGlobalFilter
 } from "@/app/services/assetsApi";
-import FilterComponent from "@/app/components/filterComponent";
+import { AssestRequestFilter } from "@/app/services/allApi";
+import StatusBtn from "@/app/components/statusBtn2";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadFile } from "@/app/services/allApi";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
@@ -70,6 +74,7 @@ export default function Page() {
   const { setLoading } = useLoading();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [payload, setPayload] = useState<Record<string, any>>({});
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
@@ -94,6 +99,8 @@ export default function Page() {
 
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
+   const [tableFilters, setTableFilters] = useState<any>({});
+
 
   useEffect(() => {
     setLoading(true);
@@ -120,16 +127,41 @@ export default function Page() {
     }
   };
 
+
+const filterBy = useCallback(
+    async (payload: Record<string, string | number | null>, pageSize = 10) => {
+       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
+      setTableFilters(payload);
+
+      const res = await AssestRequestFilter(finalPayload);
+
+      return {
+        data: res?.data || [],
+        total: res?.pagination?.totalPages || 0,
+        currentPage: res?.pagination?.page || 0,
+        pageSize: res?.pagination?.limit || pageSize,
+      };
+    },
+    [tableFilters]  // dependency array
+  );
+
+
+
+
   const fetchTableData = useCallback(
+
     async (
       pageNo: number = 1,
-      pageSize: number = 10
+      pageSize: number = 10,
+      filters?: any
     ): Promise<listReturnType> => {
       setLoading(true);
       const res = await chillerRequestList({
         page: pageNo.toString(),
         per_page: pageSize.toString(),
+        ...filters
       });
+      // console.log("Fetched data:", res.data);
       setLoading(false);
       if (res.error) {
         showSnackbar(
@@ -140,15 +172,16 @@ export default function Page() {
       } else {
         return {
           data: res.data || [],
+          
           currentPage: res?.pagination?.page || 0,
           pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.totalPages || 0,
+          total: res?.pagination?.lastpage || 0,
         };
       }
     },
     [setLoading, showSnackbar]
   );
-
+// console.log("Render Page Component",fetchTableData);
   // Helper function to render nested object data
   const renderNestedField = (
     data: TableDataType,
@@ -317,7 +350,9 @@ export default function Page() {
           config={{
             api: {
               list: fetchTableData,
-              search: searchChillerRequest,
+              // search: searchChillerRequest,
+               filterBy: filterBy,
+               
             },
             header: {
               title: "Assets Requests",
@@ -334,15 +369,9 @@ export default function Page() {
                   labelTw: "text-[12px] hidden sm:block",
                   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 },],
-              searchBar: true,
+              searchBar: false,
               columnFilter: true,
-              // filterRenderer: (props) => (
-              //                 <FilterComponent
-              //                   currentDate={true}
-              //                   {...props}
-              //                   api={fetchAssetAccordingToGlobalFilter}
-              //                 />
-              //               ),
+              filterRenderer:filterRequest,
               // actions: can("create") ? [
               //   <SidebarBtn
               //     key="name"
@@ -355,8 +384,90 @@ export default function Page() {
               // ] : [],
             },
             footer: { nextPrevBtn: true, pagination: true },
-            columns,
-            // rowSelection: true,
+            columns: [
+              // Essential Information
+              {
+                key: "osa_code",
+                label: "OSA Code",
+              },
+              {
+                key: "owner_name",
+                label: "Owner Name",
+              },
+              {
+                key: "contact_number",
+                label: "Contact Number",
+              },
+
+              // Combined Relationship Fields
+              {
+                key: "customer",
+                label: "Customer",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "customer"),
+              },
+              {
+                key: "warehouse",
+                label: "Distributor",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "warehouse"),
+              },
+              {
+                key: "outlet",
+                label: "Outlet",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "outlet"),
+              },
+              {
+                key: "salesman",
+                label: "Sales Team",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "salesman"),
+              },
+
+              // Key Chiller Detailss
+              {
+                key: "machine_number",
+                label: "Machine No",
+              },
+              {
+                key: "asset_number",
+                label: "Asset No",
+              },
+ {
+                key: "model",
+                label: "Model",
+                render: (data: TableDataType) =>
+                  renderCombinedField(data, "model"),
+              },
+
+
+
+              // {
+              //   key: "model",
+              //   label: "Model",
+              // },
+              {
+                key: "brand",
+                label: "Brand",
+              },
+
+              // Status
+              {
+                key: "status",
+                label: "Status",
+                render: (data: TableDataType) => (
+                  <StatusBtn
+                    isActive={
+                      data.status && data.status.toString() === "1"
+                        ? true
+                        : false
+                    }
+                  />
+                ),
+              },
+            ],
+            rowSelection: true,
             rowActions: [
               {
                 icon: "lucide:eye",

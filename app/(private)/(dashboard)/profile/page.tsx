@@ -7,7 +7,7 @@ import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
 import { useFormik } from "formik";
 import TabBtn from "@/app/components/tabBtn";
-import { isVerify, updateAuthUser, countryList, allRoleList } from "@/app/services/allApi";
+import { isVerify, updateAuthUser, countryList, roleList } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
 import ResetPasswordSidebar from "@/app/components/ResetPasswordSidebar";
@@ -207,7 +207,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await allRoleList();
+        const res = await roleList();
         if (res && res.data) {
           const roles = Array.isArray(res.data) ? res.data : [];
           const options = roles.map((role: any) => ({
