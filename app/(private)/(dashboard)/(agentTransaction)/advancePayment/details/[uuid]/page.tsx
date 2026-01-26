@@ -4,7 +4,7 @@ import { getPaymentById } from "@/app/services/allApi";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Loading from "@/app/components/Loading";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react";
 import Logo from "@/app/components/logo";
 import ContainerCard from "@/app/components/containerCard";

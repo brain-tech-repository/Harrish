@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter, useParams } from "next/navigation";
 import Loading from "@/app/components/Loading";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -60,8 +60,8 @@ export default function AddWarehouseStockPage() {
       status: "active",
     },
     validationSchema: Yup.object({
-      warehouse_stock_code: Yup.string().required("Warehouse Stock Code is required"),
-      warehouse_id: Yup.string().required("Warehouse is required"),
+      warehouse_stock_code: Yup.string().required("Distributor Stock Code is required"),
+      warehouse_id: Yup.string().required("Distributor is required"),
       item_id: Yup.string().required("Item is required"),
       qty: Yup.string().required("Quantity is required"),
       status: Yup.string().required("Status is required"),
@@ -90,8 +90,8 @@ export default function AddWarehouseStockPage() {
           showSnackbar(
             res.message ||
               (isEditMode
-                ? "Warehouse Stock Updated Successfully"
-                : "Warehouse Stock Created Successfully"),
+                ? "Distributor Stock Updated Successfully"
+                : "Distributor Stock Created Successfully"),
             "success"
           );
 
@@ -137,7 +137,7 @@ export default function AddWarehouseStockPage() {
             });
           }
         } catch (error) {
-          console.error("Failed to fetch Warehouse Stock", error);
+          console.error("Failed to fetch Distributor Stock", error);
         } finally {
           setLoading(false);
         }
@@ -163,7 +163,7 @@ export default function AddWarehouseStockPage() {
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">
-            {isEditMode ? "Update Warehouse Stock" : "Add Warehouse Stock"}
+            {isEditMode ? "Update Distributor Stock" : "Add Distributor Stock"}
           </h1>
         </div>
       </div>
@@ -174,12 +174,12 @@ export default function AddWarehouseStockPage() {
       ) : (
         <form onSubmit={formik.handleSubmit}>
           <ContainerCard>
-            <h2 className="text-lg font-semibold mb-6">Warehouse Stock Details</h2>
+            <h2 className="text-lg font-semibold mb-6">Distributor Stock Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Warehouse Stock Code */}
               <div className="flex items-start gap-2 max-w-[406px]">
                 <InputFields
-                  label="Warehouse Stock Code"
+                  label="Distributor Stock Code"
                   name="warehouse_stock_code"
                   value={formik.values.warehouse_stock_code}
                   onChange={formik.handleChange}

@@ -24,7 +24,7 @@ import {
   FormikTouched,
 } from "formik";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import { useEffect, useState, useRef } from "react";

@@ -6,7 +6,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { capsCollectionByUuid } from "@/app/services/agentTransaction";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { Fragment, RefObject, useEffect, useRef, useState } from "react";
 import Table, { TableDataType } from "@/app/components/customTable";

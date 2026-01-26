@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
 import * as yup from "yup";

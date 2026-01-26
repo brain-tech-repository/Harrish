@@ -66,7 +66,8 @@ export default function RouteVisits() {
   const fetchRouteVisits = useCallback(
     async (
       page: number = 1,
-      pageSize: number = 50
+      pageSize: number = 50,
+      payload?: Record<string, any>
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
@@ -79,6 +80,7 @@ export default function RouteVisits() {
           status: filters.status,
           page: page,
           per_page: pageSize,
+          ...payload,
         };
         
         // Add status filter if active (true=1, false=0)

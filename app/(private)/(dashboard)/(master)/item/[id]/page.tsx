@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState } from "react";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import { useRouter, useParams } from "next/navigation";

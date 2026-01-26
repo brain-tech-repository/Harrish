@@ -2,7 +2,7 @@ import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import { LinkDataType, SidebarDataType } from "../data/dashboardLinks";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import DismissibleDropdown from "@/app/components/dismissibleDropdown";
 import CustomDropdown from "@/app/components/customDropdown";
 import NotificationPopover from "@/app/components/notificationPopover";

@@ -7,7 +7,7 @@ import { getWarehouseById, getCustomerInWarehouse, getRouteInWarehouse, getVehic
 import { useSnackbar } from "@/app/services/snackbarContext";
 import InputFields from "@/app/components/inputFields";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
@@ -1107,9 +1107,10 @@ export default function ViewPage() {
 
     const salesByAgentCustomer = useCallback(
         async (
+            uuid: string,
             pageNo: number = 1,
             pageSize: number = 50,
-            uuid: string
+            payload?: Record<string, string | number | null>,
         ): Promise<searchReturnType> => {
             const result = await getAgentCustomerBySalesId(uuid, { from_date: "", to_date: "" });
             if (result.error) {
@@ -1498,7 +1499,7 @@ export default function ViewPage() {
                             <Table
                                 config={{
                                     api: {
-                                        list: (...args) => salesByAgentCustomer(...args, UUIDAgentCustomer),
+                                        list: (...args) => salesByAgentCustomer(UUIDAgentCustomer, ...args),
                                         filterBy: (payload, pageSize) => filterBySales(payload, pageSize, UUIDAgentCustomer)
                                     },
                                     header: {

@@ -6,10 +6,10 @@ import { useLoading } from "@/app/services/loadingContext";
 import { getRouteById } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StatusBtn from "@/app/components/statusBtn2";
+import Link from "@/app/components/smartLink";
 
 interface Item {
     id: string;
@@ -39,6 +39,7 @@ export default function ViewPage() {
 
     // state variables
     const [isChecked, setIsChecked] = useState(false);
+    const router = useRouter();
     const { showSnackbar } = useSnackbar();
     const { setLoading } = useLoading();
     const [item, setItem] = useState<Item | null>(null);

@@ -11,7 +11,7 @@ import {
 } from "@/app/services/assetsApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import { useCallback, useState,useEffect } from "react";
 import * as yup from "yup";

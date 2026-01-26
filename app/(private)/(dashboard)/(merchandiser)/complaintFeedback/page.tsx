@@ -279,7 +279,7 @@ export default function Complaint() {
                       onClick={() =>
                         openImageModal(images, 0)
                       }
-                      className="text-blue-600 font-medium hover:underline"
+                      className="text-blue-600 font-medium hover:underline cursor-pointer"
                     >
                       View Images ({images.length})
                     </button>

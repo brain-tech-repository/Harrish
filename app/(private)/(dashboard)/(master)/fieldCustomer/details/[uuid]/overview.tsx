@@ -29,32 +29,26 @@ export default function Overview({ data }: { data: AgentCustomerDetails | null }
                     Contact
                 </div>
                 <div className="flex flex-col gap-[20px] text-[#414651]">
-                    <div className="flex items-center gap-[8px] text-[16px]">
-                        {data?.contact_no &&
-                        <>
-                        <Icon
-                            icon="lucide:phone-call"
-                            width={16}
-                            className="text-[#EA0A2A]"
-                        />
-                        <span>
-                            {data?.contact_no}
-                        </span>
-                        </>
-                    }
-                    {data?.contact_no2 &&
-                    <>
-                        <Icon
-                            icon="lucide:phone-call"
-                            width={16}
-                            className="text-[#EA0A2A]"
-                        />
-                        <span>
-                            {data?.contact_no2}
-                        </span>
-                        </>
-}
-                    </div>
+                                        {data?.contact_no && (
+                                            <div className="flex items-center gap-[8px] text-[16px]">
+                                                <Icon
+                                                    icon="lucide:phone-call"
+                                                    width={16}
+                                                    className="text-[#EA0A2A]"
+                                                />
+                                                <span>{data?.contact_no}</span>
+                                            </div>
+                                        )}
+                                        {data?.contact_no2 && (
+                                            <div className="flex items-center gap-[8px] text-[16px]">
+                                                <Icon
+                                                    icon="lucide:phone-call"
+                                                    width={16}
+                                                    className="text-[#EA0A2A]"
+                                                />
+                                                <span>{data?.contact_no2}</span>
+                                            </div>
+                                        )}
                     <div className="flex items-center gap-[8px] text-[16px]">
                         {data?.whatsapp_no ? <><Icon
                             icon="ic:baseline-whatsapp"

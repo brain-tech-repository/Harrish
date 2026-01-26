@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
 import InputFields from "@/app/components/inputFields";

@@ -18,7 +18,7 @@ import { agentCustomerList, genearateCode, warehouseListGlobalSearch } from "@/a
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import * as yup from "yup";
@@ -621,7 +621,7 @@ export default function AddEditCapsCollection() {
               onClear={() => handleChange("customer", "")}
               error={errors.customer}
               disabled={!form.warehouse}
-              noOptionsMessage={!form.warehouse ? "Please select a warehouse first" : "No customers found"}
+              noOptionsMessage={!form.warehouse ? "Please select a distributor first" : "No customers found"}
             />
             
           </div>

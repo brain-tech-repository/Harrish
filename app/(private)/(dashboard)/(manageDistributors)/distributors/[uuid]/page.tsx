@@ -6,7 +6,7 @@ import WarehouseAdditionalInformation from "./warehouseAdditionalInformation";
 import { useParams, useRouter } from "next/navigation";
 import ContainerCard from "@/app/components/containerCard";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react";
 import * as Yup from "yup";
 import {

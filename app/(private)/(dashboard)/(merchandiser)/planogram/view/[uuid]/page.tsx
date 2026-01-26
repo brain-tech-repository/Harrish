@@ -11,12 +11,12 @@ import Image from "next/image";
 import SummaryCard from "@/app/components/summaryCard";
 import { getPlanogramById } from "@/app/services/merchandiserApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { OverviewTab } from "./tabs/overview";
 import { CustomerData } from "./tabs/customer";
 import { differenceInDays, parseISO } from "date-fns";
 import { PlanogramPost } from "./tabs/planogramPost";
-
+import Loading from "@/app/components/Loading";
 // import { PlanogramTab } from "./tabs/planogram";
 
 // --- Shelf Interface ---
@@ -45,17 +45,14 @@ interface Planogram {
   merchandisers?: Merchandiser[];
 }
 
-export const tabs = [
-  { name: "Overview", url: "overview", component: <OverviewTab /> },
-  { name: "Customer", url: "customer", component: <CustomerData /> },
-  { name: "Planogram Post", url: "planogramPost", component: <PlanogramPost /> }
-];
+
 
 export default function Page() {
   const router = useRouter();
   const { uuid: uuid }:any = useParams();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [custData,setCustData] = useState<any>();
   const [planogramData, setPlanogramData] = useState<Planogram | null>(null);
 
   const { showSnackbar } = useSnackbar();
@@ -74,6 +71,7 @@ export default function Page() {
 
         // Handle response correctly
         const data = res?.data?.data || res?.data;
+        setCustData(data);
         if (!data) {
           showSnackbar("Unable to fetch Planogram details", "error");
           return;
@@ -109,6 +107,12 @@ export default function Page() {
   // ✅ Usage
   const statusText = renderRemainingDays(planogramData);
 
+const tabs = [
+  { name: "Overview", url: "overview", component: <OverviewTab data={custData} /> },
+  { name: "Customer", url: "customer", component: <CustomerData data={custData} /> },
+  { name: "Planogram Post", url: "planogramPost", component: <PlanogramPost /> }
+];
+if (loading) return <Loading />;
   return (
     <>
       <div className="flex items-center gap-4 mb-6">

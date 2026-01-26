@@ -15,7 +15,7 @@ import {
   FormikHelpers,
   FormikTouched
 } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
@@ -84,7 +84,9 @@ const validationSchema = Yup.object({
   customer_ids: Yup.array()
     .of(Yup.number())
     .min(1, "Select at least one customer"),
- 
+  images: Yup.array()
+    .of(Yup.mixed())
+    .min(1, "Image is required"),
 });
 
 // Only validate specific fields for each step
@@ -97,6 +99,7 @@ const stepSchemas = [
   Yup.object().shape({
     merchendisher_ids: validationSchema.fields.merchendisher_ids,
     customer_ids: validationSchema.fields.customer_ids,
+    images: validationSchema.fields.images,
   }),
 ];
 
@@ -448,6 +451,7 @@ export default function Planogram() {
                 <InputFields
                   width="max-w-[500px]"
                   required
+                  multiSelectChips
                   label="Merchandisers"
                   name="merchendisher_ids"
                   value={values.merchendisher_ids.map(String)}
@@ -477,6 +481,7 @@ export default function Planogram() {
               </div>
               <div>
                 <InputFields
+                multiSelectChips
                   width="max-w-[500px]"
                   placeholder={
                     values.merchendisher_ids.length === 0
@@ -532,6 +537,7 @@ export default function Planogram() {
                     if (!files.length) {
                       setFieldValue("images", []);
                       setImagePreviews([]);
+                      setPlanogramImageError("Image is required");
                       return;
                     }
 
@@ -603,6 +609,8 @@ export default function Planogram() {
 
   const backBtnUrl = "/planogram";
 
+  if (loading) return <Loading />;
+
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
@@ -614,9 +622,7 @@ export default function Planogram() {
         </h1>
       </div>
 
-      {loading ? (
-        <Loading />
-      ) : (
+       
         <Formik
           enableReinitialize
           initialValues={initialValues}
@@ -672,7 +678,7 @@ export default function Planogram() {
           )}
         </Formik>
 
-      )}
+      
     </div>
   );
 }

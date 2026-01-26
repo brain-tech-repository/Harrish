@@ -1,136 +1,124 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { Icon } from "@iconify-icon/react";
 import { useRouter } from "next/navigation";
+import DismissibleDropdown from "@/app/components/dismissibleDropdown";
+import CustomDropdown from "@/app/components/customDropdown";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import BorderIconButton from "@/app/components/borderIconButton";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { useLoading } from "@/app/services/loadingContext";
-import Table, {
-  listReturnType,
-  TableDataType,
-} from "@/app/components/customTable";
+//import { deletespare, vendorList } from "@/app/services/assetsApi";
+import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 import StatusBtn from "@/app/components/statusBtn2";
-import { spareMenu } from "@/app/services/assetsApi";
+import {spareMenu,spareSubCategoryList} from "@/app/services/assetsApi";
+
+const dropdownDataList = [
+  { icon: "lucide:radio", label: "Inactive", iconWidth: 20 },
+  { icon: "lucide:delete", label: "Delete", iconWidth: 20 },
+];
 
 export default function SpareList() {
-  const { setLoading } = useLoading();
-  const { showSnackbar } = useSnackbar();
-  const router = useRouter();
+   const { setLoading } = useLoading();
+     const [showDropdown, setShowDropdown] = useState(false);
+     const [showDeletePopup, setShowDeletePopup] = useState(false);
+     const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(null);
+     const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchSpare = useCallback(
-    async (pageNo: number = 1, pageSize: number = 5): Promise<listReturnType> => {
-      try {
-        setLoading(true);
+     const router = useRouter();
+     const { showSnackbar } = useSnackbar();
+    
+     const fetchsapre = useCallback(
+     async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+           setLoading(true); 
+            const res = await spareMenu({
+             page: pageNo.toString(),
+             per_page: pageSize.toString(),
+           });
+           setLoading(false);
+           if (res.error) {
+             showSnackbar(res.data.message || "failed to fetch the Spare List", "error");
+             throw new Error("Unable to fetch the spare category");
+           } else {
+             return {
+               data: res.data || [],
+               currentPage: res?.pagination?.page || 0,
+               pageSize: res?.pagination?.limit || 10,
+               total: res?.pagination?.totalPages || 0,
+             };
+           }
+         }, []
+        )
+        useEffect(() => {
+    setLoading(true);
+  }, [])
 
-        const res = await spareMenu({
-          page: pageNo.toString(),
-          per_page: pageSize.toString(),
-        });
 
-        if (res?.error) {
-          showSnackbar(
-            res?.data?.message || "Failed to fetch spare list",
-            "error"
-          );
-          throw new Error("Fetch failed");
-        }
 
-        const page = Number(res?.pagination?.page) || 1;
-        const limit = Number(res?.pagination?.limit) || pageSize;
-        const totalPages = Number(res?.pagination?.totalPages) || 1;
 
-        return {
-          data: res?.data || [],
-          currentPage: page,
-          pageSize: limit,
-          total: totalPages * limit,
-        };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [setLoading, showSnackbar]
-  );
 
-  return (
-    <div className="flex flex-col h-full">
-      <Table
-        config={{
-          api: {
-            list: fetchSpare,
-          },
-
-          header: {
-            title: "Spare List",
-            searchBar: false,
-            columnFilter: true,
-            actions: [
-              <SidebarBtn
-                key="add"
-                href="/settings/manageAssets/spareMenu/add"
-                leadingIcon="lucide:plus"
-                label="Add"
-                labelTw="hidden lg:block"
-                isActive
-              />,
-            ],
-          },
-
-          footer: {
-            nextPrevBtn: true,
-            pagination: true,
-          },
-
-          /* ✅ TABLE COLUMNS */
-          columns: [
-            {
-              key: "osa_code",
-              label: "Code",
-              render: (row: TableDataType) => (
-                <span className="font-semibold text-[#181D27] text-[14px]">
-                  {row.osa_code}
-                </span>
-              ),
-            },
-            {
-              key: "spare_name",
-              label: "Spare Name",
-            },
-            {
-              key: "plant_name",
-              label: "Plant",
-            },
-            {
-              key: "spare_category_name",
-              label: "Spare Category",
-            },
-            {
-              key: "spare_subcategory_name",
-              label: "Spare Sub Category",
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (row: TableDataType) => (
-                <StatusBtn isActive={String(row.status) === "1"} />
-              ),
-            },
-          ],
-
-          rowSelection: true,
-
-          rowActions: [
-            {
-              icon: "lucide:edit-2",
-              onClick: (row: TableDataType) => {
-                router.push(`/settings/manageAssets/spareMenu/${row.uuid}`);
+      return(
+        <><div className="flex flex-col h-full" >
+          <Table
+                    refreshKey={refreshKey}
+                    config={{
+                      api: {
+                        list: fetchsapre
+                      },
+                      header: {
+                                    title: "Spare Menu",
+                                    searchBar: false,
+                                    columnFilter: true,
+                                    actions: [
+                                      <SidebarBtn
+                                        key="name"
+                                        href="/settings/manageAssets/spareMenu/add"
+                                        leadingIcon="lucide:plus"
+                                        label="Add"
+                                        labelTw="hidden lg:block"
+                                        isActive
+                                      />,
+                                    ],
+                                  },
+                                  footer: { nextPrevBtn: true, pagination: true },
+                                              columns: [
+                                                {
+                                                  key: "osa_code", label: "Code",
+                                                  render: (row: TableDataType) => (
+                                                    <span className="font-semibold text-[#181D27] text-[14px]">
+                                                      {row.osa_code}
+                                                    </span>
+                                                  ),
+                                                },
+                                                { key: "spare_category_name", label: "Name" },
+                                               
+                                                {
+                                                  key: "status", label: "Status", render: (data: TableDataType) => (
+                                                    <StatusBtn isActive={data.status && data.status.toString() === "1" ? true : false} />
+                                                  )
+                                                },
+                                  
+                                              ],
+                                              // rowSelection: true,
+                                             rowActions: [
+                                          
+              {
+                icon: "lucide:edit-2",
+                onClick: (data: TableDataType) => {
+                router.push(`/settings/manageAssets/spareMenu/${data.uuid}`);
+                },
               },
-            },
-          ],
+            ],
+            pageSize: 5,
+          }}
+        />
+            
+        
 
-          pageSize: 5,
-        }}
-      />
-    </div>
-  );
+        </div>
+        </>
+      );
+    
 }

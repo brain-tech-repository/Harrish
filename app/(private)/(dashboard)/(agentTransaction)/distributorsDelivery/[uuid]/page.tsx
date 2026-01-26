@@ -187,7 +187,7 @@ export default function DeliveryAddEditPage() {
   });
 
   const validationSchema = Yup.object({
-    warehouse: Yup.string().required("Warehouse is required"),
+    warehouse: Yup.string().required("Distributor is required"),
     order_code: Yup.string().required("Delivery is required"),
     salesman_id: Yup.string().required("Salesteam is required"),
     note: Yup.string().max(1000, "Note is too long"),
@@ -939,7 +939,7 @@ export default function DeliveryAddEditPage() {
     });
 
     if (res.error) {
-      showSnackbar(res.data?.message || "Failed to fetch Warehouses", "error");
+      showSnackbar(res.data?.message || "Failed to fetch Distributor", "error");
       return;
     }
     const data = res?.data || [];

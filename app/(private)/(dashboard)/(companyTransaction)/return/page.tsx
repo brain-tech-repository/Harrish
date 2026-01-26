@@ -47,7 +47,7 @@ const columns = [
   },
   {
     key: "warehouse_name",
-    label: "Warehouse Name",
+    label: "Distributor",
     showByDefault: true,
     render: (row: TableDataType) => {
       const code = row.warehouse_code ?? "";

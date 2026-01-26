@@ -10,7 +10,7 @@ import { downloadFileGlobal, getCompanyCustomerById, getCompanyCustomers, getCom
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { downloadFile } from "@/app/services/allApi";
@@ -140,7 +140,7 @@ export default function ViewPage() {
       key: "item",
       label: "Item",
       showByDefault: true,
-      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" details={row.details} />
+      render: (row: TableDataType) => <ItemCellWithPopup title="Items List" title1="Items" details={row.details} />
     },
 
     {

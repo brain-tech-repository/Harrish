@@ -8,7 +8,7 @@ import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import Overview from "./overview/page";
 import KeyValue from "./keyValue/page";
 import { useLoading } from "@/app/services/loadingContext";

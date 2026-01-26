@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { differenceInDays, parseISO } from "date-fns";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 

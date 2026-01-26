@@ -8,7 +8,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { itemById, itemPurchase, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal,exportAllPO } from "@/app/services/allApi";
 import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import KeyValueData from "@/app/components/keyValueData";
 import StatusBtn from "@/app/components/statusBtn2";
 import { useLoading } from "@/app/services/loadingContext";

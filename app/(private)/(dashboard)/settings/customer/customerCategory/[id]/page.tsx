@@ -17,7 +17,7 @@ import SettingPopUp from "@/app/components/settingPopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { useFormik } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState, useRef } from "react";
 import * as Yup from "yup";
 import { useParams, useRouter } from "next/navigation";

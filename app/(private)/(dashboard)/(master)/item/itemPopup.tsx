@@ -7,7 +7,7 @@ import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { itemById, itemReturn, itemSales } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import KeyValueData from "@/app/components/keyValueData";
 import Image from "next/image";
 import StatusBtn from "@/app/components/statusBtn2";
@@ -73,7 +73,7 @@ export const tabList = [
   { name: "Overview", key: "overview" },
   { name: "UOM", key: "uom" },
   { name: "Sales", key: "sales" },
-  { name: "Market Return", key: "return" }
+  { name: "Purchase Order", key: "return" }
 ];
 
 export default function ItemPage({id}: {id?: string}) {

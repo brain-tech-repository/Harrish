@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams, useRouter } from "next/navigation";
 import * as Yup from "yup";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";

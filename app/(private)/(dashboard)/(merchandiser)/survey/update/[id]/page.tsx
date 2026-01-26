@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { JSX } from "react"; // ✅ Fixes JSX namespace error
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter, useParams } from "next/navigation";
 import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";

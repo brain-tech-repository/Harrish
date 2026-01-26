@@ -14,7 +14,7 @@ import {
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { useFormik } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import * as Yup from "yup";

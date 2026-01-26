@@ -14,13 +14,15 @@ interface ChartData {
   brand: { brand: string; sales: number }[];
 }
 
+export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder';
+
 interface SalesChartsProps {
   chartData?: ChartData;
   dashboardData?: any;
   isLoading?: boolean;
   error?: string | null;
   searchType?: string;
-  reportType?: 'sales' | 'customer' | 'item'; // New prop to distinguish report types
+  reportType?: typeofReportType; // New prop to distinguish report types
   urlSizeWarning?: boolean; // Warning flag when URL size exceeds limit
   onUrlSizeExceeded?: () => void; // Callback when URL size exceeds limit
 }
@@ -3761,7 +3763,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
   // Item-level KPIs for item report type
   if (reportType === 'item') {
     const kpisData = dashboardData?.kpis || {};
-    console.log(kpisData)
 
     // Determine which level we are at to decide what charts to show
     // The user wants "Item Performance Chart (area wise)" and "Top performance Item - region wise"

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter, useParams } from "next/navigation";
 import { Formik, Form, ErrorMessage, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
@@ -26,6 +26,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import TabBtn from "@/app/components/tabBtn";
 import CustomCheckbox from "@/app/components/customCheckbox";
 import { shelvesDropdown } from "@/app/services/merchandiserApi";
+import DeletePopUp from "@/app/components/deletePopUp";
 
 //  Question type definitions (match update page)
 const typesWithOptions = ["check box", "radio button", "selectbox"];
@@ -147,6 +148,7 @@ type CustomerOption = {
 };
 
 export default function AddSurveyTabs() {
+    const [deletePopupIndex, setDeletePopupIndex] = useState<number | null>(null);
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
   const router = useRouter();
@@ -600,8 +602,8 @@ export default function AddSurveyTabs() {
 
     if (!q) return;
 
-    const confirmDelete = window.confirm("Are you sure you want to delete this question?");
-    if (!confirmDelete) return;
+    // const confirmDelete = window.confirm("Are you sure you want to delete this question?");
+    // if (!confirmDelete) return;
 
     try {
       if (q.question_id && isEditMode) {
@@ -907,256 +909,269 @@ export default function AddSurveyTabs() {
               </div>
             </div>
             <div className="space-y-6">
-              {questions.map((q, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
-                  {!q.editable ? (
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-base font-semibold mb-2">Q{index + 1}. {q.question || "Untitled question"}</h3>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newQs = [...questions];
-                              newQs[index].editable = true;
-                              setQuestions(newQs);
-                            }}
-                            className="text-gray-400 hover:text-gray-700"
-                            aria-label={`Edit question ${index + 1}`}
-                          >
-                            <Icon icon="lucide:edit-2" width={18} height={18} />
-                          </button>
+              {Array.isArray(questions) && questions.map((q, index) => {
+                if (!q) return null;
+                return (
+                  <div key={index} className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+                    {!q.editable ? (
+                      <div>
+                        <div className="flex items-start justify-between">
+                          <h3 className="text-base font-semibold mb-2">Q{index + 1}. {q.question || "Untitled question"}</h3>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newQs = [...questions];
+                                newQs[index].editable = true;
+                                setQuestions(newQs);
+                              }}
+                              className="text-gray-400 hover:text-gray-700"
+                              aria-label={`Edit question ${index + 1}`}
+                            >
+                              <Icon icon="lucide:edit-2" width={18} height={18} />
+                            </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteQuestion(index)}
-                            className="text-gray-400 hover:text-red-600"
-                            aria-label={`Delete question ${index + 1}`}
-                            disabled={savingAll || savingQuestionIndex === index}
-                          >
-                            <Icon icon="lucide:trash-2" width={18} height={18} />
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteQuestion(index)}
+                              className="text-gray-400 hover:text-red-600"
+                              aria-label={`Delete question ${index + 1}`}
+                              disabled={savingAll || savingQuestionIndex === index}
+                            >
+                              <Icon icon="lucide:trash-2" width={18} height={18} />
+                            </button>
+                          </div>
                         </div>
-                      </div>
 
-                      {typesWithOptions.includes(q.questionType) ? (
-                        <div className="space-y-2">
-                          {q.options
-                            .filter((opt) => opt.trim() !== "")
-                            .map((opt, i) => (
-                              <div key={i} className="flex items-center gap-3">
-                                {q.questionType === "check box" && (
-                                  <input type="checkbox" disabled className="accent-red-600" />
-                                )}
-                                {q.questionType === "radio button" && (
-                                  <input type="radio" disabled className="accent-red-600" />
-                                )}
-                                <span className="text-gray-700">{opt}</span>
+                        {typesWithOptions.includes(q.questionType) ? (
+                          <div className="space-y-2">
+                            {Array.isArray(q.options) && q.options
+                              .filter((opt) => opt && typeof opt === 'string' && opt.trim() !== "")
+                              .map((opt, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                  {q.questionType === "check box" && (
+                                    <input type="checkbox" disabled className="accent-red-600" />
+                                  )}
+                                  {q.questionType === "radio button" && (
+                                    <input type="radio" disabled className="accent-red-600" />
+                                  )}
+                                  <span className="text-gray-700">{opt}</span>
+                                </div>
+                              ))}
+
+                            {q.questionType === "selectbox" && (
+                              <div className="mt-3">
+                                <select disabled className="border border-gray-300 rounded-lg px-3 py-2 w-[300px] bg-gray-50">
+                                  {Array.isArray(q.options) && q.options
+                                    .filter((opt) => opt && typeof opt === 'string' && opt.trim() !== "")
+                                    .map((opt, i) => (
+                                      <option key={i}>{opt}</option>
+                                    ))}
+                                </select>
                               </div>
-                            ))}
+                            )}
+                          </div>
+                        ) : (["textbox", "comment box"].includes(q.questionType) ? (
+                          <div>
+                            <input
+                              type="text"
+                              disabled
+                              placeholder={""}
+                              className="border border-gray-300 rounded-lg px-3 py-2 w-[400px] w-full"
+                            />
+                          </div>
+                        ) : null)}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between">
+                          <h3 className="text-base font-semibold mb-4">Question {index + 1}</h3>
+                        </div>
 
-                          {q.questionType === "selectbox" && (
-                            <div className="mt-3">
-                              <select disabled className="border border-gray-300 rounded-lg px-3 py-2 w-[300px] bg-gray-50">
-                                {q.options
-                                  .filter((opt) => opt.trim() !== "")
-                                  .map((opt, i) => (
-                                    <option key={i}>{opt}</option>
-                                  ))}
-                              </select>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          <div className="md:col-span-2">
+                            <InputFields
+                            required
+                              width="max-w-full"
+                              label="Question"
+                              name={`question_${index}`}
+                              value={q.question}
+                              onChange={(e) => {
+                                const newQs = [...questions];
+                                newQs[index].question = e.target.value;
+                                setQuestions(newQs);
+                                // clear question error for this index
+                                setQuestionErrors((prev) => {
+                                  const copy = { ...prev };
+                                  if (copy[index]) {
+                                    delete copy[index].question;
+                                    if (Object.keys(copy[index]).length === 0) delete copy[index];
+                                  }
+                                  return copy;
+                                });
+                              }}
+                              error={questionErrors[index]?.question}
+                            />
+                            
+                          </div>
+                          <div>
+                            <InputFields
+                            required
+                              label="Question Type"
+                              name={`questionType_${index}`}
+                              value={q.questionType}
+                              onChange={(e) => {
+                                const newQs = [...questions];
+                                newQs[index].questionType = e.target.value;
+                                newQs[index].options = typesWithOptions.includes(e.target.value) ? [""] : [];
+                                setQuestions(newQs);
+                                // clear questionType error
+                                setQuestionErrors((prev) => {
+                                  const copy = { ...prev };
+                                  if (copy[index]) {
+                                    delete copy[index].questionType;
+                                    if (Object.keys(copy[index]).length === 0) delete copy[index];
+                                  }
+                                  return copy;
+                                });
+                              }}
+                              type="select"
+                              options={questionTypes.map((type) => ({
+                                value: type,
+                                label: type.replace(/\b\w/g, (c) => c.toUpperCase()),
+                              }))}
+                              error={questionErrors[index]?.questionType}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 ps-163">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveSingleQuestion(index, values)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm cursor-pointer"
+                            disabled={savingQuestionIndex === index}
+                          >
+                            {savingQuestionIndex === index ? (
+                              <span className="flex items-center gap-2 cursor-pointer">
+                                <Icon icon="lucide:loader" width={14} height={14} className="animate-spin" />
+                                {"Saving"}
+                              </span>
+                            ) : (
+                              "Save"
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setDeletePopupIndex(index)}
+                            className="bg-white border border-gray-300 px-3 py-1 rounded-lg text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                            disabled={savingQuestionIndex === index || savingAll}
+                          >
+                            Delete
+                          </button>
+                          {/* Delete confirmation popup for question delete */}
+                          {deletePopupIndex !== null && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] bg-[#f5f6fa]/80">
+                              <DeletePopUp
+                                onClose={() => setDeletePopupIndex(null)}
+                                onConfirm={() => {
+                                  handleDeleteQuestion(deletePopupIndex);
+                                  setDeletePopupIndex(null);
+                                }}
+                                title="Delete Question"
+                              />
                             </div>
                           )}
                         </div>
-                      ) : (["textbox", "comment box"].includes(q.questionType) ? (
-                        <div>
-                          <input
-                            type="text"
-                            disabled
-                            placeholder={""}
-                            className="border border-gray-300 rounded-lg px-3 py-2 w-[400px] w-full"
-                          />
-                        </div>
-                      ) : null)}
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-base font-semibold mb-4">Question {index + 1}</h3>
-                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div className="md:col-span-2">
-                          <InputFields
-                          required
-                            width="max-w-full"
-                            label="Question"
-                            name={`question_${index}`}
-                            value={q.question}
-                            onChange={(e) => {
-                              const newQs = [...questions];
-                              newQs[index].question = e.target.value;
-                              setQuestions(newQs);
-                              // clear question error for this index
-                              setQuestionErrors((prev) => {
-                                const copy = { ...prev };
-                                if (copy[index]) {
-                                  delete copy[index].question;
-                                  if (Object.keys(copy[index]).length === 0) delete copy[index];
-                                }
-                                return copy;
-                              });
-                            }}
-                            error={questionErrors[index].question}
-                          />
-                          
-                        </div>
-                        <div>
-                          <InputFields
-                          required
-                            label="Question Type"
-                            name={`questionType_${index}`}
-                            value={q.questionType}
-                            onChange={(e) => {
-                              const newQs = [...questions];
-                              newQs[index].questionType = e.target.value;
-                              newQs[index].options = typesWithOptions.includes(e.target.value) ? [""] : [];
-                              setQuestions(newQs);
-                              // clear questionType error
-                              setQuestionErrors((prev) => {
-                                const copy = { ...prev };
-                                if (copy[index]) {
-                                  delete copy[index].questionType;
-                                  if (Object.keys(copy[index]).length === 0) delete copy[index];
-                                }
-                                return copy;
-                              });
-                            }}
-                            type="select"
-                            options={questionTypes.map((type) => ({
-                              value: type,
-                              label: type.replace(/\b\w/g, (c) => c.toUpperCase()),
-                            }))}
-                            error={questionErrors[index]?.questionType}
-                          />
-                          {/* {questionErrors[index]?.questionType && (
-                            <div className="text-sm text-red-600 mt-1">{questionErrors[index].questionType}</div>
-                          )} */}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3 ps-163">
-                        <button
-                          type="button"
-                          onClick={() => handleSaveSingleQuestion(index, values)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-sm"
-                          disabled={savingQuestionIndex === index}
-                        >
-                          {savingQuestionIndex === index ? (
-                            <span className="flex items-center gap-2">
-                              <Icon icon="lucide:loader" width={14} height={14} className="animate-spin" />
-                              {"Saving"}
-                            </span>
-                          ) : (
-                            "Save"
-                          )}
-                        </button>
+                        {/*  Dynamic Options / Preview */}
+                        {(() => {
+                          if (typesWithOptions.includes(q.questionType)) {
+                            return (
+                              <div className="mt-5">
+                                <h3 className="text-sm font-semibold mb-2">Enter the options</h3>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteQuestion(index)}
-                          className="bg-white border border-gray-300 px-3 py-1 rounded-lg text-sm text-red-600 hover:bg-red-50"
-                          disabled={savingQuestionIndex === index || savingAll}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                                <div className="flex flex-col gap-3">
+                                  {Array.isArray(q.options) && q.options.map((opt, optIndex) => (
+                                    <div key={optIndex} className="flex items-center gap-3">
+                                      {q.questionType === "check box" && (
+                                        <input type="checkbox" disabled className="accent-red-600" />
+                                      )}
+                                      {q.questionType === "radio button" && (
+                                        <input type="radio" disabled className="accent-red-600" />
+                                      )}
 
-                      {/*  Dynamic Options / Preview */}
-                      {(() => {
-                        if (typesWithOptions.includes(q.questionType)) {
-                          return (
-                            <div className="mt-5">
-                              <h3 className="text-sm font-semibold mb-2">Enter the options</h3>
+                                      <input
+                                        type="text"
+                                        value={opt}
+                                        onChange={(e) => {
+                                          const newQs = [...questions];
+                                          newQs[index].options[optIndex] = e.target.value;
+                                          setQuestions(newQs);
+                                          // clear options error for this question
+                                          setQuestionErrors((prev) => {
+                                            const copy = { ...prev };
+                                            if (copy[index]) {
+                                              delete copy[index].options;
+                                              if (Object.keys(copy[index]).length === 0) delete copy[index];
+                                            }
+                                            return copy;
+                                          });
+                                        }}
+                                        placeholder={`Option ${optIndex + 1}`}
+                                        className="border-b-1 border-gray-300 px-5 py-2 focus:outline-none focus:border-red-600"
+                                      />
 
-                              <div className="flex flex-col gap-3">
-                                {q.options.map((opt, optIndex) => (
-                                  <div key={optIndex} className="flex items-center gap-3">
-                                    {q.questionType === "check box" && (
-                                      <input type="checkbox" disabled className="accent-red-600" />
-                                    )}
-                                    {q.questionType === "radio button" && (
-                                      <input type="radio" disabled className="accent-red-600" />
-                                    )}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newQs = [...questions];
+                                          newQs[index].options.splice(optIndex, 1);
+                                          setQuestions(newQs);
+                                        }}
+                                        className="text-gray-500 hover:text-red-600 transition-all"
+                                      >
+                                        <Icon icon="lucide:x" width={22} height={22} />
+                                      </button>
+                                    </div>
+                                  ))}
 
-                                    <input
-                                      type="text"
-                                      value={opt}
-                                      onChange={(e) => {
-                                        const newQs = [...questions];
-                                        newQs[index].options[optIndex] = e.target.value;
-                                        setQuestions(newQs);
-                                        // clear options error for this question
-                                        setQuestionErrors((prev) => {
-                                          const copy = { ...prev };
-                                          if (copy[index]) {
-                                            delete copy[index].options;
-                                            if (Object.keys(copy[index]).length === 0) delete copy[index];
-                                          }
-                                          return copy;
-                                        });
-                                      }}
-                                      placeholder={`Option ${optIndex + 1}`}
-                                      className="border-b-1 border-gray-300 px-5 py-2 focus:outline-none focus:border-red-600"
-                                    />
+                                  {questionErrors[index]?.options && (
+                                    <div className="text-sm text-red-600 mt-1">{questionErrors[index].options}</div>
+                                  )}
 
+                                  {Array.isArray(q.options) && q.options.length < 6 && (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         const newQs = [...questions];
-                                        newQs[index].options.splice(optIndex, 1);
+                                        newQs[index].options.push("");
                                         setQuestions(newQs);
                                       }}
-                                      className="text-gray-500 hover:text-red-600 transition-all"
+                                      className="flex items-center gap-1 text-red-600 font-medium hover:underline mt-2 cursor-pointer"
                                     >
-                                      <Icon icon="lucide:x" width={22} height={22} />
+                                      <Icon icon="lucide:plus-circle" width={18} height={18} />
+                                      Add option
                                     </button>
-                                  </div>
-                                ))}
-
-                                {questionErrors[index]?.options && (
-                                  <div className="text-sm text-red-600 mt-1">{questionErrors[index].options}</div>
-                                )}
-
-                                {q.options.length < 6 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newQs = [...questions];
-                                      newQs[index].options.push("");
-                                      setQuestions(newQs);
-                                    }}
-                                    className="flex items-center gap-1 text-red-600 font-medium hover:underline mt-2"
-                                  >
-                                    <Icon icon="lucide:plus-circle" width={18} height={18} />
-                                    Add option
-                                  </button>
-                                )}
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }
+                            );
+                          }
 
-                        return null;
-                      })()}
-                    </>
-                  )}
-                </div>
-              ))}
+                          return null;
+                        })()}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
 
               <div className="flex items-center justify-between mb-4">
                 <button
                   type="button"
                   onClick={handleAddNewQuestion}
-                  className="flex items-center gap-1 text-red-600 font-medium hover:underline"
+                  className="flex items-center gap-1 text-red-600 font-medium hover:underline cursor-pointer"
                 >
                   <Icon icon="lucide:plus-circle" width={18} height={18} />
                   Add New Question
@@ -1167,7 +1182,7 @@ export default function AddSurveyTabs() {
                   <button
                     type="button"
                     onClick={() => handleSaveQuestions(values)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-medium"
+                    className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-medium cursor-pointer"
                     disabled={savingAll}
                   >
                     {savingAll ? (
@@ -1177,7 +1192,7 @@ export default function AddSurveyTabs() {
                       </span>
                     ) : (
                       <div className="flex items-center">
-                        <Icon icon="mdi:check" width={22} height={22} className="mr-2" />
+                        <Icon icon="mdi:check" width={22} height={22} className="mr-2 cursor-pointer" />
                         <span>Submit</span>
                       </div>
                     )}
@@ -1191,7 +1206,7 @@ export default function AddSurveyTabs() {
                         // router.push handled inside handleSaveQuestions when redirectAfter=true
                       }
                     }}
-                    className="bg-white border border-gray-300 px-4 py-2 rounded-lg font-medium"
+                    className="bg-white border border-gray-300 px-4 py-2 rounded-lg font-medium cursor-pointer"
                   >
                     Submit
                   </button>

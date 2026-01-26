@@ -104,7 +104,7 @@ export default function AddEditSub() {
             try {
               await saveFinalCode({
                 reserved_code: values.osa_code,
-                model_name: "spa_subcat",
+                model_name: "sub",
               });
             } catch (e) {
               console.warn("Code finalization failed:", e);
@@ -145,9 +145,9 @@ export default function AddEditSub() {
       } else if (!codeGeneratedRef.current) {
         codeGeneratedRef.current = true;
         try {
-          const res = await genearateCode({ model_name: "spa_subcat" });
+          const res = await genearateCode({ model_name: "sub" });
           if (res?.code) {
-            formik.setFieldValue("osa_code", res.code);
+            formik.setFieldValue("sub_code", res.code);
           }
           if (res?.prefix) setPrefix(res.prefix);
         } catch {
@@ -165,7 +165,7 @@ export default function AddEditSub() {
           <Icon icon="lucide:arrow-left" width={24} />
         </div>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Update Spare Sub Category" : "Add Spare Sub Category"}
+          {isEditMode ? "Update Sub" : "Add Sub"}
         </h1>
       </div>
 

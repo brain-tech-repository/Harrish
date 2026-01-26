@@ -381,7 +381,7 @@ export default function SalemanLoad() {
         }
         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
       } catch (error) {
-        showSnackbar("Failed to download warehouse data", "error");
+        showSnackbar("Failed to download Distributor data", "error");
         setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
       } finally {
       }
