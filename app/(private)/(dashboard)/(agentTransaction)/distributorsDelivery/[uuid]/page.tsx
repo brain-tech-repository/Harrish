@@ -37,7 +37,6 @@ import StepperForm, { useStepperForm } from "@/app/components/stepperForm";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import Link from "@/app/components/smartLink";
-
 interface FormData {
   id: number;
   erp_code: string;
@@ -223,6 +222,8 @@ export default function DeliveryAddEditPage() {
   }, [ensureWarehouseLoaded]);
   const [deliveryData, setDeliveryData] = useState<OrderData[]>([]);
   const [searchedItem, setSearchedItem] = useState<FormData[] | null>(null);
+  const [isValueChange, setIsValueChange] = useState<any>(false);
+
   const [warehouseStocks, setWarehouseStocks] = useState<Record<string, WarehouseStock[]>>({});
   const warehouseDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [orderData, setOrderData] = useState<FormData[]>([]);
@@ -250,6 +251,7 @@ export default function DeliveryAddEditPage() {
   const [promotions, setPromotions] = useState([]);
   const [selectedPromotionsItems, setSelectedPromotionsItems] = useState([]);
   const [checkout,setCheckout]=useState(1);
+   const formikRef = useRef<any>(null);
 
   // Track used quantities per item to calculate remaining stock
   const [usedQuantities, setUsedQuantities] = useState<Record<string, { secondary: number; primary: number }>>({});
@@ -815,6 +817,9 @@ export default function DeliveryAddEditPage() {
       let promotionPayload = convertOrderPayload(payload)
 
        const promotionRes = await applyPromotion(promotionPayload);
+
+       if(isValueChange)
+       {
             if(checkout == 1)
             {
             if (promotionRes?.data?.itemPromotionInfo.length > 0) {
@@ -833,6 +838,7 @@ export default function DeliveryAddEditPage() {
      
      
               setCheckout(2);
+              callForClick();
              
             }
 
@@ -841,7 +847,8 @@ export default function DeliveryAddEditPage() {
           }
 
           if(checkout == 2)
-          {
+       
+            {
              const res = await createDelivery(payload);
       if (res.error) {
         showSnackbar(res.data.message || "Failed to create Delivery", "error");
@@ -859,12 +866,26 @@ export default function DeliveryAddEditPage() {
         router.push("/distributorsDelivery");
       }
           }
+        }       else{
+      const res = await createDelivery(payload);
+      if (res.error) {
+        showSnackbar(res.data.message || "Failed to create Delivery", "error");
+        console.error("Create Delivery error:", res);
+      } else {
+        try {
+          await saveFinalCode({
+            reserved_code: code,
+            model_name: "delivery",
+          });
+        } catch (e) {
+          // Optionally handle error, but don't block success
+        }
+        showSnackbar("Delivery created successfully", "success");
+        router.push("/distributorsDelivery");
+      }
+         
 
-
-     
-
-
-
+        }
 
     } catch (err) {
       console.error(err);
@@ -956,6 +977,10 @@ export default function DeliveryAddEditPage() {
     setFilteredWarehouseOptions(options);
     return options;
   };
+  const callForClick = () => {  
+   
+    formikRef.current?.submitForm();
+   }
 
   // const fetchPrice = async (item_id: string, customer_id: string, warehouse_id?: string, route_id?: string) => {
   //   const res = await pricingHeaderGetItemPrice({ customer_id, item_id });
@@ -988,10 +1013,12 @@ export default function DeliveryAddEditPage() {
           "
         >
           <Link href="/distributorsDelivery" back >
+          <Link href="/distributorsDelivery" back >
           <Icon
             icon="lucide:arrow-left"
             width={24}
           />
+          </Link>
           </Link>
           <h1
             className="
@@ -1059,6 +1086,7 @@ export default function DeliveryAddEditPage() {
         />
 
         <Formik<FormikValues>
+           innerRef={formikRef}
           initialValues={form}
           onSubmit={handleSubmit}
           validationSchema={validationSchema}
@@ -1360,6 +1388,7 @@ export default function DeliveryAddEditPage() {
                         width: 300,
                         render: (row) => {
                           const idx = Number(row.idx);
+
                           const err = itemErrors[idx]?.item_id;
                           const matchedOption = itemsOptions.find(
                             (o) => o.value === row.item_id
@@ -1379,6 +1408,8 @@ export default function DeliveryAddEditPage() {
                                 options={itemsOptions}
                                 searchable={true}
                                 onChange={(e) => {
+                                  setIsValueChange(true);
+
                                   if (e.target.value !== row.item_id) {
                                     recalculateItem(
                                       Number(row.idx),
@@ -1400,6 +1431,7 @@ export default function DeliveryAddEditPage() {
                         width: 150,
                         render: (row) => {
                           const idx = Number(row.idx);
+
                           const err = itemErrors[idx]?.uom_id;
                           const options = JSON.parse(row.UOM ?? "[]");
                           return (
@@ -1416,6 +1448,7 @@ export default function DeliveryAddEditPage() {
                                 }
                                 showSkeleton={Boolean(itemLoading[idx]?.uom)}
                                 onChange={(e) => {
+                                  setIsValueChange(true);
                                  
                                   // Just recalculate with new UOM ID
                                   // The recalculateItem function will handle price update
@@ -1450,7 +1483,9 @@ export default function DeliveryAddEditPage() {
                                 value={row.Quantity}
                                 disabled={currentItem?.is_promotional === true || !row.uom_id || !values.order_code || currentItem?.isPrmotion == true}
                                 onChange={(e) => {
-                                  const raw = (e.target as HTMLInputElement).value;
+                                  setIsValueChange(true);
+                                  const raw = (e.target as HTMLInputElement)
+                                    .value;
                                   const intPart = raw.split(".")[0];
                                   let sanitized = intPart === "" ? "" : String(Math.max(0, parseInt(intPart, 10) || 0));
                                   recalculateItem(Number(row.idx), "Quantity", sanitized);
@@ -1745,7 +1780,7 @@ export default function DeliveryAddEditPage() {
             >
               <DialogContent>
                 {/* <DialogContentText id="alert-dialog-description"> */}
-                 <PromotionStepper setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
+                 <PromotionStepper callForClick={callForClick} setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
                 {/* </DialogContentText> */}
               </DialogContent>
              
@@ -1821,7 +1856,7 @@ function getPromotionItemsByIndex(
 }
 
 
- function PromotionStepper({setCheckout, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
+ function PromotionStepper({setCheckout,callForClick, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
   const { showSnackbar } = useSnackbar();
 
   /** 🔹 Convert promotions → steps */
@@ -1878,8 +1913,12 @@ function getPromotionItemsByIndex(
     // recalculateItem(Number(itemData.length), "item_id", selectedPromotionsItems[0])
 setOpenPromotion(false);
 setCheckout(2)
+callForClick();
     // showSnackbar("All promotions processed successfully", "success");
   };
+
+
+
 
 
 
