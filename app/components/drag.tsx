@@ -1617,7 +1617,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_code || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_id || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_sap_id || '-'}</td>
-                                      <td className="px-4 py-3 text-sm text-gray-700">{row.total || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{toInternationalNumber(row.total, {minimumFractionDigits: 0}) || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.unique_item_count || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.warehouse_name || '-'}</td>
                                     </>
