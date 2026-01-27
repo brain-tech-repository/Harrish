@@ -28,7 +28,7 @@ import StepperForm, {
   useStepperForm,
 } from "@/app/components/stepperForm";
 
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { AnyARecord } from "dns";
 
 
@@ -262,6 +262,8 @@ export default function OrderAddEditPage() {
       available_stock: "",
     },
   ]);
+     const formikRef = useRef<any>(null);
+ 
 
   // per-row validation errors for item rows (keyed by row index)
   const [itemErrors, setItemErrors] = useState<Record<number, Record<string, string>>>({});
@@ -1013,6 +1015,7 @@ export default function OrderAddEditPage() {
 
 
         setCheckout(2);
+        callForClick();
       }
     }
       else{
@@ -1043,7 +1046,10 @@ export default function OrderAddEditPage() {
       }
     }
   };
-
+ const callForClick = () => {  
+   
+    formikRef.current?.submitForm();
+   }
   const keyValueData = [
     // { key: "Gross Total", value: `AED ${toInternationalNumber(grossTotal)}` },
     // { key: "Discount", value: `AED ${toInternationalNumber(discount)}` },
@@ -1109,17 +1115,15 @@ export default function OrderAddEditPage() {
   return (
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
+        <Link href={"distributorsOrder"} back className="flex items-center gap-[16px]">
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
           />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Add Distributor&apos;s Orders
           </h1>
-        </div>
+        </Link>
       </div>
 
       <ContainerCard className="rounded-[10px] scrollbar-none">
@@ -1136,6 +1140,8 @@ export default function OrderAddEditPage() {
         <hr className="w-full text-[#D5D7DA]" />
 
         <Formik<FormikValues>
+
+         innerRef={formikRef}
           initialValues={form}
           onSubmit={handleSubmit}
           validationSchema={validationSchema}
@@ -1505,7 +1511,7 @@ export default function OrderAddEditPage() {
       >
         <DialogContent>
           {/* <DialogContentText id="alert-dialog-description"> */}
-           <PromotionStepper setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
+           <PromotionStepper callForClick={callForClick} setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
           {/* </DialogContentText> */}
         </DialogContent>
        
@@ -1541,7 +1547,7 @@ export default function OrderAddEditPage() {
 
 
 
- function PromotionStepper({setCheckout, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
+ function PromotionStepper({setCheckout,callForClick, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
   const { showSnackbar } = useSnackbar();
 
   /** 🔹 Convert promotions → steps */
@@ -1596,6 +1602,8 @@ export default function OrderAddEditPage() {
     // recalculateItem(Number(itemData.length), "item_id", selectedPromotionsItems[0])
 setOpenPromotion(false);
 setCheckout(2)
+
+callForClick();
     // showSnackbar("All promotions processed successfully", "success");
   };
 
