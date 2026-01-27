@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import ToggleButton from "@mui/material/ToggleButton";
 import Toggle from "@/app/components/toggle";
+import Link from "@/app/components/smartLink";
 
 // ---- Your JSON pasted here ----
 // const WORKFLOW_DATA:any = [
@@ -279,12 +280,10 @@ export default function WorkflowTable() {
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Icon
+          <Link href="/settings/approval" back><Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-            className="cursor-pointer"
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Assign Workflow
           </h1>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { ArrowLeft, FileText, Truck, Receipt, Calculator, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import Loading from "@/app/components/Loading";
 import { Icon } from "@iconify-icon/react";
 import { useRouter,useSearchParams  } from "next/navigation";
@@ -362,14 +362,9 @@ if ( loading) {
   return (
     <>
     <div className="flex items-center gap-2 mb-4">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="cursor-pointer"
-        aria-label="Go back"
-      >
+      <Link href="/settings/processFlow" back>
         <Icon icon="lucide:arrow-left" width={24} />
-      </button>
+      </Link>
       <h1 className="text-xl font-semibold text-gray-900 mb-1"> Process Flow</h1>
     </div>
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">

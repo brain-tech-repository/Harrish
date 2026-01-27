@@ -20,6 +20,7 @@ import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 import Loading from "@/app/components/Loading";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
+import Link from "@/app/components/smartLink";
 
 // ✅ Validation Schema
 const validationSchema = Yup.object().shape({
@@ -227,9 +228,9 @@ export default function AddEditServiceTerritory() {
     return (
         <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
-                <div onClick={() => router.back()} className="cursor-pointer">
+                <Link href="/serviceTerritory" back>
                     <Icon icon="lucide:arrow-left" width={24} />
-                </div>
+                </Link>
                 <h1 className="text-xl font-semibold">
                     {isEditMode ? "Update Service Territory" : "Add Service Territory"}
                 </h1>

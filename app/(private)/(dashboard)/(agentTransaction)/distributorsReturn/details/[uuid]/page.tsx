@@ -18,6 +18,7 @@ import PrintButton from "@/app/components/printButton";
 import KeyValueData from "@/app/components/keyValueData";
 import { downloadFile, downloadPDFGlobal } from "@/app/services/allApi";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
+import Link from "@/app/components/smartLink";
 
 interface DeliveryDetail {
   id: number; 
@@ -220,7 +221,7 @@ export default function OrderDetailPage() {
     <>
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
+        <Link href={backBtnUrl} back className="flex items-center gap-[16px]">
           <Icon
             icon="lucide:arrow-left"
             width={24}
@@ -230,7 +231,7 @@ export default function OrderDetailPage() {
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Distributor&apos;s Return Details
           </h1>
-        </div>
+        </Link>
 
         {/* Action Buttons */}
         <div className="flex gap-[12px] relative">

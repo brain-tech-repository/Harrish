@@ -8,7 +8,7 @@ import ContainerCard from "@/app/components/containerCard";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import {
@@ -1662,7 +1662,7 @@ export default function AddPricing() {
   return (
     <div className="">
       <div className="flex items-center gap-2">
-        <Link href="/pricing">
+        <Link href="/pricing" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold text-gray-900 mb-1">

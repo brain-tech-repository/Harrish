@@ -30,7 +30,7 @@ export default function AgentCustomer() {
         ensureCustomerCategoryLoaded();
         ensureAllCustomerTypesLoaded();
     }, [ensureChannelLoaded, ensureCustomerSubCategoryLoaded, ensureItemCategoryLoaded, ensureRouteLoaded, ensureWarehouseAllLoaded,ensureAllCustomerTypesLoaded]);
-    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
+    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>();
     const [warehouseId, setWarehouseId] = useState<string>();
     const [channelId, setChannelId] = useState<string>();
     const [customerCategoryId, setCustomerCategoryId] = useState<string>();
@@ -270,11 +270,13 @@ export default function AgentCustomer() {
     const fetchAgentCustomers = useCallback(
         async (
             page: number = 1,
-            pageSize: number = 5
+            pageSize: number = 5,
+            payload?: Record<string, any>
         ): Promise<listReturnType> => {
             // Build params with all filters
             const params: Record<string, string> = {
                 page: page.toString(),
+                ...payload
             };
             if (selectedSubCategoryId) {
                 params.subcategory_id = String(selectedSubCategoryId);

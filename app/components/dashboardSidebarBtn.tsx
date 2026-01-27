@@ -1,5 +1,5 @@
 import { Icon, IconifyIcon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import React from "react";
 
 export default function SidebarBtn({

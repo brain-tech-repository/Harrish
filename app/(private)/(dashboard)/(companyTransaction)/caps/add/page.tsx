@@ -18,7 +18,7 @@ import { capsByUUID, capsCreate, capsQuantityCollected, driverList } from "@/app
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import * as yup from "yup";
@@ -903,7 +903,7 @@ export default function CapsAddPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href={backBtnUrl}>
+          <Link href={backBtnUrl} back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900 mb-1">

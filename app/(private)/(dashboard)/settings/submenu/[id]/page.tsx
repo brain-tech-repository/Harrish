@@ -2,7 +2,7 @@
 
 import React, { use, useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { Formik, Form, ErrorMessage, type FormikHelpers } from "formik";
 import * as Yup from "yup";
@@ -142,7 +142,7 @@ export default function AddShelfDisplay() {
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/settings/submenu">
+        <Link href="/settings/submenu" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Submenu" : "Add New Submenu"}</h1>

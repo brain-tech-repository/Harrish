@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Formik, Form, ErrorMessage, type FormikHelpers } from "formik";
@@ -149,7 +149,7 @@ export default function AddEditRegion() {
   return (
     <div className="w-full h-full p-4">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/settings/region">
+        <Link href="/settings/region" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import * as yup from "yup";
 import InputFields from "@/app/components/inputFields";
@@ -87,7 +87,7 @@ export default function AddOrder() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex flex-row items-center gap-4">
-          <Link href="/harrisTransaction/customerOrder">
+          <Link href="/harrisTransaction/customerOrder" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-2xl font-semibold text-gray-900">Add Order</h1>

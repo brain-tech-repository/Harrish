@@ -364,11 +364,6 @@ export async function generatePdfFromElement(
       throw new Error('No element provided');
     }
 
-  
-
-
-
-
     // Clone the element to avoid modifying the original
     const clonedElement = element.cloneNode(true) as HTMLElement;
     
@@ -411,78 +406,6 @@ export async function generatePdfFromElement(
     throw error;
   }
 }
-//  ***************************************************
-
-export async function generateQR(
-  element: HTMLElement,
-  options: GeneratePdfOptions = {}
-): Promise<void> {
-  const {
-    fileName = 'document.pdf',
-    orientation = 'portrait',
-    margin = 10,
-    scale = 2,
-    onSuccess,
-    onError
-  } = options;
-
-  try {
-    if (!element) {
-      throw new Error('No element provided');
-    }
-
-  
-
-
-
-
-    // Clone the element to avoid modifying the original
-    const clonedElement = element.cloneNode(true) as HTMLElement;
-    
-    // Hide elements with print:hidden class
-    const printHiddenElements = clonedElement.querySelectorAll('.print\\:hidden');
-    printHiddenElements.forEach((el) => {
-      (el as HTMLElement).style.display = 'none';
-    });
-    
-    // PDF generation options
-    const pdfOptions = {
-      margin: margin,
-      filename: fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { 
-        scale: scale,
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-      },
-      jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: orientation
-      }
-    };
-
-    // Generate and download PDF
-    await html2pdf().set(pdfOptions).from(clonedElement).save();
-    
-    if (onSuccess) {
-      onSuccess();
-    }
-  } catch (error) {
-    console.error('PDF generation failed:', error);
-    if (onError) {
-      onError(error);
-    }
-    throw error;
-  }
-}
-
-
-
-
-
 
 /**
  * Global function to capture and download the current page content as PDF

@@ -10,7 +10,7 @@ import { getRouteVisitDetails } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -117,7 +117,7 @@ export default function ViewPage() {
     <>
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>

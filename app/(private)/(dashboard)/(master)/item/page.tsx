@@ -174,7 +174,8 @@ useEffect(() => {
   const fetchItems = useCallback(
     async (
       page: number = 1,
-      pageSize: number = 50
+      pageSize: number = 50,
+      payload?: Record<string, any>
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
@@ -183,6 +184,7 @@ useEffect(() => {
         const params: any = {
           page: page.toString(),
           per_page: pageSize.toString(),
+          ...payload,
         };
         
         // Add category filter if selected
@@ -191,7 +193,7 @@ useEffect(() => {
         }
         
         // Add status filter if active (true=1, false=0)
-        if (currentStatusFilter !== null) {
+        if (currentStatusFilter !== null || params.status !== undefined) {
           params.status = currentStatusFilter ? "1" : "0";
         }
         const res = await itemList(params);

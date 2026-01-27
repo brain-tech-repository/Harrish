@@ -13,6 +13,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { genearateCode, saveFinalCode } from "@/app/services/allApi";
 import ContainerCard from "@/app/components/containerCard";
 import Loading from "@/app/components/Loading";
+import Link from "@/app/components/smartLink";
 
 /* ---------------- VALIDATION ---------------- */
 const validationSchema = Yup.object({
@@ -32,6 +33,7 @@ export default function AddEditSpare() {
   const router = useRouter();
   const params = useParams();
 
+  /* -------- UUID HANDLING -------- */
   const uuid =
     typeof params.uuid === "string" ? params.uuid : String(params.uuid);
 
@@ -41,17 +43,13 @@ export default function AddEditSpare() {
   const [localLoading, setLocalLoading] = useState(false);
   const codeGeneratedRef = useRef(false);
 
-  /* ---------------- FORM STATE ---------------- */
-  const [initialData, setInitialData] = useState({
-    osa_code: "",
-    spare_category_name: "",
-    status: 1,
-  });
-
   /* ---------------- FORM ---------------- */
   const formik = useFormik({
-    enableReinitialize: true, // ✅ IMPORTANT
-    initialValues: initialData,
+    initialValues: {
+      osa_code: "",
+      spare_category_name: "",
+      status: 1,
+    },
     validationSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       setLoading(true);
@@ -77,16 +75,14 @@ export default function AddEditSpare() {
         }
 
         showSnackbar(
-          isEditMode
-            ? "Spare updated successfully"
-            : "Spare added successfully",
+          isEditMode ? "Spare Category updated successfully" : "Spare Category added successfully",
           "success"
         );
 
         if (isAddMode) {
           await saveFinalCode({
             reserved_code: values.osa_code,
-            model_name: "spa_cat",
+            model_name: "spare",
           });
         }
 
@@ -104,13 +100,13 @@ export default function AddEditSpare() {
   /* ---------------- LOAD DATA ---------------- */
   useEffect(() => {
     const loadData = async () => {
-      // EDIT MODE
+      // EDIT MODE → fetch by UUID
       if (isEditMode) {
         setLocalLoading(true);
         try {
           const res = await spareByID(uuid);
           if (res?.data) {
-            setInitialData({
+            formik.setValues({
               osa_code: res.data.osa_code ?? "",
               spare_category_name: res.data.spare_category_name ?? "",
               status: res.data.status ?? 1,
@@ -123,26 +119,19 @@ export default function AddEditSpare() {
         }
       }
 
-      // ADD MODE → GENERATE CODE
+      // ADD MODE → generate code
       if (isAddMode && !codeGeneratedRef.current) {
         codeGeneratedRef.current = true;
         try {
-          const res = await genearateCode({ model_name: "spa_cat" });
+          const res = await genearateCode({ model_name: "spare" });
           if (res?.code) {
-            setInitialData({
-              osa_code: res.code,
-              spare_category_name: "",
-              status: 1,
-            });
+            formik.setFieldValue("osa_code", res.code);
           }
         } catch {
           showSnackbar("Failed to generate spare code", "error");
         }
       }
     };
-       
-  
-    
 
     loadData();
   }, [uuid]);
@@ -150,10 +139,11 @@ export default function AddEditSpare() {
   /* ---------------- UI ---------------- */
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="/settings/manageAssets/spareCategory" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Spare Category" : "Add Spare Category"}
         </h1>
@@ -174,6 +164,7 @@ export default function AddEditSpare() {
                   value={formik.values.osa_code}
                   onChange={formik.handleChange}
                   disabled
+                  error={formik.touched.osa_code && formik.errors.osa_code}
                 />
 
                 <InputFields

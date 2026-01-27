@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState } from "react";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import { useRouter, useParams } from "next/navigation";
@@ -1097,7 +1097,7 @@ export default function AddEditItem() {
     <>
       <div>
         <div className="flex items-center gap-4">
-          <Link href="/item">
+          <Link href="/item" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900 mb-[4px]">

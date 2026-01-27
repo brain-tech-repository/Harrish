@@ -17,7 +17,7 @@ import SettingPopUp from "@/app/components/settingPopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { useFormik } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState, useRef } from "react";
 import * as Yup from "yup";
 import { useParams, useRouter } from "next/navigation";
@@ -169,7 +169,7 @@ export default function AddCustomerCategory() {
     <>
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Link href="/settings/customer/customerCategory">
+          <Link href="/settings/customer/customerCategory" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">

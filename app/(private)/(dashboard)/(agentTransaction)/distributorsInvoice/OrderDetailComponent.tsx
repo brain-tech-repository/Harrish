@@ -20,7 +20,6 @@ import { formatWithPattern } from "@/app/(private)/utils/date";
 import { isValidDate } from "@/app/utils/formatDate";
 import { downloadFile } from "@/app/services/allApi";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
-// import AssetLabel from "@/app/(private)/(dashboard)/(assetsManagement)/assetsMaster/barcode/page";
 
 interface DeliveryDetail {
   id: number;
@@ -268,15 +267,6 @@ export function OrderDetailPage({ uuid, onClose }: { uuid: any; onClose?: () => 
               Hariss Trading Co., Dubai - UAE
             </span> */}
             </div>
-              {/* <AssetLabel
-               assetCode="NC/HIL/2016/220/0424"
-               serialNo="31654151100003"
-                 model="SRC 220"
-    /> */}
-
-
-
-
 
             <div className="flex flex-col items-end">
               <span className="text-[42px] uppercase text-[#A4A7AE] mb-[10px]">

@@ -11,7 +11,7 @@ import {
 } from "@/app/services/assetsApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import { useCallback, useState,useEffect } from "react";
 import * as yup from "yup";
@@ -237,7 +237,7 @@ export default function AddRoute() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/chillerInstallation/bulkTransfer">
+        <Link href="/chillerInstallation/bulkTransfer" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">Add Bulk Transfer</h1>

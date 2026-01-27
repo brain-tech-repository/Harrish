@@ -143,13 +143,15 @@ export default function Route() {
 
     const fetchRoutes = async (
         pageNo: number = 1,
-        pageSize: number = 10
+        pageSize: number = 10,
+        payload?: Record<string, any>
     ): Promise<listReturnType> => {
         try {
             // Build params with all filters
             const params: any = {
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
+                ...payload,
             };
             
             if (warehouseId) {

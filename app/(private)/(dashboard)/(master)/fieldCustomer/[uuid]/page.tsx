@@ -34,6 +34,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
 import { LocationInput } from "@/app/components/LocationInput";
+import Link from "@/app/components/smartLink";
 interface AgentCustomerFormValues {
     osa_code: string;
     name: string;
@@ -1258,12 +1259,9 @@ export default function AddEditAgentCustomer() {
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <div
-                        className="cursor-pointer"
-                        onClick={() => router.back()}
-                    >
+                    <Link href={"/fieldCustomer"} back>
                         <Icon icon="lucide:arrow-left" width={24} />
-                    </div>
+                    </Link>
                     <h1 className="text-xl font-semibold text-gray-900">
                         {isEditMode
                             ? "Update Field Customer"

@@ -31,6 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 import React, { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import * as yup from "yup";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Link from "@/app/components/smartLink";
 // ---- Types ----
 interface Uom {
   id: string;
@@ -786,12 +787,12 @@ export default function OrderAddEditPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center mb-[20px]">
-        <div className="flex items-center gap-[16px]">
+        <Link href="/distributorsReturn" back className="flex items-center gap-[16px]">
           <Icon icon="lucide:arrow-left" width={24} onClick={() => router.back()} />
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
             {isEditMode ? "Update Return" : "Add Return"}
           </h1 >
-        </div >
+        </Link >
       </div >
 
       <ContainerCard className="rounded-[10px] scrollbar-none">

@@ -10,6 +10,7 @@ import { Icon } from "@iconify-icon/react";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { salesTeamRecontionOrders, salesTeamRecontionOrdersTop, addSalesTeamRecontionOrders, blockSalesTeamRecontionOrders } from "@/app/services/agentTransaction";
 import { useSnackbar } from "@/app/services/snackbarContext";
+import Link from "@/app/components/smartLink";
 
 const initialItems: TableDataType[] = [];
 
@@ -234,17 +235,15 @@ export default function AddSalesmanLoadUI() {
     return (
         <div className="flex flex-col">
             {/* -------- HEADER -------- */}
-            <div className="flex items-center gap-4 mb-5">
+            <Link href="/salesTeamReconcile" back className="flex items-center gap-4 mb-5">
                 <Icon
                     icon="lucide:arrow-left"
                     width={24}
-                    className="cursor-pointer"
-                    onClick={() => router.back()}
                 />
                 <h1 className="text-[20px] font-semibold text-[#181D27]">
                     Add Sales Team Reconciliation
                 </h1>
-            </div>
+            </Link>
 
             <ContainerCard className="rounded-[10px]">
                 {/* -------- FORM -------- */}

@@ -8,6 +8,7 @@ import Table, {
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
 import Logo from "@/app/components/logo";
+import Link from "@/app/components/smartLink";
 import {
   salesmanLoadHeaderAdd,
   salesmanLoadHeaderById,
@@ -639,16 +640,15 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
   return (
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-5">
-        <div className="flex items-center gap-4">
+        <Link href="/salesTeamLoad" back className="flex items-center gap-4">
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
           />
+        </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
             Add Sales Team Load
           </h1>
-        </div>
       </div>
 
       <ContainerCard className="rounded-[10px] scrollbar-none">

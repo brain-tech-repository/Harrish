@@ -11,10 +11,10 @@ const page = () => {
           titleNearExport="Sales Report"
           reportType="sales"
           apiEndpoints={{
-              filters: 'http://172.16.6.205:8001/api/filters',
-              dashboard: 'http://172.16.6.205:8001/api/dashboard',
-              table: 'http://172.16.6.205:8001/api/table',
-              export: 'http://172.16.6.205:8001/api/export'
+              filters: 'http://172.16.6.205:8001/api/sales-report-filters',
+              dashboard: 'http://172.16.6.205:8001/api/sales-dashboard',
+              table: 'http://172.16.6.205:8001/api/sales-report-table',
+              export: 'http://172.16.6.205:8001/api/sales-report-export'
             }}
         />
     </div>

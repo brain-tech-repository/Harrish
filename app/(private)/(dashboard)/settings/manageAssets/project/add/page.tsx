@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Formik, Form, FormikHelpers } from "formik";
@@ -134,7 +134,7 @@ export default function AddProject() {
             {/* HEADER */}
             <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/settings/manageAssets/project">
+                    <Link href="/settings/manageAssets/project" back>
                         <Icon icon="lucide:arrow-left" width={24} />
                     </Link>
                     <h1 className="text-xl font-semibold text-gray-900">

@@ -14,7 +14,7 @@ import {
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { useFormik } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
@@ -411,7 +411,7 @@ export default function AddPaymentPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Link href="/advancePayment">
+          <Link href="/advancePayment" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">

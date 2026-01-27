@@ -19,6 +19,7 @@ import IconButton from "@/app/components/iconButton";
 import SettingPopUp from "@/app/components/settingPopUp";
 import ContainerCard from "@/app/components/containerCard";
 import Loading from "@/app/components/Loading";
+import Link from "@/app/components/smartLink";
 
 // ✅ Validation Schema
 const validationSchema = Yup.object().shape({
@@ -187,9 +188,9 @@ export default function AddEditVendor() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="/settings/manageAssets/vendor" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Vendor" : "Add Vendor"}
         </h1>

@@ -6,7 +6,7 @@ import StepperForm, {
 } from "@/app/components/stepperForm";
 import ContainerCard from "@/app/components/containerCard";
 import InputFields from "@/app/components/inputFields";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter, useParams } from "next/navigation";
@@ -409,7 +409,7 @@ export default function ShelfDisplay() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/shelfDisplay">
+        <Link href="/shelfDisplay" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Shelf" : "Add Shelf"}</h1>

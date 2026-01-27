@@ -15,7 +15,7 @@ import {
   FormikHelpers,
   FormikTouched
 } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
@@ -614,7 +614,7 @@ export default function Planogram() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">

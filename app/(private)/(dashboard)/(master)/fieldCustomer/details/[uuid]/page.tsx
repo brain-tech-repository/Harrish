@@ -22,6 +22,7 @@ import Skeleton from "@mui/material/Skeleton";
 import FilterComponent from "@/app/components/filterComponent";
 import Drawer from "@mui/material/Drawer";
 import { SideBarDetailPage } from "@/app/components/sideDrawer";
+import Link from "@/app/components/smartLink";
 export interface AgentCustomerDetails {
     id: string;
     uuid: string;
@@ -501,16 +502,15 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
         <>
             {/* header */}
             <div className="flex justify-between items-center mb-[20px]">
-                <div className="flex items-center gap-[16px] cursor-pointer">
+                <Link href="/fieldCustomer" back className="flex items-center gap-[16px] cursor-pointer">
                     <Icon
                         icon="lucide:arrow-left"
                         width={24}
-                        onClick={() => router.back()}
                     />
+                </Link>
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
                         Field Customer Details
                     </h1>
-                </div>
             </div>
 
             <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">

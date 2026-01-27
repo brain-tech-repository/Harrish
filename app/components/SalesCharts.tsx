@@ -14,13 +14,15 @@ interface ChartData {
   brand: { brand: string; sales: number }[];
 }
 
+export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder';
+
 interface SalesChartsProps {
   chartData?: ChartData;
   dashboardData?: any;
   isLoading?: boolean;
   error?: string | null;
   searchType?: string;
-  reportType?: 'sales' | 'customer' | 'item'; // New prop to distinguish report types
+  reportType?: typeofReportType; // New prop to distinguish report types
   urlSizeWarning?: boolean; // Warning flag when URL size exceeds limit
   onUrlSizeExceeded?: () => void; // Callback when URL size exceeds limit
 }

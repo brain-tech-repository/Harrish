@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useParams, useRouter } from "next/navigation";
 import * as Yup from "yup";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
@@ -492,7 +492,7 @@ export default function AddApprovalFlow() {
     return (
         <>
             <div className="flex items-center gap-2 mb-4">
-                <Link href="/settings/approval">
+                <Link href="/settings/approval" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold text-gray-900 mb-1">Update Approval Flow</h1>

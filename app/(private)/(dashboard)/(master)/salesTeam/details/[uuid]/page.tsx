@@ -11,7 +11,7 @@ import {  downloadPDFGlobal } from '@/app/services/allApi';
 import { iframeDownload } from "@/app/utils/iframeDownload";
 import { downloadFile, getOrderOfSalesmen, getSalesmanById, getSalesmanBySalesId, salesmanAttendence, salesmanAllInvoiceExport} from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import Table, { configType, listReturnType, searchReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
@@ -717,7 +717,7 @@ export default function Page() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
