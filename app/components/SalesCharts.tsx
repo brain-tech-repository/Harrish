@@ -1146,6 +1146,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               {selectedMaxView === 'mostPurchased' && 'Most Purchased Item Details'}
               {selectedMaxView === 'leastSold' && 'Least Selling Item Details'}
               {selectedMaxView === 'leastPurchased' && 'Least Purchased Item Details'}
+              {selectedMaxView === 'poOrderOverTime' && 'PO Order Over Time Details'}
             </h2>
             <button
               onClick={() => setSelectedMaxView(null)}
@@ -2559,6 +2560,60 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 </div>
               </>
             )}
+
+            {selectedMaxView === 'poOrderOverTime' && (() => {
+                const ordersTrendRaw = dashboardData?.data?.trend_line?.orders_over_time || [];
+                const trendChartData = ordersTrendRaw.map((d: any) => ({
+                  period: d.period,
+                  'Total Orders': d.total_orders ?? 0,
+                  'Order Pending': d.order_pending ?? 0,
+                  'Delivery Pending': d.delivery_pending ?? 0,
+                }));
+                return (
+                  <>
+                    <div className="bg-white p-6 border rounded-lg shadow-sm">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend</h3>
+                      <div className="w-full h-[500px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                            <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
+                            <Tooltip formatter={(value: any) => `${value}`} />
+                            <Legend />
+                            <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 border rounded-lg shadow-sm">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend Table</h3>
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b-2 border-gray-200">
+                          <tr>
+                            <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Orders</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Order Pending</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Delivery Pending</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trendChartData.map((d: any, i: number) => (
+                            <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="px-6 py-4 text-gray-800 font-medium">{d.period}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Total Orders']?.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Order Pending']?.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Delivery Pending']?.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                );
+              })()}
           </div>
         </div>
       </div>
@@ -4169,9 +4224,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // KPIs for Po Order report type
   if (reportType === 'poOrder') {
-    const kpisData = dashboardData?.kpis || {};
-    const trendData = dashboardData?.trend_line || {};
-  console.log(kpisData);
+    const kpisData = dashboardData?.data?.kpis || {};
+    const trendData = dashboardData?.data?.trend_line || {};
     const kpiCards = [
       {
         title: 'Pending Delivery',
@@ -4194,7 +4248,15 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     ];
 
     // Trend data
-    const purchaseTrendRaw = trendData.orders_over_time || [];
+    const ordersTrendRaw = trendData.orders_over_time || [];
+    // Prepare data for multi-series line chart
+    // Each object: { period, total_orders, order_pending, delivery_pending }
+    const trendChartData = ordersTrendRaw.map((d: any) => ({
+      period: d.period,
+      'Total Orders': d.total_orders ?? 0,
+      'Order Pending': d.order_pending ?? 0,
+      'Delivery Pending': d.delivery_pending ?? 0,
+    }));
 
     return (
       <div className="mt-5 space-y-6">
@@ -4223,33 +4285,34 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           ))}
         </div>
 
-
-        {/* Item Performance Trend */}
-        <div className="space-y-6">
-          {/* <h2 className="text-xl font-bold text-gray-800">Orders Over Time Trend</h2> */}
-
-          {/* Purchase Trend */}
-          {purchaseTrendRaw.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Orders Over Time Trend</h3>
-                <button
-                  onClick={() => setSelectedMaxView('purchaseTrend')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[350px]">
-                <NeonTrendAreaChart
-                  data={purchaseTrendRaw.map((d: any) => ({ period: d.period, Purchase: d.total_purchase }))}
-                  areas={['Purchase']}
-                  title="Purchase Trend"
-                />
-              </div>
+        {/* Orders Over Time Trend (Multi-series LineChart) */}
+        {trendChartData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Orders Over Time Trend</h3>
+              <button
+                onClick={() => setSelectedMaxView('poOrderOverTime')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
             </div>
-          )}
-        </div>
+            <div className="w-full h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
