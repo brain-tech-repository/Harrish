@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter, useParams } from "next/navigation";
 import { Formik, Form, ErrorMessage, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
@@ -1224,7 +1224,7 @@ export default function AddSurveyTabs() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/survey">
+        <Link href="/survey" back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold">{isEditMode ? "Update Survey" : "Add Survey"}</h1>

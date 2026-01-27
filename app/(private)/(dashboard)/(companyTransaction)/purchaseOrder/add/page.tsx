@@ -19,6 +19,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import getExcise from "@/app/(private)/utils/excise";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Link from "@/app/components/smartLink";
 
 interface FormData {
   id: number,
@@ -752,11 +753,11 @@ export default function PurchaseOrderAddEditPage() {
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/purchaseOrder" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.back()}
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Add Purchase Order
           </h1>

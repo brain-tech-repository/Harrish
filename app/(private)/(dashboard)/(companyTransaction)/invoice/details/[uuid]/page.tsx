@@ -16,6 +16,7 @@ import PrintButton from "@/app/components/printButton";
 import BorderIconButton from "@/app/components/borderIconButton";
 import { formatWithPattern } from "@/app/(private)/utils/date";
 import { invoiceExportHeader, invoiceListByUUID, exportInvoiceViewPdf } from "@/app/services/companyTransaction";
+import Link from "@/app/components/smartLink";
 
 const columns = [
   { key: "index", label: "#" },
@@ -160,12 +161,11 @@ export default function OrderDetailPage() {
       {/* ---------- Header ---------- */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
+          <Link href="/invoice" back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
-            onClick={() => router.push("/invoice")}
-            className="cursor-pointer"
-          />
+          /></Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
             Invoice #{data?.order_code || "-"}
           </h1>

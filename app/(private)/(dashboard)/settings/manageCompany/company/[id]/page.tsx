@@ -24,7 +24,7 @@ import {
   FormikTouched,
 } from "formik";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 import { useEffect, useState, useRef } from "react";
@@ -683,7 +683,7 @@ export default function AddEditCompany() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/settings/manageCompany/company">
+          <Link href="/settings/manageCompany/company" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

@@ -14,19 +14,15 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import DeleteConfirmPopup from "@/app/components/deletePopUp";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
-import filterRequest from "@/app/components/filterRequest";
-
 import {
   assetsRequestExport,
-
   chillerRequestGlobalSearch,
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
   assetrequestGlobalFilter
 } from "@/app/services/assetsApi";
-import { AssestRequestFilter } from "@/app/services/allApi";
-import StatusBtn from "@/app/components/statusBtn2";
+import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { downloadFile } from "@/app/services/allApi";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
@@ -74,7 +70,6 @@ export default function Page() {
   const { setLoading } = useLoading();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
-  const [payload, setPayload] = useState<Record<string, any>>({});
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
@@ -99,8 +94,6 @@ export default function Page() {
 
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
-   const [tableFilters, setTableFilters] = useState<any>({});
-
 
   useEffect(() => {
     setLoading(true);
@@ -127,41 +120,16 @@ export default function Page() {
     }
   };
 
-
-const filterBy = useCallback(
-    async (payload: Record<string, string | number | null>, pageSize = 10) => {
-       const finalPayload = { ...tableFilters, ...payload }; // parent state + table payload
-      setTableFilters(payload);
-
-      const res = await AssestRequestFilter(finalPayload);
-
-      return {
-        data: res?.data || [],
-        total: res?.pagination?.totalPages || 0,
-        currentPage: res?.pagination?.page || 0,
-        pageSize: res?.pagination?.limit || pageSize,
-      };
-    },
-    [tableFilters]  // dependency array
-  );
-
-
-
-
   const fetchTableData = useCallback(
-
     async (
       pageNo: number = 1,
-      pageSize: number = 10,
-      filters?: any
+      pageSize: number = 10
     ): Promise<listReturnType> => {
       setLoading(true);
       const res = await chillerRequestList({
         page: pageNo.toString(),
         per_page: pageSize.toString(),
-        ...filters
       });
-      // console.log("Fetched data:", res.data);
       setLoading(false);
       if (res.error) {
         showSnackbar(
@@ -172,16 +140,15 @@ const filterBy = useCallback(
       } else {
         return {
           data: res.data || [],
-          
           currentPage: res?.pagination?.page || 0,
           pageSize: res?.pagination?.limit || 10,
-          total: res?.pagination?.lastpage || 0,
+          total: res?.pagination?.totalPages || 0,
         };
       }
     },
     [setLoading, showSnackbar]
   );
-// console.log("Render Page Component",fetchTableData);
+
   // Helper function to render nested object data
   const renderNestedField = (
     data: TableDataType,
@@ -350,9 +317,7 @@ const filterBy = useCallback(
           config={{
             api: {
               list: fetchTableData,
-              // search: searchChillerRequest,
-               filterBy: filterBy,
-               
+              search: searchChillerRequest,
             },
             header: {
               title: "Assets Requests",
@@ -369,9 +334,15 @@ const filterBy = useCallback(
                   labelTw: "text-[12px] hidden sm:block",
                   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 },],
-              searchBar: false,
+              searchBar: true,
               columnFilter: true,
-              filterRenderer:filterRequest,
+              // filterRenderer: (props) => (
+              //                 <FilterComponent
+              //                   currentDate={true}
+              //                   {...props}
+              //                   api={fetchAssetAccordingToGlobalFilter}
+              //                 />
+              //               ),
               // actions: can("create") ? [
               //   <SidebarBtn
               //     key="name"

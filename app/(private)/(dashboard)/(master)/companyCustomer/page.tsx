@@ -85,13 +85,14 @@ export default function CompanyCustomers() {
     }
   };
 
-  const fetchCompanyCustomers = async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
+  const fetchCompanyCustomers = async (pageNo: number = 1, pageSize: number = 50, payload?: Record<string, any>): Promise<listReturnType> => {
     // setLoading(true);
 
     // Build params with all filters
     const params: any = {
       page: pageNo.toString(),
-      pageSize: pageSize.toString()
+      pageSize: pageSize.toString(),
+      ...payload,
     };
 
     // Add status filter if active (true=1, false=0)

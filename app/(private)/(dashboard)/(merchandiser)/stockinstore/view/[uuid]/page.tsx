@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { differenceInDays, parseISO } from "date-fns";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 
@@ -135,7 +135,7 @@ export default function Page() {
     <>
       {/* Back Button + Title */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">Stock In Store Details</h1>

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { getCompititorById } from "@/app/services/merchandiserApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { OverviewTab } from "./tabs/overview";
 interface compititor {
   uuid: string;
@@ -64,7 +64,7 @@ export default function Page() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>

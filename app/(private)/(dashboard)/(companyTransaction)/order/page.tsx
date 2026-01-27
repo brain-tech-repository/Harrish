@@ -121,7 +121,6 @@ export default function CustomerInvoicePage() {
             payload: Record<string, string | number | null>,
             pageSize: number
         ): Promise<listReturnType> => {
-            console.log("payload", payload);
             let result;
             try {
                 const params: Record<string, string> = { per_page: pageSize.toString() };

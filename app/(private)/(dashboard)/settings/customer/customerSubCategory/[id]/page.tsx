@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Formik, Form, ErrorMessage, FormikHelpers } from "formik";
@@ -196,7 +196,7 @@ export default function AddEditCustomerSubCategory() {
     <div className="w-full h-full overflow-x-hidden p-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/settings/customer/customerSubCategory">
+          <Link href="/settings/customer/customerSubCategory" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

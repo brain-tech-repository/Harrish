@@ -15,6 +15,7 @@
   import { b, q } from "framer-motion/client";
   import { sub } from "date-fns";
   import { stat } from "fs";
+import Link from "@/app/components/smartLink";
   export interface NewCustomerDetails {
     id?: number;
     customer_id?: number;
@@ -348,10 +349,10 @@
       <>
         {/* header */}
         <div className="flex justify-between items-center mb-[20px]">
-          <div className="flex items-center gap-[16px]">
+          <Link href="/newCustomer" back className="flex items-center gap-[16px]">
             <Icon icon="lucide:arrow-left" width={24} onClick={() => router.back()} />
             <h1 className="text-[20px] font-semibold text-[#181D27]">Approval Customers </h1>
-          </div>
+          </Link>
           {!hideActionMenu && (
             <div className="flex items-center gap-[10px] border border-[#D5D7DA] relative rounded-lg px-1 bg-[#FFFFFF] opacity-100">
               {/* 3-dot menu button */}

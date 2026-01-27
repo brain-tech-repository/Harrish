@@ -7,7 +7,7 @@ import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { itemById, itemReturn, itemSales } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import KeyValueData from "@/app/components/keyValueData";
 import Image from "next/image";
 import StatusBtn from "@/app/components/statusBtn2";

@@ -13,6 +13,7 @@ import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { addChiller, assetsStatusList, chillerByUUID, updateChiller } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { genearateCode } from "@/app/services/allApi";
+import Link from "@/app/components/smartLink";
 
 /* ----------------------------------------------------
    VALIDATION SCHEMA
@@ -475,9 +476,9 @@ export default function AddOrEditChiller() {
     <div>
       {/* HEADER */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()}>
+        <Link href="/assetsMaster" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
           {isEditMode ? "Update Assets Master" : "Add Assets Master"}
         </h1>

@@ -1013,10 +1013,12 @@ export default function DeliveryAddEditPage() {
           "
         >
           <Link href="/distributorsDelivery" back >
+          <Link href="/distributorsDelivery" back >
           <Icon
             icon="lucide:arrow-left"
             width={24}
           />
+          </Link>
           </Link>
           <h1
             className="

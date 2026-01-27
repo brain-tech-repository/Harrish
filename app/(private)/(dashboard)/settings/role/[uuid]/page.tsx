@@ -11,7 +11,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import { Form, Formik, type FormikHelpers } from "formik";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
@@ -332,7 +332,7 @@ export default function AddEditRole() {
     <div className="w-full h-full overflow-x-hidden p-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/settings/role">
+          <Link href="/settings/role" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">

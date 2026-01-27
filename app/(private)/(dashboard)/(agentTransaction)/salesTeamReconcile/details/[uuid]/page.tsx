@@ -11,6 +11,7 @@ import KeyValueData from "@/app/components/keyValueData";
 import { formatWithPattern } from "@/app/utils/formatDate";
 import { useLoading } from "@/app/services/loadingContext";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
+import Link from "@/app/components/smartLink";
 
 export default function SalesmanLoadDetailsUI() {
     const { setLoading } = useLoading();
@@ -97,17 +98,15 @@ export default function SalesmanLoadDetailsUI() {
     return (
         <div className="flex flex-col">
             {/* -------- HEADER -------- */}
-            <div className="flex items-center gap-4 mb-5">
+            <Link href="/salesTeamRecosite" back className="flex items-center gap-4 mb-5">
                 <Icon
                     icon="lucide:arrow-left"
                     width={24}
-                    className="cursor-pointer"
-                    onClick={() => router.back()}
                 />
+            </Link>
                 <h1 className="text-[20px] font-semibold text-[#181D27]">
                     Sales Team Reconciliation Details
                 </h1>
-            </div>
 
             <div className="flex flex-col gap-6">
                 <div className="flex flex-wrap gap-4">

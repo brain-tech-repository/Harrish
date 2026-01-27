@@ -9,7 +9,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import Image from "next/image";
 import { getCompanyById } from "@/app/services/allApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import Overview from "./overview/page";
 import StatusBtn from "@/app/components/statusBtn2";
 
@@ -98,7 +98,7 @@ export default function Page() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>

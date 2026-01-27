@@ -11,7 +11,7 @@ import Image from "next/image";
 import SummaryCard from "@/app/components/summaryCard";
 import { getPlanogramById } from "@/app/services/merchandiserApi";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { OverviewTab } from "./tabs/overview";
 import { CustomerData } from "./tabs/customer";
 import { differenceInDays, parseISO } from "date-fns";
@@ -116,7 +116,7 @@ if (loading) return <Loading />;
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>

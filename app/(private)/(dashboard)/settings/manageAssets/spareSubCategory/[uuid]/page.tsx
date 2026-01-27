@@ -17,6 +17,7 @@ import ContainerCard from "@/app/components/containerCard";
 import Loading from "@/app/components/Loading";
 import Category from "../../../promotionTypes/page";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
+import Link from "@/app/components/smartLink";
 const validationSchema = Yup.object().shape({
   spare_subcategory_name: Yup.string()
     .trim()
@@ -104,7 +105,7 @@ export default function AddEditSub() {
             try {
               await saveFinalCode({
                 reserved_code: values.osa_code,
-                model_name: "spa_subcat",
+                model_name: "sub",
               });
             } catch (e) {
               console.warn("Code finalization failed:", e);
@@ -145,9 +146,9 @@ export default function AddEditSub() {
       } else if (!codeGeneratedRef.current) {
         codeGeneratedRef.current = true;
         try {
-          const res = await genearateCode({ model_name: "spa_subcat" });
+          const res = await genearateCode({ model_name: "sub" });
           if (res?.code) {
-            formik.setFieldValue("osa_code", res.code);
+            formik.setFieldValue("sub_code", res.code);
           }
           if (res?.prefix) setPrefix(res.prefix);
         } catch {
@@ -161,11 +162,11 @@ export default function AddEditSub() {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div onClick={() => router.back()} className="cursor-pointer">
+        <Link href="/settings/manageAssets/spareSubCategory" back>
           <Icon icon="lucide:arrow-left" width={24} />
-        </div>
+        </Link>
         <h1 className="text-xl font-semibold">
-          {isEditMode ? "Update Spare Sub Category" : "Add Spare Sub Category"}
+          {isEditMode ? "Update Sub" : "Add Sub"}
         </h1>
       </div>
 

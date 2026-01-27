@@ -6,7 +6,7 @@ import AutoSuggestion from "@/app/components/autoSuggestion";
 import Loading from "@/app/components/Loading";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import { useState,useEffect } from "react";
 import { createPetitClaim } from "@/app/services/claimManagement";
@@ -160,7 +160,7 @@ export default function PetitClaimFormPage() {
     <>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Link href="/petitClaim">
+          <Link href="/petitClaim" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-xl font-semibold text-gray-900">Add Petit Claims</h1>

@@ -22,7 +22,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import StepperForm, { StepperStep, useStepperForm } from "@/app/components/stepperForm";
-import { Link } from "lucide-react";
+import Link from "@/app/components/smartLink";
 
 // Local types to avoid any
 type Option = { value: string; label: string; code?: string; name?: string };
@@ -1250,12 +1250,14 @@ export default function InvoiceddEditPage() {
         <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-[20px]">
                 <div className="flex items-center gap-[16px]">
+                    <Link href="/distributorsInvoice" back>
                     <Icon
                         icon="lucide:arrow-left"
                         width={24}
                         onClick={() => router.back()}
                         className="cursor-pointer"
                     />
+                    </Link>
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
                         {isEditMode ? "Update Invoice" : "Add Invoice"}
                     </h1>

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useRouter, useParams } from "next/navigation";
 import Loading from "@/app/components/Loading";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
@@ -159,7 +159,7 @@ export default function AddWarehouseStockPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-[20px]">
         <div className="flex items-center gap-[16px]">
-          <Link href="/settings/warehouseStock">
+          <Link href="/settings/warehouseStock" back>
             <Icon icon="lucide:arrow-left" width={24} />
           </Link>
           <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[5px]">

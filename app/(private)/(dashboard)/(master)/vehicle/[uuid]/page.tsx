@@ -19,7 +19,7 @@ import {
 } from "@/app/services/allApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import * as Yup from "yup";
@@ -675,7 +675,7 @@ export default function AddEditVehicleWithStepper() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Link href="/vehicle">
+        <Link href="/vehicle" back={true}>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="mb-[4px] text-xl font-semibold text-gray-900">

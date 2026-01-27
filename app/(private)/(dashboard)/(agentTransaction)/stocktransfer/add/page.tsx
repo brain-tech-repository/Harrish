@@ -5,6 +5,7 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 import Table, { TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import InputFields from "@/app/components/inputFields";
+import Link from "@/app/components/smartLink";
 import { StockTransferTopOrders, addStockTransfer } from "@/app/services/agentTransaction";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -167,12 +168,9 @@ export default function StockTransfer() {
                 <h1 className="text-lg font-semibold uppercase">
                     Stock Transfer
                 </h1>
-                <button
-                    onClick={() => router.back()}
-                    className="bg-red-500 text-white px-5 py-2 rounded"
-                >
+                <Link href="/stocktransfer" back className="bg-red-500 text-white px-5 py-2 rounded">
                     Back
-                </button>
+                </Link>
             </div>
 
             {/* WAREHOUSE SELECT */}

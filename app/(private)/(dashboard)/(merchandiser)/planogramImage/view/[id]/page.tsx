@@ -7,7 +7,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { planogramImageById } from "@/app/services/merchandiserApi";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -61,7 +61,7 @@ export default function ViewPage() {
     return (
         <>
             <div className="flex items-center gap-4 mb-6">
-                <Link href={backBtnUrl}>
+                <Link href={backBtnUrl} back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">{title}</h1>

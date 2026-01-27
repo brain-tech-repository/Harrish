@@ -455,10 +455,14 @@ export default function AddDiscount() {
                 if (currentStep > 1) {
                   prevStep();
                 } else {
-                  router.push("/discount");
+                  if (typeof window !== "undefined" && window.history.length <= 2) {
+                    router.push("/discount");
+                  } else {
+                    router.back();
+                  }
                 }
               }}
-              className="p-1 rounded-full hover:bg-gray-100"
+              className="p-1 rounded-full hover:bg-gray-100 cursor-pointer"
               aria-label="Go back"
             >
               <Icon icon="lucide:arrow-left" width={24} />

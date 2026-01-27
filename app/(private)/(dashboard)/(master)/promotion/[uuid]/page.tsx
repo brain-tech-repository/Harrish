@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@iconify-icon/react";
 import * as yup from "yup";
@@ -495,7 +495,11 @@ export default function AddPricing() {
                 if (currentStep > 1) {
                   prevStep();
                 } else {
-                  router.push("/promotion");
+                  if (typeof window !== "undefined" && window.history.length <= 2) {
+                    router.push("/promotion");
+                  } else {
+                    router.back();
+                  }
                 }
               }}
               className="p-1 rounded-full hover:bg-gray-100"

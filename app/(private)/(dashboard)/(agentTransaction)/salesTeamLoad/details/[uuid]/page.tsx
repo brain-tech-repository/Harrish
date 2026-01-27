@@ -15,7 +15,7 @@ import { Icon } from "@iconify-icon/react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState, RefObject, useRef } from "react";
 import PrintButton from "@/app/components/printButton";
@@ -114,7 +114,7 @@ export default function ViewPage() {
     <>
       {/* ---------- Header ---------- */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl}>
+        <Link href={backBtnUrl} back>
           <Icon
             icon="lucide:arrow-left"
             width={24}
