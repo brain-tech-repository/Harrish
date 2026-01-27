@@ -10,7 +10,7 @@ const page = () => {
           reportType="poOrder"
           apiEndpoints={{
               filters: 'http://172.16.6.205:8001/api/po-order-filters',
-              dashboard: '',
+              dashboard: 'http://172.16.6.205:8001/api/pmry-ord-dashboard',
               table: 'http://172.16.6.205:8001/api/po-order-table',
               export: 'http://172.16.6.205:8001/api/po-order-export'
             }}
