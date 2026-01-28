@@ -802,7 +802,11 @@ export default function AddEditSalesmanLoad() {
                   width: 320,
                   options: Array.isArray(itemOptions) ? itemOptions : [],
                   onSelect: (selected) => {
-                    setItemId((prev) => prev === selected ? "" : (selected as string));
+                    setItemId((prev: any) =>
+                      prev.includes(selected as string)
+                        ? prev.filter((id: string) => id !== selected)
+                        : [...prev, selected as string]
+                    );
                   },
                   isSingle: false,
                   selectedValue: itemId,

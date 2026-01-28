@@ -183,14 +183,14 @@ export default function InputFields({
   ) => {
     return (e: React.KeyboardEvent) => {
       if (e.key === "ArrowDown") {
-      let lat = "";
-      let lng = "";
-      if (typeof value === "string" && value.includes(",")) {
-        [lat, lng] = value.split(",");
-      } else if (typeof value === "object" && value !== null && "lat" in value && "lng" in value) {
-        lat = String((value as { lat: unknown }).lat);
-        lng = String((value as { lng: unknown }).lng);
-      }
+        let lat = "";
+        let lng = "";
+        if (typeof value === "string" && value.includes(",")) {
+          [lat, lng] = value.split(",");
+        } else if (typeof value === "object" && value !== null && "lat" in value && "lng" in value) {
+          lat = String((value as { lat: unknown }).lat);
+          lng = String((value as { lng: unknown }).lng);
+        }
 
         // Open dropdown if not already open
         if (!isDropdownOpen && setDropdownOpen) {
@@ -1760,7 +1760,7 @@ export default function InputFields({
     <div className={`flex flex-col gap-[6px] min-w-0 ${width} relative`}>
       {showSkeleton && (
         <div className="absolute h-[90px] w-full rounded-[5px] z-40 flex flex-col gap-[5px]">
-          {label && <div style={{ width: "50%", height: "20%"}} />}
+          {label && <div style={{ width: "50%", height: "20%" }} />}
           <div className="bg-white flex flex-col w-full gap-[5px] h-[68px]">
             <Skeleton variant="rounded" width={"100%"} height={"70%"} />
             {error && (
