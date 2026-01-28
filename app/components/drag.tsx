@@ -90,12 +90,14 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const lastChangedFilterRef = useRef<string | null>(null);
 
   const searchTypeOptions = reportType === 'attendence' ? [
+    { value: 'projects', label: 'Projects' },
+    { value: 'salesman', label: 'Salesman' },
     { value: 'sales executive-GT', label: 'Sales Executive-GT' }
   ] 
   : reportType === 'poOrder' ? []
   : [
+    { value: 'quantity', label: 'Quantity' },
     { value: 'amount', label: 'Amount' },
-    { value: 'quantity', label: 'Quantity' }
   ];
 
   const displayQuantityOptions = reportType === 'attendence' ? [] 
@@ -163,12 +165,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       return;
     }
 
-    if (!searchType) {
+    if (!["poOrder"].includes(reportType) && !searchType) {
       showSnackbar('Please select the search type (Amount or Quantity)', 'warning');
       return;
     }
 
-    if (!displayQuantity) {
+    if (!["poOrder"].includes(reportType) && !displayQuantity) {
       showSnackbar('Please select the display quantity (With Free Good or Without Free Good)', 'warning');
       return;
     }
@@ -513,13 +515,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     try {
       // Get only the lowest-level filter for export data
       // const lowestLevelFilters = getLowestLevelFilters();
+      const filters: Record<string, number[]> = {};
+      Object.entries(selectedChildItems).forEach(([filterId, items]) => {
+        if (items.length > 0) {
+          const key = `${filterId}_ids`;
+          filters[key] = (items as string[]).map((id: string) => parseInt(id));
+        }
+      });
 
       // Build the payload with file_type and view_type
       const payload: any = {
         from_date: startDate,
         to_date: endDate,
         search_type: searchType,
-        ...selectedChildItems
+        ...filters
       };
 
       const response = await fetch(`${apiEndpoints.export}`, {
@@ -1238,7 +1247,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {!["attendence", "poOrder"].includes(reportType) && (<button
+            {!["attendence"].includes(reportType) && (<button
               onClick={handleDashboardClick}
               disabled={isLoadingDashboard}
               className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1425,7 +1434,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                           const selectedCount = getSelectedCount(filter.id);
                           const isLoading = loadingFilterIds.has(filter.id);
                           return (
-                            <div key={filter.id} className="relative w-full sm:w-auto">
+                            <div key={filter.id} className="relative w-fit lg:w-full sm:w-auto">
                               <div className="dropdown-trigger flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#414651] rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
                                 // Close search by and more filters when opening a filter dropdown
                                 setSearchbyclose(false);

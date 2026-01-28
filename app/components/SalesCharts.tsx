@@ -1146,6 +1146,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               {selectedMaxView === 'mostPurchased' && 'Most Purchased Item Details'}
               {selectedMaxView === 'leastSold' && 'Least Selling Item Details'}
               {selectedMaxView === 'leastPurchased' && 'Least Purchased Item Details'}
+              {selectedMaxView === 'poOrderOverTime' && 'PO Order Over Time Details'}
             </h2>
             <button
               onClick={() => setSelectedMaxView(null)}
@@ -2559,6 +2560,60 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 </div>
               </>
             )}
+
+            {selectedMaxView === 'poOrderOverTime' && (() => {
+                const ordersTrendRaw = dashboardData?.data?.trend_line?.orders_over_time || [];
+                const trendChartData = ordersTrendRaw.map((d: any) => ({
+                  period: d.period,
+                  'Total Orders': d.total_orders ?? 0,
+                  'Order Pending': d.order_pending ?? 0,
+                  'Delivery Pending': d.delivery_pending ?? 0,
+                }));
+                return (
+                  <>
+                    <div className="bg-white p-6 border rounded-lg shadow-sm">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend</h3>
+                      <div className="w-full h-[500px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                            <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
+                            <Tooltip formatter={(value: any) => `${value}`} />
+                            <Legend />
+                            <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                            <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 border rounded-lg shadow-sm">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend Table</h3>
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b-2 border-gray-200">
+                          <tr>
+                            <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Orders</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Order Pending</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Delivery Pending</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trendChartData.map((d: any, i: number) => (
+                            <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="px-6 py-4 text-gray-800 font-medium">{d.period}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Total Orders']?.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Order Pending']?.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Delivery Pending']?.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                );
+              })()}
           </div>
         </div>
       </div>
@@ -2600,11 +2655,20 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   <XAxis
                     dataKey="period"
                     stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
+                    tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80}
                   />
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
+                    // tickFormatter={(value: number) => {
+                    //   // Use formatNumberShort for units, then localize the number part
+                    //   if (typeof value !== 'number') return value;
+                    //   if (value < 1000) {
+                    //     return value.toLocaleString();
+                    //   };
+                    //   if (value >= 100000) return ` ${(value / 100000).toFixed(2)}L`;
+                    //   return ` ${value.toLocaleString()}`;
+                    // }}
                   />
                   <Tooltip
                     contentStyle={{
@@ -3968,7 +4032,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* Item Rankings */}
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-gray-800">Item Ranking</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Most Sold Item */}
             {itemRanking.top_10_sales && itemRanking.top_10_sales.length > 5 && (
               <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
@@ -4064,8 +4128,200 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 </div>
               </div>
             )}
+
+            {/* for Item level */}
+            {/* Most Sold Item */}
+            {itemRanking.top_5_sales && itemRanking.top_5_sales.length >= 5 && (
+              <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Most Sold Item</h3>
+                  <button
+                    onClick={() => setSelectedMaxView('mostSold')}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
+                </div>
+                <div className="w-full h-[400px]">
+                  <Column3DChart
+                    data={itemRanking.top_5_sales.map((i: any) => ({ name: i.item_name, value: i.value }))}
+                    xAxisKey="name"
+                    yAxisKey="value"
+                    colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                    height="400px"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Most Purchase Item */}
+            {itemRanking.top_5_purchase && itemRanking.top_5_purchase.length >= 5 && (
+              <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Most Purchased Item</h3>
+                  <button
+                    onClick={() => setSelectedMaxView('mostPurchased')}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
+                </div>
+                <div className="w-full h-[400px]">
+                  <Column3DChart
+                    data={itemRanking.top_5_purchase.map((i: any) => ({ name: i.item_name, value: i.value }))}
+                    xAxisKey="name"
+                    yAxisKey="value"
+                    colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                    height="400px"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Least Selling Item */}
+            {itemRanking.least_5_sales && itemRanking.least_5_sales.length >= 5 && (
+              <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Least Selling Item</h3>
+                  <button
+                    onClick={() => setSelectedMaxView('leastSold')}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
+                </div>
+                <div className="w-full h-[400px]">
+                  <Column3DChart
+                    data={itemRanking.least_5_sales.map((i: any) => ({ name: i.item_name, value: i.value }))}
+                    xAxisKey="name"
+                    yAxisKey="value"
+                    colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                    height="400px"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Least Purchase Item */}
+            {itemRanking.least_5_purchase && itemRanking.least_5_purchase.length >= 5 && (
+              <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Least Purchased Item</h3>
+                  <button
+                    onClick={() => setSelectedMaxView('leastPurchased')}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Maximize2 size={16} />
+                  </button>
+                </div>
+                <div className="w-full h-[400px]">
+                  <Column3DChart
+                    data={itemRanking.least_5_purchase.map((i: any) => ({ name: i.item_name, value: i.value }))}
+                    xAxisKey="name"
+                    yAxisKey="value"
+                    colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                    height="400px"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // KPIs for Po Order report type
+  if (reportType === 'poOrder') {
+    const kpisData = dashboardData?.data?.kpis || {};
+    const trendData = dashboardData?.data?.trend_line || {};
+    const kpiCards = [
+      {
+        title: 'Pending Delivery',
+        value: Math.floor((kpisData.delivery_pending ?? 0)).toLocaleString(),
+        icon: 'mdi:package-variant',
+        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
+      },
+      {
+        title: 'Pending Order',
+        value: Math.floor((kpisData.order_pending ?? 0)).toLocaleString(),
+        icon: 'mdi:currency-usd',
+        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
+      },
+      {
+        title: 'Total Orders',
+        value: Math.floor((kpisData.total_orders ?? 0)).toLocaleString(),
+        icon: 'mdi:cart-arrow-down',
+        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
+      },
+    ];
+
+    // Trend data
+    const ordersTrendRaw = trendData.orders_over_time || [];
+    // Prepare data for multi-series line chart
+    // Each object: { period, total_orders, order_pending, delivery_pending }
+    const trendChartData = ordersTrendRaw.map((d: any) => ({
+      period: d.period,
+      'Total Orders': d.total_orders ?? 0,
+      'Order Pending': d.order_pending ?? 0,
+      'Delivery Pending': d.delivery_pending ?? 0,
+    }));
+
+    return (
+      <div className="mt-5 space-y-6">
+        <MaximizedView />
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {kpiCards.map((card, index) => (
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Orders Over Time Trend (Multi-series LineChart) */}
+        {trendChartData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Orders Over Time Trend</h3>
+              <button
+                onClick={() => setSelectedMaxView('poOrderOverTime')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value}`} />
+                  <Legend />
+                  <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -4082,25 +4338,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     const kpiCards = [
       {
         title: "Total Sales",
-        value: totalSales.toLocaleString(),
+        value: toInternationalNumber(totalSales, { maximumFractionDigits: 0 }),
         icon: "carbon:currency",
         color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: "Total Customers",
-        value: totalCustomers.toLocaleString(),
+        value: toInternationalNumber(totalCustomers, { maximumFractionDigits: 0 }),
         icon: "mdi:account-group",
         color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: "Active Customers",
-        value: activeSalesCustomers.toLocaleString(),
+        value: toInternationalNumber(activeSalesCustomers, { maximumFractionDigits: 0 }),
         icon: "mdi:account-check",
         color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: "Inactive Customers",
-        value: inactiveSalesCustomers.toLocaleString(),
+        value: toInternationalNumber(inactiveSalesCustomers, { maximumFractionDigits: 0 }),
         icon: "mdi:account-off",
         color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
@@ -4322,25 +4578,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     const kpiCards = [
       {
         title: "Total Sales",
-        value: totalSales.toLocaleString(),
+        value: toInternationalNumber(totalSales, {maximumFractionDigits: 0}),
         icon: "carbon:currency",
         color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
       },
       {
         title: "Total Customers",
-        value: totalCustomers.toLocaleString(),
+        value: toInternationalNumber(totalCustomers, {maximumFractionDigits: 0}),
         icon: "mdi:account-group",
         color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
       },
       {
         title: "Active Customers",
-        value: activeSalesCustomers.toLocaleString(),
+        value: toInternationalNumber(activeSalesCustomers, {maximumFractionDigits: 0}),
         icon: "mdi:account-check",
         color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
       },
       {
         title: "Inactive Customers",
-        value: inactiveSalesCustomers.toLocaleString(),
+        value: toInternationalNumber(inactiveSalesCustomers, {maximumFractionDigits: 0}),
         icon: "mdi:account-off",
         color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
       },
