@@ -1221,9 +1221,8 @@ export default function InputFields({
                           }
                         }}
                         onFocus={() => setDropdownOpen(true)}
-                        className={`w-full truncate outline-none border-none px-3 h-full placeholder:text-gray-400 ${hasSelection ? "text-gray-900" : "text-gray-400"
-                          }`}
-                        style={hasSelection ? { color: "#111827" } : undefined}
+                        className={`w-full truncate outline-none border-none px-3 h-full placeholder:text-gray-400 text-gray-700`}
+                        // style={{ color: "#111827" }}
                         onKeyDown={createArrowKeyHandler(
                           filteredOptions,
                           highlightedIndex,

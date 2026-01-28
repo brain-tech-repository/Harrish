@@ -37,6 +37,7 @@ import StepperForm, { useStepperForm } from "@/app/components/stepperForm";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import Link from "@/app/components/smartLink";
+
 interface FormData {
   id: number;
   erp_code: string;
@@ -782,8 +783,8 @@ export default function DeliveryAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
-        is_promotional: item.isPrmotion ? item.isPromtion : item.is_promotional,
-        isPrmotion: item.isPrmotion ? item.isPromtion : item.is_promotional,
+        is_promotional: item.isPrmotion?item.isPrmotion:item.is_promotional ?? false,
+        isPrmotion: item.isPrmotion?item.isPrmotion:item.is_promotional ?? false,
       })),
     };
   };
@@ -1013,12 +1014,10 @@ export default function DeliveryAddEditPage() {
           "
         >
           <Link href="/distributorsDelivery" back >
-          <Link href="/distributorsDelivery" back >
           <Icon
             icon="lucide:arrow-left"
             width={24}
           />
-          </Link>
           </Link>
           <h1
             className="
