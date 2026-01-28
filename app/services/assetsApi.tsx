@@ -1221,3 +1221,12 @@ export const assetrequestGlobalFilter = async (body: Object) => {
     return handleError(error);
   }
 };
+
+export const callRegisterGlobalFilter = async (body: Object) => {
+  try {
+    const res = await API.post("/api/assets/call-register/globalFilter", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
