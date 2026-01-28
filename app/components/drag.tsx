@@ -12,6 +12,7 @@ import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
 import toInternationalNumber from '../(private)/utils/formatNumber';
+import { report } from 'process';
 
 // Define TypeScript interfaces
 interface FilterChildItem {
@@ -43,7 +44,7 @@ interface SalesReportDashboardProps {
     table: string;
     export: string;
   };
-  reportType?: typeofReportType; // default to 'sales'
+  reportType: typeofReportType; // default to 'sales'
 }
 
 const SalesReportDashboard = (props: SalesReportDashboardProps) => {
@@ -89,18 +90,25 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const lastChangedFilterRef = useRef<string | null>(null);
 
   const searchTypeOptions = reportType === 'attendence' ? [
+    { value: 'projects', label: 'Projects' },
+    { value: 'salesman', label: 'Salesman' },
     { value: 'sales executive-GT', label: 'Sales Executive-GT' }
-  ] : [
+  ] 
+  : reportType === 'poOrder' ? []
+  : [
+    { value: 'quantity', label: 'Quantity' },
     { value: 'amount', label: 'Amount' },
-    { value: 'quantity', label: 'Quantity' }
   ];
 
-  const displayQuantityOptions = reportType === 'attendence' ? [] : [
+  const displayQuantityOptions = reportType === 'attendence' ? [] 
+  : reportType === 'poOrder' ? []
+  : [
     { value: 'with_free_good', label: 'With Free Good' },
     { value: 'without_free_good', label: 'Without Free Good' }
   ];
 
   useEffect(() => {
+    if(reportType === 'poOrder') return;
     setSearchType(searchTypeOptions[0]?.value);
     setDisplayQuantity(displayQuantityOptions[0]?.value);
   }, []);
@@ -157,12 +165,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       return;
     }
 
-    if (!searchType) {
+    if (!["poOrder"].includes(reportType) && !searchType) {
       showSnackbar('Please select the search type (Amount or Quantity)', 'warning');
       return;
     }
 
-    if (!displayQuantity) {
+    if (!["poOrder"].includes(reportType) && !displayQuantity) {
       showSnackbar('Please select the display quantity (With Free Good or Without Free Good)', 'warning');
       return;
     }
@@ -432,19 +440,24 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Fetch Table Data function
   const handleTableView = async (page?: number) => {
+    if (droppedFilters.length === 0 || Object.values(selectedChildItems).every(items => items.length === 0)) {
+      showSnackbar('Please drag and drop at least one filter with selections to view table data', 'warning');
+      return;
+    }
+
     if (!startDate || !endDate) {
       showSnackbar('Please select a date range before loading table data', 'warning');
       return;
     }
 
     // Validate search type selection
-    if (!searchType) {
+    if (!["poOrder"].includes(reportType) && !searchType) {
       showSnackbar('Please select the search type (Type by Price or Type by Quantity)', 'warning');
       return;
     }
 
     // Validate display quantity selection
-    if (reportType !== "attendence" && !displayQuantity) {
+    if (!["attendence", "poOrder"].includes(reportType) && !displayQuantity) {
       showSnackbar('Please select the display quantity (Free-Good or Without-Free-Good)', 'warning');
       return;
     }
@@ -487,7 +500,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   };
 
   // Export function for customer reports with file_type and view_type
-  const handleAttendenceExport = async () => {
+  const handleExport = async (filename: string) => {
+    if (droppedFilters.length === 0 || Object.values(selectedChildItems).every(items => items.length === 0)) {
+      showSnackbar('Please drag and drop at least one filter with selections to view table data', 'warning');
+      return;
+    }
+
     if (!startDate || !endDate) {
       showSnackbar('Please select a date range before exporting', 'warning');
       return;
@@ -496,14 +514,21 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     setIsExporting(true);
     try {
       // Get only the lowest-level filter for export data
-      const lowestLevelFilters = getLowestLevelFilters();
+      // const lowestLevelFilters = getLowestLevelFilters();
+      const filters: Record<string, number[]> = {};
+      Object.entries(selectedChildItems).forEach(([filterId, items]) => {
+        if (items.length > 0) {
+          const key = `${filterId}_ids`;
+          filters[key] = (items as string[]).map((id: string) => parseInt(id));
+        }
+      });
 
       // Build the payload with file_type and view_type
       const payload: any = {
         from_date: startDate,
         to_date: endDate,
         search_type: searchType,
-        ...lowestLevelFilters
+        ...filters
       };
 
       const response = await fetch(`${apiEndpoints.export}`, {
@@ -527,7 +552,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       const link = document.createElement('a');
       link.href = url;
       const extension = 'xlsx';
-      link.download = `attendence-report-${startDate}-to-${endDate}.${extension}`;
+      link.download = `${filename}-${startDate}-to-${endDate}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -599,6 +624,11 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Export XLSX function
   const handleExportXLSX = async (selectedSearchType: string, selectedDisplayQuantity: string, dataview: string) => {
+    if (droppedFilters.length === 0 || Object.values(selectedChildItems).every(items => items.length === 0)) {
+      showSnackbar('Please drag and drop at least one filter with selections to view table data', 'warning');
+      return;
+    }
+
     if (!startDate || !endDate) {
       showSnackbar('Please select a date range before exporting', 'warning');
       return;
@@ -1116,9 +1146,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   // Handler to open modal with images from row
   const handleRowImagePreview = (row: any) => {
     const images: string[] = [];
-    const baseUrl = "http://172.16.6.205:8001/";
-    if (row.in_img) images.push(baseUrl + row.in_img);
-    if (row.out_img) images.push(baseUrl + row.out_img);
+    if (row.in_img) images.push(row.in_img);
+    if (row.out_img) images.push(row.out_img);
     setModalImages(images);
     setModalStartIndex(1);
     setImageModalOpen(true);
@@ -1201,6 +1230,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
               </div>)}
+
               {displayQuantityOptions.length > 0 && (<div className="relative w-full sm:w-auto">
                 <select
                   value={displayQuantity}
@@ -1217,7 +1247,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            {reportType !== "attendence" && (<button
+            {!["attendence"].includes(reportType) && (<button
               onClick={handleDashboardClick}
               disabled={isLoadingDashboard}
               className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg flex-1 sm:flex-none justify-center ${viewType === 'graph' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200'} disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -1258,9 +1288,9 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   isLoading={isExporting}
                 />
               ) 
-              : reportType === 'attendence' ? (
+              : reportType === 'attendence' || reportType === 'poOrder' ? (
                 <AttendenceExportButtons
-                  onExport={handleAttendenceExport}
+                  onExport={() => handleExport(reportType === 'attendence' ? 'attendence-report' : 'po-order-report')}
                   isLoading={isExporting}
                 />
               ) 
@@ -1404,7 +1434,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                           const selectedCount = getSelectedCount(filter.id);
                           const isLoading = loadingFilterIds.has(filter.id);
                           return (
-                            <div key={filter.id} className="relative w-full sm:w-auto">
+                            <div key={filter.id} className="relative w-fit lg:w-full sm:w-auto">
                               <div className="dropdown-trigger flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#414651] rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
                                 // Close search by and more filters when opening a filter dropdown
                                 setSearchbyclose(false);
@@ -1541,6 +1571,17 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">In Img</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Out Img</th>
                                   </>
+                                ) : reportType === 'poOrder' ? (
+                                  <>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Delivery No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Order Code</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Order Number</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">SAP No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Amount</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Items</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Distributor</th>
+                                    </>
                                 ) : dynamicColumn.type === 'customer-report' ? (
                                   dynamicColumn.columns.map((col: any, idx: number) => (
                                     <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
@@ -1577,6 +1618,17 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.time_out || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700 cursor-pointer" onClick={() => handleRowImagePreview(row)}>{row.in_img ? <span className="underline text-blue-600">View</span> : '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700 cursor-pointer" onClick={() => handleRowImagePreview(row)}>{row.out_img ? <span className="underline text-blue-600">View</span> : '-'}</td>
+                                    </>
+                                  ) : reportType === 'poOrder' ? (
+                                    <>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.delivery_sap_id || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.invoice_sap_id || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.order_code || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.order_id || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.order_sap_id || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{toInternationalNumber(row.total, {minimumFractionDigits: 0}) || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.unique_item_count || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{row.warehouse_name || '-'}</td>
                                     </>
                                   ) : dynamicColumn.type === 'customer-report' ? (
                                     dynamicColumn.columns.map((col: any, idx: number) => (

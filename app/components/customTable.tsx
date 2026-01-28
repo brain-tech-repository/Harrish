@@ -1277,14 +1277,9 @@ function FilterTableHeader({
     useEffect(() => {
         const urlVal = searchParams.get(column);
         if (urlVal) {
-            if (urlVal.includes(',')) {
-                const arr = urlVal.split(',');
-                setSelectedValues(arr);
-                selectedRef.current = arr;
-            } else {
-                setSelectedValues([urlVal]);
-                selectedRef.current = urlVal;
-            }
+            const arr = urlVal.split(',');
+            setSelectedValues(arr);
+            selectedRef.current = arr;
         }
     }, []);
 
@@ -1414,16 +1409,16 @@ function FilterTableHeader({
             } else {
                 updated = [...selectedValues, value];
             }
-            
-            // Sync multi-select to URL
-            if (updated.length > 0) {
-                params.set(column, updated.join(','));
-            } else {
-                params.delete(column);
-            }
-            
+
+            // // Remove all previous instances of the param (plain and array-style) before setting new value
+            // params.delete(column);
+            // params.delete(column + '[]');
+            // if (updated.length > 0) {
+            //     params.set(column, updated.join(','));
+            // }
+
             setSelectedValues(updated);
-            if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
+            // if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
 
             // Sync to global filter state
             try {
@@ -1432,9 +1427,43 @@ function FilterTableHeader({
                     payload: { ...(prev?.payload || {}), [column]: updated } 
                 }));
             } catch (err) { /* ignore */ }
-        }
 
-        // Update the URL in the browser
+            // Update the URL in the browser
+            router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+        }
+    }
+
+    // Function to clear filter for this column
+    function clearColumnFilter() {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete(column);
+        params.delete(column + '[]');
+        setSelectedValues([]);
+        if (filterConfig?.onSelect) filterConfig.onSelect("");
+        try {
+            setFilterState(prev => ({
+                applied: Array.from(params.keys()).length > 0,
+                payload: { ...(prev?.payload || {}), [column]: "" }
+            }));
+        } catch (err) { /* ignore */ }
+        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+    }
+
+    // Function to apply filter for this column (multi-select only)
+    function applyColumnFilter() {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete(column);
+        params.delete(column + '[]');
+        if (selectedValues.length > 0) {
+            params.set(column, selectedValues.join(','));
+        }
+        if (filterConfig?.onSelect) filterConfig.onSelect(String(selectedValues.join(",")));
+        try {
+            setFilterState(prev => ({
+                applied: selectedValues.length > 0,
+                payload: { ...(prev?.payload || {}), [column]: selectedValues }
+            }));
+        } catch (err) { /* ignore */ }
         router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
     }
 // function handleSelect(value: string) {
@@ -1499,8 +1528,29 @@ function FilterTableHeader({
                                 selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? "")}
                                 onSelect={handleSelect}
                             />
-                        ) : (
-                            filteredOptions.map((option, idx) => (
+                        ) : (<>
+                            <div className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] border-b border-gray-200">
+                                <CustomCheckbox
+                                    id={column + "-select-all"}
+                                    checked={filteredOptions.length > 0 && filteredOptions.every(opt => selectedValues.includes(opt.value))}
+                                    indeterminate={selectedValues.length > 0 && selectedValues.length < filteredOptions.length}
+                                    label="Select All"
+                                    onChange={() => {
+                                        if (filteredOptions.length === 0) return;
+                                        if (filteredOptions.every(opt => selectedValues.includes(opt.value))) {
+                                            // Deselect all
+                                            setSelectedValues([]);
+                                            // if (filterConfig?.onSelect) filterConfig.onSelect("");
+                                        } else {
+                                            // Select all
+                                            const all = filteredOptions.map(opt => opt.value);
+                                            setSelectedValues(all);
+                                            // if (filterConfig?.onSelect) filterConfig.onSelect(all.join(","));
+                                        }
+                                    }}
+                                />
+                            </div>
+                            {filteredOptions.map((option, idx) => (
                                 <div
                                     key={option.value}
                                     className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
@@ -1512,7 +1562,27 @@ function FilterTableHeader({
                                         onChange={() => handleSelect(option.value)}
                                     />
                                 </div>
-                            ))
+                            ))}
+                            <div className="h-12"></div>
+                            <div className="absolute bottom-0 p-1 px-2 w-full bg-white col-span-2 flex justify-end gap-2 mt-2">
+                                <SidebarBtn
+                                    isActive={false}
+                                    type="button"
+                                    onClick={clearColumnFilter}
+                                    label="Clear"
+                                    buttonTw="px-3 py-2 h-9"
+                                    disabled={filteredOptions.length === 0}
+                                />
+                                <SidebarBtn
+                                    isActive={true}
+                                    type="button"
+                                    onClick={applyColumnFilter}
+                                    label="Apply Filter"
+                                    buttonTw="px-4 py-2 h-9"
+                                    disabled={filteredOptions.length === 0}
+                                />
+                            </div>
+                            </>
                         )
                     ) : (
                         <div className="flex flex-col items-center justify-center py-4 text-gray-600 text-sm">
@@ -2236,6 +2306,17 @@ useEffect(() => {
 
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
 
+        // Remove all filter params from URL (except page)
+        if (searchParams && router) {
+            const params = new URLSearchParams(searchParams.toString());
+            (config.header?.filterByFields || []).forEach((f: FilterField) => {
+                params.delete(f.key);
+            });
+            params.delete('page'); // Optionally reset to page 1
+            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newUrl, { scroll: false });
+        }
+
         if (config.api?.list) {
             const pageSize = config.pageSize || defaultPageSize;
             try {
@@ -2270,6 +2351,17 @@ useEffect(() => {
         setCustomPayload({});
         setAppliedFilters(false);
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
+
+        // Remove all filter params from URL (except page)
+        if (searchParams && router) {
+            const params = new URLSearchParams(searchParams.toString());
+            Object.keys(customPayload || {}).forEach((k) => {
+                params.delete(k);
+            });
+            params.delete('page');
+            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newUrl, { scroll: false });
+        }
 
         if (config.api?.list) {
             const pageSize = config.pageSize || defaultPageSize;
