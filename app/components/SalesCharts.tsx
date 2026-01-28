@@ -2655,11 +2655,20 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   <XAxis
                     dataKey="period"
                     stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
+                    tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80}
                   />
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
+                    // tickFormatter={(value: number) => {
+                    //   // Use formatNumberShort for units, then localize the number part
+                    //   if (typeof value !== 'number') return value;
+                    //   if (value < 1000) {
+                    //     return value.toLocaleString();
+                    //   };
+                    //   if (value >= 100000) return ` ${(value / 100000).toFixed(2)}L`;
+                    //   return ` ${value.toLocaleString()}`;
+                    // }}
                   />
                   <Tooltip
                     contentStyle={{
