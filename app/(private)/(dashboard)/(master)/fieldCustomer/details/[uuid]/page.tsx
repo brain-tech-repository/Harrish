@@ -501,7 +501,13 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
     return (
         <>
             {/* header */}
-            <div className="flex justify-between items-center mb-[20px]">
+            <div className="flex items-center gap-4 mb-6">
+                    <Link href="/fieldCustomer" back className="flex items-center gap-[16px] cursor-pointer">
+                      <Icon icon="lucide:arrow-left" width={24} />
+                    </Link>
+                    <h1 className="text-xl font-semibold mb-1">Field Customer Details</h1>
+                  </div>
+            {/* <div className="flex justify-between items-center mb-[20px]">
                 <Link href="/fieldCustomer" back className="flex items-center gap-[16px] cursor-pointer">
                     <Icon
                         icon="lucide:arrow-left"
@@ -511,7 +517,7 @@ const ExportDownloadButton = ({ row }: { row: TableDataType }) => {
                     <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
                         Field Customer Details
                     </h1>
-            </div>
+            </div> */}
 
             <ContainerCard className="w-full flex flex-col sm:flex-row items-center justify-between gap-[10px] md:gap-0">
                 {/* profile details */}

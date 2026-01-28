@@ -298,7 +298,8 @@ const nextConfig: NextConfig = {
       // { source: '/chillerinstallation/iro', destination: '/chillerInstallation/iro' },
 { source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
       { source: '/fridgeupdatecustomer/add', destination: '/fridgeUpdateCustomer/add' },
-      { source: '/fridgeupdatecustomer/:uuid', destination: '/fridgeUpdateCustomer/:uuid' },
+      { source: '/fridgeupdatecustomer/:id', destination: '/fridgeUpdateCustomer/:id' },
+      { source: '/fridgeupdatecustomer/view/:uuid', destination: '/fridgeUpdateCustomer/view/:uuid' },
       { source: '/fridgeupdatecustomer', destination: '/fridgeUpdateCustomer' },
 
       { source: '/serviceterritory/add', destination: '/serviceTerritory/add' },

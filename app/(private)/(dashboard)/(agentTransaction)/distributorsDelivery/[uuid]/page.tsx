@@ -782,8 +782,8 @@ export default function DeliveryAddEditPage() {
         // gross_total: Number(item.Total) || null,
         net_total: Number(item.Net) || null,
         total: Number(item.Total) || null,
-        is_promotional: item.isPrmotion ?? false,
-        isPrmotion: item.isPrmotion??false,
+        is_promotional: item.isPrmotion ? item.isPromtion : item.is_promotional,
+        isPrmotion: item.isPrmotion ? item.isPromtion : item.is_promotional,
       })),
     };
   };

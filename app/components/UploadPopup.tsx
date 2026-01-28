@@ -142,7 +142,7 @@ const UploadPopup: React.FC<UploadPopupProps> = ({ open, onClose, dummyApi, api 
  <div className="flex justify-center mb-1">
           <button
             type="button"
-            className="text-blue-600 underline text-sm focus:outline-none"
+            className="text-blue-600 underline text-sm focus:outline-none cursor-pointer"
             onClick={() => setInfoPopoverOpen((v) => !v)}
           >
             Need a sample file?
