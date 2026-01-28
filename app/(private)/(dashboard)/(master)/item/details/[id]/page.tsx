@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import ContainerCard from "@/app/components/containerCard";
 import TabBtn from "@/app/components/tabBtn";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { itemById, itemPurchase, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal,exportAllPO } from "@/app/services/allApi";
+import { itemById, itemPurchase, itemSales, downloadFile, itemAllReturnExport, allItemInvoiceExport, downloadPDFGlobal, exportAllPO } from "@/app/services/allApi";
 import { exportOrderInvoice, exportReturneWithDetails } from "@/app/services/agentTransaction";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import Link from "@/app/components/smartLink";
@@ -87,10 +87,10 @@ export default function Page() {
   const [salesData, setSalesData] = useState<any[]>([]);
   const [itemId, setItemId] = useState("");
   // const { id, tabName } = useParams();
-   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
-    const [showDrawer, setShowDrawer] = useState(false);
-     const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
-        const [showPODrawer, setShowPODrawer] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [selectedPORow, setSelectedPORow] = useState<TableDataType | null>(null);
+  const [showPODrawer, setShowPODrawer] = useState(false);
   const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; pdf: boolean }>({ csv: false, xlsx: false, pdf: false });
   const params = useParams<{ id: string }>();
   const id = params?.id;
@@ -297,7 +297,7 @@ export default function Page() {
     <>
       {/* Header Section */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href={backBtnUrl} back>
+        <Link href={backBtnUrl}>
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
@@ -352,9 +352,9 @@ export default function Page() {
         </div> */}
       </div>
 
-        {/* Right Side - Description, Tabs, and Tab Content */}
-        {/* <div className="flex-1 flex flex-col gap-y-[5px]"> */}
-          {/* {item?.description && (
+      {/* Right Side - Description, Tabs, and Tab Content */}
+      {/* <div className="flex-1 flex flex-col gap-y-[5px]"> */}
+      {/* {item?.description && (
             <ContainerCard className="w-full">
               <h3 className="text-lg font-semibold mb-3">Description</h3>
               <p className="text-gray-700 text-sm leading-relaxed">
@@ -363,100 +363,100 @@ export default function Page() {
             </ContainerCard>
           )} */}
 
-          {/* Tabs */}
-         <ContainerCard
-                         className="w-full flex gap-[4px] overflow-x-auto"
-                         padding="5px"
-                     >
-            {tabList.map((tab, index) => (
-              <div key={index}>
-                <TabBtn
-                  label={tab.name}
-                  isActive={activeTab === tab.key}
-                  onClick={() => onTabClick(index)}
-                />
-              </div>
-            ))}
-          </ContainerCard>
+      {/* Tabs */}
+      <ContainerCard
+        className="w-full flex gap-[4px] overflow-x-auto"
+        padding="5px"
+      >
+        {tabList.map((tab, index) => (
+          <div key={index}>
+            <TabBtn
+              label={tab.name}
+              isActive={activeTab === tab.key}
+              onClick={() => onTabClick(index)}
+            />
+          </div>
+        ))}
+      </ContainerCard>
 
-          {/* Tab Content */}
-          {activeTab === "overview" && (
-            <div className="flex gap-x-[20px] flex-wrap md:flex-nowrap">
+      {/* Tab Content */}
+      {activeTab === "overview" && (
+        <div className="flex gap-x-[20px] flex-wrap md:flex-nowrap">
 
-              {/* Right Section */}
-              <div className="w-full flex flex-col gap-y-[15px]">
+          {/* Right Section */}
+          <div className="w-full flex flex-col gap-y-[15px]">
 
-                <ContainerCard className="w-full h-fit">
-                  <KeyValueData
-                    title="Item Information"
-                    data={[
-                      { key: "ERP Code", value: item?.erp_code || "-" },
-                      { key: "Brand", value: item?.brand?.name || "-" },
-                      {
-                        key: "Category",
-                        value: item?.item_category?.category_name
-                          ? `${item.item_category.category_name}`
-                          : "-",
-                      },
-                      {
-                        key: "Sub Category",
-                        value: item?.item_sub_category?.name
-                          ? `${item.item_sub_category.name}`
-                          : "-",
-                      },
-                      { key: "Shelf Life", value: item?.shelf_life || "-" },
-                      { key: "Commodity Goods Code", value: item?.commodity_goods_code || "-" },
-                      { key: "Excise Duty Code", value: item?.excise_duty_code || "-" },
-                      { key: "Item Weight", value: item?.item_weight || "-" },
-                      { key: "Volume", value: item?.volume?.toString() || "-" },
-                      {
-                        key: "Taxable",
-                        value: item?.is_taxable ? "Yes" : "No",
-                      },
-                      {
-                        key: "Has Excise",
-                        value: item?.has_excies ? "Yes" : "No",
-                      },
-                    ]}
-                  />
-                </ContainerCard>
-              </div>
+            <ContainerCard className="w-full h-fit">
+              <KeyValueData
+                title="Item Information"
+                data={[
+                  { key: "ERP Code", value: item?.erp_code || "-" },
+                  { key: "Brand", value: item?.brand?.name || "-" },
+                  {
+                    key: "Category",
+                    value: item?.item_category?.category_name
+                      ? `${item.item_category.category_name}`
+                      : "-",
+                  },
+                  {
+                    key: "Sub Category",
+                    value: item?.item_sub_category?.name
+                      ? `${item.item_sub_category.name}`
+                      : "-",
+                  },
+                  { key: "Shelf Life", value: item?.shelf_life || "-" },
+                  { key: "Commodity Goods Code", value: item?.commodity_goods_code || "-" },
+                  { key: "Excise Duty Code", value: item?.excise_duty_code || "-" },
+                  { key: "Item Weight", value: item?.item_weight || "-" },
+                  { key: "Volume", value: item?.volume?.toString() || "-" },
+                  {
+                    key: "Taxable",
+                    value: item?.is_taxable ? "Yes" : "No",
+                  },
+                  {
+                    key: "Has Excise",
+                    value: item?.has_excies ? "Yes" : "No",
+                  },
+                ]}
+              />
+            </ContainerCard>
+          </div>
+        </div>
+      )}
+      {activeTab === "uom" && (
+        item?.item_uoms.map((singleItem, index) => {
+
+          return (<ContainerCard key={index} className="w-full p-5">
+
+            <h3 className="text-md font-semibold text-gray-800 mb-2">
+              {singleItem?.uom_type || "UOM"}
+            </h3>
+
+            <div className="space-y-1 text-gray-700 text-sm">
+              <p>
+                <strong>Name:</strong> {singleItem?.name || "-"}
+              </p>
+              <p>
+                <strong>Price:</strong> {toInternationalNumber(singleItem?.uom_price) || "0.00"}
+              </p>
+              <p>
+                <strong>UPC:</strong> {singleItem?.upc || "N/A"}
+              </p>
+              <p>
+                <strong>Enable For:</strong> {singleItem?.enable_for || "-"}
+              </p>
+              <p>
+                <strong>Stock Keeping Unit:</strong>{" "}
+                {singleItem?.is_stock_keeping ? "Yes" : "No"}
+              </p>
             </div>
-          )}
-          {activeTab === "uom" && (
-            item?.item_uoms.map((singleItem, index) => {
+          </ContainerCard>)
 
-              return (<ContainerCard key={index} className="w-full p-5">
-
-                <h3 className="text-md font-semibold text-gray-800 mb-2">
-                  {singleItem?.uom_type || "UOM"}
-                </h3>
-
-                <div className="space-y-1 text-gray-700 text-sm">
-                  <p>
-                    <strong>Name:</strong> {singleItem?.name || "-"}
-                  </p>
-                  <p>
-                    <strong>Price:</strong> {toInternationalNumber(singleItem?.uom_price) || "0.00"}
-                  </p>
-                  <p>
-                    <strong>UPC:</strong> {singleItem?.upc || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Enable For:</strong> {singleItem?.enable_for || "-"}
-                  </p>
-                  <p>
-                    <strong>Stock Keeping Unit:</strong>{" "}
-                    {singleItem?.is_stock_keeping ? "Yes" : "No"}
-                  </p>
-                </div>
-              </ContainerCard>)
-
-            })
-          )}
-          {activeTab === "sales" && (
-            <ContainerCard >
-             <div className="flex flex-col h-full w-full overflow-x-auto">
+        })
+      )}
+      {activeTab === "sales" && (
+        <ContainerCard >
+          <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
@@ -498,43 +498,45 @@ export default function Page() {
                 footer: { nextPrevBtn: true, pagination: true },
                 rowActions: [
                   {
-                    icon:  "lucide:download",
+                    icon: "lucide:download",
                     showLoading: true,
                     onClick: (row: TableDataType) => downloadSalesPdf(row.header_uuid),
                   },
                 ],
                 table: {
-                                    height: 400,
-                                },
+                  height: 400,
+                },
                 columns: [
-                   { key: "invoice_code", label: "Code", render: (row: TableDataType) => (
-            <span className="cursor-pointer hover:text-red-500" onClick={e => {
-                e.stopPropagation();
-                setSelectedRow(row);
-                setShowDrawer(true);
-            }}>{row.invoice_code || "-"}</span>
-        ) },
-                  { key: "invoice_date", label: "Invoice Date",render: (row: TableDataType) => <>{formatDate(row.invoice_date)}</> },
-                  { key: "warehouse_code,warehouse_name", label: "Distributor",render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</> },
-                  { key: "route_code,route_name", label: "Route",render: (row: TableDataType) => <>{row?.route_code} - {row?.route_name}</> },
-                  { key: "salesman_code,salesman_name", label: "Sales Team",render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</> },
-                  { key: "total", label: "Total",render: (row: TableDataType) => <>{toInternationalNumber(row?.total)}</> },
+                  {
+                    key: "invoice_code", label: "Code", render: (row: TableDataType) => (
+                      <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedRow(row);
+                        setShowDrawer(true);
+                      }}>{row.invoice_code || "-"}</span>
+                    )
+                  },
+                  { key: "invoice_date", label: "Invoice Date", render: (row: TableDataType) => <>{formatDate(row.invoice_date)}</> },
+                  { key: "warehouse_code,warehouse_name", label: "Distributor", render: (row: TableDataType) => <>{row?.warehouse_code} - {row?.warehouse_name}</> },
+                  { key: "route_code,route_name", label: "Route", render: (row: TableDataType) => <>{row?.route_code} - {row?.route_name}</> },
+                  { key: "salesman_code,salesman_name", label: "Sales Team", render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</> },
+                  { key: "total", label: "Total", render: (row: TableDataType) => <>{toInternationalNumber(row?.total)}</> },
                 ],
                 pageSize: 50
               }}
             />
-            </div>
-            </ContainerCard>
-          )}
-          {activeTab === "return" && (
-            <ContainerCard >
-            
-                            <div className="flex flex-col h-full w-full overflow-x-auto">
+          </div>
+        </ContainerCard>
+      )}
+      {activeTab === "return" && (
+        <ContainerCard >
+
+          <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
                 api: {
                   list: async (page: number = 1, pageSize: number = 50) => {
-                    const res = await itemPurchase( { item_id: String(item?.id), page: page.toString(), limit: pageSize.toString() });
+                    const res = await itemPurchase({ item_id: String(item?.id), page: page.toString(), limit: pageSize.toString() });
                     if (res.error) {
                       // showSnackbar(res.data?.message || "Unable to fetch Return data", "error");
                       throw new Error(res.data?.message || "Unable to fetch Return data");
@@ -579,37 +581,38 @@ export default function Page() {
                 footer: { nextPrevBtn: true, pagination: true },
                 table: {
                   height: "400px",
-                  maxWidth: "1320px",
                 },
                 columns: [
-                   { key: "order_code", label: "Code", render: (row: TableDataType) => (
-            <span className="cursor-pointer hover:text-red-500" onClick={e => {
-                e.stopPropagation();
-                setSelectedPORow(row);
-                setShowPODrawer(true);
-            }}>{row.order_code || "-"}</span>
-        ) },
-                  { key: "delivery_date", label: "Delivery Date",render: (row: TableDataType) => <>{formatDate(row.delivery_date)}</> },
-                  { key: "customer_code,customer_name", label: "Customer" ,render: (row: TableDataType) => <>{row?.customer_code} - {row?.customer_name}</>},
-                  { key: "salesman_code,salesman_name", label: "Sales Team" ,render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</>},
+                  {
+                    key: "order_code", label: "Code", render: (row: TableDataType) => (
+                      <span className="cursor-pointer hover:text-red-500" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedPORow(row);
+                        setShowPODrawer(true);
+                      }}>{row.order_code || "-"}</span>
+                    )
+                  },
+                  { key: "delivery_date", label: "Delivery Date", render: (row: TableDataType) => <>{formatDate(row.delivery_date)}</> },
+                  { key: "customer_code,customer_name", label: "Customer", render: (row: TableDataType) => <>{row?.customer_code} - {row?.customer_name}</> },
+                  { key: "salesman_code,salesman_name", label: "Sales Team", render: (row: TableDataType) => <>{row?.salesman_code} - {row?.salesman_name}</> },
                   { key: "total", label: "Total", render: (row: TableDataType) => <>{toInternationalNumber(row.total)}</> },
                   // { key: "sap_msg", label: "SAP Status" }
                 ],
                 pageSize: 50
               }}
             />
-            </div>
-            </ContainerCard>
-          )}
-        {/* </div> */}
-          <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
-                                    {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
-                                  </Drawer>
-                                  
-                                    <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
-                                                              {selectedPORow && <SideBarDetailPage title="Purchase Order" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
-                                                            </Drawer>
-                                                            
+          </div>
+        </ContainerCard>
+      )}
+      {/* </div> */}
+      <Drawer anchor="right" open={showDrawer} onClose={() => { setShowDrawer(false) }} className="p-2" >
+        {selectedRow && <SideBarDetailPage title="Invoice" data={selectedRow} onClose={() => setShowDrawer(false)} />}
+      </Drawer>
+
+      <Drawer anchor="right" open={showPODrawer} onClose={() => { setShowPODrawer(false) }} className="p-2" >
+        {selectedPORow && <SideBarDetailPage title="Purchase Order" data={selectedPORow} onClose={() => setShowPODrawer(false)} />}
+      </Drawer>
+
 
     </>
   );

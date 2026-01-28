@@ -32,7 +32,7 @@ interface LocalTableDataType {
   code?: string;
   name?: string;
   item_category?: { category_name?: string };
-  item_uoms?: Array<{ name?: string; uom_type?: string; uom_price?: string }>;
+  item_uoms?: Array<{ uom_name?: string; uom_type?: string; uom_price?: string }>;
   status?: number | string;
 }
 
@@ -74,7 +74,7 @@ export default function Item() {
       // If clicking the same filter, clear it
       const newFilter = currentStatusFilter === status ? null : status;
       setCurrentStatusFilter(newFilter);
-      
+
       // Refresh the table with the new filter
       setRefreshKey((k) => k + 1);
     } catch (error) {
@@ -86,8 +86,8 @@ export default function Item() {
   const columns = [
     // { key: "erp_code", label: "ERP Code", render: (row: LocalTableDataType) => row.erp_code || "-" },
     {
-      key: "name", 
-      label: "Name", 
+      key: "name",
+      label: "Name",
       showByDefault: true,
       render: (row: LocalTableDataType) => {
         return <div className="cursor-pointer hover:text-[#EA0A2A]" onClick={() => {
@@ -101,17 +101,17 @@ export default function Item() {
       label: "Category",
       showByDefault: true,
       render: (row: LocalTableDataType) => row.item_category?.category_name || "-",
-            filter: {
-                isFilterable: true,
-                width: 320,
-                filterkey: "warehouse_id",
-                options: Array.isArray(itemCategoryAllOptions) ? itemCategoryAllOptions : [],
-                onSelect: (selected: string | string[]) => {
-                    setcategoryId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: categoryId,
-            },
+      filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(itemCategoryAllOptions) ? itemCategoryAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+          setcategoryId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: categoryId,
+      },
     },
     {
       key: "base_uom",
@@ -119,7 +119,7 @@ export default function Item() {
       showByDefault: true,
       render: (row: LocalTableDataType) => {
         if (!row.item_uoms || row.item_uoms.length === 0) return "-";
-        return row.item_uoms[0]?.name ?? "-";
+        return row.item_uoms[0]?.uom_name ?? "-";
       },
     },
     {
@@ -137,7 +137,7 @@ export default function Item() {
       showByDefault: true,
       render: (row: LocalTableDataType) => {
         if (!row.item_uoms || row.item_uoms.length < 2) return "-";
-        return row.item_uoms[1]?.name ?? "-";
+        return row.item_uoms[1]?.uom_name ?? "-";
       },
     },
     {
@@ -168,9 +168,9 @@ export default function Item() {
       },
     },
   ];
-useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [categoryId, currentStatusFilter]);
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [categoryId, currentStatusFilter]);
   const fetchItems = useCallback(
     async (
       page: number = 1,
@@ -179,19 +179,19 @@ useEffect(() => {
     ): Promise<listReturnType> => {
       try {
         // setLoading(true);
-        
+
         // Build params with all filters
         const params: any = {
           page: page.toString(),
           per_page: pageSize.toString(),
           ...payload,
         };
-        
+
         // Add category filter if selected
         if (categoryId) {
           params.category_id = categoryId;
         }
-        
+
         // Add status filter if active (true=1, false=0)
         if (currentStatusFilter !== null || params.status !== undefined) {
           params.status = currentStatusFilter ? "1" : "0";
@@ -246,7 +246,7 @@ useEffect(() => {
     },
     []
   );
- const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
+  const statusUpdate = async (ids?: (string | number)[], status: number = 0) => {
     try {
       // setLoading(true);
       if (!ids || ids.length === 0) {
@@ -261,8 +261,8 @@ useEffect(() => {
       await updateItemStatus({ item_ids: selectedRowsData, status });
       // Refresh vehicle list after 3 seconds
       // (async () => {
-        // fetchVehicles();
-        setRefreshKey((k) => k + 1);
+      // fetchVehicles();
+      setRefreshKey((k) => k + 1);
       // });
       showSnackbar("Vehicle status updated successfully", "success");
       // setLoading(false);
@@ -276,7 +276,7 @@ useEffect(() => {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await itemExport({ format, search: searchFilterValue, filter:{ status: currentStatusFilter == false ? "0" : "1", category_id: categoryId }});
+      const response = await itemExport({ format, search: searchFilterValue, filter: { status: currentStatusFilter == false ? "0" : "1", category_id: categoryId } });
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -304,10 +304,10 @@ useEffect(() => {
             header: {
               title: "Item",
               searchBar: true,
-               exportButton: {
-                threeDotLoading:  threeDotLoading,
+              exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
-                onClick: () => exportFile("xlsx"), 
+                onClick: () => exportFile("xlsx"),
               },
               threeDot: [
                 // {
@@ -322,7 +322,7 @@ useEffect(() => {
                 //   labelTw: "text-[12px] hidden sm:block",
                 //   onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                 // },
-                
+
                 {
                   icon: "lucide:radio",
                   label: "Inactive",
@@ -365,7 +365,7 @@ useEffect(() => {
                     statusUpdate(ids, Number(1));
                   },
                 },
-              
+
               ],
               columnFilter: true,
               actions: can("create") ? [
