@@ -671,7 +671,7 @@ export default function InvoiceddEditPage() {
     // }, [form.warehouse, showSnackbar]);
 
     const handleCustomerSearch = useCallback(async (searchText?: string) => {
-        
+       
         try {
             let response;
             if (form.customerType === "2") {
@@ -956,6 +956,15 @@ export default function InvoiceddEditPage() {
     // Align with delivery page: final total should be net + VAT (which equals gross total)
     // Previous implementation added grossTotal + totalVat causing VAT to be counted twice.
     const finalTotal = totalVat + netAmount;
+     const formikRef = useRef<any>(null);
+
+     const callForClick = () => {  
+
+    setTimeout(() => {
+    formikRef.current?.click();
+
+      },100)
+   }
 
     // Create Payload for API
     const generatePayload = () => {
@@ -1023,6 +1032,11 @@ export default function InvoiceddEditPage() {
                 })),
         };
     };
+
+    const removeAppledPromotionalItems = () => {
+        const filteredItems = itemData.filter(item => !item.isPrmotion || item.is_promotional === false);
+        setItemData(filteredItems);
+    }
     const handleSubmit = async () => {
         if (isSubmitting) return;
         try {
@@ -1142,6 +1156,8 @@ export default function InvoiceddEditPage() {
                
                
                         setCheckout(2);
+                        callForClick();
+                       
                       }
                     }
 
@@ -1155,6 +1171,8 @@ export default function InvoiceddEditPage() {
                     res.data?.message || (isEditMode ? "Failed to update invoice" : "Failed to create invoice"),
                     "error"
                 );
+                        setCheckout(1);
+removeAppledPromotionalItems();
                 setIsSubmitting(false);
                 return;
             }
@@ -1169,6 +1187,9 @@ export default function InvoiceddEditPage() {
                 } catch (e) {
                     // Optionally handle error, but don't block success
                     console.error("Failed to save final code:", e);
+                        setCheckout(1);
+                        removeAppledPromotionalItems();
+
                 }
             }
 
@@ -1219,7 +1240,8 @@ export default function InvoiceddEditPage() {
                         errorMessage = error.message;
                     }
                 }
-
+                setCheckout(1);
+                 removeAppledPromotionalItems();
                 showSnackbar(errorMessage, "error");
             }
         } finally {
@@ -1343,7 +1365,7 @@ export default function InvoiceddEditPage() {
                                         warehouse_name: "",
                                         customer: "",
                                         customer_name: "",
-                                        
+                                       
                                     }
                                 ));
                                
@@ -1531,7 +1553,7 @@ export default function InvoiceddEditPage() {
                                 onChange={handleChange}
                                 error={errors.customerType}
                             /> */}
-                            
+                           
                             <AutoSuggestion
                                 required
                                 label="Distributor"
@@ -2002,7 +2024,7 @@ export default function InvoiceddEditPage() {
                                             <option value="1">Days</option>
                                             <option value="2">Months</option>
                                         </select>
-                                    }
+                                   
                                     onChange={handleChange}
                                 />
                                 <InputFields
@@ -2076,7 +2098,7 @@ export default function InvoiceddEditPage() {
       >
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-           <PromotionStepper setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
+           <PromotionStepper callForClick={callForClick} setCheckout={setCheckout} setOpenPromotion={setOpenPromotion} promotions={promotions} selectedPromotionsItems={selectedPromotionsItems} recalculateItem={recalculateItem} setSelectedPromotionsItems={setSelectedPromotionsItems} itemData={itemData}  setItemData={setItemData} />
           </DialogContentText>
         </DialogContent>
        
@@ -2131,7 +2153,7 @@ function getPromotionItemsByIndex(
   return result;
 }
 
- function PromotionStepper({setCheckout, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
+ function PromotionStepper({setCheckout,callForClick, promotions,setOpenPromotion, selectedPromotionsItems,setPromotions, setSelectedPromotionsItems,itemData,setItemData,recalculateItem }: any) {
   const { showSnackbar } = useSnackbar();
 
   /** 🔹 Convert promotions → steps */
@@ -2186,6 +2208,10 @@ function getPromotionItemsByIndex(
     // recalculateItem(Number(itemData.length), "item_id", selectedPromotionsItems[0])
 setOpenPromotion(false);
 setCheckout(2)
+callForClick();
+
+
+// handleSubmit();
     // showSnackbar("All promotions processed successfully", "success");
   };
 
@@ -2325,5 +2351,3 @@ interface Props {
       </ContainerCard>
     );
   };
-
-     
