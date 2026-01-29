@@ -203,7 +203,6 @@ export default function CustomerInvoicePage() {
   ];
 
   // Memoize the fetchOrders API call so it only fetches once per session
-  const fetchOrdersCache = useRef<{ [key: string]: listReturnType }>({});
   const fetchOrders = useCallback(
     async (
       page: number = 1,
@@ -239,101 +238,44 @@ export default function CustomerInvoicePage() {
     },
     [agentOrderList, warehouseId, salesmanId]
   );
-  const fetchOrdersAccordingToGlobalFilter = useCallback(
-    async (
-      payload: Record<string, any>,
-      pageSize: number = 50,
-      pageNo: number = 1
-    ): Promise<listReturnType> => {
 
-      try {
-        setLoading(true);
-        setFilterPayload(payload);
-        const body = {
-          limit: pageSize.toString(),
-          page: pageNo.toString(),
-          filter: payload
-        }
-        const listRes = await orderGlobalFilter(body);
-       const pagination =
-        listRes.pagination?.pagination || listRes.pagination || {};
-      return {
-        data: listRes.data || [],
-        total: pagination.totalPages || listRes.pagination?.totalPages || 1,
-        totalRecords:
-          pagination.totalRecords || listRes.pagination?.totalRecords || 0,
-        currentPage: pagination.page || listRes.pagination?.page || 1,
-        pageSize: pagination.limit || pageSize,
-      };
-        // fetchOrdersCache.current[cacheKey] = result;
-        // return listRes;
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
-      }
-      finally{
-        setLoading(false);
-      }
-    },
-    [orderGlobalFilter, warehouseId, salesmanId]
-  );
 
-  // In-memory cache for filterBy API calls
-  const agentOrderFilterCache = useRef<{ [key: string]: any }>({});
+    const filterBy = useCallback(
+        async (
+            payload: Record<string, string | number | null | any>,
+            pageSize: number = 50,
+            pageNo?: number
+        ): Promise<listReturnType> => {
+            let result;
+            setLoading(true);
+            setFilterPayload(payload);
+            try {
+                const body = {
+                    per_page: pageSize.toString(),
+                    current_page: (pageNo ?? 1).toString(),
+                    filter: payload
+                };
+                result = await orderGlobalFilter(body);
+            } finally {
+                setLoading(false);
+                setColFilter(false);
+            }
 
-  const filterBy = useCallback(
-    async (
-      payload: Record<string, string | number | null>,
-      pageSize: number,
-    ): Promise<listReturnType> => {
-      setColFilter(true);
-      const params: Record<string, string> = {
-        per_page: pageSize.toString(),
-      };
-      Object.keys(payload || {}).forEach((k) => {
-        const v = payload[k as keyof typeof payload];
-        if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-          params[k] = String(v);
-        }
-      });
-      const cacheKey = JSON.stringify(params);
-      if (agentOrderFilterCache.current[cacheKey]) {
-        const result = agentOrderFilterCache.current[cacheKey];
-        const pagination =
-          result.pagination?.pagination || result.pagination || {};
-        return {
-          data: result.data || [],
-          total: pagination.totalPages || result.pagination?.totalPages || 1,
-          totalRecords:
-            pagination.totalRecords || result.pagination?.totalRecords || 0,
-          currentPage: pagination.page || result.pagination?.page || 1,
-          pageSize: pagination.limit || pageSize,
-        };
-      }
-      // if (warehouseId) {
-      //   params.warehouse_id = warehouseId;
-      // }
-      // if (salesmanId) {
-      //   params.salesman_id = salesmanId;
-      // }
-      // const result = await agentOrderList({ filter: Object.values(params) });
-      const result = await orderGlobalFilter(params);
-      agentOrderFilterCache.current[cacheKey] = result;
-      const pagination =
-        result.pagination?.pagination || result.pagination || {};
-        setColFilter(false);
-      return {
-        data: result.data || [],
-        total: pagination.totalPages || result.pagination?.totalPages || 1,
-        totalRecords:
-          pagination.totalRecords || result.pagination?.totalRecords || 0,
-        currentPage: pagination.page || result.pagination?.page || 1,
-        pageSize: pagination.limit || pageSize,
-      };
-    },
-    [orderGlobalFilter, warehouseId, salesmanId,colFilter],
-  );
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
+                return {
+                    data: result.data || [],
+                    total: pagination?.totalPages || result.pagination?.totalPages || 0,
+                    totalRecords: pagination?.totalRecords || result.pagination?.totalRecords || 0,
+                    currentPage: pagination?.page || result.pagination?.page || 0,
+                    pageSize: pagination?.limit || pageSize,
+                };
+            }
+        },
+        [setLoading]
+    );
+
 
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
@@ -408,15 +350,8 @@ export default function CustomerInvoicePage() {
           config={{
             api: {
               list: fetchOrders,
-              // filterBy: fetchOrdersAccordingToGlobalFilter
-              filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
-                if (colFilter) {
-                  return filterBy(payload, pageSize);
-                } else {
-                  
-                  return fetchOrdersAccordingToGlobalFilter( payload, pageSize);
-                }
-              },
+              filterBy: filterBy
+              
             },
             header: {
               title: "Distributor's Orders",
@@ -444,7 +379,6 @@ export default function CustomerInvoicePage() {
                 <FilterComponent
                   currentDate={true}
                   {...props}
-                  api={fetchOrdersAccordingToGlobalFilter}
                 />
               ),
               actions: can("create") ? [

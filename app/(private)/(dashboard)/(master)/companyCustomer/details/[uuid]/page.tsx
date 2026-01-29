@@ -1,6 +1,5 @@
 
 "use client";
-
 import ContainerCard from "@/app/components/containerCard";
 import Table, { configType, listReturnType, TableDataType } from "@/app/components/customTable";
 import KeyValueData from "@/app/components/keyValueData";
@@ -12,7 +11,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { Icon } from "@iconify-icon/react";
 import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useCallback} from "react";
 import { downloadFile } from "@/app/services/allApi";
 import Skeleton from "@mui/material/Skeleton";
 import { formatDate } from "../../../salesTeam/details/[uuid]/page";
@@ -206,6 +205,41 @@ export default function ViewPage() {
     }
   };
 
+      const filterByPO = useCallback(
+          async (
+              payload: Record<string, string | number | null>,
+              pageSize: number
+          ): Promise<listReturnType> => {
+              let result;
+              setLoading(true);
+              try {
+                  const params: Record<string, string> = { per_page: pageSize.toString() };
+                  Object.keys(payload || {}).forEach((k) => {
+                      const v = payload[k as keyof typeof payload];
+                      if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+                          params[k] = String(v);
+                      }
+                  });
+                  result = await getCompanyCustomersPurchase({uuid:uuid,to_date: params?.from_date, from_date: params?.to_date });
+              } finally {
+                  setLoading(false);
+              }
+  
+              if (result?.error) throw new Error(result.data?.message || "Filter failed");
+              else {
+                  const pagination = result.pagination?.pagination || result.pagination || {};
+                  return {
+                      data: result.data || [],
+                      total: pagination.totalPages || result.pagination?.totalPages || 0,
+                      totalRecords: pagination.totalRecords || result.pagination?.totalRecords || 0,
+                      currentPage: pagination.page || result.pagination?.currentPage || 0,
+                      pageSize: pagination.limit || pageSize,
+                  };
+              }
+          },
+          [setLoading]
+      );
+
   const exportFile = async (uuid: string, format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
@@ -386,6 +420,7 @@ export default function ViewPage() {
                   config={{
                     api: {
                       list: fetchCompanyCustomersPurchase,
+                      filterBy : filterByPO,
                     },
                     header: {
 

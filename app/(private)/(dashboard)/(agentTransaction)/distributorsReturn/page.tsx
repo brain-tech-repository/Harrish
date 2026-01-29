@@ -357,7 +357,7 @@ useEffect(() => {
             <Table
                 refreshKey={refreshKey}
                 config={{
-                    api: { list: fetchInvoices, search: searchInvoices, filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+                    api: { list: fetchInvoices, search: searchInvoices, filterBy: async (payload: Record<string, string | number | null | any>,pageSize: number) => {
                 if (colFilter) {
                   return filterBy(payload, pageSize);
                 } else {

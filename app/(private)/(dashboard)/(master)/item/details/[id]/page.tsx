@@ -22,6 +22,7 @@ import { formatDate } from "../../../salesTeam/details/[uuid]/page";
 import { exportPurposeOrderViewPdf } from "@/app/services/companyTransaction";
 import Drawer from "@mui/material/Drawer";
 import { SideBarDetailPage } from "@/app/components/sideDrawer";
+import { PageNotFoundError } from "next/dist/shared/lib/utils";
 interface Item {
   id?: number;
   erp_code?: string;
@@ -86,6 +87,8 @@ export default function Page() {
   const [returnData, setRetrunData] = useState<any[]>([]);
   const [salesData, setSalesData] = useState<any[]>([]);
   const [itemId, setItemId] = useState("");
+  const [stDate,setStDate] = useState<string>("");
+  const [endDate,setEndDate] = useState<string>("");
   // const { id, tabName } = useParams();
   const [selectedRow, setSelectedRow] = useState<TableDataType | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
@@ -96,6 +99,8 @@ export default function Page() {
   const id = params?.id;
 
   const { setLoading } = useLoading();
+  const [showNest,setShowNest]=useState(false);
+  const [showNestReturn,setShowNestReturn]=useState(false);
   const [item, setItem] = useState<Item | null>(null);
   const { showSnackbar } = useSnackbar();
   const [imageSrc, setImageSrc] = useState<string>("/no-image.png");
@@ -151,10 +156,11 @@ export default function Page() {
   const filterBySales = useCallback(
     async (
       payload: Record<string, string | number | null>,
-      pageSize: number
+      pageSize: number,
+      PageNo?: number
     ): Promise<listReturnType> => {
       let result;
-      setLoading(true);
+      setShowNest(true);
       try {
 
         const params: Record<string, string> = { per_page: pageSize.toString() };
@@ -164,14 +170,16 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await itemSales(String(item?.id), { from_date: params?.from_date, to_date: params?.to_date });
+        setStDate(params?.from_date || "");
+        setEndDate(params?.to_date || "");
+        result = await itemSales(String(itemId), { from_date: params?.from_date, to_date: params?.to_date,page: PageNo?.toString(), limit: pageSize.toString() });
       } finally {
-        setLoading(false);
+        setShowNest(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
       else {
-        const pagination = result.pagination?.pagination || result.pagination || {};
+        const pagination = result.pagination?.pagination || result.meta || {};
         return {
           data: result.data || [],
           total: pagination.totalPages || result.pagination?.totalPages || 0,
@@ -181,15 +189,16 @@ export default function Page() {
         };
       }
     },
-    [setLoading]
+    [setShowNest]
   );
   const filterByReturn = useCallback(
     async (
       payload: Record<string, string | number | null>,
-      pageSize: number
+      pageSize: number,
+      PageNo?: number
     ): Promise<listReturnType> => {
       let result;
-      setLoading(true);
+      setShowNestReturn(true);
       try {
 
         const params: Record<string, string> = { per_page: pageSize.toString() };
@@ -199,14 +208,14 @@ export default function Page() {
             params[k] = String(v);
           }
         });
-        result = await itemPurchase({ item_id: String(item?.id), from_date: params?.from_date, to_date: params?.to_date });
+        result = await itemPurchase({ item_id: String(itemId), from_date: params?.from_date, to_date: params?.to_date,page: PageNo?.toString(), limit: pageSize.toString() });
       } finally {
-        setLoading(false);
+        setShowNestReturn(false);
       }
 
       if (result?.error) throw new Error(result.data?.message || "Filter failed");
       else {
-        const pagination = result.pagination?.pagination || result.pagination || {};
+        const pagination = result.pagination?.pagination || result.meta || {};
         return {
           data: result.data || [],
           total: pagination.totalPages || result.pagination?.totalPages || 0,
@@ -216,7 +225,7 @@ export default function Page() {
         };
       }
     },
-    [setLoading]
+    [setShowNestReturn]
   );
 
   const downloadSalesPdf = async (uuid: string) => {
@@ -277,7 +286,8 @@ export default function Page() {
   const exportSalesFile = async (uuid: string, format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await allItemInvoiceExport({ item_id: uuid, format }); // send proper body object
+      
+      const response = await allItemInvoiceExport({ item_id: uuid, format, from_date: stDate, to_date: endDate }); // send proper body object
       if (response && typeof response === "object" && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully", "success");
@@ -459,6 +469,7 @@ export default function Page() {
           <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
+                showNestedLoading:showNest,
                 api: {
                   list: async (page: number = 1, pageSize: number = 50) => {
                     const res = await itemSales(String(item?.id), { page: page.toString(), per_page: pageSize.toString() });
@@ -534,6 +545,7 @@ export default function Page() {
           <div className="flex flex-col h-full w-full overflow-x-auto">
             <Table
               config={{
+                showNestedLoading:showNestReturn,
                 api: {
                   list: async (page: number = 1, pageSize: number = 50) => {
                     const res = await itemPurchase({ item_id: String(item?.id), page: page.toString(), limit: pageSize.toString() });
