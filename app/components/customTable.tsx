@@ -69,7 +69,6 @@
 //         list?: (
 //             pageNo: number,
 //             pageSize: number,
-//             payload?: Record<string, any>,
 //         ) => Promise<listReturnType> | listReturnType;
 //         filterBy?: (
 //             payload: Record<string, string | number | null>,
@@ -304,25 +303,10 @@
 // function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
 //     // Ref to track last API call params
 //     const searchParams = useSearchParams();
-//     const pageRef = useRef(1);
-
-//     useEffect(() => {
-//     const urlPage = searchParams.get('page');
-//     const targetPage = urlPage ? parseInt(urlPage) - 1 : 0;
-
-//     // If the URL page is different from our state, trigger the update
-//     if (targetPage !== tableDetails.currentPage) {
-//         // You can call your handlePageChange logic here or 
-//         // simply trigger the API call again based on the new URL params.
-//         pageRef.current = targetPage + 1; // Store 1-based page number
-
-//     }
-// }, [searchParams]); // Listen specifically for URL changes
-
 //     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
-//     const { setSelectedColumns,  } = useContext(ColumnFilterConfig);
+//     const { setSelectedColumns } = useContext(ColumnFilterConfig);
 //     const { setConfig } = useContext(Config);
-//     const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, setFilterState } = useContext(TableDetails);
+//     const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, filterState, setFilterState } = useContext(TableDetails);
 //     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
 //     const [showDropdown, setShowDropdown] = useState(false);
 //     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -332,6 +316,39 @@
 //     );
 
 //     const columnsSignature = useMemo(() => (config.columns || []).map(c => c.key).join(','), [config.columns]);
+
+//     // Restore filter and page state from localStorage if present
+//     // Add handlePageChange function here
+//     async function handlePageChange(pageNo: number) {
+//         const pageSize = config.pageSize || defaultPageSize;
+//         if (config.api?.list) {
+//             try {
+//                 setNestedLoading(true);
+//                 const result = await config.api.list(pageNo + 1, pageSize);
+//                 const resolvedResult = result instanceof Promise ? await result : result;
+//                 const { data, total, currentPage } = resolvedResult;
+//                 setTableDetails({
+//                     data,
+//                     total,
+//                     currentPage: currentPage - 1,
+//                     pageSize,
+//                 });
+//                 setDisplayedData(data);
+//             } finally {
+//                 setNestedLoading(false);
+//             }
+//         } else if (Array.isArray(data)) {
+//             const start = pageNo * pageSize;
+//             const end = start + pageSize;
+//             setTableDetails({
+//                 data: data.slice(start, end),
+//                 total: Math.ceil(data.length / pageSize),
+//                 currentPage: pageNo,
+//                 pageSize,
+//             });
+//             setDisplayedData(data.slice(start, end));
+//         }
+//     }
 
 //     useEffect(() => {
 //         const newOrder = (config.columns || []).map((_, i) => i);
@@ -344,14 +361,29 @@
 //         } else {
 //             setSelectedColumns(newOrder);
 //         }
+
+//         // Restore filter and page state
+//         try {
+//             const key = config?.localStorageKey;
+//             if (key) {
+//                 const saved = localStorage.getItem(key + "_tableState");
+//                 if (saved) {
+//                     const parsed = JSON.parse(saved);
+//                     if (parsed.filterState) {
+//                         setFilterState(parsed.filterState);
+//                     }
+//                     if (parsed.pageNo !== undefined && parsed.pageNo !== null) {
+//                         // Set page after data is loaded
+//                         setTimeout(() => {
+//                             handlePageChange(parsed.pageNo);
+//                         }, 0);
+//                     }
+//                 }
+//             }
+//         } catch (err) {}
 //     }, [columnsSignature]);
 
 //     async function checkForData() {
-//         // const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
-
-//         // // Check if any of the URL params match our column keys
-//         // const hasColumnFilters = config.columns.some(col => searchParams.has(col.key));
-
 //         // if data is passed, use default values
 //         if (data) {
 //             const date = new Date();
@@ -377,99 +409,52 @@
 //                 /* ignore */
 //             }
 //             setTimeout(() => setNestedLoading(false), Math.max(0, 1000 - (new Date().getTime() - date.getTime())));
-//         } else if (config.api?.list || config.api?.filterBy) {
-//         const payload: Record<string, any> = {};
-//         searchParams.forEach((value, key) => {
-//             if (key === 'page') return;
-//             payload[key] = value.includes(',') ? value.split(',') : value;
-//         });
-
-//         // Trigger the filter API immediately
-//         const pageSize = config.pageSize || defaultPageSize;
-//         const pageNo = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
-
-//         const hasFilters = Object.keys(payload).length > 0;
-
-//         try {
-//             setNestedLoading(true);
-//             let result;
-
-//             // Prioritize filterBy if filters exist, otherwise use the updated list API
-//             if (hasFilters && config.api?.filterBy) {
-//                 result = await config.api.filterBy(payload, pageSize, pageNo);
-//             } else if (config.api?.list) {
-//                 // Pass the extracted URL params as the third 'payload' argument
-//                 result = await config.api.list(pageNo, pageSize, hasFilters ? payload : undefined);
+//         }
+//         // if api is passed, use default values
+//         else if (config.api?.list) {
+//             const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+//             if (hasUrlParams && config.api?.filterBy) {
+//                 return; 
 //             }
-
-//             if (result) {
-//                 const resolvedResult = result instanceof Promise ? await result : result;
-//                 const { data: tableData, total, currentPage, totalRecords } = resolvedResult;
-                
-//                 const tableInit = {
-//                     data: tableData || [],
-//                     total: total || 1,
-//                     currentPage: (currentPage || 1) - 1,
-//                     pageSize,
-//                     totalRecords: totalRecords
-//                 };
-
-//                 setTableDetails(tableInit);
-//                 if (hasFilters) {
-//                     setFilterState({ applied: true, payload });
+//             const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
+//             const start = Date.now();
+//             const pageNo = 1;
+//             const pageSize = config.pageSize || defaultPageSize;
+//             // Only call API if params changed
+//             if (
+//                 !lastApiCallRef.current ||
+//                 lastApiCallRef.current.pageNo !== pageNo ||
+//                 lastApiCallRef.current.pageSize !== pageSize
+//             ) {
+//                 lastApiCallRef.current = { pageNo, pageSize };
+//                 try {
+//                     setNestedLoading(true);
+//                     const result = await config.api.list(pageNo, pageSize);
+//                     const resolvedResult = result instanceof Promise ? await result : result;
+//                     const { data, total, currentPage } = resolvedResult;
+//                     const tableInit = {
+//                         data,
+//                         total,
+//                         currentPage: currentPage - 1,
+//                         pageSize,
+//                     };
+//                     setTableDetails(tableInit);
+//                     setDisplayedData(data);
+//                     try {
+//                         setInitialTableData(tableInit);
+//                     } catch (err) {
+//                         /* ignore */
+//                     }
+//                 } finally {
+//                     const elapsed = Date.now() - start;
+//                     const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+//                     if (wait > 0) {
+//                         await new Promise((res) => setTimeout(res, wait + 500));
+//                     }
+//                     setNestedLoading(false);
 //                 }
 //             }
-//         } catch (err) {
-//             console.error("API Error during initialization:", err);
-//         } finally {
-//             setNestedLoading(false);
 //         }
-//     }
-//         // if api is passed, use default values
-//         // else if (config.api?.list) {
-//         //     const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
-//         //     if (hasUrlParams && config.api?.filterBy) {
-//         //         return; 
-//         //     }
-//         //     const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
-//         //     const start = Date.now();
-//         //     const pageNo = pageRef.current || 1;
-//         //     const pageSize = config.pageSize || defaultPageSize;
-//         //     // Only call API if params changed
-//         //     if (
-//         //         !lastApiCallRef.current ||
-//         //         lastApiCallRef.current.pageNo !== pageNo ||
-//         //         lastApiCallRef.current.pageSize !== pageSize
-//         //     ) {
-//         //         lastApiCallRef.current = { pageNo, pageSize };
-//         //         try {
-//         //             setNestedLoading(true);
-//         //             const result = await config.api.list(pageNo, pageSize);
-//         //             const resolvedResult = result instanceof Promise ? await result : result;
-//         //             const { data, total, currentPage } = resolvedResult;
-//         //             const tableInit = {
-//         //                 data,
-//         //                 total,
-//         //                 currentPage: currentPage - 1,
-//         //                 pageSize,
-//         //             };
-//         //             setTableDetails(tableInit);
-//         //             setDisplayedData(data);
-//         //             try {
-//         //                 setInitialTableData(tableInit);
-//         //             } catch (err) {
-//         //                 /* ignore */
-//         //             }
-//         //         } finally {
-//         //             const elapsed = Date.now() - start;
-//         //             const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-//         //             if (wait > 0) {
-//         //                 await new Promise((res) => setTimeout(res, wait + 500));
-//         //             }
-//         //             setNestedLoading(false);
-//         //         }
-//         //     }
-//         // }
 //         // nothing is passed
 //         else {
 //             throw new Error(
@@ -478,155 +463,168 @@
 //         }
 //     }
 
-//     useEffect(() => {
-//         setConfig(config);
-//     }, [config]);
+//                     useEffect(() => {
+//                         setConfig(config);
+//                     }, [config]);
 
-//     useEffect(() => {
-//         // Reset lastApiCallRef when refreshKey changes to force API re-fetch
-//         lastApiCallRef.current = null;
-//         checkForData();
+//                     // Save filter and page state to localStorage whenever they change
+//                     useEffect(() => {
+//                         const key = config?.localStorageKey;
+//                         if (!key) return;
+//                         try {
+//                             const tableState = {
+//                                 filterState: filterState,
+//                                 pageNo: tableDetails.currentPage
+//                             };
+//                             localStorage.setItem(key + "_tableState", JSON.stringify(tableState));
+//                         } catch (err) {}
+//                     }, [filterState, tableDetails.currentPage, config?.localStorageKey]);
 
-//         // Only initialize "select all" when there is no saved selection in localStorage.
-//         // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
-//         try {
-//             const key = config?.localStorageKey;
-//             const saved = key ? localStorage.getItem(key) : null;
-//             if (!saved) {
-//                 const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
-//                 const filtered = allByDefault.filter((n) => n !== -1);
-//                 if (filtered.length > 0) {
-//                     setSelectedColumns(filtered);
-//                     return;
-//                 }
-//                 setSelectedColumns(config.columns?.map((_, index) => index));
-//             } else {
-//                 setSelectedColumns(saved ? JSON.parse(saved) : []);
-//             }
-//         } catch (err) {
-//             // If reading localStorage fails, fall back to select all
-//             setSelectedColumns(config.columns?.map((_, index) => index));
-//         }
-//         setSelectedRow([]);
-//     }, [data, refreshKey]);
+//                     useEffect(() => {
+//                         // Reset lastApiCallRef when refreshKey changes to force API re-fetch
+//                         lastApiCallRef.current = null;
+//                         checkForData();
+
+//                         // Only initialize "select all" when there is no saved selection in localStorage.
+//                         // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
+//                         try {
+//                             const key = config?.localStorageKey;
+//                             const saved = key ? localStorage.getItem(key) : null;
+//                             if (!saved) {
+//                                 const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
+//                                 const filtered = allByDefault.filter((n) => n !== -1);
+//                                 if (filtered.length > 0) {
+//                                     setSelectedColumns(filtered);
+//                                     return;
+//                                 }
+//                                 setSelectedColumns(config.columns?.map((_, index) => index));
+//                             } else {
+//                                 setSelectedColumns(saved ? JSON.parse(saved) : []);
+//                             }
+//                         } catch (err) {
+//                             // If reading localStorage fails, fall back to select all
+//                             setSelectedColumns(config.columns?.map((_, index) => index));
+//                         }
+//                         setSelectedRow([]);
+//                     }, [data, refreshKey]);
 
 
-//     useEffect(() => {
-//         if (config.onRowSelectionChange) {
-//             config.onRowSelectionChange(selectedRow);
-//         }
-//     }, [selectedRow, config.onRowSelectionChange]);
+//                     useEffect(() => {
+//                         if (config.onRowSelectionChange) {
+//                             config.onRowSelectionChange(selectedRow);
+//                         }
+//                     }, [selectedRow, config.onRowSelectionChange]);
 
-//     const [showUploadPopup, setShowUploadPopup] = useState(false);
-//     // Listen for open-upload-popup event
-//     useEffect(() => {
-//         const handler = () => setShowUploadPopup(true);
-//         window.addEventListener('open-upload-popup', handler);
-//         return () => window.removeEventListener('open-upload-popup', handler);
-//     }, []);
+//                     const [showUploadPopup, setShowUploadPopup] = useState(false);
+//                     // Listen for open-upload-popup event
+//                     useEffect(() => {
+//                         const handler = () => setShowUploadPopup(true);
+//                         window.addEventListener('open-upload-popup', handler);
+//                         return () => window.removeEventListener('open-upload-popup', handler);
+//                     }, []);
 
-//     const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
+//                     const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
 
-//     return (
-//         <>
-//             {(config.header?.title || config.header?.wholeTableActions || config.header?.tableActions) && (
-//                 <div className="flex justify-between items-center mb-[20px] h-[34px]">
-//                     {config.header?.title && (
-//                         <h1 className="text-[18px] font-semibold text-[#181D27]">
-//                             {config.header.title}
-//                         </h1>
-//                     )}
-//                     <div className="flex gap-[8px]">
-//                         {config.header?.tableActions && config.header?.tableActions?.map((action) => action)}
-//                         {selectedRow.length > 0 &&
-//                             config.header?.wholeTableActions?.map(
-//                                 (action) => action
-//                             )}
-//                             {config.header?.exportButton && (
-//                                 <div className="flex gap-[12px] relative items-center">
-//                                     <BorderIconButton
-//                                         icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
-//                                         label="Export Excel"
-//                                         onClick={async () => {
-//                                             if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
-//                                             if (!config.header?.exportButton?.onClick) return;
-//                                             config.header.exportButton.onClick(config.api?.list as any, displayedData);
-//                                         }}
-//                                     />
-//                                     {/* Upload icon next to exportButton if upload prop is provided */}
-//                                     {config.header?.upload && (
-//                                         <BorderIconButton
-//                                             icon="material-symbols:upload-rounded"
-//                                             // label="Upload"
-//                                             onClick={() => setShowUploadPopup(true)}
-//                                         />
+//                     return (
+//                         <>
+//                             {(config.header?.title || config.header?.wholeTableActions || config.header?.tableActions) && (
+//                                 <div className="flex justify-between items-center mb-[20px] h-[34px]">
+//                                     {config.header?.title && (
+//                                         <h1 className="text-[18px] font-semibold text-[#181D27]">
+//                                             {config.header.title}
+//                                         </h1>
 //                                     )}
+//                                     <div className="flex gap-[8px]">
+//                                         {config.header?.tableActions && config.header?.tableActions?.map((action) => action)}
+//                                         {selectedRow.length > 0 &&
+//                                             config.header?.wholeTableActions?.map(
+//                                                 (action) => action
+//                                             )}
+//                                             {config.header?.exportButton && (
+//                                                 <div className="flex gap-[12px] relative items-center">
+//                                                     <BorderIconButton
+//                                                         icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
+//                                                         label="Export Excel"
+//                                                         onClick={async () => {
+//                                                             if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
+//                                                             if (!config.header?.exportButton?.onClick) return;
+//                                                             config.header.exportButton.onClick(config.api?.list as any, displayedData);
+//                                                         }}
+//                                                     />
+//                                                     {/* Upload icon next to exportButton if upload prop is provided */}
+//                                                     {config.header?.upload && (
+//                                                         <BorderIconButton
+//                                                             icon="material-symbols:upload-rounded"
+//                                                             // label="Upload"
+//                                                             onClick={() => setShowUploadPopup(true)}
+//                                                         />
+//                                                     )}
+//                                                 </div>
+//                                             )}
+//                                         {/* If you want to add threeDot dropdown, do it in the correct place in header */}
+//                                       {config.header?.threeDot && (() => {
+                            
+//                                             const visibleOptions = config.header.threeDot.filter(option => {
+//                                                 const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
+//                                                 return shouldShow;
+//                                             });
+//                                             if (visibleOptions.length === 0) return null;
+//                                             return (
+//                                                 <div className="flex gap-[12px] relative">
+//                                                     <DismissibleDropdown
+//                                                         isOpen={showDropdown}
+//                                                         setIsOpen={setShowDropdown}
+//                                                         button={
+//                                                             <BorderIconButton icon="ic:sharp-more-vert" />
+//                                                         }
+//                                                         dropdown={
+//                                                             <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+//                                                                 <CustomDropdown>
+//                                                                     {visibleOptions.map((option, idx) => (
+//                                                                         <div
+//                                                                             key={idx}
+//                                                                             className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
+//                                                                             onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
+//                                                                         >
+//                                                                             {option?.icon && (
+//                                                                                 <Icon
+//                                                                                     icon={option.icon}
+//                                                                                     width={option.iconWidth || 20}
+//                                                                                     className="text-[#717680]"
+//                                                                                 />
+//                                                                             )}
+//                                                                             <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
+//                                                                                 {option.label}
+//                                                                             </span>
+//                                                                         </div>
+//                                                                     ))}
+//                                                                 </CustomDropdown>
+//                                                             </div>
+//                                                         }
+//                                                     />
+//                                                 </div>
+//                                             );
+//                                         })()}
+//                                     </div>
 //                                 </div>
 //                             )}
-//                         {/* If you want to add threeDot dropdown, do it in the correct place in header */}
-//                         {config.header?.threeDot && (() => {
-            
-//                             const visibleOptions = config.header.threeDot.filter(option => {
-//                                 const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
-//                                 return shouldShow;
-//                             });
-//                             if (visibleOptions.length === 0) return null;
-//                             return (
-//                                 <div className="flex gap-[12px] relative">
-//                                     <DismissibleDropdown
-//                                         isOpen={showDropdown}
-//                                         setIsOpen={setShowDropdown}
-//                                         button={
-//                                             <BorderIconButton icon="ic:sharp-more-vert" />
-//                                         }
-//                                         dropdown={
-//                                             <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-//                                                 <CustomDropdown>
-//                                                     {visibleOptions.map((option, idx) => (
-//                                                         <div
-//                                                             key={idx}
-//                                                             className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
-//                                                             onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
-//                                                         >
-//                                                             {option?.icon && (
-//                                                                 <Icon
-//                                                                     icon={option.icon}
-//                                                                     width={option.iconWidth || 20}
-//                                                                     className="text-[#717680]"
-//                                                                 />
-//                                                             )}
-//                                                             <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
-//                                                                 {option.label}
-//                                                             </span>
-//                                                         </div>
-//                                                     ))}
-//                                                 </CustomDropdown>
-//                                             </div>
-//                                         }
-//                                     />
-//                                 </div>
-//                             );
-//                         })()}
-//                     </div>
-//                 </div>
-//             )}
-//             <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
-//                 <TableHeader directFilterRenderer={directFilterRenderer} />
-//                 <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
-//                 <TableFooter />
-//             </div>
-//             {/* Upload Popup */}
-//             {config.header?.upload && (
-//                 <UploadPopup
-//                     open={showUploadPopup}
-//                     onClose={() => setShowUploadPopup(false)}
-//                     dummyApi={config.header.upload.dummyApi}
-//                     api={config.header.upload.api}
-//                 />
-//             )}
-//         </>
-//     );
-// }
+//                             <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
+//                                 <TableHeader directFilterRenderer={directFilterRenderer} />
+//                                 <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
+//                                 <TableFooter />
+//                             </div>
+//                             {/* Upload Popup */}
+//                             {config.header?.upload && (
+//                                 <UploadPopup
+//                                     open={showUploadPopup}
+//                                     onClose={() => setShowUploadPopup(false)}
+//                                     dummyApi={config.header.upload.dummyApi}
+//                                     api={config.header.upload.api}
+//                                 />
+//                             )}
+//                         </>
+//                     );
+//                 }
 
 // function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.ReactNode }) {
 //     const { config } = useContext(Config);
@@ -862,6 +860,7 @@
 //     );
 // }
 
+
 // function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configType['columns']; setColumnOrder: React.Dispatch<React.SetStateAction<number[]>> }) {
 //     const { config } = useContext(Config);
 //     const { api, rowSelection, rowActions, pageSize = defaultPageSize } = config;
@@ -888,8 +887,6 @@
 //     const allItemsCount: number = tableData.length || 0;
 //     const isAllSelected = selectedRow.length === allItemsCount;
 //     const isIndeterminate = selectedRow.length > 0 && !isAllSelected;
-//     const router = useRouter();
-//     const searchParams = useSearchParams();
 
 //     useEffect(() => {
 //         // Update displayedData whenever tableDetails changes. Do not
@@ -945,13 +942,6 @@
 //         // apply sorting using the computed order immediately
 //         setDisplayedData(naturalSort(displayedData, nextOrder, column));
 //     };
-//     const handleFilterStatusBtnClick = (status: boolean, callback: any) => {
-//         const params = new URLSearchParams(Array.from(searchParams.entries()));
-//         params.set('status', String(status ? 1 : 0));
-//         params.delete('page'); // Reset to page 1
-//         router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-//         callback(status)
-//     }
 
 //     return (
 //         <>{(config.showNestedLoading && nestedLoading) ? <CustomTableSkelton /> : <>
@@ -1071,22 +1061,22 @@
 //                                                             width={12}
 //                                                             height={12}
 //                                                             className={`cursor-pointer transition-colors ${
-//                                                                 col.filterStatus.currentFilter === true || searchParams.get('status') === '1'
+//                                                                 col.filterStatus.currentFilter === true
 //                                                                     ? "text-blue-600"
 //                                                                     : "text-gray-400 hover:text-gray-600"
 //                                                             }`}
-//                                                             onClick={() => handleFilterStatusBtnClick(true, col.filterStatus?.onFilter)}
+//                                                             onClick={() => col.filterStatus?.onFilter(true)}
 //                                                         />
 //                                                         <Icon
 //                                                             icon="ep:arrow-down"
 //                                                             width={12}
 //                                                             height={12}
 //                                                             className={`cursor-pointer transition-colors ${
-//                                                                 col.filterStatus.currentFilter === false || searchParams.get('status') === '0'
+//                                                                 col.filterStatus.currentFilter === false
 //                                                                     ? "text-blue-600"
 //                                                                     : "text-gray-400 hover:text-gray-600"
 //                                                             }`}
-//                                                             onClick={() => handleFilterStatusBtnClick(false, col.filterStatus?.onFilter)}
+//                                                             onClick={() => col.filterStatus?.onFilter(false)}
 //                                                         />
 //                                                     </div>
 //                                                 )}
@@ -1266,20 +1256,10 @@
 //     const { api } = config;
 //     const [searchBarValue, setSearchBarValue] = useState("");
 //     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
-//     const [selectedValues, setSelectedValues] = useState<any>([]);
+//     const [selectedValues, setSelectedValues] = useState<string[]>([]);
 //     const parentRef = useRef<HTMLDivElement>(null);
 //     const { filterState, setFilterState } = useContext(TableDetails);
 //     const selectedRef = useRef<string | string[] | null>(null);
-//      const router = useRouter();
-//     const searchParams = useSearchParams(); 
-//      useEffect(() => {
-//         const urlVal = searchParams.get(column);
-//         if (urlVal) {
-//             const arr = urlVal.split(',');
-//             setSelectedValues(arr);
-//             selectedRef.current = arr;
-//         }
-//     }, []);
 
 //     useEffect(() => {
 //         if (filterConfig?.options) {
@@ -1335,19 +1315,15 @@
 
 //     async function handleSelect(value: string) {
 //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-//          const params = new URLSearchParams(searchParams.toString());
-//          params.delete('page');
 //         if (isSingle) {
+//             // If already selected, deselect (clear filter)
 //             const selectedValue = filterConfig?.selectedValue;
-//             params.delete(column);
 //             if (filterConfig?.onSelect) {
 //                 if (selectedValue === value) {
 //                     filterConfig.onSelect(""); // Deselect
-//                     // update global filter state to clear this field
 //                     try {
 //                         setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: "" } }));
 //                     } catch (err) { }
-//                     // Call default list API and clear search filter
 //                     if(api?.list) {
 //                         try {
 //                             setNestedLoading(true);
@@ -1366,7 +1342,6 @@
 //                     }
 //                 } 
 //                 else {
-//                     params.set(column, value);
 //                     filterConfig.onSelect(value);
 //                     try {
 //                         setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
@@ -1393,84 +1368,14 @@
 //         } else {
 //             let updated: string[];
 //             if (selectedValues.includes(value)) {
-//                 updated = selectedValues.filter((v:any) => v !== value);
+//                 updated = selectedValues.filter((v) => v !== value);
 //             } else {
 //                 updated = [...selectedValues, value];
 //             }
-//             // Only update local state, do not call API or onSelect here for multi-select
+//             // Only update local state, do not call API or update filterState yet
 //             setSelectedValues(updated);
-//             // Optionally update filterState for UI sync, but do NOT trigger API
-//             try {
-//                 setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
-//             } catch (err) { }
-//             // Do NOT call filterConfig.onSelect or any API here for multi-select
-//             //  router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
 //         }
 //     }
-
-//     //     function clearColumnFilter() {
-//     //     const params = new URLSearchParams(searchParams.toString());
-//     //     params.delete(column);
-//     //     params.delete(column + '[]');
-//     //     setSelectedValues([]);
-//     //     if (filterConfig?.onSelect) filterConfig.onSelect("");
-//     //     try {
-//     //         setFilterState(prev => ({
-//     //             applied: Array.from(params.keys()).length > 0,
-//     //             payload: { ...(prev?.payload || {}), [column]: "" }
-//     //         }));
-//     //     } catch (err) { /* ignore */ }
-//     //     router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-//     // }
-//     // Apply filter for multi-select (isSingle: false)
-//     async function applyColumnFilter() {
-//         const params = new URLSearchParams(searchParams.toString());
-//          params.delete(column);
-//         params.delete(column + '[]');
-//         if (selectedValues.length > 0) {
-//             params.set(column, selectedValues.join(','));
-//         }
-//         if (filterConfig?.isSingle === false) {
-//             if (filterConfig?.onSelect) filterConfig.onSelect(selectedValues);
-//             try {
-//                 setFilterState(prev => ({ applied: selectedValues.length > 0, payload: { ...(prev?.payload || {}), [column]: selectedValues } }));
-//             } catch (err) { }
-//             if (api?.search) {
-//                 try {
-//                     setNestedLoading(true);
-//                     const res = api.search(selectedValues, defaultPageSize, column, 1);
-//                     const result = res instanceof Promise ? await res : res;
-//                     const { data, total, currentPage } = result;
-//                     setTableDetails({
-//                         ...tableDetails,
-//                         data,
-//                         currentPage: currentPage - 1,
-//                         total,
-//                         pageSize: defaultPageSize,
-//                     });
-//                 } catch (err) { /* ignore */ }
-//                 finally { setNestedLoading(false); }
-//             }
-//             setShowFilterDropdown(false);
-//         }
-//         // router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-//     }
-
-//         function clearColumnFilter() {
-//         const params = new URLSearchParams(searchParams.toString());
-//         params.delete(column);
-//         params.delete(column + '[]');
-//         setSelectedValues([]);
-//         if (filterConfig?.onSelect) filterConfig.onSelect("");
-//         try {
-//             setFilterState(prev => ({
-//                 applied: Array.from(params.keys()).length > 0,
-//                 payload: { ...(prev?.payload || {}), [column]: "" }
-//             }));
-//         } catch (err) { /* ignore */ }
-//         // router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-//     }
-    
 // // function handleSelect(value: string) {
 // //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
 // //         if (isSingle) {
@@ -1500,8 +1405,6 @@
 // //             });
 // //         }
 // //     }
-
-
 
 //     return (
 //         <DismissibleDropdown
@@ -1536,40 +1439,87 @@
 //                                 onSelect={handleSelect}
 //                             />
 //                         ) : (
-//                             <>
-//                             {filteredOptions.map((option, idx) => (
-//                                 <div
-//                                     key={option.value}
-//                                     className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
-//                                 >
-//                                     <CustomCheckbox
-//                                         id={option.value}
-//                                         checked={selectedValues.includes(option.value)}
-//                                         label={option.label}
-//                                         onChange={() => handleSelect(option.value)}
-//                                     />
-//                                 </div>
-//                             ))}
-//                             <div className="h-12"></div>
-//                             <div className="absolute bottom-0 p-1 px-2 w-full bg-white col-span-2 flex justify-end gap-2 mt-2">
-//                                 <SidebarBtn
-//                                     isActive={false}
-//                                     type="button"
-//                                     onClick={clearColumnFilter}
-//                                     label="Clear All"
-//                                     buttonTw="px-3 py-2 h-9"
-//                                     disabled={filteredOptions.length === 0}
-//                                 />
-//                                 <SidebarBtn
-//                                     isActive={true}
-//                                     type="button"
-//                                     onClick={applyColumnFilter}
-//                                     label="Apply Filter"
-//                                     buttonTw="px-4 py-2 h-9"
-//                                     disabled={filteredOptions.length === 0}
-//                                 />
-//                             </div>
-//                             </>
+//                               <>
+//                                                        {filteredOptions.map((option, idx) => (
+//                                                            <div
+//                                                                key={option.value}
+//                                                                className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
+//                                                            >
+//                                                                <CustomCheckbox
+//                                                                    id={option.value}
+//                                                                    checked={selectedValues.includes(option.value)}
+//                                                                    label={option.label}
+//                                                                    onChange={() => handleSelect(option.value)}
+//                                                                />
+//                                                            </div>
+//                                                        ))}
+//                                                        <div className="h-12"></div>
+//                                                        <div className="absolute bottom-0 p-1 px-2 w-full bg-white col-span-2 flex justify-end gap-2 mt-2">
+//                                                            <SidebarBtn
+//                                                                isActive={false}
+//                                                                type="button"
+//                                                                onClick={async () => {
+//                                                                    setSelectedValues([]);
+//                                                                    if (filterConfig?.onSelect) filterConfig.onSelect("");
+//                                                                    try {
+//                                                                        setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: [] } }));
+//                                                                    } catch (err) {}
+//                                                                    // Call default list API to clear filter
+//                                                                    if (api?.list) {
+//                                                                        try {
+//                                                                            setNestedLoading(true);
+//                                                                            const res = api.list(1, defaultPageSize);
+//                                                                            const result = res instanceof Promise ? await res : res;
+//                                                                            const { data, total, currentPage } = result;
+//                                                                            setTableDetails({
+//                                                                                ...tableDetails,
+//                                                                                data,
+//                                                                                currentPage: currentPage - 1,
+//                                                                                total,
+//                                                                                pageSize: defaultPageSize,
+//                                                                            });
+//                                                                        } catch (err) { /* ignore */ }
+//                                                                        finally { setNestedLoading(false); }
+//                                                                    }
+//                                                                    setShowFilterDropdown(false);
+//                                                                }}
+//                                                                label="Clear All"
+//                                                                buttonTw="px-3 py-2 h-9"
+//                                                                disabled={filteredOptions.length === 0}
+//                                                            />
+//                                                            <SidebarBtn
+//                                                                isActive={true}
+//                                                                type="button"
+//                                                                onClick={async () => {
+//                                                                    try {
+//                                                                        setFilterState(prev => ({ applied: selectedValues.length > 0, payload: { ...(prev?.payload || {}), [column]: selectedValues } }));
+//                                                                    } catch (err) {}
+//                                                                    if (filterConfig?.onSelect) filterConfig.onSelect(selectedValues);
+//                                                                    // Only call list API, not filterBy
+//                                                                    if (api?.list) {
+//                                                                        try {
+//                                                                            setNestedLoading(true);
+//                                                                            const res = api.list(1, defaultPageSize);
+//                                                                            const result = res instanceof Promise ? await res : res;
+//                                                                            const { data, total, currentPage } = result;
+//                                                                            setTableDetails({
+//                                                                                ...tableDetails,
+//                                                                                data,
+//                                                                                currentPage: currentPage - 1,
+//                                                                                total,
+//                                                                                pageSize: defaultPageSize,
+//                                                                            });
+//                                                                        } catch (err) { /* ignore */ }
+//                                                                        finally { setNestedLoading(false); }
+//                                                                    }
+//                                                                    setShowFilterDropdown(false);
+//                                                                }}
+//                                                                label="Apply Filter"
+//                                                                buttonTw="px-4 py-2 h-9"
+//                                                                disabled={filteredOptions.length === 0}
+//                                                            />
+//                                                        </div>
+//                                                        </>
 //                         )
 //                     ) : (
 //                         <div className="flex flex-col items-center justify-center py-4 text-gray-600 text-sm">
@@ -1590,8 +1540,6 @@
 // function TableFooter() {
 //     const { config } = useContext(Config);
 //     const { api, footer, pageSize = defaultPageSize } = config;
-//     const router = useRouter();
-//     const searchParams = useSearchParams();
 //     const { tableDetails, nestedLoading, setTableDetails, setNestedLoading, searchState, filterState } = useContext(TableDetails);
 //     const { selectedRow } = useContext(SelectedRow);
 //     const { selectedColumns } = useContext<columnFilterConfigType>(ColumnFilterConfig);
@@ -1600,14 +1548,6 @@
 
 //     async function handlePageChange(pageNo: number) {
 //         if (pageNo < 0 || pageNo > totalPages - 1) return;
-
-//         const params = new URLSearchParams(searchParams.toString());
-//         if (pageNo === 0) {
-//             params.delete('page'); // Don't show ?page=1
-//         } else {
-//             params.set('page', (pageNo + 1).toString());
-//         }
-//         router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
 
 //         const MIN_LOADING_MS = 1000;
 //         const start = Date.now();
@@ -1618,7 +1558,6 @@
 //             try {
 //                 const globalSearch = searchState;
 //                 if (globalSearch && globalSearch.applied && api?.search) {
-//                     console.log('[TableFooter] API CALL: search', { term: globalSearch.term });
 //                     const term = globalSearch.term ?? "";
 //                     const res = await api.search(term, pageSize, undefined, pageNo + 1);
 //                     const resolvedResult = res instanceof Promise ? await res : res;
@@ -1636,35 +1575,11 @@
 //                 console.warn('Search-based pagination failed', err);
 //             }
 
-//             // If any column filter is active, always use list API and never call filterBy
+//             // If filters are applied (persisted globally) and filter API exists, call filter API for the page
 //             try {
 //                 const globalFilter = filterState;
-//                 const isColumnFilter = Object.keys(globalFilter?.payload || {}).some(k => k.endsWith('_id'));
-//                 if (isColumnFilter && api?.list) {
-//                     console.log('[TableFooter] API CALL: list (column filter active)', { payload: globalFilter?.payload });
-//                     // Always call list API for paging/filtering when column filter is active
-//                     const listParams: Record<string, string> = {};
-//                     Object.entries(globalFilter?.payload || {}).forEach(([key, value]) => {
-//                         if (Array.isArray(value) && value.length > 0) {
-//                             listParams[key] = value.join(",");
-//                         } else if (typeof value === "string" && value) {
-//                             listParams[key] = value;
-//                         }
-//                     });
-//                     const result = await api.list(pageNo + 1, pageSize, listParams);
-//                     const resolvedResult = result instanceof Promise ? await result : result;
-//                     const { data, total, currentPage } = resolvedResult;
-//                     setTableDetails({
-//                         ...tableDetails,
-//                         data,
-//                         currentPage: currentPage - 1,
-//                         total,
-//                         pageSize,
-//                     });
-//                     return;
-//                 } else if (globalFilter && globalFilter.applied && api?.filterBy && !isColumnFilter) {
-//                     console.log('[TableFooter] API CALL: filterBy (global filter, no column filter)', { payload: globalFilter?.payload });
-//                     // Only call filterBy if NOT using column filters
+//                 if (globalFilter && globalFilter.applied && api?.filterBy) {
+//                     // reuse payload and request the requested page; do NOT add .page to payload, instead pass as 3rd arg
 //                     const payload = { ...(globalFilter.payload || {}) } as Record<string, any>;
 //                     const res = await api.filterBy(payload, pageSize, pageNo + 1);
 //                     const resolvedResult = res instanceof Promise ? await res : res;
@@ -1684,7 +1599,6 @@
 //             }
 
 //             if (api?.list) {
-//                 console.log('[TableFooter] API CALL: list (default)', {});
 //                 const result = await api.list(pageNo + 1, pageSize);
 //                 const resolvedResult =
 //                     result instanceof Promise ? await result : result;
@@ -1956,81 +1870,102 @@
 //     const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
 
 //     useEffect(() => {
-//     if (!searchParams) return;
+//         if (!searchParams) return;
 
-//     const paramsObj: Record<string, any> = {};
-//     searchParams.forEach((value, key) => {
-//         // If the value contains a comma, treat it as an array (matching your .join(',') logic)
-//         if (value.includes(',')) {
-//             paramsObj[key] = value.split(',');
-//         } else if (value === 'all') {
-//             paramsObj[key] = 'all';
-//         } else {
-//             paramsObj[key] = value;
-//         }
-//     });
-
-//     const urlPage = searchParams.get('page');
-//     const initialPage = urlPage ? Math.max(0, parseInt(urlPage) - 1) : 0;
-
-//     if (hasCustomRenderer) {
-//         setCustomPayload(paramsObj);
-//     } else {
-//         // For built-in filters, we need to match the structure expected by filterByFields
-//         const initialFilters: Record<string, string | string[]> = {};
-//         (config.header?.filterByFields || []).forEach((f: any) => {
-//             const val = paramsObj[f.key];
-//             if (val) {
-//                 initialFilters[f.key] = val;
+//         const paramsObj: Record<string, any> = {};
+//         searchParams.forEach((value, key) => {
+//             if (value.includes(',')) {
+//                 paramsObj[key] = value.split(',');
+//             } else if (value === 'all') {
+//                 paramsObj[key] = 'all';
 //             } else {
-//                 initialFilters[f.key] = f.isSingle === false ? [] : "";
+//                 paramsObj[key] = value;
 //             }
 //         });
-//         setFilters(initialFilters);
-//     }
 
-//     setTableDetails(prev => ({
-//         ...prev,
-//         currentPage: initialPage
-//     }));
+//         // Try to restore from localStorage if no params in URL
+//         let restoredFromLocalStorage = false;
+//         if (Object.keys(paramsObj).length === 0 && config?.localStorageKey) {
+//             try {
+//                 const raw = localStorage.getItem(config.localStorageKey + '-filters');
+//                 if (raw) {
+//                     const saved = JSON.parse(raw);
+//                     if (saved && typeof saved === 'object') {
+//                         if (hasCustomRenderer) {
+//                             setCustomPayload(saved);
+//                         } else {
+//                             setFilters(saved);
+//                         }
+//                         setAppliedFilters(true);
+//                         setFilterState({ applied: true, payload: toApiPayload(saved) });
+//                         restoredFromLocalStorage = true;
+//                     }
+//                 }
+//             } catch (err) {
+//                 // ignore
+//             }
+//         }
 
-//     if (Object.keys(paramsObj).length > 0) {
-//         setAppliedFilters(true);
-//         // Sync to global context so TableHeader/Footer see it
-//         setFilterState({ 
-//             applied: true, 
-//             payload: toApiPayload(paramsObj) 
-//         });
-//     }
+//         if (!restoredFromLocalStorage) {
+//             if (hasCustomRenderer) {
+//                 setCustomPayload(paramsObj);
+//             } else {
+//                 const initialFilters: Record<string, string | string[]> = {};
+//                 (config.header?.filterByFields || []).forEach((f: any) => {
+//                     const val = paramsObj[f.key];
+//                     if (val) {
+//                         initialFilters[f.key] = val;
+//                     } else {
+//                         initialFilters[f.key] = f.isSingle === false ? [] : "";
+//                     }
+//                 });
+//                 setFilters(initialFilters);
+//             }
 
-//     setIsInitialized(true);
-// }, []);
+//             if (Object.keys(paramsObj).length > 0) {
+//                 setAppliedFilters(true);
+//                 setFilterState({ 
+//                     applied: true, 
+//                     payload: toApiPayload(paramsObj) 
+//                 });
+//             }
+//         }
+
+//         setIsInitialized(true);
+//     }, []);
 
 //     useEffect(() => {
 //         if (!hasCustomRenderer) return;
 //         if (!searchParams || !router) return;
 //         const params = new URLSearchParams(searchParams.toString());
-
-//        // 1. Sync Filters (Custom Payload)
 //         Object.keys(customPayload || {}).forEach((k) => {
-//             const v = customPayload[k];
-//             if (v === 'all') {
-//                 params.set(k, 'all');
-//             } else if (Array.isArray(v)) {
-//                 v.length > 0 ? params.set(k, v.join(',')) : params.delete(k);
-//             } else if (v !== null && String(v).trim().length > 0) {
-//                 params.set(k, String(v));
-//             } else {
-//                 params.delete(k);
-//             }
+//         const v = customPayload[k];
+//         // Only ever put 'all' or a comma-joined array in the URL
+//         if (v === 'all') {
+//         params.set(k, 'all');
+//         } else if (Array.isArray(v)) {
+//         if (v.length > 0) {
+//             params.set(k, v.join(','));
+//         } else {
+//             params.delete(k);
+//         }
+//         } else if (v !== null && String(v).trim().length > 0) {
+//         params.set(k, String(v));
+//         } else {
+//         params.delete(k);
+//         }
+//         });
+//         // Remove any keys in params not present in customPayload
+//         Array.from(params.keys()).forEach((k) => {
+//         if (!(k in customPayload)) params.delete(k);
 //         });
 
 //         if (urlRef.current !== params.toString()) {
 //             urlRef.current = params.toString();
-//             const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-//             router.push(newUrl, { scroll: false });
+//             const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+//             router.push(newRelativePathQuery, { scroll: false });
 //         }
-//     }, [customPayload, tableDetails.currentPage, isInitialized, hasCustomRenderer, router, searchParams]);
+//     }, [customPayload, hasCustomRenderer, router, searchParams]);
 
 //     // initialize filters when fields change (only for built-in filterByFields)
 //     useEffect(() => {
@@ -2045,14 +1980,12 @@
 //     useEffect(() => {
 //     // This triggers as soon as hydration finishes
 //     if (isInitialized && searchParams && searchParams.size > 0) {
-//         const urlPage = searchParams.get('page');
-//         const pageToLoad = urlPage ? parseInt(urlPage) : 1;
 //         if (hasCustomRenderer) {
 //             applyCustomPayload(customPayload);
 //         } else {
 //             // Note: pass the hydrated filters directly to ensure we don't 
 //             // wait for a state re-render cycle
-//             applyFilter({...filters, page: pageToLoad });
+//             applyFilter(filters);
 //         }
 //     }
 // }, [isInitialized, hasCustomRenderer]);
@@ -2119,16 +2052,20 @@
 //     if (Object.keys(currentFilters).length === 0) return;
     
 //     setShowDropdown(false);
+//     // Save filters to localStorage
+//     if (config?.localStorageKey) {
+//         try {
+//             localStorage.setItem(config.localStorageKey + '-filters', JSON.stringify(currentFilters));
+//         } catch (err) { /* ignore */ }
+//     }
 //     if (config.api?.filterBy) {
 //         setNestedLoading(true);
 //         try {
 //             const payloadForApi = toApiPayload(currentFilters);
 //             setFilterState({ applied: true, payload: payloadForApi });
-            
 //             const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
 //             const resolved = res instanceof Promise ? await res : res;
 //             const { currentPage, totalRecords, pageSize, total, data } = resolved;
-            
 //             setTableDetails({
 //                 data: data || [],
 //                 total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
@@ -2145,25 +2082,20 @@
 //     } else {
 //         if (activeFilterCount === 0) return;
 //         setShowDropdown(false);
-//         // call API if provided
 //         if (config.api?.filterBy) {
 //             try {
 //                 setNestedLoading(true);
-                
 //                 const payloadForApi: Record<string, string | number | null> = {};
 //                 const fields = config.header?.filterByFields || [];
 //                 Object.keys(filters || {}).forEach((k) => {
 //                     const field = fields.find(f => f.key === k);
 //                     try {
 //                         if (field?.applyWhen && !field.applyWhen(filters)) {
-//                             // skip this key as its predicate decided it shouldn't apply
 //                             return;
 //                         }
 //                     } catch (err) {
-//                         // if predicate throws, default to skipping to be safe
 //                         return;
 //                     }
-
 //                     const v = filters[k];
 //                     if (Array.isArray(v)) {
 //                         payloadForApi[k] = v.length > 0 ? v.join(',') : "";
@@ -2171,17 +2103,11 @@
 //                         payloadForApi[k] = v as string;
 //                     }
 //                 });
-
-//                 // persist applied filter payload via context so pagination can reuse it
 //                 try {
 //                     setFilterState({ applied: true, payload: payloadForApi });
-//                 } catch (err) {
-//                     // ignore environments without window
-//                 }
-
+//                 } catch (err) {}
 //                 const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
 //                 const { currentPage, totalRecords, pageSize, total, data } = res instanceof Promise ? await res : res;
-//                 // prefer totalRecords when provided by API
 //                 const totalRecordsValue = totalRecords ?? total ?? 0;
 //                 const pageSizeValue = pageSize || config.pageSize || defaultPageSize;
 //                 const totalPages = pageSizeValue > 0 ? Math.max(1, Math.ceil(totalRecordsValue / pageSizeValue)) : (total ?? 1);
@@ -2207,19 +2133,15 @@
 //                     const field = fields.find(f => f.key === k);
 //                     try {
 //                         if (field?.applyWhen && !field.applyWhen(filters)) {
-//                             // skip this filter if its predicate says not to apply
 //                             return true;
 //                         }
 //                     } catch (err) {
-//                         // if predicate throws, skip this filter to be safe
 //                         return true;
 //                     }
-
 //                     const val = filters[k];
 //                     if (val === "" || val == null) return true;
 //                     const cell = String((row as TableDataType)[k] ?? "").toLowerCase();
 //                     if (Array.isArray(val)) {
-//                         // match any of the selected values
 //                         return val.some(v => cell.includes(String(v).toLowerCase()));
 //                     }
 //                     return cell.includes(String(val).toLowerCase());
@@ -2233,10 +2155,10 @@
 //             });
 //             setAppliedFilters(true);
 //         }
-
 //         setShowDropdown(false);
-//     };
-// }, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
+//     }
+    
+// }, [filters, config, setShowDropdown, setNestedLoading, setFilterState, setTableDetails, activeFilterCount, tableDetails.data, toApiPayload]);
 
 // const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
 //         const effectivePayload = payload || customPayload || {};
@@ -2317,18 +2239,14 @@
 //         setFilters(cleared);
 //         setAppliedFilters(false);
 
-//         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
-
-//         // Remove all filter params from URL (except page)
-//         if (searchParams && router) {
-//             const params = new URLSearchParams(searchParams.toString());
-//             (config.header?.filterByFields || []).forEach((f: FilterField) => {
-//                 params.delete(f.key);
-//             });
-//             params.delete('page'); // Optionally reset to page 1
-//             const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-//             router.push(newUrl, { scroll: false });
+//         // Remove filters from localStorage
+//         if (config?.localStorageKey) {
+//             try {
+//                 localStorage.removeItem(config.localStorageKey + '-filters');
+//             } catch (err) { /* ignore */ }
 //         }
+
+//         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
 
 //         if (config.api?.list) {
 //             const pageSize = config.pageSize || defaultPageSize;
@@ -2364,17 +2282,6 @@
 //         setCustomPayload({});
 //         setAppliedFilters(false);
 //         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
-
-//         // Remove all filter params from URL (except page)
-//         if (searchParams && router) {
-//             const params = new URLSearchParams(searchParams.toString());
-//             Object.keys(customPayload || {}).forEach((k) => {
-//                 params.delete(k);
-//             });
-//             params.delete('page');
-//             const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-//             router.push(newUrl, { scroll: false });
-//         }
 
 //         if (config.api?.list) {
 //             const pageSize = config.pageSize || defaultPageSize;
@@ -2598,6 +2505,8 @@
 //     );
 // }
 
+
+
 "use client";
 
 import SearchBar from "./searchBar";
@@ -2669,7 +2578,6 @@ export type configType = {
         list?: (
             pageNo: number,
             pageSize: number,
-            payload?: Record<string, any>,
         ) => Promise<listReturnType> | listReturnType;
         filterBy?: (
             payload: Record<string, string | number | null>,
@@ -2904,25 +2812,10 @@ function ContextProvider({ children }: { children: React.ReactNode }) {
 function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
     const searchParams = useSearchParams();
-    const pageRef = useRef(1);
-
-    useEffect(() => {
-    const urlPage = searchParams.get('page');
-    const targetPage = urlPage ? parseInt(urlPage) - 1 : 0;
-
-    // If the URL page is different from our state, trigger the update
-    if (targetPage !== tableDetails.currentPage) {
-        // You can call your handlePageChange logic here or 
-        // simply trigger the API call again based on the new URL params.
-        pageRef.current = targetPage + 1; // Store 1-based page number
-
-    }
-}, [searchParams]); // Listen specifically for URL changes
-
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
-    const { setSelectedColumns,  } = useContext(ColumnFilterConfig);
+    const { setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
-    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, setFilterState } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData } = useContext(TableDetails);
     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
     const [showDropdown, setShowDropdown] = useState(false);
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -2947,11 +2840,6 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
     }, [columnsSignature]);
 
     async function checkForData() {
-        // const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
-
-        // // Check if any of the URL params match our column keys
-        // const hasColumnFilters = config.columns.some(col => searchParams.has(col.key));
-
         // if data is passed, use default values
         if (data) {
             const date = new Date();
@@ -2977,99 +2865,52 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                 /* ignore */
             }
             setTimeout(() => setNestedLoading(false), Math.max(0, 1000 - (new Date().getTime() - date.getTime())));
-        } else if (config.api?.list || config.api?.filterBy) {
-        const payload: Record<string, any> = {};
-        searchParams.forEach((value, key) => {
-            if (key === 'page') return;
-            payload[key] = value.includes(',') ? value.split(',') : value;
-        });
-
-        // Trigger the filter API immediately
-        const pageSize = config.pageSize || defaultPageSize;
-        const pageNo = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
-
-        const hasFilters = Object.keys(payload).length > 0;
-
-        try {
-            setNestedLoading(true);
-            let result;
-
-            // Prioritize filterBy if filters exist, otherwise use the updated list API
-            if (hasFilters && config.api?.filterBy) {
-                result = await config.api.filterBy(payload, pageSize, pageNo);
-            } else if (config.api?.list) {
-                // Pass the extracted URL params as the third 'payload' argument
-                result = await config.api.list(pageNo, pageSize, hasFilters ? payload : undefined);
+        }
+        // if api is passed, use default values
+        else if (config.api?.list) {
+            const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+            if (hasUrlParams && config.api?.filterBy) {
+                return; 
             }
-
-            if (result) {
-                const resolvedResult = result instanceof Promise ? await result : result;
-                const { data: tableData, total, currentPage, totalRecords } = resolvedResult;
-                
-                const tableInit = {
-                    data: tableData || [],
-                    total: total || 1,
-                    currentPage: (currentPage || 1) - 1,
-                    pageSize,
-                    totalRecords: totalRecords
-                };
-
-                setTableDetails(tableInit);
-                if (hasFilters) {
-                    setFilterState({ applied: true, payload });
+            const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
+            const start = Date.now();
+            const pageNo = 1;
+            const pageSize = config.pageSize || defaultPageSize;
+            // Only call API if params changed
+            if (
+                !lastApiCallRef.current ||
+                lastApiCallRef.current.pageNo !== pageNo ||
+                lastApiCallRef.current.pageSize !== pageSize
+            ) {
+                lastApiCallRef.current = { pageNo, pageSize };
+                try {
+                    setNestedLoading(true);
+                    const result = await config.api.list(pageNo, pageSize);
+                    const resolvedResult = result instanceof Promise ? await result : result;
+                    const { data, total, currentPage } = resolvedResult;
+                    const tableInit = {
+                        data,
+                        total,
+                        currentPage: currentPage - 1,
+                        pageSize,
+                    };
+                    setTableDetails(tableInit);
+                    setDisplayedData(data);
+                    try {
+                        setInitialTableData(tableInit);
+                    } catch (err) {
+                        /* ignore */
+                    }
+                } finally {
+                    const elapsed = Date.now() - start;
+                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+                    if (wait > 0) {
+                        await new Promise((res) => setTimeout(res, wait + 500));
+                    }
+                    setNestedLoading(false);
                 }
             }
-        } catch (err) {
-            console.error("API Error during initialization:", err);
-        } finally {
-            setNestedLoading(false);
         }
-    }
-        // if api is passed, use default values
-        // else if (config.api?.list) {
-        //     const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
-        //     if (hasUrlParams && config.api?.filterBy) {
-        //         return; 
-        //     }
-        //     const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
-        //     const start = Date.now();
-        //     const pageNo = pageRef.current || 1;
-        //     const pageSize = config.pageSize || defaultPageSize;
-        //     // Only call API if params changed
-        //     if (
-        //         !lastApiCallRef.current ||
-        //         lastApiCallRef.current.pageNo !== pageNo ||
-        //         lastApiCallRef.current.pageSize !== pageSize
-        //     ) {
-        //         lastApiCallRef.current = { pageNo, pageSize };
-        //         try {
-        //             setNestedLoading(true);
-        //             const result = await config.api.list(pageNo, pageSize);
-        //             const resolvedResult = result instanceof Promise ? await result : result;
-        //             const { data, total, currentPage } = resolvedResult;
-        //             const tableInit = {
-        //                 data,
-        //                 total,
-        //                 currentPage: currentPage - 1,
-        //                 pageSize,
-        //             };
-        //             setTableDetails(tableInit);
-        //             setDisplayedData(data);
-        //             try {
-        //                 setInitialTableData(tableInit);
-        //             } catch (err) {
-        //                 /* ignore */
-        //             }
-        //         } finally {
-        //             const elapsed = Date.now() - start;
-        //             const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-        //             if (wait > 0) {
-        //                 await new Promise((res) => setTimeout(res, wait + 500));
-        //             }
-        //             setNestedLoading(false);
-        //         }
-        //     }
-        // }
         // nothing is passed
         else {
             throw new Error(
@@ -3078,155 +2919,155 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         }
     }
 
-    useEffect(() => {
-        setConfig(config);
-    }, [config]);
+                    useEffect(() => {
+                        setConfig(config);
+                    }, [config]);
 
-    useEffect(() => {
-        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
-        lastApiCallRef.current = null;
-        checkForData();
+                    useEffect(() => {
+                        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
+                        lastApiCallRef.current = null;
+                        checkForData();
 
-        // Only initialize "select all" when there is no saved selection in localStorage.
-        // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
-        try {
-            const key = config?.localStorageKey;
-            const saved = key ? localStorage.getItem(key) : null;
-            if (!saved) {
-                const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
-                const filtered = allByDefault.filter((n) => n !== -1);
-                if (filtered.length > 0) {
-                    setSelectedColumns(filtered);
-                    return;
-                }
-                setSelectedColumns(config.columns?.map((_, index) => index));
-            } else {
-                setSelectedColumns(saved ? JSON.parse(saved) : []);
-            }
-        } catch (err) {
-            // If reading localStorage fails, fall back to select all
-            setSelectedColumns(config.columns?.map((_, index) => index));
-        }
-        setSelectedRow([]);
-    }, [data, refreshKey]);
+                        // Only initialize "select all" when there is no saved selection in localStorage.
+                        // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
+                        try {
+                            const key = config?.localStorageKey;
+                            const saved = key ? localStorage.getItem(key) : null;
+                            if (!saved) {
+                                const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
+                                const filtered = allByDefault.filter((n) => n !== -1);
+                                if (filtered.length > 0) {
+                                    setSelectedColumns(filtered);
+                                    return;
+                                }
+                                setSelectedColumns(config.columns?.map((_, index) => index));
+                            } else {
+                                setSelectedColumns(saved ? JSON.parse(saved) : []);
+                            }
+                        } catch (err) {
+                            // If reading localStorage fails, fall back to select all
+                            setSelectedColumns(config.columns?.map((_, index) => index));
+                        }
+                        setSelectedRow([]);
+                    }, [data, refreshKey]);
 
 
-    useEffect(() => {
-        if (config.onRowSelectionChange) {
-            config.onRowSelectionChange(selectedRow);
-        }
-    }, [selectedRow, config.onRowSelectionChange]);
+                    useEffect(() => {
+                        if (config.onRowSelectionChange) {
+                            config.onRowSelectionChange(selectedRow);
+                        }
+                    }, [selectedRow, config.onRowSelectionChange]);
 
-    const [showUploadPopup, setShowUploadPopup] = useState(false);
-    // Listen for open-upload-popup event
-    useEffect(() => {
-        const handler = () => setShowUploadPopup(true);
-        window.addEventListener('open-upload-popup', handler);
-        return () => window.removeEventListener('open-upload-popup', handler);
-    }, []);
+                    const [showUploadPopup, setShowUploadPopup] = useState(false);
+                    // Listen for open-upload-popup event
+                    useEffect(() => {
+                        const handler = () => setShowUploadPopup(true);
+                        window.addEventListener('open-upload-popup', handler);
+                        return () => window.removeEventListener('open-upload-popup', handler);
+                    }, []);
 
-    const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
+                    const orderedColumns = (columnOrder || []).map((i) => config.columns[i]).filter(Boolean);
 
-    return (
-        <>
-            {(config.header?.title || config.header?.wholeTableActions || config.header?.tableActions) && (
-                <div className="flex justify-between items-center mb-[20px] h-[34px]">
-                    {config.header?.title && (
-                        <h1 className="text-[18px] font-semibold text-[#181D27]">
-                            {config.header.title}
-                        </h1>
-                    )}
-                    <div className="flex gap-[8px]">
-                        {config.header?.tableActions && config.header?.tableActions?.map((action) => action)}
-                        {selectedRow.length > 0 &&
-                            config.header?.wholeTableActions?.map(
-                                (action) => action
-                            )}
-                            {config.header?.exportButton && (
-                                <div className="flex gap-[12px] relative items-center">
-                                    <BorderIconButton
-                                        icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
-                                        label="Export Excel"
-                                        onClick={async () => {
-                                            if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
-                                            if (!config.header?.exportButton?.onClick) return;
-                                            config.header.exportButton.onClick(config.api?.list as any, displayedData);
-                                        }}
-                                    />
-                                    {/* Upload icon next to exportButton if upload prop is provided */}
-                                    {config.header?.upload && (
-                                        <BorderIconButton
-                                            icon="material-symbols:upload-rounded"
-                                            // label="Upload"
-                                            onClick={() => setShowUploadPopup(true)}
-                                        />
+                    return (
+                        <>
+                            {(config.header?.title || config.header?.wholeTableActions || config.header?.tableActions) && (
+                                <div className="flex justify-between items-center mb-[20px] h-[34px]">
+                                    {config.header?.title && (
+                                        <h1 className="text-[18px] font-semibold text-[#181D27]">
+                                            {config.header.title}
+                                        </h1>
                                     )}
+                                    <div className="flex gap-[8px]">
+                                        {config.header?.tableActions && config.header?.tableActions?.map((action) => action)}
+                                        {selectedRow.length > 0 &&
+                                            config.header?.wholeTableActions?.map(
+                                                (action) => action
+                                            )}
+                                            {config.header?.exportButton && (
+                                                <div className="flex gap-[12px] relative items-center">
+                                                    <BorderIconButton
+                                                        icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
+                                                        label="Export Excel"
+                                                        onClick={async () => {
+                                                            if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
+                                                            if (!config.header?.exportButton?.onClick) return;
+                                                            config.header.exportButton.onClick(config.api?.list as any, displayedData);
+                                                        }}
+                                                    />
+                                                    {/* Upload icon next to exportButton if upload prop is provided */}
+                                                    {config.header?.upload && (
+                                                        <BorderIconButton
+                                                            icon="material-symbols:upload-rounded"
+                                                            // label="Upload"
+                                                            onClick={() => setShowUploadPopup(true)}
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
+                                        {/* If you want to add threeDot dropdown, do it in the correct place in header */}
+                                      {config.header?.threeDot && (() => {
+                            
+                                            const visibleOptions = config.header.threeDot.filter(option => {
+                                                const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
+                                                return shouldShow;
+                                            });
+                                            if (visibleOptions.length === 0) return null;
+                                            return (
+                                                <div className="flex gap-[12px] relative">
+                                                    <DismissibleDropdown
+                                                        isOpen={showDropdown}
+                                                        setIsOpen={setShowDropdown}
+                                                        button={
+                                                            <BorderIconButton icon="ic:sharp-more-vert" />
+                                                        }
+                                                        dropdown={
+                                                            <div className="absolute top-[40px] right-0 z-30 w-[226px]">
+                                                                <CustomDropdown>
+                                                                    {visibleOptions.map((option, idx) => (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
+                                                                            onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
+                                                                        >
+                                                                            {option?.icon && (
+                                                                                <Icon
+                                                                                    icon={option.icon}
+                                                                                    width={option.iconWidth || 20}
+                                                                                    className="text-[#717680]"
+                                                                                />
+                                                                            )}
+                                                                            <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
+                                                                                {option.label}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </CustomDropdown>
+                                                            </div>
+                                                        }
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
                                 </div>
                             )}
-                        {/* If you want to add threeDot dropdown, do it in the correct place in header */}
-                        {config.header?.threeDot && (() => {
-            
-                            const visibleOptions = config.header.threeDot.filter(option => {
-                                const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
-                                return shouldShow;
-                            });
-                            if (visibleOptions.length === 0) return null;
-                            return (
-                                <div className="flex gap-[12px] relative">
-                                    <DismissibleDropdown
-                                        isOpen={showDropdown}
-                                        setIsOpen={setShowDropdown}
-                                        button={
-                                            <BorderIconButton icon="ic:sharp-more-vert" />
-                                        }
-                                        dropdown={
-                                            <div className="absolute top-[40px] right-0 z-30 w-[226px]">
-                                                <CustomDropdown>
-                                                    {visibleOptions.map((option, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            className="px-[14px] py-[10px] flex items-center gap-[8px] hover:bg-[#FAFAFA] cursor-pointer"
-                                                            onClick={() => option.onClick && option.onClick(displayedData, selectedRow)}
-                                                        >
-                                                            {option?.icon && (
-                                                                <Icon
-                                                                    icon={option.icon}
-                                                                    width={option.iconWidth || 20}
-                                                                    className="text-[#717680]"
-                                                                />
-                                                            )}
-                                                            <span className={`text-[#181D27] font-[500] text-[16px] ${option?.labelTw}`}>
-                                                                {option.label}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </CustomDropdown>
-                                            </div>
-                                        }
-                                    />
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
-            <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
-                <TableHeader directFilterRenderer={directFilterRenderer} />
-                <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
-                <TableFooter />
-            </div>
-            {/* Upload Popup */}
-            {config.header?.upload && (
-                <UploadPopup
-                    open={showUploadPopup}
-                    onClose={() => setShowUploadPopup(false)}
-                    dummyApi={config.header.upload.dummyApi}
-                    api={config.header.upload.api}
-                />
-            )}
-        </>
-    );
-}
+                            <div className="flex flex-col bg-white w-full border-[1px] border-[#E9EAEB] rounded-[8px] overflow-hidden">
+                                <TableHeader directFilterRenderer={directFilterRenderer} />
+                                <TableBody orderedColumns={orderedColumns} setColumnOrder={setColumnOrder} />
+                                <TableFooter />
+                            </div>
+                            {/* Upload Popup */}
+                            {config.header?.upload && (
+                                <UploadPopup
+                                    open={showUploadPopup}
+                                    onClose={() => setShowUploadPopup(false)}
+                                    dummyApi={config.header.upload.dummyApi}
+                                    api={config.header.upload.api}
+                                />
+                            )}
+                        </>
+                    );
+                }
 
 function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.ReactNode }) {
     const { config } = useContext(Config);
@@ -3462,6 +3303,7 @@ function ColumnFilter() {
     );
 }
 
+
 function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configType['columns']; setColumnOrder: React.Dispatch<React.SetStateAction<number[]>> }) {
     const { config } = useContext(Config);
     const { api, rowSelection, rowActions, pageSize = defaultPageSize } = config;
@@ -3488,8 +3330,6 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     const allItemsCount: number = tableData.length || 0;
     const isAllSelected = selectedRow.length === allItemsCount;
     const isIndeterminate = selectedRow.length > 0 && !isAllSelected;
-    const router = useRouter();
-    const searchParams = useSearchParams();
 
     useEffect(() => {
         // Update displayedData whenever tableDetails changes. Do not
@@ -3545,13 +3385,6 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
         // apply sorting using the computed order immediately
         setDisplayedData(naturalSort(displayedData, nextOrder, column));
     };
-    const handleFilterStatusBtnClick = (status: boolean, callback: any) => {
-        const params = new URLSearchParams(Array.from(searchParams.entries()));
-        params.set('status', String(status ? 1 : 0));
-        params.delete('page'); // Reset to page 1
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-        callback(status)
-    }
 
     return (
         <>{(config.showNestedLoading && nestedLoading) ? <CustomTableSkelton /> : <>
@@ -3671,22 +3504,22 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                             width={12}
                                                             height={12}
                                                             className={`cursor-pointer transition-colors ${
-                                                                col.filterStatus.currentFilter === true || searchParams.get('status') === '1'
+                                                                col.filterStatus.currentFilter === true
                                                                     ? "text-blue-600"
                                                                     : "text-gray-400 hover:text-gray-600"
                                                             }`}
-                                                            onClick={() => handleFilterStatusBtnClick(true, col.filterStatus?.onFilter)}
+                                                            onClick={() => col.filterStatus?.onFilter(true)}
                                                         />
                                                         <Icon
                                                             icon="ep:arrow-down"
                                                             width={12}
                                                             height={12}
                                                             className={`cursor-pointer transition-colors ${
-                                                                col.filterStatus.currentFilter === false || searchParams.get('status') === '0'
+                                                                col.filterStatus.currentFilter === false
                                                                     ? "text-blue-600"
                                                                     : "text-gray-400 hover:text-gray-600"
                                                             }`}
-                                                            onClick={() => handleFilterStatusBtnClick(false, col.filterStatus?.onFilter)}
+                                                            onClick={() => col.filterStatus?.onFilter(false)}
                                                         />
                                                     </div>
                                                 )}
@@ -3870,18 +3703,6 @@ function FilterTableHeader({
     const parentRef = useRef<HTMLDivElement>(null);
     const { filterState, setFilterState } = useContext(TableDetails);
     const selectedRef = useRef<string | string[] | null>(null);
-    const router = useRouter();
-    const searchParams = useSearchParams(); 
-
-    // 1. Hydrate state from URL on mount
-    useEffect(() => {
-        const urlVal = searchParams.get(column);
-        if (urlVal) {
-            const arr = urlVal.split(',');
-            setSelectedValues(arr);
-            selectedRef.current = arr;
-        }
-    }, []);
 
     useEffect(() => {
         if (filterConfig?.options) {
@@ -3937,134 +3758,72 @@ function FilterTableHeader({
 
     async function handleSelect(value: string) {
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-        const params = new URLSearchParams(searchParams.toString());
-        
-        // Reset to page 1 whenever a filter is changed
-        params.delete('page');
-
         if (isSingle) {
+            // If already selected, deselect (clear filter)
             const selectedValue = filterConfig?.selectedValue;
-            
-            // Toggle logic: If clicking the same value, clear it
-            if (selectedValue === value || value === "") {
-                params.delete(column);
-                if (filterConfig?.onSelect) filterConfig.onSelect("");
-                
-                // Sync with global filter state to clear the field
-                try {
-                    setFilterState(prev => ({ 
-                        applied: Array.from(params.keys()).length > 0, 
-                        payload: { ...(prev?.payload || {}), [column]: "" } 
-                    }));
-                } catch (err) { /* ignore */ }
-
-                // Trigger API reload for the first page
-                if (api?.list) {
+            if (filterConfig?.onSelect) {
+                if (selectedValue === value) {
+                    filterConfig.onSelect(""); // Deselect
+                    // update global filter state to clear this field
                     try {
-                        setNestedLoading(true);
-                        const res = await api.list(1, defaultPageSize);
-                        const { data, total, currentPage } = await (res instanceof Promise ? res : res);
-                        setTableDetails({
-                            ...tableDetails,
-                            data,
-                            currentPage: currentPage - 1,
-                            total,
-                            pageSize: defaultPageSize,
-                        });
-                    } finally { setNestedLoading(false); }
-                }
-            } else {
-                // New selection logic
-                params.set(column, value);
-                if (filterConfig?.onSelect) filterConfig.onSelect(value);
-                
-                try {
-                    setFilterState(prev => ({ 
-                        applied: true, 
-                        payload: { ...(prev?.payload || {}), [column]: value } 
-                    }));
-                } catch (err) { /* ignore */ }
-
-                if (api?.search) {
+                        setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: "" } }));
+                    } catch (err) { }
+                    // Call default list API and clear search filter
+                    if(api?.list) {
+                        try {
+                            setNestedLoading(true);
+                            const res = api.list(1, defaultPageSize);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
+                } 
+                else {
+                    filterConfig.onSelect(value);
                     try {
-                        setNestedLoading(true);
-                        const res = await api.search(value, defaultPageSize, column, 1);
-                        const { data, total, currentPage } = await (res instanceof Promise ? res : res);
-                        setTableDetails({
-                            ...tableDetails,
-                            data,
-                            currentPage: currentPage - 1,
-                            total,
-                            pageSize: defaultPageSize,
-                        });
-                    } finally { setNestedLoading(false); }
+                        setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
+                    } catch (err) { }
+                    if(api?.search) {
+                        try {
+                            setNestedLoading(true);
+                            const res = api.search(value, defaultPageSize, column, 1);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
                 }
             }
             setShowFilterDropdown(false);
         } else {
-            // Multi-select logic
             let updated: string[];
             if (selectedValues.includes(value)) {
                 updated = selectedValues.filter((v) => v !== value);
             } else {
                 updated = [...selectedValues, value];
             }
-
-            // // Remove all previous instances of the param (plain and array-style) before setting new value
-            // params.delete(column);
-            // params.delete(column + '[]');
-            // if (updated.length > 0) {
-            //     params.set(column, updated.join(','));
-            // }
-
-            setSelectedValues(updated);
-            // if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
-
-            // Sync to global filter state
+            // persist multi-select in global filter state
             try {
-                setFilterState(prev => ({ 
-                    applied: updated.length > 0, 
-                    payload: { ...(prev?.payload || {}), [column]: updated } 
-                }));
-            } catch (err) { /* ignore */ }
-
-            // Update the URL in the browser
-            router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+                setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
+            } catch (err) { }
+            if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
+            setSelectedValues(updated);
         }
-    }
-
-    // Function to clear filter for this column
-    function clearColumnFilter() {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(column);
-        params.delete(column + '[]');
-        setSelectedValues([]);
-        if (filterConfig?.onSelect) filterConfig.onSelect("");
-        try {
-            setFilterState(prev => ({
-                applied: Array.from(params.keys()).length > 0,
-                payload: { ...(prev?.payload || {}), [column]: "" }
-            }));
-        } catch (err) { /* ignore */ }
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-    }
-
-    // Function to apply filter for this column (multi-select only)
-    function applyColumnFilter() {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(column);
-        params.delete(column + '[]');
-        if (selectedValues.length > 0) {
-            params.set(column, selectedValues.join(','));
-        }
-        if (filterConfig?.onSelect) filterConfig.onSelect(String(selectedValues.join(",")));
-        try {
-            setFilterState(prev => ({
-                applied: selectedValues.length > 0,
-                payload: { ...(prev?.payload || {}), [column]: selectedValues }
-            }));
-        } catch (err) { /* ignore */ }
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
     }
 // function handleSelect(value: string) {
 //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
@@ -4128,29 +3887,8 @@ function FilterTableHeader({
                                 selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? "")}
                                 onSelect={handleSelect}
                             />
-                        ) : (<>
-                            <div className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] border-b border-gray-200">
-                                <CustomCheckbox
-                                    id={column + "-select-all"}
-                                    checked={filteredOptions.length > 0 && filteredOptions.every(opt => selectedValues.includes(opt.value))}
-                                    indeterminate={selectedValues.length > 0 && selectedValues.length < filteredOptions.length}
-                                    label="Select All"
-                                    onChange={() => {
-                                        if (filteredOptions.length === 0) return;
-                                        if (filteredOptions.every(opt => selectedValues.includes(opt.value))) {
-                                            // Deselect all
-                                            setSelectedValues([]);
-                                            // if (filterConfig?.onSelect) filterConfig.onSelect("");
-                                        } else {
-                                            // Select all
-                                            const all = filteredOptions.map(opt => opt.value);
-                                            setSelectedValues(all);
-                                            // if (filterConfig?.onSelect) filterConfig.onSelect(all.join(","));
-                                        }
-                                    }}
-                                />
-                            </div>
-                            {filteredOptions.map((option, idx) => (
+                        ) : (
+                            filteredOptions.map((option, idx) => (
                                 <div
                                     key={option.value}
                                     className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
@@ -4162,27 +3900,7 @@ function FilterTableHeader({
                                         onChange={() => handleSelect(option.value)}
                                     />
                                 </div>
-                            ))}
-                            <div className="h-12"></div>
-                            <div className="absolute bottom-0 p-1 px-2 w-full bg-white col-span-2 flex justify-end gap-2 mt-2">
-                                <SidebarBtn
-                                    isActive={false}
-                                    type="button"
-                                    onClick={clearColumnFilter}
-                                    label="Clear"
-                                    buttonTw="px-3 py-2 h-9"
-                                    disabled={filteredOptions.length === 0}
-                                />
-                                <SidebarBtn
-                                    isActive={true}
-                                    type="button"
-                                    onClick={applyColumnFilter}
-                                    label="Apply Filter"
-                                    buttonTw="px-4 py-2 h-9"
-                                    disabled={filteredOptions.length === 0}
-                                />
-                            </div>
-                            </>
+                            ))
                         )
                     ) : (
                         <div className="flex flex-col items-center justify-center py-4 text-gray-600 text-sm">
@@ -4203,8 +3921,6 @@ function FilterTableHeader({
 function TableFooter() {
     const { config } = useContext(Config);
     const { api, footer, pageSize = defaultPageSize } = config;
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const { tableDetails, nestedLoading, setTableDetails, setNestedLoading, searchState, filterState } = useContext(TableDetails);
     const { selectedRow } = useContext(SelectedRow);
     const { selectedColumns } = useContext<columnFilterConfigType>(ColumnFilterConfig);
@@ -4213,14 +3929,6 @@ function TableFooter() {
 
     async function handlePageChange(pageNo: number) {
         if (pageNo < 0 || pageNo > totalPages - 1) return;
-
-        const params = new URLSearchParams(searchParams.toString());
-        if (pageNo === 0) {
-            params.delete('page'); // Don't show ?page=1
-        } else {
-            params.set('page', (pageNo + 1).toString());
-        }
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
 
         const MIN_LOADING_MS = 1000;
         const start = Date.now();
@@ -4557,9 +4265,6 @@ function FilterBy() {
         }
     });
 
-    const urlPage = searchParams.get('page');
-    const initialPage = urlPage ? Math.max(0, parseInt(urlPage) - 1) : 0;
-
     if (hasCustomRenderer) {
         setCustomPayload(paramsObj);
     } else {
@@ -4575,11 +4280,6 @@ function FilterBy() {
         });
         setFilters(initialFilters);
     }
-
-    setTableDetails(prev => ({
-        ...prev,
-        currentPage: initialPage
-    }));
 
     if (Object.keys(paramsObj).length > 0) {
         setAppliedFilters(true);
@@ -4597,27 +4297,34 @@ function FilterBy() {
         if (!hasCustomRenderer) return;
         if (!searchParams || !router) return;
         const params = new URLSearchParams(searchParams.toString());
-
-       // 1. Sync Filters (Custom Payload)
         Object.keys(customPayload || {}).forEach((k) => {
-            const v = customPayload[k];
-            if (v === 'all') {
-                params.set(k, 'all');
-            } else if (Array.isArray(v)) {
-                v.length > 0 ? params.set(k, v.join(',')) : params.delete(k);
-            } else if (v !== null && String(v).trim().length > 0) {
-                params.set(k, String(v));
-            } else {
-                params.delete(k);
-            }
+        const v = customPayload[k];
+        // Only ever put 'all' or a comma-joined array in the URL
+        if (v === 'all') {
+        params.set(k, 'all');
+        } else if (Array.isArray(v)) {
+        if (v.length > 0) {
+            params.set(k, v.join(','));
+        } else {
+            params.delete(k);
+        }
+        } else if (v !== null && String(v).trim().length > 0) {
+        params.set(k, String(v));
+        } else {
+        params.delete(k);
+        }
+        });
+        // Remove any keys in params not present in customPayload
+        Array.from(params.keys()).forEach((k) => {
+        if (!(k in customPayload)) params.delete(k);
         });
 
         if (urlRef.current !== params.toString()) {
             urlRef.current = params.toString();
-            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            router.push(newUrl, { scroll: false });
+            const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            router.push(newRelativePathQuery, { scroll: false });
         }
-    }, [customPayload, tableDetails.currentPage, isInitialized, hasCustomRenderer, router, searchParams]);
+    }, [customPayload, hasCustomRenderer, router, searchParams]);
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
@@ -4632,14 +4339,12 @@ function FilterBy() {
     useEffect(() => {
     // This triggers as soon as hydration finishes
     if (isInitialized && searchParams && searchParams.size > 0) {
-        const urlPage = searchParams.get('page');
-        const pageToLoad = urlPage ? parseInt(urlPage) : 1;
         if (hasCustomRenderer) {
             applyCustomPayload(customPayload);
         } else {
             // Note: pass the hydrated filters directly to ensure we don't 
             // wait for a state re-render cycle
-            applyFilter({...filters, page: pageToLoad });
+            applyFilter(filters);
         }
     }
 }, [isInitialized, hasCustomRenderer]);
@@ -4906,17 +4611,6 @@ useEffect(() => {
 
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
 
-        // Remove all filter params from URL (except page)
-        if (searchParams && router) {
-            const params = new URLSearchParams(searchParams.toString());
-            (config.header?.filterByFields || []).forEach((f: FilterField) => {
-                params.delete(f.key);
-            });
-            params.delete('page'); // Optionally reset to page 1
-            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            router.push(newUrl, { scroll: false });
-        }
-
         if (config.api?.list) {
             const pageSize = config.pageSize || defaultPageSize;
             try {
@@ -4951,17 +4645,6 @@ useEffect(() => {
         setCustomPayload({});
         setAppliedFilters(false);
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
-
-        // Remove all filter params from URL (except page)
-        if (searchParams && router) {
-            const params = new URLSearchParams(searchParams.toString());
-            Object.keys(customPayload || {}).forEach((k) => {
-                params.delete(k);
-            });
-            params.delete('page');
-            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            router.push(newUrl, { scroll: false });
-        }
 
         if (config.api?.list) {
             const pageSize = config.pageSize || defaultPageSize;
