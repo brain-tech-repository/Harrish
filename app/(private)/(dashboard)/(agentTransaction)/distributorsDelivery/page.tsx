@@ -95,7 +95,7 @@ export default function CustomerInvoicePage() {
         } finally {
             setLoading(false);
         }
-    }, [setLoading, showSnackbar]);
+    }, [setLoading, showSnackbar,warehouseId,salesmanId]);
 
     // Fetch for table (list)
     const fetchDelivery = useCallback(async (
@@ -329,7 +329,7 @@ export default function CustomerInvoicePage() {
             if (!code && !name) return "-";
             return `${code}${code && name ? " - " : ""}${name}`;
         },
-        filter: {
+         filter: {
             isFilterable: true,
             width: 320,
             filterkey: "salesman_id",
@@ -340,6 +340,7 @@ export default function CustomerInvoicePage() {
             isSingle: false,
             selectedValue: salesmanId,
         },
+      
     },
     // { key: "Invoice_type", label: "Invoice Type" },
     // { key: "Invoice_no", label: "Invoice No" },
@@ -417,7 +418,7 @@ export default function CustomerInvoicePage() {
                                                                                                             <FilterComponent
                                                                                                             currentDate={true}
                                                                                                               {...props}
-                                                                                                            //   api={fetchDeliveriesAccordingToGlobalFilter}
+                                                                                                            //   api={filterBy}
                                                                                                             />
                                                                                                           ),
                     },

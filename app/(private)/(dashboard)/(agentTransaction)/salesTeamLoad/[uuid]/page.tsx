@@ -638,19 +638,20 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
   };
 
   return (
+    <>
+      
     <div className="flex flex-col">
-      <div className="flex justify-between items-center mb-5">
-        <Link href="/salesTeamLoad" back className="flex items-center gap-4">
-          <Icon
-            icon="lucide:arrow-left"
-            width={24}
-          />
-        </Link>
-          <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px] mb-[4px]">
-            Add Sales Team Load
-          </h1>
-      </div>
-
+     <div className="flex justify-between items-center mb-[20px]">
+            <Link href="/salesTeamLoad" back className="flex items-center gap-[16px]">
+              <Icon
+                icon="lucide:arrow-left"
+                width={24}
+              />
+              <h1 className="text-[20px] font-semibold text-[#181D27] flex items-center leading-[30px]">
+                Add Sales Team Load
+              </h1>
+            </Link>
+          </div>
       <ContainerCard className="rounded-[10px] scrollbar-none">
         {/* --- Header Section --- */}
         <div className="flex justify-between mb-10 flex-wrap gap-[20px]">
@@ -1004,5 +1005,7 @@ const handleQtyBlur = (index: number, field: 'pcs_qty' | 'cse_qty') => {
         </div>
       </ContainerCard>
     </div>
+    </>
   );
+
 }

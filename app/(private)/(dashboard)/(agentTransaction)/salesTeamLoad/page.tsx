@@ -95,7 +95,7 @@ export default function SalemanLoad() {
       label: "Route",
       render: (row: TableDataType) => {
         const s = row as SalesmanLoadRow;
-        return s.route?.code || "-";
+        return `${s.route?.code || ""} - ${s.route?.name || ""}`;
       },
       filter: {
                 isFilterable: true,
@@ -167,7 +167,6 @@ export default function SalemanLoad() {
 
 
   // In-memory cache for salesmanLoadHeaderList API calls
-  const salesmanLoadHeaderCache = useRef<{ [key: string]: any }>({});
      useEffect(() => {
         setRefreshKey((k) => k + 1);
     }, [ warehouseId, routeId,salesmanId]);
@@ -175,12 +174,14 @@ export default function SalemanLoad() {
   const fetchSalesmanLoadHeader = useCallback(
     async (
       page: number = 1,
-      pageSize: number = 50
+      pageSize: number = 50,
+      payload?: Record<string, any>
     ): Promise<listReturnType> => {
-      const params: Record<string, string> = {
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      };
+      const params: any = {
+                page: page.toString(),
+                per_page: pageSize.toString(),
+                ...payload,
+            };
      
             if (warehouseId) {
                 params.warehouse_id = String(warehouseId);
@@ -191,20 +192,11 @@ export default function SalemanLoad() {
             if (salesmanId) {
                 params.salesman_id = String(salesmanId);
             }
-      const cacheKey = JSON.stringify(params);
-      if (salesmanLoadHeaderCache.current[cacheKey]) {
-        const listRes = salesmanLoadHeaderCache.current[cacheKey];
-        return {
-          data: Array.isArray(listRes.data) ? listRes.data : [],
-          total: listRes?.pagination?.totalPages || 1,
-          currentPage: listRes?.pagination?.page || 1,
-          pageSize: listRes?.pagination?.limit || pageSize,
-        };
-      }
+      
+       
       try {
         setLoading(true);
         const listRes = await salesmanLoadHeaderList(params);
-        salesmanLoadHeaderCache.current[cacheKey] = listRes;
         setLoading(false);
         return {
           data: Array.isArray(listRes.data) ? listRes.data : [],
@@ -212,6 +204,7 @@ export default function SalemanLoad() {
           currentPage: listRes?.pagination?.page || 1,
           pageSize: listRes?.pagination?.limit || pageSize,
         };
+        
       } catch (error) {
         setLoading(false);
         showSnackbar("Failed to load Salesman Load list", "error");
@@ -226,60 +219,8 @@ export default function SalemanLoad() {
     [setLoading, showSnackbar, warehouseId, routeId,salesmanId]
   );
 
-  // In-memory cache for filterBy API calls
-  const salesmanLoadHeaderFilterCache = useRef<{ [key: string]: any }>({});
 
-  const filterBy = useCallback(
-    async (
-      payload: Record<string, string | number | null>,
-      pageSize: number
-    ): Promise<listReturnType> => {
-      setColFilter(true);
-      const params: Record<string, string> = {};
-      Object.keys(payload || {}).forEach((k) => {
-        const v = payload[k as keyof typeof payload];
-        if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-          params[k] = String(v);
-        }
-      });
-      const cacheKey = JSON.stringify(params);
-      if (salesmanLoadHeaderFilterCache.current[cacheKey]) {
-        const result = salesmanLoadHeaderFilterCache.current[cacheKey];
-        const pagination = result.pagination?.pagination || result.pagination || {};
-        return {
-          data: result.data || [],
-          total: pagination.last_page || result.pagination?.last_page || 0,
-          totalRecords: pagination.total || result.pagination?.total || 0,
-          currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-          pageSize: pagination.limit || pageSize,
-        };
-      }
-      setLoading(true);
-      let result;
-      try {
-        result = await salesmanLoadHeaderList(params);
-        salesmanLoadHeaderFilterCache.current[cacheKey] = result;
-      } finally {
-        setLoading(false);
-        setColFilter(false);
-      }
-
-      if (result?.error) throw new Error(result.data?.message || "Filter failed");
-      else {
-        const pagination = result.pagination?.pagination || result.pagination || {};
-        return {
-          data: result.data || [],
-          total: pagination.last_page || result.pagination?.last_page || 0,
-          totalRecords: pagination.total || result.pagination?.total || 0,
-          currentPage: pagination.current_page || result.pagination?.currentPage || 0,
-          pageSize: pagination.limit || pageSize,
-        };
-      }
-    },
-    [setLoading]
-  );
-
-        const fetchLoadAccordingToGlobalFilter = useCallback(
+        const filterBy = useCallback(
           async (
             payload: Record<string, any>,
             pageSize: number = 50,
@@ -288,14 +229,16 @@ export default function SalemanLoad() {
       
             try {
               setLoading(true);
-              setFilterPayload(payload);
-              const body = {
+              // setFilterPayload(payload);
+             
+     
+       const body = {
                  per_page: pageSize.toString(),
             current_page: pageNo.toString(),
                 filter: payload
               }
-              const listRes = await loadGlobalFilter(body);
-             const pagination =
+        const listRes = await loadGlobalFilter(body);
+         const pagination =
               listRes.pagination?.pagination || listRes.pagination || {};
             return {
              data: listRes.data || [],
@@ -305,8 +248,7 @@ export default function SalemanLoad() {
           currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
           pageSize: pagination.per_page || pageSize,
             };
-              // fetchOrdersCache.current[cacheKey] = result;
-              // return listRes;
+      
             } catch (error: unknown) {
               console.error("API Error:", error);
               setLoading(false);
@@ -316,16 +258,12 @@ export default function SalemanLoad() {
               setLoading(false);
             }
           },
-          [loadGlobalFilter, warehouseId, salesmanId]
+          [loadGlobalFilter]
         );
 
   useEffect(() => {
     setLoading(true);
   }, [setLoading]);
-
-  // useEffect(() => {
-  //   setRefreshKey(refreshKey + 1);
-  // }, [regionOptions, warehouseOptions, routeOptions, channelOptions, itemCategoryOptions, customerSubCategoryOptions]);
 
 
   const downloadPdf = async (uuid: string) => {
@@ -394,20 +332,8 @@ export default function SalemanLoad() {
         config={{
           api: {
             list: fetchSalesmanLoadHeader,
-            filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
-                if (colFilter) {
-                  return filterBy(payload, pageSize);
-                } else {
-                  let pageNo = 1;
-                  if (payload && typeof payload.page === 'number') {
-                    pageNo = payload.page;
-                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
-                    pageNo = Number(payload.page);
-                  }
-                  const { page, ...restPayload } = payload || {};
-                  return fetchLoadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
-                }
-          },
+            filterBy: filterBy,
+         
         },
           header: {
             title: "Sales Team Load",

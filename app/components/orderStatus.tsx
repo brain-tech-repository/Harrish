@@ -11,7 +11,7 @@ const statusEnum: Record<number | string, string> = {
     "Delivery Created": "Delivery Created",
     "Completed": "Completed",
     // For is_confirmed logic
-    is_confirmed_1: "SalesTeam Accepted",
+    is_confirmed_1: "Sales Team Accepted",
     is_confirmed_0: "Waiting For Accept",
 };
 

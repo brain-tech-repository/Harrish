@@ -92,18 +92,18 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
       const lastDay = new Date(year, month + 1, 1);
       const firstDayStr = firstDay.toISOString().slice(0, 10);
       const lastDayStr = lastDay.toISOString().slice(0, 10);
-      filterProps.setPayload((prev) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
+      filterProps.setPayload((prev:any) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
     } else if (currentDate) {
       const today = new Date().toISOString().slice(0, 10);
       if (!filterProps.payload.from_date) {
-        filterProps.setPayload((prev) => ({ ...prev, from_date: today }));
+        filterProps.setPayload((prev:any) => ({ ...prev, from_date: today }));
       }
       if (!filterProps.payload.to_date) {
-        filterProps.setPayload((prev) => ({ ...prev, to_date: today }));
+        filterProps.setPayload((prev:any) => ({ ...prev, to_date: today }));
       }
     } else {
       // If neither, clear the dates
-      filterProps.setPayload((prev) => ({ ...prev, from_date: "", to_date: "" }));
+      filterProps.setPayload((prev:any) => ({ ...prev, from_date: "", to_date: "" }));
     }
     // Only run on mount or when currentDate/currentMonth changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,9 +154,9 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
   const onChangeArray = (key: string, value: any) => {
     if (keysToArray.includes(key)) {
-      setPayload((prev) => ({ ...prev, [key]: toArray(value) }));
+      setPayload((prev:any) => ({ ...prev, [key]: toArray(value) }));
     } else {
-      setPayload((prev) => ({ ...prev, [key]: value }));
+      setPayload((prev:any) => ({ ...prev, [key]: value }));
     }
   } 
 
@@ -359,7 +359,7 @@ fetchRoutes();
         ]}
         value={
           Array.isArray(payload.day_filter)
-            ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
+            ? payload.day_filter.map((v:any) => (typeof v === "number" ? String(v) : v))
             : typeof payload.day_filter === "number"
             ? String(payload.day_filter)
             : payload.day_filter || ""
@@ -367,7 +367,7 @@ fetchRoutes();
         disabled={disabled || !!payload.from_date || !!payload.to_date}
         onChange={(e) => {
           const raw = (e as any)?.target?.value ?? e;
-          setPayload((prev) => ({ ...prev, day_filter: raw }));
+          setPayload((prev:any) => ({ ...prev, day_filter: raw }));
         }}
       />
        )}
@@ -385,7 +385,7 @@ fetchRoutes();
           disabled={disabled || !!payload.day_filter}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, from_date: raw }));
+            setPayload((prev:any) => ({ ...prev, from_date: raw }));
           }}
         />
       )}
@@ -404,7 +404,7 @@ fetchRoutes();
           disabled={disabled || !!payload.day_filter || !payload.from_date}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev) => ({ ...prev, to_date: raw }));
+            setPayload((prev:any) => ({ ...prev, to_date: raw }));
           }}
         />
       )}
