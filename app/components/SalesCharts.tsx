@@ -7,6 +7,8 @@ import HighchartsReact from 'highcharts-react-official';
 import { useSnackbar } from '../services/snackbarContext';
 import toInternationalNumber from '../(private)/utils/formatNumber';
 import Loading from './Loading';
+import { formatNumberShort } from '../(private)/utils/quantityFormat';
+// import CompanySalesTrendWithLegend from './CompanySalesTrendWithLegend';
 interface ChartData {
   salesTrend: { year: string; sales: number }[];
   companies: { name: string; sales: number; color: string }[];
@@ -42,6 +44,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
   const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
   const [is3DLoaded, setIs3DLoaded] = useState(false);
   const [hiddenWarehouses, setHiddenWarehouses] = useState<string[]>([]);
+  const [hiddenPoOrderLines, setHiddenPoOrderLines] = useState<string[]>([]);
   const [urlWarningShown, setUrlWarningShown] = useState(false);
   const CURRENCY = localStorage.getItem('country') + " " || ' ';
 
@@ -171,7 +174,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     }
 
     const isQuantity = searchType === 'quantity';
-    const yAxisLabel = isQuantity ? 'Quantity' : `Sales Value`;
+    const yAxisLabel = isQuantity ? 'Quantity' : `Quantity`;
     const valuePrefix = isQuantity ? '' : ' ';
     const valueSuffix = isQuantity ? 'Qty' : '';
 
@@ -846,7 +849,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" height={40} />
+            <XAxis dataKey="name" tick={{ fontSize: 11, dy: 5 }} angle={-30} textAnchor="end" height={40} />
             <YAxis tickFormatter={(v) => (searchType === 'quantity' ? v : ` ${v.toLocaleString()}`)} />
             <Tooltip formatter={(value: any) => (searchType === 'quantity' ? `${value.toLocaleString()}` : ` ${value.toLocaleString()}`)} />
             <Bar dataKey="value">
@@ -943,9 +946,25 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             <XAxis
               dataKey="period"
               axisLine={{ stroke: '#d1d5db' }}
-              tick={{ fill: '#0964e2ff', fontSize: 11 }}
+              tick={(props) => {
+                const { x, y, payload } = props;
+                return (
+                  <g transform={`translate(${x},${y}) rotate(-45)`}>
+                    <text
+                      x={0}
+                      y={0}
+                      dy={10}
+                      textAnchor="end"
+                      fill="#4b5563"
+                      fontSize={11}
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }}
               tickLine={{ stroke: '#d1d5db' }}
-              dy={5}
+              height={80}
             />
 
             {/* Y-Axis with light styling */}
@@ -1099,7 +1118,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         // For customer reports, use salesTrendData; for sales reports, use warehouse_trend
         if (reportType === 'customer' && salesTrendData.length > 0) {
           trendData = salesTrendData;
-          trendTitle = 'Warehouse Sales Trend';
+          trendTitle = 'Distributor Sales Trend';
         } else {
           const wh = dashboardData?.charts?.warehouse_trend || [];
           const periods = Array.from(new Set(wh.map((r: any) => r.period))) as string[];
@@ -1107,7 +1126,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             period: p,
             value: wh.filter((x: any) => x.period === p).reduce((s: number, x: any) => s + (x.value || 0), 0)
           }));
-          trendTitle = 'Warehouse Sales Trend';
+          trendTitle = 'Distributor Sales Trend';
         }
       }
     }
@@ -1122,21 +1141,21 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               {selectedMaxView === 'region' && 'Region Sales Details'}
               {selectedMaxView === 'regionItems' && 'Region Sales Details'}
               {selectedMaxView === 'regionVisited' && 'Visit Customer Trend - Region Details'}
-              {selectedMaxView === 'warehouseSales' && 'Warehouse Sales Details'}
+              {selectedMaxView === 'warehouseSales' && 'Distributor Sales Details'}
               {selectedMaxView === 'area' && 'Area Sales Details'}
               {selectedMaxView === 'areaItems' && 'Area Contribution'}
               {selectedMaxView === 'areaPerformance' && 'Area Performance Details'}
               {selectedMaxView === 'areaVisited' && 'Area Visited Customers Details'}
               {selectedMaxView === 'areaTrend' && 'Area Sales Trend Details'}
               {selectedMaxView === 'trend' && `${trendTitle} Details`}
-              {selectedMaxView === 'salesmen' && 'Top Salesmen Details'}
-              {selectedMaxView === 'warehouses' && 'Top Warehouses Details'}
-              {selectedMaxView === 'customers' && 'Top Customers Details'}
-              {selectedMaxView === 'items' && 'Top Items Details'}
+              {selectedMaxView === 'salesmen' && 'Salesmen Details'}
+              {selectedMaxView === 'warehouses' && 'Distributors Details'}
+              {selectedMaxView === 'customers' && 'Customers Details'}
+              {selectedMaxView === 'items' && 'Items Details'}
               {selectedMaxView === 'channels' && 'Channel Sales Details'}
               {selectedMaxView === 'customerCategories' && 'Customer Category Sales Details'}
-              {selectedMaxView === 'topChannels' && 'Top Channels Details'}
-              {selectedMaxView === 'topCustomerCategories' && 'Top Customer Categories Details'}
+              {selectedMaxView === 'topChannels' && 'Channels Details'}
+              {selectedMaxView === 'topCustomerCategories' && 'Customer Categories Details'}
               {selectedMaxView === 'regionItemPerformance' && 'Region Wise Item Performance Details'}
               {selectedMaxView === 'areaItemPerformance' && 'Area Wise Item Performance Details'}
               {selectedMaxView === 'purchaseTrend' && 'Purchase Trend Details'}
@@ -1172,8 +1191,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Company Name</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1221,7 +1240,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Region</th>
                           <th className="px-6 py-4 text-right font-semibold text-gray-700">Visited Customers</th>
                           <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Customers</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Visited Percentage (%)</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Visited Contribution (%)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1266,7 +1285,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                             <tr>
                               <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                               <th className="px-6 py-4 text-left font-semibold text-gray-700">Region Name</th>
-                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1295,8 +1314,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <tr>
                             <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                             <th className="px-6 py-4 text-left font-semibold text-gray-700">Region Name</th>
-                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
-                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
+                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1347,7 +1366,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                             <tr>
                               <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                               <th className="px-6 py-4 text-left font-semibold text-gray-700">Region</th>
-                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1391,8 +1410,29 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                              <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                              <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                              <XAxis 
+                                dataKey="period" 
+                                tick={(props) => {
+                                  const { x, y, payload } = props;
+                                  return (
+                                    <g transform={`translate(${x},${y}) rotate(-45)`}>
+                                      <text
+                                        x={0}
+                                        y={0}
+                                        dy={10}
+                                        textAnchor="end"
+                                        fill="#4b5563"
+                                        fontSize={11}
+                                      >
+                                        {payload.value}
+                                      </text>
+                                    </g>
+                                  );
+                                }} 
+                                textAnchor="end" 
+                                height={80} 
+                              />
+                              <YAxis tickFormatter={(value) => `${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
                               {/* <Legend /> */}
                               {regionNames.map((rn: string, idx: number) => (
@@ -1463,12 +1503,53 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     <>
                       <div className="bg-white p-6 border rounded-lg shadow-sm">
                         <h3 className="text-xl font-semibold text-gray-800 mb-4">Area Sales Trend</h3>
+
+                      {/* Interactive legend to toggle warehouse lines */}
+                        <div className="mb-4">
+                          <div className="flex flex-wrap h-10 overflow-auto gap-2 text-[12px]">
+                            {areaNames.map((an: string, i: number) => {
+                              const hidden = hiddenWarehouses.includes(an);
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => setHiddenWarehouses(prev => prev.includes(an) ? prev.filter(x => x !== an) : [...prev, an])}
+                                  className={`inline-flex items-center gap-2 px-2 py-1 rounded ${hidden ? 'opacity-40' : ''}`}
+                                >
+                                  <span style={{ width: 10, height: 10, borderRadius: 6, backgroundColor: neonAreaColors[i % neonAreaColors.length].line }} />
+                                  <span className="text-gray-700">{an}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                         <div className="w-full h-[500px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                              <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                              <YAxis tickFormatter={(value) => ` ${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                              <XAxis 
+                                dataKey="period" 
+                                tick={(props) => {
+                                  const { x, y, payload } = props;
+                                  return (
+                                    <g transform={`translate(${x},${y}) rotate(-45)`}>
+                                      <text
+                                        x={0}
+                                        y={0}
+                                        dy={10}
+                                        textAnchor="end"
+                                        fill="#4b5563"
+                                        fontSize={11}
+                                      >
+                                        {payload.value}
+                                      </text>
+                                    </g>
+                                  );
+                                }}
+                                textAnchor="end" 
+                                height={80} 
+                              />
+                              <YAxis tickFormatter={(value) => ` ${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
                               {/* <Legend /> */}
                               {areaNames.map((an: string, idx: number) => (
@@ -1539,11 +1620,11 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     return (
                       <>
                         <div className="bg-white p-6 border rounded-lg shadow-sm">
-                          <h3 className="text-xl font-semibold text-gray-800 mb-4">Warehouse Sales Trend</h3>
+                          <h3 className="text-xl font-semibold text-gray-800 mb-4">Distributor Sales Trend</h3>
 
                           {/* Interactive legend to toggle warehouse lines */}
                           <div className="mb-4">
-                            <div className="flex flex-wrap gap-2 text-[12px]">
+                            <div className="flex flex-wrap h-10 overflow-auto gap-2 text-[12px]">
                               {warehouseNames.map((wn: string, i: number) => {
                                 const hidden = hiddenWarehouses.includes(wn);
                                 return (
@@ -1565,8 +1646,24 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                                <YAxis tickFormatter={(value) => ` ${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                                <XAxis dataKey="period"tick={(props) => {
+                                  const { x, y, payload } = props;
+                                  return (
+                                    <g transform={`translate(${x},${y}) rotate(-45)`}>
+                                      <text
+                                        x={0}
+                                        y={0}
+                                        dy={10}
+                                        textAnchor="end"
+                                        fill="#4b5563"
+                                        fontSize={11}
+                                      >
+                                        {payload.value}
+                                      </text>
+                                    </g>
+                                  );
+                                }} textAnchor="end" height={80} />
+                                <YAxis tickFormatter={(value) => ` ${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                                 <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
                                 {/* <Legend /> */}
                                 {warehouseNames.map((wn: string, idx: number) => (
@@ -1630,16 +1727,39 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={trendData}>
                               <defs>
-                                <linearGradient id="trendGradientMax" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                              <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                              <YAxis tickFormatter={(value) => ` ${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                              <XAxis dataKey="period" tick={(props) => {
+                                  const { x, y, payload } = props;
+                                  return (
+                                    <g transform={`translate(${x},${y}) rotate(-45)`}>
+                                      <text
+                                        x={0}
+                                        y={0}
+                                        dy={10}
+                                        textAnchor="end"
+                                        fill="#4b5563"
+                                        fontSize={11}
+                                      >
+                                        {payload.value}
+                                      </text>
+                                    </g>
+                                  );
+                                }} textAnchor="end" height={80} />
+                              <YAxis tickFormatter={(value) => ` ${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
-                              <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} fill="url(#trendGradientMax)" dot={{ r: 5 }} activeDot={{ r: 7 }} />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#3b82f6"
+                                strokeWidth={2}
+                                fillOpacity={1}
+                                fill="url(#colorValue)"
+                              />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
@@ -1650,7 +1770,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <thead className="bg-gray-50 border-b-2 border-gray-200">
                             <tr>
                               <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
-                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                              <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1693,15 +1813,17 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <thead className="bg-gray-50 border-b-2 border-gray-200">
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
-                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Area - Item</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Area</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Item</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                         </tr>
                       </thead>
                       <tbody>
                         {areaContributionData.map((row: any, index: number) => (
                           <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="px-6 py-4 text-gray-600">{index + 1}</td>
-                            <td className="px-6 py-4 text-gray-800 font-medium">{`${row.areaName} - ${row.itemName}`}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{row.areaName}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{row.itemName}</td>
                             <td className="px-6 py-4 text-right text-gray-800 font-semibold">{(row.value || 0).toLocaleString()}</td>
                           </tr>
                         ))}
@@ -1729,8 +1851,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Salesman Name</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Sales Value'}</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Quantity'}</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1757,21 +1879,21 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             {selectedMaxView === 'warehouses' && topWarehousesChartData.length > 0 && (
               <>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Warehouses Distribution</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Distributors Distribution</h3>
                   <div className="w-full h-[520px]">
                     <Column3DChart data={topWarehousesChartData} xAxisKey="name" yAxisKey="value" colors={warehouseColors} height="480px" />
                   </div>
                 </div>
                 <div className="bg-white p-6 border rounded-lg shadow-sm">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Warehouses Table</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Top Distributors Table</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-gray-50 border-b-2 border-gray-200">
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
-                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Warehouse Name</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Sales Value'}</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Distributor Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Quantity'}</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1811,8 +1933,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Customer Name</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Sales Value'}</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Quantity'}</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1876,8 +1998,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Item / Region</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Sales Value'}</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">{searchType === 'quantity' ? 'Quantity' : 'Quantity'}</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1964,8 +2086,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Area Name</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Performance Value</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Performance</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2055,7 +2177,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Area Name</th>
                         <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution Value</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2094,8 +2216,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Channel Name</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2132,8 +2254,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <tr>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                           <th className="px-6 py-4 text-left font-semibold text-gray-700">Customer Category</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
-                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2172,7 +2294,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Channel Name</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2207,7 +2329,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Customer Category</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2392,7 +2514,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     <thead className="bg-gray-50 border-b-2 border-gray-200">
                       <tr>
                         <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
-                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                        <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2577,10 +2699,20 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                            <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
                             <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
                             <Tooltip formatter={(value: any) => `${value}`} />
-                            <Legend />
+                            <Legend
+                              verticalAlign="top"
+                              align="right"
+                              wrapperStyle={{
+                                paddingBottom: '20px',
+                                color: '#1f2937',
+                                height: '80px',
+                                overflowY: 'auto',
+                                fontSize: '11px',
+                              }}
+                            />
                             <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                             <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                             <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
@@ -2655,11 +2787,29 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   <XAxis
                     dataKey="period"
                     stroke="#6b7280"
-                    tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80}
+                    tick={(props) => {
+                      const { x, y, payload } = props;
+                      return (
+                        <g transform={`translate(${x},${y}) rotate(-45)`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={10}
+                            textAnchor="end"
+                            fill="#4b5563"
+                            fontSize={11}
+                          >
+                            {payload.value}
+                          </text>
+                        </g>
+                      );
+                    }} 
+                    angle={-45} textAnchor="end" height={80}
                   />
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `${formatNumberShort(value)}`}
                     // tickFormatter={(value: number) => {
                     //   // Use formatNumberShort for units, then localize the number part
                     //   if (typeof value !== 'number') return value;
@@ -2670,14 +2820,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     //   return ` ${value.toLocaleString()}`;
                     // }}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
+                  <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
                   <Area
                     type="monotone"
                     dataKey="value"
@@ -2757,7 +2900,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           {/* Top Warehouses */}
           <div className="bg-white p-5 border w-full rounded-lg shadow-sm border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Top Warehouses</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Top Distributors</h3>
               <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
             <div className="w-full  flex flex-wrap h-[420px]">
@@ -2780,7 +2923,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
   if (dataLevel === 'region' && reportType === 'sales') {
     // Prepare region contribution data for pie chart (use region + item labels)
     const regionContributionPieData = (dashboardData?.charts?.region_contribution_top_item || []).map((it: any, i: number) => ({
-      name: `${it.region_name || 'Unknown'} - ${it.item_name || ''}`,
+      name: `${it.region_name || 'Unknown'}`,
       value: it.value || 0,
       color: areaColors[i % areaColors.length]
     }));
@@ -2840,7 +2983,19 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           </div>
         </div>
 
-        {/* Row 2 - Customer Coverage: 3D Column Chart */}
+
+        {/* Row 2 - Sales Trend: Neon Area Chart split by region_name */}
+        <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Region Sales Trend</h3>
+            <button onClick={() => setSelectedMaxView('trend')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
+          </div>
+          <div className="w-full h-[380px]">
+            <NeonTrendAreaChart data={trendSeries} areas={regionNames} title="Region Sales Trend" />
+          </div>
+        </div>
+
+        {/* Row 3 - Customer Coverage: 3D Column Chart */}
         <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">Visit Customer Trend by Region</h3>
@@ -2862,17 +3017,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 height="320px"
               />
             )}
-          </div>
-        </div>
-
-        {/* Row 3 - Sales Trend: Neon Area Chart split by region_name */}
-        <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Region Sales Trend</h3>
-            <button onClick={() => setSelectedMaxView('trend')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
-          </div>
-          <div className="w-full h-[380px]">
-            <NeonTrendAreaChart data={trendSeries} areas={regionNames} title="Region Sales Trend" />
           </div>
         </div>
 
@@ -2935,7 +3079,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           {/* Top Warehouses */}
           <div className="bg-white  border rounded-lg shadow-sm border-gray-200">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg p-5 font-semibold text-gray-800">Top Warehouses</h3>
+              <h3 className="text-lg p-5 font-semibold text-gray-800">Top Distributors</h3>
               <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 pr-5 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
             <div className="w-full h-[420px]">
@@ -2994,8 +3138,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
       };
 
       const displayText = selectedWarehouses.length === 0
-        ? `All Warehouses (${warehouseSales.length})`
-        : `${selectedWarehouses.length} warehouse${selectedWarehouses.length > 1 ? 's' : ''} selected`;
+        ? `All Distributors (${warehouseSales.length})`
+        : `${selectedWarehouses.length} Distributor${selectedWarehouses.length > 1 ? 's' : ''} selected`;
 
       return (
         <div className="relative inline-block" ref={dropdownRef}>
@@ -3145,7 +3289,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold text-gray-800">Warehouse Sales</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">Distributor Sales</h3>
                   <WarehouseSelector />
                 </div>
                 <button onClick={() => setSelectedMaxView('warehouseSales')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
@@ -3158,7 +3302,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 ) : (
                   <Column3DChart
                     data={filteredWarehouses}
-                    title="Warehouse Sales"
+                    title="Distributor Sales"
                     xAxisKey="warehouse_label"
                     yAxisKey="value"
                     colors={warehouseColors}
@@ -3171,16 +3315,16 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             {/* Table for 10+ warehouses */}
             <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Warehouse Sales Table</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Distributor Sales Table</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b-2 border-gray-200">
                     <tr>
                       <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
-                      <th className="px-6 py-4 text-left font-semibold text-gray-700">Warehouse Name</th>
-                      <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
-                      <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
+                      <th className="px-6 py-4 text-left font-semibold text-gray-700">Distributor Name</th>
+                      <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
+                      <th className="px-6 py-4 text-right font-semibold text-gray-700">Contribution</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3221,7 +3365,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   <tr>
                     <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
                     <th className="px-6 py-4 text-left font-semibold text-gray-700"></th>
-                    <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales Value</th>
+                    <th className="px-6 py-4 text-right font-semibold text-gray-700">Quantity</th>
                     <th className="px-6 py-4 text-right font-semibold text-gray-700">Percentage</th>
                   </tr>
                 </thead>
@@ -3251,7 +3395,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {/* Row 3 - Sales Trend: Neon Area Chart split by warehouse_label */}
         <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Warehouse Sales Trend</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Distributor Sales Trend</h3>
             <button onClick={() => setSelectedMaxView('trend')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
           </div>
           <div className="w-full h-[500px]">
@@ -3260,7 +3404,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                 <AlertCircle size={16} className="mr-2" /> No data available
               </div>
             ) : (
-              <NeonTrendAreaChart data={trendSeries} areas={warehouseNames} title="Warehouse Sales Trend" />
+              <NeonTrendAreaChart data={trendSeries} areas={warehouseNames} title="Distributor Sales Trend" />
             )}
           </div>
         </div>
@@ -3322,12 +3466,12 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         </div>
 
         {/* Row 5 - Top Warehouses and Top Salesman (Full width) */}
-        <div className="grid md:grid-cols-2 grid-cols-1 gap-6">
+        <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
           {/* Top Warehouses Chart */}
           {topWarehousesChartData.length > 0 ?
             <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Warehouses</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Top Distributors</h3>
                 <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
               </div>
               <div className="w-full h-[420px]">
@@ -3337,7 +3481,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               </div>
               {/* If more than 10 warehouses, show a message or scroll */}
               {topWarehousesChartData.length > 10 && (
-                <div className="mt-2 text-xs text-gray-500">Showing top 10 warehouses. Use filters to see more.</div>
+                <div className="mt-2 text-xs text-gray-500">Showing top 10 Distributors. Use filters to see more.</div>
               )}
             </div> : null
           }
@@ -3451,7 +3595,29 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           </div>
         </div>
 
-        {/* Row 2 - Customer Coverage: 3D Column Chart */}
+         {/* Row 2 - Sales Trend: Neon Area Chart split by area_name */}
+        <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-gray-800">Area Sales Trend</h3>
+            <button
+              onClick={() => setSelectedMaxView('trend')}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <Maximize2 size={16} className="text-gray-600" />
+            </button>
+          </div>
+          <div className="w-full h-[380px]">
+            {areaTrendSeries.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-gray-500">
+                No data available
+              </div>
+            ) : (
+              <NeonTrendAreaChart data={areaTrendSeries} areas={areaNames} title="Area Sales Trend" />
+            )}
+          </div>
+        </div>
+
+        {/* Row 3 - Customer Coverage: 3D Column Chart */}
         <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">Visited Customer Trend by Area</h3>
@@ -3476,27 +3642,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           </div>
         </div>
 
-        {/* Row 3 - Sales Trend: Neon Area Chart split by area_name */}
-        <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Area Sales Trend</h3>
-            <button
-              onClick={() => setSelectedMaxView('trend')}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
-              <Maximize2 size={16} className="text-gray-600" />
-            </button>
-          </div>
-          <div className="w-full h-[380px]">
-            {areaTrendSeries.length === 0 ? (
-              <div className="w-full h-full flex items-center justify-center text-gray-500">
-                No data available
-              </div>
-            ) : (
-              <NeonTrendAreaChart data={areaTrendSeries} areas={areaNames} title="Area Sales Trend" />
-            )}
-          </div>
-        </div>
 
         {/* Row 4 - Top Performers: Salesmen and Customers (Charts) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -3564,7 +3709,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           {/* Top Warehouses */}
           <div className="bg-white p-5 border w-full rounded-lg shadow-sm border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Top Warehouses</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Top Distributors</h3>
               <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
             <div className="w-full  flex flex-wrap h-[420px]">
@@ -3583,246 +3728,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     );
   }
 
-  // Company-level layout for customer reports (new data structure)
-  if (dataLevel === 'company' && reportType === 'customer') {
-    // Extract KPI data
-    const kpisData = dashboardData?.kpis || {};
-    const totalSales = kpisData.total_sales || 0;
-    const totalCustomers = kpisData.total_customers || 0;
-    const activeSalesCustomers = kpisData.active_sales_customers || 0;
-    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
-
-    const kpiCards = [
-      {
-        title: "Total Sales",
-        value: totalSales.toLocaleString(),
-        icon: "carbon:currency",
-        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)", // Rose to amber
-      },
-      {
-        title: "Total Customers",
-        value: totalCustomers.toLocaleString(),
-        icon: "mdi:account-group",
-        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)", // Indigo to cyan
-      },
-      {
-        title: "Active Customers",
-        value: activeSalesCustomers.toLocaleString(),
-        icon: "mdi:account-check",
-        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)", // Cyan to green
-      },
-      {
-        title: "Inactive Customers",
-        value: inactiveSalesCustomers.toLocaleString(),
-        icon: "mdi:account-off",
-        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)", // Slate to gray
-      },
-    ];
-
-    return (
-      <div className="mt-5 space-y-6">
-        <MaximizedView />
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpiCards.map((card, index) => (
-            <div
-              key={index}
-              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
-              style={{
-                background: card.color,
-                color: '#fff',
-                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
-                minHeight: 80,
-              }}
-            >
-              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
-                <Icon icon={card.icon} width="32" height="32" color="#fff" />
-              </div>
-              <div className="ml-4 flex-1">
-                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
-                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Row 1: Sales Trend Line Graph (Full Width) */}
-        {salesTrendData.length > 0 && (
-          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
-              <button
-                onClick={() => setSelectedMaxView('trend')}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <Maximize2 size={16} />
-              </button>
-            </div>
-            <div className="w-full h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
-                  <defs>
-                    <linearGradient id="companyTrendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
-                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
-                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
-                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#companyTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Channel Sales - Pie Chart */}
-          {channelSalesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Channel Sales Distribution</h3>
-                <button
-                  onClick={() => setSelectedMaxView('channels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-full">
-                <ExplodedPieChart data={channelSalesData} outerRadius={80} />
-              </div>
-            </div>
-          )}
-
-          {/* Customer Category Sales - Donut Chart */}
-          {customerCategorySalesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Customer Category Sales</h3>
-                <button
-                  onClick={() => setSelectedMaxView('customerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-full">
-                <ExplodedDonutChart data={customerCategorySalesData.slice(0, 10)} innerRadius={50} outerRadius={80} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 3: Top Items + Top Customers */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Items */}
-          {topItemsChartData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Items</h3>
-                <button
-                  onClick={() => setSelectedMaxView('items')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart
-                  data={topItemsChartData}
-                  xAxisKey="name"
-                  yAxisKey="value"
-                  colors={['#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899']}
-                  height="420px"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Customers */}
-          {topCustomersChartData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customers</h3>
-                <button
-                  onClick={() => setSelectedMaxView('customers')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart
-                  data={topCustomersChartData}
-                  xAxisKey="name"
-                  yAxisKey="value"
-                  colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
-                  height="420px"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Row 4: Top Customer Categories + Top Channels */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Customer Categories Chart */}
-          {topCustomerCategoriesData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
-                <button
-                  onClick={() => setSelectedMaxView('topCustomerCategories')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart
-                  data={topCustomerCategoriesData}
-                  xAxisKey="name"
-                  yAxisKey="value"
-                  colors={customerCategoryColors}
-                  height="420px"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Top Channels Chart */}
-          {topChannelsData.length > 0 && (
-            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
-                <button
-                  onClick={() => setSelectedMaxView('topChannels')}
-                  className="p-1 hover:bg-gray-100 rounded"
-                >
-                  <Maximize2 size={16} />
-                </button>
-              </div>
-              <div className="w-full h-[420px]">
-                <Column3DChart
-                  data={topChannelsData}
-                  xAxisKey="name"
-                  yAxisKey="value"
-                  colors={channelColors}
-                  height="420px"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
+  
   // Item-level KPIs for item report type (company level)
   // Item-level KPIs for item report type
   if (reportType === 'item') {
@@ -4310,10 +4216,43 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
                   <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
                   <Tooltip formatter={(value: any) => `${value}`} />
-                  <Legend />
+                  <Legend
+                    verticalAlign="top"
+                    align="right"
+                    wrapperStyle={{
+                      paddingBottom: '20px',
+                      color: '#1f2937',
+                      height: '80px',
+                      overflowY: 'auto',
+                      fontSize: '13px',
+                    }}
+                    // onClick={(e: any) => {
+                    //   if (!e || !e.dataKey) return;
+                    //   setHiddenPoOrderLines((prev: string[]) => prev.includes(e.dataKey) ? prev.filter((k) => k !== e.dataKey) : [...prev, e.dataKey]);
+                    // }}
+                    // formatter={(value) => (
+                    //   <span style={{
+                    //     color: hiddenPoOrderLines.includes(value) ? '#000000' : '#1f2937',
+                    //     fontSize: '12px',
+                    //     cursor: 'pointer',
+                    //     textDecoration: hiddenPoOrderLines.includes(value) ? 'line-through' : 'none'
+                    //   }}>
+                    //     {value}
+                    //   </span>
+                    // )}
+                  />
+                  {/* {!hiddenPoOrderLines.includes('Total Orders') && (
+                    <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  )}
+                  {!hiddenPoOrderLines.includes('Order Pending') && (
+                    <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  )}
+                  {!hiddenPoOrderLines.includes('Delivery Pending') && (
+                    <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  )} */}
                   <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
@@ -4326,42 +4265,249 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     );
   }
 
+
+  let kpisData = dashboardData?.kpis || {};
+  let totalSales = kpisData.total_sales || 0;
+  let companyTotalCustomers = kpisData.total_customers || 0;
+  let activeSalesCustomers = kpisData.active_sales_customers || 0;
+  let inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
+
+  const kpiCards = [
+    {
+      title: "Total Sales",
+      value: toInternationalNumber(totalSales, { maximumFractionDigits: 0 }),
+      icon: "carbon:currency",
+      color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
+    },
+    {
+      title: "Total Customers",
+      value: toInternationalNumber(companyTotalCustomers, { maximumFractionDigits: 0 }),
+      icon: "mdi:account-group",
+      color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
+    },
+    {
+      title: "Active Customers",
+      value: toInternationalNumber(activeSalesCustomers, { maximumFractionDigits: 0 }),
+      icon: "mdi:account-check",
+      color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
+    },
+    {
+      title: "Inactive Customers",
+      value: toInternationalNumber(inactiveSalesCustomers, { maximumFractionDigits: 0 }),
+      icon: "mdi:account-off",
+      color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
+    },
+  ];
+
+  // Company-level layout for customer reports (new data structure)
+  if (dataLevel === 'company' && reportType === 'customer') {
+    return (
+      <div className="mt-5 space-y-6">
+        <MaximizedView />
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiCards.map((card, index) => (
+            <div
+              key={index}
+              className="flex items-center rounded-xl shadow-lg border border-gray-100 p-3"
+              style={{
+                background: card.color,
+                color: '#fff',
+                boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                minHeight: 80,
+              }}
+            >
+              <div className="p-3 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                <Icon icon={card.icon} width="32" height="32" color="#fff" />
+              </div>
+              <div className="ml-4 flex-1">
+                <p className="text-xs font-medium opacity-90" style={{ color: '#fff' }}>{card.title}</p>
+                <p className="mt-1 font-bold text-xl" style={{ color: '#fff' }}>{card.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 1: Sales Trend Line Graph (Full Width) */}
+        {salesTrendData.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Sales Trend</h3>
+              <button
+                onClick={() => setSelectedMaxView('trend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="companyTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#companyTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Row 2: Channel Sales Distribution + Customer Category Sales */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Channel Sales - Pie Chart */}
+          {channelSalesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Channel Sales Distribution</h3>
+                <button
+                  onClick={() => setSelectedMaxView('channels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-full">
+                <ExplodedPieChart data={channelSalesData} outerRadius={80} />
+              </div>
+            </div>
+          )}
+
+          {/* Customer Category Sales - Donut Chart */}
+          {customerCategorySalesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Customer Category Sales</h3>
+                <button
+                  onClick={() => setSelectedMaxView('customerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-full">
+                <ExplodedDonutChart data={customerCategorySalesData.slice(0, 10)} innerRadius={50} outerRadius={80} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 3: Top Items + Top Customers */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Items */}
+          {topItemsChartData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Items</h3>
+                <button
+                  onClick={() => setSelectedMaxView('items')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart
+                  data={topItemsChartData}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899']}
+                  height="420px"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Customers */}
+          {topCustomersChartData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customers</h3>
+                <button
+                  onClick={() => setSelectedMaxView('customers')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart
+                  data={topCustomersChartData}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                  height="420px"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Row 4: Top Customer Categories + Top Channels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Customer Categories Chart */}
+          {topCustomerCategoriesData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Customer Categories</h3>
+                <button
+                  onClick={() => setSelectedMaxView('topCustomerCategories')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart
+                  data={topCustomerCategoriesData}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={customerCategoryColors}
+                  height="420px"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Top Channels Chart */}
+          {topChannelsData.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Top Channels</h3>
+                <button
+                  onClick={() => setSelectedMaxView('topChannels')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[420px]">
+                <Column3DChart
+                  data={topChannelsData}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={channelColors}
+                  height="420px"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+
   // Region-level layout for customer reports
   if (dataLevel === 'region' && reportType === 'customer') {
-    // Extract KPI data
-    const kpisData = dashboardData?.kpis || {};
-    const totalSales = kpisData.total_sales || 0;
-    const totalCustomers = kpisData.total_customers || 0;
-    const activeSalesCustomers = kpisData.active_sales_customers || 0;
-    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
-
-    const kpiCards = [
-      {
-        title: "Total Sales",
-        value: toInternationalNumber(totalSales, { maximumFractionDigits: 0 }),
-        icon: "carbon:currency",
-        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
-      },
-      {
-        title: "Total Customers",
-        value: toInternationalNumber(totalCustomers, { maximumFractionDigits: 0 }),
-        icon: "mdi:account-group",
-        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
-      },
-      {
-        title: "Active Customers",
-        value: toInternationalNumber(activeSalesCustomers, { maximumFractionDigits: 0 }),
-        icon: "mdi:account-check",
-        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
-      },
-      {
-        title: "Inactive Customers",
-        value: toInternationalNumber(inactiveSalesCustomers, { maximumFractionDigits: 0 }),
-        icon: "mdi:account-off",
-        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
-      },
-    ];
-
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
@@ -4412,7 +4558,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
                   <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                   <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
                   <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#regionTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
@@ -4568,40 +4714,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Area-level layout for customer reports
   if (dataLevel === 'area' && reportType === 'customer') {
-    // Extract KPI data
-    const kpisData = dashboardData?.kpis || {};
-    const totalSales = kpisData.total_sales || 0;
-    const totalCustomers = kpisData.total_customers || 0;
-    const activeSalesCustomers = kpisData.active_sales_customers || 0;
-    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
-
-    const kpiCards = [
-      {
-        title: "Total Sales",
-        value: toInternationalNumber(totalSales, {maximumFractionDigits: 0}),
-        icon: "carbon:currency",
-        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
-      },
-      {
-        title: "Total Customers",
-        value: toInternationalNumber(totalCustomers, {maximumFractionDigits: 0}),
-        icon: "mdi:account-group",
-        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
-      },
-      {
-        title: "Active Customers",
-        value: toInternationalNumber(activeSalesCustomers, {maximumFractionDigits: 0}),
-        icon: "mdi:account-check",
-        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
-      },
-      {
-        title: "Inactive Customers",
-        value: toInternationalNumber(inactiveSalesCustomers, {maximumFractionDigits: 0}),
-        icon: "mdi:account-off",
-        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
-      },
-    ];
-
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
@@ -4652,7 +4764,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
                   <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                   <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
                   <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#areaTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
@@ -4808,40 +4920,6 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
 
   // Warehouse-level layout for customer reports
   if (dataLevel === 'warehouse' && reportType === 'customer') {
-    // Extract KPI data
-    const kpisData = dashboardData?.kpis || {};
-    const totalSales = kpisData.total_sales || 0;
-    const totalCustomers = kpisData.total_customers || 0;
-    const activeSalesCustomers = kpisData.active_sales_customers || 0;
-    const inactiveSalesCustomers = kpisData.inactive_sales_customers || 0;
-
-    const kpiCards = [
-      {
-        title: "Total Sales",
-        value: totalSales.toLocaleString(),
-        icon: "carbon:currency",
-        color: "linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%)",
-      },
-      {
-        title: "Total Customers",
-        value: totalCustomers.toLocaleString(),
-        icon: "mdi:account-group",
-        color: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
-      },
-      {
-        title: "Active Customers",
-        value: activeSalesCustomers.toLocaleString(),
-        icon: "mdi:account-check",
-        color: "linear-gradient(135deg, #22d3ee 0%, #4ade80 100%)",
-      },
-      {
-        title: "Inactive Customers",
-        value: inactiveSalesCustomers.toLocaleString(),
-        icon: "mdi:account-off",
-        color: "linear-gradient(135deg, #64748b 0%, #a1a1aa 100%)",
-      },
-    ];
-
     return (
       <div className="mt-5 space-y-6">
         <MaximizedView />
@@ -4892,7 +4970,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="period" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
+                  <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
                   <YAxis tickFormatter={(value) => `${(value / 100000).toFixed(2)}L`} tick={{ fontSize: 13 }} />
                   <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
                   <Area type="monotone" dataKey="value" name="Sales" stroke="#8b5cf6" strokeWidth={2} fill="url(#warehouseTrendGradient)" dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 3 }} activeDot={{ r: 5, fill: '#6d28d9' }} />
@@ -5199,7 +5277,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
         {topWarehousesChartData.length > 0 && (
           <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Top Warehouses</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Top Distributors</h3>
               <button onClick={() => setSelectedMaxView('warehouses')} className="p-1 hover:bg-gray-100 rounded"><Maximize2 size={16} /></button>
             </div>
 

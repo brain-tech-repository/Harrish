@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Table, { TableDataType } from "@/app/components/customTable";
+import { useState, useEffect ,useCallback} from "react";
+import Table, { TableDataType,listReturnType } from "@/app/components/customTable";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
 import { downloadFile } from "@/app/services/allApi";
@@ -10,7 +10,7 @@ import { useLoading } from "@/app/services/loadingContext";
 import { compensationReportExport, compensationReportList } from "@/app/services/companyTransaction";
 import { toInternationalNumber } from "@/app/(private)/utils/formatNumber";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import FilterComponent from "@/app/components/filterComponent";
 
 const columns = [
     { key: "sap_id", label: "SAP Code", showByDefault: true },
@@ -92,49 +92,6 @@ export default function CustomerInvoicePage() {
     }
   }, [permissions]);
 
-  // Paginated fetch function
-  const fetchReportData = async (page = 1, pageSize = 50, filterParams: Record<string, string> = {}) => {
-    setLocalLoading(true);
-    try {
-      const params: Record<string, string> = { ...filterParams, page: String(page), per_page: String(pageSize) };
-      const res = await compensationReportList(params);
-      const pagination = res?.pagination || {};
-      setReportData({
-        data: Array.isArray(res.data) ? res.data : [],
-        pagination: {
-          total: pagination.last_page || (res.data ? res.data.length : 0),
-          currentPage: (pagination.current_page || page) - 1,
-          pageSize: pagination.per_page || pageSize,
-        },
-      });
-      setHasData(Array.isArray(res.data) && res.data.length > 0);
-      setLocalLoading(false);
-      return {
-        data: res.data || [],
-        total: pagination.last_page || 0,
-        currentPage: pagination.current_page || page,
-        pageSize: pagination.per_page || pageSize,
-      };
-    } catch (err) {
-      setReportData({
-        data: [],
-        pagination: { total: 0, currentPage: 1, pageSize: 50 },
-      });
-      setHasData(false);
-      setLocalLoading(false);
-      return {
-        data: [],
-        total: 0,
-        currentPage: 1,
-        pageSize: 50,
-      };
-    }
-    finally{
-      setLoading(false);
-    }
-  };
-
-  // Export logic (reuse filters)
   const exportFile = async (format: "csv" | "xlsx" = "csv") => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
@@ -153,38 +110,54 @@ export default function CustomerInvoicePage() {
     }
   };
 
-  // Handle filter changes (for filterByFields)
-  const handleFilter = async (payload: Record<string, string | number | null>, pageSize: number) => {
-    const filterParams: Record<string, string> = {};
-    Object.keys(payload || {}).forEach((k) => {
-      const v = payload[k as keyof typeof payload];
-      if (v !== null && typeof v !== "undefined" && String(v) !== "") {
-        filterParams[k] = String(v);
-      }
-    });
-    setFilters(filterParams);
-    return await fetchReportData(1, pageSize, filterParams);
-  };
+    const filterBy = useCallback(
+        async (
+            payload: Record<string, string | number | null>,
+            pageSize: number = 50,
+            pageNo?: number
+        ): Promise<listReturnType> => {
+            let result;
+            setLoading(true);
+            try {
+                // Convert payload to Record<string, string>
+               
+        const params: Record<string, string> = { per_page: pageSize.toString() };
+        Object.keys(payload || {}).forEach((k) => {
+          const v = payload[k as keyof typeof payload];
+          if (v !== null && typeof v !== "undefined" && String(v) !== "") {
+            params[k] = String(v);
+          }
+        });
+                result = await compensationReportList({from_date:params?.from_date,to_date:params?.to_date, current_page: String(pageNo || 1), per_page: String(pageSize) });
+            } finally {
+                setLoading(false);
+            }
 
+            if (result?.error) throw new Error(result.data?.message || "Filter failed");
+            else {
+                const pagination = result.pagination?.pagination || result.pagination || {};
+                return {
+                    data: result.data || [],
+                    total: pagination?.last_page || result.pagination?.last_page || 0,
+                    totalRecords: pagination?.total || result.pagination?.total || 0,
+                    currentPage: pagination?.current_page || result.pagination?.current_page || 0,
+                    pageSize: pagination?.per_page || pageSize,
+                };
+            }
+        },
+        [setLoading]
+    );
   return (
     <div className="flex flex-col h-full">
       
         <Table
           refreshKey={refreshKey}
-          data={{
-            data: reportData.data,
-            total: reportData.pagination.total,
-            currentPage: reportData.pagination.currentPage,
-            pageSize: reportData.pagination.pageSize,
-          }}
+          
           config={{
             showNestedLoading:false,
             api: {
-              list: async (pageNo, pageSize) => {
-                // Table expects 1-based pageNo
-                return await fetchReportData(pageNo, pageSize, filters);
-              },
-              filterBy: handleFilter,
+             
+              filterBy: filterBy,
             },
             header: {
               title: "Compensation Report",
@@ -210,18 +183,13 @@ export default function CustomerInvoicePage() {
                     },
                   ]
                 : undefined,
-              filterByFields: [
-                {
-                  key: "from_date",
-                  label: "Start Date",
-                  type: "date",
-                },
-                {
-                  key: "to_date",
-                  label: "End Date",
-                  type: "date",
-                },
-              ],
+              filterRenderer: (props) => (
+                                          <FilterComponent
+                                              currentDate={true}
+                                              onlyFilters={["from_date","to_date"]}
+                                              {...props}
+                                          />
+                                      ),
             },
             footer: { nextPrevBtn: true, pagination: true },
             columns,

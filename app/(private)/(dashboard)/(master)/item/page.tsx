@@ -184,7 +184,7 @@ export default function Item() {
         const params: any = {
           page: page.toString(),
           per_page: pageSize.toString(),
-          ...payload,
+          // ...payload,
         };
 
         // Add category filter if selected

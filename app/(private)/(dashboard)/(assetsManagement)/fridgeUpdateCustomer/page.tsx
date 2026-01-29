@@ -212,9 +212,7 @@ export default function FridgeUpdateCustomer() {
                             columnFilter: true,
                         },
                         localStorageKey: "fridgeUpdateCustomerTable",
-                        table: {
-                            height: 400
-                        },
+                        
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: [
                             {

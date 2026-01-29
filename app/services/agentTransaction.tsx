@@ -1046,3 +1046,12 @@ export const returnGlobalFilter = async (body?: Object) => {
     return handleError(error);
   }
 };
+
+export const unloadPdfDownload = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/unload/exportall`,{params});
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};

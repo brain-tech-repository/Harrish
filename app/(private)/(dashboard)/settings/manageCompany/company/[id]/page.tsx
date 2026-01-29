@@ -58,8 +58,8 @@ const CompanySchema = Yup.object().shape({
   website: Yup.string()
     .required("Company website is required")
     .matches(
-      /^(https?:\/\/)[\w.-]+(\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=.]+$/,
-      "Please enter a valid URL starting with https:// or http://"
+      /^(https?:\/\/|www\.)[\w.-]+(\.[\w\.-]+)+[\w\-\._~:/?#[\]@!$&'()*+,;=.]+$/,
+      "Please enter a valid URL starting with https://, http://, or www."
     ),
   logo: Yup.mixed().nullable().required("Company Logo is required"),
   email: Yup.string().nullable().email("Invalid email"),
