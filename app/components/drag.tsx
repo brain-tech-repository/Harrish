@@ -1434,7 +1434,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                           const selectedCount = getSelectedCount(filter.id);
                           const isLoading = loadingFilterIds.has(filter.id);
                           return (
-                            <div key={filter.id} className="relative w-fit lg:w-full sm:w-auto">
+                            <div key={filter.id} className="relative w-auto">
                               <div className="dropdown-trigger flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-[#414651] rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
                                 // Close search by and more filters when opening a filter dropdown
                                 setSearchbyclose(false);
