@@ -3,7 +3,7 @@
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { callRegisterList, callRegisterGlobalSearch, exportCallRegister, getTechicianList } from "@/app/services/assetsApi";
+import { callRegisterList, callRegisterGlobalSearch, exportCallRegister, getTechicianList, callRegisterGlobalFilter } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ export default function CallRegister() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [serarchQuery, setSearchQuery] = useState("");
+    const [filterPayload, setFilterPayload] = useState({});
     const [threeDotLoading, setThreeDotLoading] = useState({
         csv: false,
         xlsx: false,
@@ -124,6 +125,46 @@ export default function CallRegister() {
         }
     };
 
+    const fetchCallRegisterAccordingToGlobalFilter = useCallback(
+        async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+        ): Promise<listReturnType> => {
+
+            try {
+                setLoading(true);
+                setFilterPayload(payload);
+                const body = {
+                    limit: pageSize.toString(),
+                    page: pageNo.toString(),
+                    filter: payload
+                }
+                const listRes = await callRegisterGlobalFilter(body);
+                const pagination =
+                    listRes.pagination?.pagination || listRes.pagination || {};
+                return {
+                    data: listRes.data || [],
+                    total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+                    totalRecords:
+                        pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+                    currentPage: pagination.page || listRes.pagination?.page || 1,
+                    pageSize: pagination.limit || pageSize,
+                };
+                // fetchOrdersCache.current[cacheKey] = result;
+                // return listRes;
+            } catch (error: unknown) {
+                console.error("API Error:", error);
+                setLoading(false);
+                throw error;
+            }
+            finally {
+                setLoading(false);
+            }
+        },
+        []
+    );
+
     return (
         <>
             {/* Table */}
@@ -133,7 +174,8 @@ export default function CallRegister() {
                     config={{
                         api: {
                             list: fetchServiceTypes,
-                            search: searchChiller
+                            search: searchChiller,
+                            filterBy: fetchCallRegisterAccordingToGlobalFilter
                         },
                         header: {
                             title: "Call Register",
@@ -159,13 +201,16 @@ export default function CallRegister() {
                                 {
                                     key: "from_date",
                                     label: "From Date",
+                                    type: "date",
                                     // isSingle: false,
                                     multiSelectChips: true,
                                     // options: regionOptions || [],
+                                    // api={fetchCallRegisterAccordingToGlobalFilter},
                                 },
                                 {
                                     key: "to_date",
                                     label: "To Date",
+                                    type: "date",
                                     // isSingle: false,
                                     multiSelectChips: true,
                                     // options: areaOptions || [],
