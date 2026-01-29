@@ -20,7 +20,7 @@ import {
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
-  assetrequestGlobalFilter
+  // assetrequestGlobalFilter
 } from "@/app/services/assetsApi";
 import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
@@ -237,76 +237,76 @@ export default function Page() {
 
 
 
-    const columns=[
-              // Essential Information
-              {
-                key: "created_at",
-                label: "Date", render: (data: TableDataType) => formatDate(data.created_at),
-              },
-              {
-                key: "osa_code",
-                label: "OSA Code",
-              },
-              {
-                key: "warehouse",
-                label: "Distributor",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "warehouse"),
-                 filter: {
-            isFilterable: true,
-            width: 320,
-            filterkey: "warehouse_id",
-            options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-            onSelect: (selected: string | string[]) => {
-                setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-            },
-            isSingle: false,
-            selectedValue: warehouseId,
+  const columns = [
+    // Essential Information
+    {
+      key: "created_at",
+      label: "Date", render: (data: TableDataType) => formatDate(data.created_at),
+    },
+    {
+      key: "osa_code",
+      label: "OSA Code",
+    },
+    {
+      key: "warehouse",
+      label: "Distributor",
+      render: (data: TableDataType) =>
+        renderCombinedField(data, "warehouse"),
+      filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected: string | string[]) => {
+          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
         },
-              },
+        isSingle: false,
+        selectedValue: warehouseId,
+      },
+    },
 
-              {
-                key: "customer",
-                label: "Customer",
-                render: (data: TableDataType) =>
-                  renderCombinedField(data, "customer"),
-              },
-              {
-                key: "owner_name",
-                label: "Owner Name",
-              },
+    {
+      key: "customer",
+      label: "Customer",
+      render: (data: TableDataType) =>
+        renderCombinedField(data, "customer"),
+    },
+    {
+      key: "owner_name",
+      label: "Owner Name",
+    },
 
-              // Combined Relationship Fields
+    // Combined Relationship Fields
 
-              {
-                key: "contact_number",
-                label: "Contact Number",
-              },
+    {
+      key: "contact_number",
+      label: "Contact Number",
+    },
 
-              {
-                key: "outlet",
-                label: "Outlet",
-                render: (data: TableDataType) =>
-                  data.outlet?.name || "-",
-              },
-              {
-                key: "model",
-                label: "Model",
-                render: (data: TableDataType) =>
-                  renderNestedField(data, "model", "name"),
-              },
-              {
-                key: "approval_status",
-                label: "Approval Status",
-              },
+    {
+      key: "outlet",
+      label: "Outlet",
+      render: (data: TableDataType) =>
+        data.outlet?.name || "-",
+    },
+    {
+      key: "model",
+      label: "Model",
+      render: (data: TableDataType) =>
+        renderNestedField(data, "model", "name"),
+    },
+    {
+      key: "approval_status",
+      label: "Approval Status",
+    },
 
-              {
-                key: "status",
-                label: "Status",
-                render: (data: TableDataType) =>
-                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
-              },
-            ];
+    {
+      key: "status",
+      label: "Status",
+      render: (data: TableDataType) =>
+        CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
+    },
+  ];
 
   return (
     <>
@@ -366,7 +366,7 @@ export default function Page() {
                 key: "osa_code",
                 label: "OSA Code",
               },
-               {
+              {
                 key: "warehouse",
                 label: "Distributor",
                 render: (data: TableDataType) =>
@@ -378,7 +378,7 @@ export default function Page() {
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "customer"),
               },
-             
+
               {
                 key: "contact_number",
                 label: "Contact Number",
@@ -391,7 +391,7 @@ export default function Page() {
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "salesman"),
               },
-             
+
               {
                 key: "outlet",
                 label: "Outlet",
@@ -399,12 +399,12 @@ export default function Page() {
                   data.outlet.name,
               },
 
-             
+
               {
                 key: "asset_number",
                 label: "Asset Number",
               },
- {
+              {
                 key: "model",
                 label: "Model Number",
                 render: (data: TableDataType) =>
@@ -414,7 +414,7 @@ export default function Page() {
 
 
               // Status
-               {
+              {
                 key: "status",
                 label: "Status",
                 render: (data: TableDataType) =>
