@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import Table from "@/app/components/customTable";
+import { formatDate } from "@/app/(private)/(dashboard)/(master)/salesTeam/details/[uuid]/page";
 
 const title = "Stock Transfer Details";
 const backBtnUrl = "/stocktransfer";
@@ -92,17 +93,9 @@ export default function ViewPage() {
                             },
                             {
                                 key: "Transfer Date",
-                                value: transferData?.transfer_date,
+                                value: formatDate(transferData?.transfer_date),
                             },
-                            {
-                                key: "Status",
-                                value: "",
-                                component: (
-                                    <StatusBtn
-                                        isActive={transferData?.status === 1}
-                                    />
-                                ),
-                            },
+                            
                         ]}
                     />
                 </ContainerCard>
