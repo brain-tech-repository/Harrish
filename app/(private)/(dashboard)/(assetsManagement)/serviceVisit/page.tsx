@@ -11,7 +11,7 @@ import Table, {
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
 
-import { serviceVisitExport, ServiceVisitList } from "@/app/services/assetsApi";
+import { getTechicianList, serviceVisitExport, serviceVisitGlobalFilter, ServiceVisitList } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
@@ -82,7 +82,12 @@ export default function ServiceVisit() {
     const [showExportDropdown, setShowExportDropdown] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [threeDotLoading, setThreeDotLoading] = useState<{ pdf: boolean; xlsx: boolean; csv: boolean }>({ pdf: false, xlsx: false, csv: false });
-
+    const [filters, setFilters] = useState({
+        from_date: "",
+        to_date: "",
+    });
+    const [filterPayload, setFilterPayload] = useState({});
+    const [technicianOptions, setTechnicianOptions] = useState([]);
 
     // Refresh table when permissions load
     useEffect(() => {
@@ -128,7 +133,7 @@ export default function ServiceVisit() {
                 render: (r: any) => (r as ServiceVisitRow).cabin_temperature || "-",
             },
 
-           
+
             { key: "work_done_type", label: "Work Done Type" },
             { key: "spare_request", label: "Spare Request" },
             { key: "technical_behavior", label: "Tech Behavior" },
@@ -142,7 +147,7 @@ export default function ServiceVisit() {
 
             { key: "comment", label: "Comment" },
             { key: "cts_comment", label: "CTS Comment" },
-             {
+            {
                 key: "work_status",
                 label: "Work Status",
                 render: (r: any) => (
@@ -160,6 +165,26 @@ export default function ServiceVisit() {
         ],
         []
     );
+
+    const fetchTechnicians = useCallback(
+        async () => {
+            const res = await getTechicianList();
+            const technicianData = res.data.map((item: any) => ({
+                label: item.name,
+                value: item.id,
+            }));
+            if (res.error) {
+                showSnackbar(res.data.message || "failed to fetch the technicians", "error");
+                throw new Error("Unable to fetch the technicians");
+            } else {
+                setTechnicianOptions(technicianData);
+            }
+        },
+        [showSnackbar]
+    );
+    useEffect(() => {
+        fetchTechnicians();
+    }, [fetchTechnicians]);
 
     // ✅ FIXED PAGINATION API HANDLER (NO DUPLICATE per_page)
     const fetchServiceVisitList = useCallback(
@@ -259,6 +284,46 @@ export default function ServiceVisit() {
         return { data: [], currentPage: 1, total: 0, pageSize: 20 };
     }, []);
 
+    const fetchServiceVisitAccordingToGlobalFilter = useCallback(
+        async (
+            payload: Record<string, any>,
+            pageSize: number = 50,
+            pageNo: number = 1
+        ): Promise<listReturnType> => {
+
+            try {
+                setLoading(true);
+                setFilterPayload(payload);
+                const body = {
+                    limit: pageSize.toString(),
+                    page: pageNo.toString(),
+                    filter: payload
+                }
+                const listRes = await serviceVisitGlobalFilter(body);
+                const pagination =
+                    listRes.pagination?.pagination || listRes.pagination || {};
+                return {
+                    data: listRes.data || [],
+                    total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+                    totalRecords:
+                        pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+                    currentPage: pagination.page || listRes.pagination?.page || 1,
+                    pageSize: pagination.limit || pageSize,
+                };
+                // fetchOrdersCache.current[cacheKey] = result;
+                // return listRes;
+            } catch (error: unknown) {
+                console.error("API Error:", error);
+                setLoading(false);
+                throw error;
+            }
+            finally {
+                setLoading(false);
+            }
+        },
+        []
+    );
+
     return (
         <div className="flex flex-col h-full">
             <Table
@@ -267,6 +332,7 @@ export default function ServiceVisit() {
                     api: {
                         list: fetchServiceVisitList,
                         search: searchInvoices,
+                        filterBy: fetchServiceVisitAccordingToGlobalFilter,
                     },
 
                     header: {
@@ -285,6 +351,53 @@ export default function ServiceVisit() {
                                 onClick: (data: TableDataType[], selectedRow?: number[]) => {
                                     handleExport("xlsx");
                                 },
+                            },
+                        ],
+                        filterByFields: [
+                            {
+                                key: "from_date",
+                                label: "From Date",
+                                type: "date",
+                                multiSelectChips: true,
+                                onChange: (value: string) => {
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        from_date: value,
+                                        to_date:
+                                            prev.to_date && new Date(prev.to_date) < new Date(value)
+                                                ? "" // reset invalid to_date
+                                                : prev.to_date,
+                                    }));
+                                },
+                            },
+                            {
+                                key: "to_date",
+                                label: "To Date",
+                                type: "date",
+                                multiSelectChips: true,
+                                onChange: (value: string) => {
+                                    setFilters((prev) => {
+                                        if (prev.from_date && new Date(value) < new Date(prev.from_date)) {
+                                            showSnackbar("To Date cannot be before From Date", "error");
+                                            return prev; // ❌ block update
+                                        }
+                                        return { ...prev, to_date: value };
+                                    });
+                                },
+                            },
+                            {
+                                key: "ticket_type",
+                                label: "Ticket Type",
+                                // isSingle: false,
+                                multiSelectChips: true,
+                                options: [{ label: "BD", value: "BD" }, { label: "TR", value: "TR" }, { label: "RB", value: "RB" }],
+                            },
+                            {
+                                key: "technician_id",
+                                label: "Technician",
+                                isSingle: false,
+                                multiSelectChips: true,
+                                options: technicianOptions || [],
                             },
                         ],
                         columnFilter: false,
@@ -322,7 +435,7 @@ export default function ServiceVisit() {
                     ],
 
                     footer: { nextPrevBtn: true, pagination: true },
-                    pageSize: 20,
+                    pageSize: 50,
                     localStorageKey: "service-visit-table",
                 }}
             />

@@ -23,6 +23,7 @@ export type listReturnType = {
     pageSize: number;
     total: number;
     totalRecords?: number;
+
 };
 
 // New type for data prop with pagination
@@ -44,6 +45,8 @@ export type FilterField = {
     multiSelectChips?: boolean;
     applyWhen?: (filters: Record<string, any>) => boolean;
     inputProps?: Record<string, any>;
+    onChange?: (value: any) => void;
+    minDate?: string;
 };
 
 export type FilterRendererProps = {
@@ -56,6 +59,7 @@ export type FilterRendererProps = {
     close: () => void;
     isApplying: boolean;
     isClearing: boolean;
+    minDate?: string;
 };
 
 export type configType = {
@@ -91,7 +95,7 @@ export type configType = {
         filterByFields?: FilterField[];
         filterRenderer?: (props: FilterRendererProps) => React.ReactNode;
         exportButton?: {
-            threeDotLoading?: { csv: boolean; xlsx: boolean ; xls?: boolean; xslx?:boolean}; 
+            threeDotLoading?: { csv: boolean; xlsx: boolean; xls?: boolean; xslx?: boolean };
             show: boolean;
             onClick: (api: (params?: Record<string, any>) => Promise<any>, data?: TableDataType[]) => void;
         };
@@ -112,9 +116,10 @@ export type configType = {
             onClick?: (data: TableDataType[], selectedRow?: number[]) => void;
             showOnSelect?: boolean;
             showWhen?: (data: TableDataType[], selectedRow?: number[]) => boolean;
+            minDate?: string;
         }[],
         selectedCount?: {
-            
+
             label?: string | React.ReactNode;
             labelTw?: string;
             onClick?: (data: TableDataType[], selectedRow?: number[]) => void;
@@ -169,7 +174,7 @@ export type configType = {
         sticky?: string;
         isSortable?: boolean;
         showByDefault?: boolean;
-         filter?: {
+        filter?: {
             isFilterable?: boolean;
             filterkey?: string;
             width?: number | string;
@@ -307,20 +312,20 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
     const pageRef = useRef(1);
 
     useEffect(() => {
-    const urlPage = searchParams.get('page');
-    const targetPage = urlPage ? parseInt(urlPage) - 1 : 0;
+        const urlPage = searchParams.get('page');
+        const targetPage = urlPage ? parseInt(urlPage) - 1 : 0;
 
-    // If the URL page is different from our state, trigger the update
-    if (targetPage !== tableDetails.currentPage) {
-        // You can call your handlePageChange logic here or 
-        // simply trigger the API call again based on the new URL params.
-        pageRef.current = targetPage + 1; // Store 1-based page number
+        // If the URL page is different from our state, trigger the update
+        if (targetPage !== tableDetails.currentPage) {
+            // You can call your handlePageChange logic here or 
+            // simply trigger the API call again based on the new URL params.
+            pageRef.current = targetPage + 1; // Store 1-based page number
 
-    }
-}, [searchParams]); // Listen specifically for URL changes
+        }
+    }, [searchParams]); // Listen specifically for URL changes
 
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
-    const { setSelectedColumns,  } = useContext(ColumnFilterConfig);
+    const { setSelectedColumns, } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
     const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, setFilterState } = useContext(TableDetails);
     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
@@ -378,53 +383,53 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
             }
             setTimeout(() => setNestedLoading(false), Math.max(0, 1000 - (new Date().getTime() - date.getTime())));
         } else if (config.api?.list || config.api?.filterBy) {
-        const payload: Record<string, any> = {};
-        searchParams.forEach((value, key) => {
-            if (key === 'page') return;
-            payload[key] = value.includes(',') ? value.split(',') : value;
-        });
+            const payload: Record<string, any> = {};
+            searchParams.forEach((value, key) => {
+                if (key === 'page') return;
+                payload[key] = value.includes(',') ? value.split(',') : value;
+            });
 
-        // Trigger the filter API immediately
-        const pageSize = config.pageSize || defaultPageSize;
-        const pageNo = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
+            // Trigger the filter API immediately
+            const pageSize = config.pageSize || defaultPageSize;
+            const pageNo = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
 
-        const hasFilters = Object.keys(payload).length > 0;
+            const hasFilters = Object.keys(payload).length > 0;
 
-        try {
-            setNestedLoading(true);
-            let result;
+            try {
+                setNestedLoading(true);
+                let result;
 
-            // Prioritize filterBy if filters exist, otherwise use the updated list API
-            if (hasFilters && config.api?.filterBy) {
-                result = await config.api.filterBy(payload, pageSize, pageNo);
-            } else if (config.api?.list) {
-                // Pass the extracted URL params as the third 'payload' argument
-                result = await config.api.list(pageNo, pageSize, hasFilters ? payload : undefined);
-            }
-
-            if (result) {
-                const resolvedResult = result instanceof Promise ? await result : result;
-                const { data: tableData, total, currentPage, totalRecords } = resolvedResult;
-                
-                const tableInit = {
-                    data: tableData || [],
-                    total: total || 1,
-                    currentPage: (currentPage || 1) - 1,
-                    pageSize,
-                    totalRecords: totalRecords
-                };
-
-                setTableDetails(tableInit);
-                if (hasFilters) {
-                    setFilterState({ applied: true, payload });
+                // Prioritize filterBy if filters exist, otherwise use the updated list API
+                if (hasFilters && config.api?.filterBy) {
+                    result = await config.api.filterBy(payload, pageSize, pageNo);
+                } else if (config.api?.list) {
+                    // Pass the extracted URL params as the third 'payload' argument
+                    result = await config.api.list(pageNo, pageSize, hasFilters ? payload : undefined);
                 }
+
+                if (result) {
+                    const resolvedResult = result instanceof Promise ? await result : result;
+                    const { data: tableData, total, currentPage, totalRecords } = resolvedResult;
+
+                    const tableInit = {
+                        data: tableData || [],
+                        total: total || 1,
+                        currentPage: (currentPage || 1) - 1,
+                        pageSize,
+                        totalRecords: totalRecords
+                    };
+
+                    setTableDetails(tableInit);
+                    if (hasFilters) {
+                        setFilterState({ applied: true, payload });
+                    }
+                }
+            } catch (err) {
+                console.error("API Error during initialization:", err);
+            } finally {
+                setNestedLoading(false);
             }
-        } catch (err) {
-            console.error("API Error during initialization:", err);
-        } finally {
-            setNestedLoading(false);
         }
-    }
         // if api is passed, use default values
         // else if (config.api?.list) {
         //     const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
@@ -542,30 +547,30 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                             config.header?.wholeTableActions?.map(
                                 (action) => action
                             )}
-                            {config.header?.exportButton && (
-                                <div className="flex gap-[12px] relative items-center">
+                        {config.header?.exportButton && (
+                            <div className="flex gap-[12px] relative items-center">
+                                <BorderIconButton
+                                    icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
+                                    label="Export Excel"
+                                    onClick={async () => {
+                                        if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
+                                        if (!config.header?.exportButton?.onClick) return;
+                                        config.header.exportButton.onClick(config.api?.list as any, displayedData);
+                                    }}
+                                />
+                                {/* Upload icon next to exportButton if upload prop is provided */}
+                                {config.header?.upload && (
                                     <BorderIconButton
-                                        icon={(config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) ? "eos-icons:three-dots-loading" : "gala:file-document"}
-                                        label="Export Excel"
-                                        onClick={async () => {
-                                            if (config.header?.exportButton?.threeDotLoading?.xlsx || config.header?.exportButton?.threeDotLoading?.xslx || config.header?.exportButton?.threeDotLoading?.xls) return;
-                                            if (!config.header?.exportButton?.onClick) return;
-                                            config.header.exportButton.onClick(config.api?.list as any, displayedData);
-                                        }}
+                                        icon="material-symbols:upload-rounded"
+                                        // label="Upload"
+                                        onClick={() => setShowUploadPopup(true)}
                                     />
-                                    {/* Upload icon next to exportButton if upload prop is provided */}
-                                    {config.header?.upload && (
-                                        <BorderIconButton
-                                            icon="material-symbols:upload-rounded"
-                                            // label="Upload"
-                                            onClick={() => setShowUploadPopup(true)}
-                                        />
-                                    )}
-                                </div>
-                            )}
+                                )}
+                            </div>
+                        )}
                         {/* If you want to add threeDot dropdown, do it in the correct place in header */}
                         {config.header?.threeDot && (() => {
-            
+
                             const visibleOptions = config.header.threeDot.filter(option => {
                                 const shouldShow = option.showOnSelect ? selectedRow.length > 0 : option.showWhen ? option.showWhen(displayedData, selectedRow) : true;
                                 return shouldShow;
@@ -1070,22 +1075,20 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                             icon="ep:arrow-up"
                                                             width={12}
                                                             height={12}
-                                                            className={`cursor-pointer transition-colors ${
-                                                                col.filterStatus.currentFilter === true || searchParams.get('status') === '1'
+                                                            className={`cursor-pointer transition-colors ${col.filterStatus.currentFilter === true || searchParams.get('status') === '1'
                                                                     ? "text-blue-600"
                                                                     : "text-gray-400 hover:text-gray-600"
-                                                            }`}
+                                                                }`}
                                                             onClick={() => handleFilterStatusBtnClick(true, col.filterStatus?.onFilter)}
                                                         />
                                                         <Icon
                                                             icon="ep:arrow-down"
                                                             width={12}
                                                             height={12}
-                                                            className={`cursor-pointer transition-colors ${
-                                                                col.filterStatus.currentFilter === false || searchParams.get('status') === '0'
+                                                            className={`cursor-pointer transition-colors ${col.filterStatus.currentFilter === false || searchParams.get('status') === '0'
                                                                     ? "text-blue-600"
                                                                     : "text-gray-400 hover:text-gray-600"
-                                                            }`}
+                                                                }`}
                                                             onClick={() => handleFilterStatusBtnClick(false, col.filterStatus?.onFilter)}
                                                         />
                                                     </div>
@@ -1114,85 +1117,86 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                             displayedData.map((row, index) => {
                                 const rowBgColor = config.rowColor ? config.rowColor(row) : undefined;
                                 return (
-                                <tr
-                                    className="border-b-[1px] border-[#E9EAEB] capitalize"
-                                    key={index}
-                                    style={{
-                                        backgroundColor: rowBgColor
-                                    }}
-                                >
-                                    {rowSelection &&
-                                        selectedColumns.length > 0 && (
-                                            <td className="sm:sticky left-0 px-[10px] py-[12px]" style={{ backgroundColor: rowBgColor || 'white' }}>
-                                                <div className="flex items-center gap-[12px] font-[500]">
-                                                    <CustomCheckbox
-                                                        id={"check" + index}
-                                                        label=""
-                                                        checked={selectedRow.includes(
-                                                            index
-                                                        )}
-                                                        onChange={() =>
-                                                            handleSelectItem(
+                                    <tr
+                                        className="border-b-[1px] border-[#E9EAEB] capitalize"
+                                        key={index}
+                                        style={{
+                                            backgroundColor: rowBgColor
+                                        }}
+                                    >
+                                        {rowSelection &&
+                                            selectedColumns.length > 0 && (
+                                                <td className="sm:sticky left-0 px-[10px] py-[12px]" style={{ backgroundColor: rowBgColor || 'white' }}>
+                                                    <div className="flex items-center gap-[12px] font-[500]">
+                                                        <CustomCheckbox
+                                                            id={"check" + index}
+                                                            label=""
+                                                            checked={selectedRow.includes(
                                                                 index
-                                                            )
-                                                        }
-                                                    />
-                                                </div>
-                                            </td>
-                                        )}
-
-                                    {columns?.map((col: configType["columns"][0], orderIdx) => {
-                                        const originalIndex = config.columns.findIndex((c) => c.key === col.key);
-                                        if (!selectedColumns.includes(originalIndex)) return null;
-                                        return (
-                                            <td
-                                                key={col.key}
-                                                width={col.width}
-                                                className={`px-[24px] py-[12px] ${col.sticky ? "z-10 md:sticky" : ""} ${col.sticky === "left"
-                                                    ? "left-0"
-                                                    : ""
-                                                    } ${col.sticky === "right"
-                                                        ? "right-0"
-                                                        : ""
-                                                    }`}
-                                                style={{ backgroundColor: rowBgColor || 'white' }}
-                                            >
-                                                {col.render ? (
-                                                    col.render(row)
-                                                ) : (
-                                                    <div className="flex items-center">
-                                                        {row[col.key] || "-"}
+                                                            )}
+                                                            onChange={() =>
+                                                                handleSelectItem(
+                                                                    index
+                                                                )
+                                                            }
+                                                        />
                                                     </div>
-                                                )}
-                                            </td>
-                                        );
-                                    })}
+                                                </td>
+                                            )}
 
-                                    {rowActions &&
-                                        selectedColumns.length > 0 && (
-                                            <td
-                                                className="
+                                        {columns?.map((col: configType["columns"][0], orderIdx) => {
+                                            const originalIndex = config.columns.findIndex((c) => c.key === col.key);
+                                            if (!selectedColumns.includes(originalIndex)) return null;
+                                            return (
+                                                <td
+                                                    key={col.key}
+                                                    width={col.width}
+                                                    className={`px-[24px] py-[12px] ${col.sticky ? "z-10 md:sticky" : ""} ${col.sticky === "left"
+                                                        ? "left-0"
+                                                        : ""
+                                                        } ${col.sticky === "right"
+                                                            ? "right-0"
+                                                            : ""
+                                                        }`}
+                                                    style={{ backgroundColor: rowBgColor || 'white' }}
+                                                >
+                                                    {col.render ? (
+                                                        col.render(row)
+                                                    ) : (
+                                                        <div className="flex items-center">
+                                                            {row[col.key] || "-"}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+
+                                        {rowActions &&
+                                            selectedColumns.length > 0 && (
+                                                <td
+                                                    className="
                                             sm:sticky right-0 z-[10]
                                             px-[2px] py-[12px]
                                             border-[#E9EAEB]
                                             whitespace-nowrap
                                             before:content-[''] before:absolute before:top-0 before:left-0 before:w-[1px] before:h-full before:bg-[#E9EAEB]
                                             "
-                                            style={{ backgroundColor: rowBgColor || 'white' }}
-                                            >
-                                                <div className="flex items-center gap-[10px]">
-                                                    {rowActions.map(
-                                                        (action, index) => (
-                                                            <div key={index}>
-                                                                <IconWithLoading action={action} index={index} row={row} showLoading={action.showLoading} />
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
-                                </tr>
-                            )})}
+                                                    style={{ backgroundColor: rowBgColor || 'white' }}
+                                                >
+                                                    <div className="flex items-center gap-[10px]">
+                                                        {rowActions.map(
+                                                            (action, index) => (
+                                                                <div key={index}>
+                                                                    <IconWithLoading action={action} index={index} row={row} showLoading={action.showLoading} />
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
+                                    </tr>
+                                )
+                            })}
                     </tbody>
                 </table>
             </div>
@@ -1212,29 +1216,29 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     );
 }
 
-function IconWithLoading({ action, index, row ,showLoading}: { action: any; index: number; row: any; showLoading?: boolean }){
+function IconWithLoading({ action, index, row, showLoading }: { action: any; index: number; row: any; showLoading?: boolean }) {
     const [isLoading, setIsLoading] = useState(false);
-    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={30} className="flex justify-center items-center ml-2"/></div> : <div 
-                                                                key={index} 
-                                                                onClick={async () => {
-                                                                    if (action.onClick) {
-                                                                        setIsLoading(true);
-                                                                        await action.onClick(row);
-                                                                        setIsLoading(false);
-                                                                    }
-                                                                }}
-                                                                className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
-                                                            >
-                                                            {action.icon  
-                                                                ? <Icon
-                                                                    key={index}
-                                                                    icon={action.icon}
-                                                                    width={20}
-                                                                /> 
-                                                                : <span>{action.label}</span>
-                                                            }
-                                                        </div>
-}</>)
+    return (<> {isLoading && showLoading ? <div className="flex justify-center items-center"><Skeleton width={30} className="flex justify-center items-center ml-2" /></div> : <div
+        key={index}
+        onClick={async () => {
+            if (action.onClick) {
+                setIsLoading(true);
+                await action.onClick(row);
+                setIsLoading(false);
+            }
+        }}
+        className="flex p-[10px] cursor-pointer text-[#5E5E5E] transition-all duration-200 ease-in-out hover:text-[#EA0A2A] hover:scale-110"
+    >
+        {action.icon
+            ? <Icon
+                key={index}
+                icon={action.icon}
+                width={20}
+            />
+            : <span>{action.label}</span>
+        }
+    </div>
+    }</>)
 }
 
 // Filter Component for column near column name using icon button
@@ -1271,7 +1275,7 @@ function FilterTableHeader({
     const { filterState, setFilterState } = useContext(TableDetails);
     const selectedRef = useRef<string | string[] | null>(null);
     const router = useRouter();
-    const searchParams = useSearchParams(); 
+    const searchParams = useSearchParams();
 
     // 1. Hydrate state from URL on mount
     useEffect(() => {
@@ -1338,23 +1342,23 @@ function FilterTableHeader({
     async function handleSelect(value: string) {
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
         const params = new URLSearchParams(searchParams.toString());
-        
+
         // Reset to page 1 whenever a filter is changed
         params.delete('page');
 
         if (isSingle) {
             const selectedValue = filterConfig?.selectedValue;
-            
+
             // Toggle logic: If clicking the same value, clear it
             if (selectedValue === value || value === "") {
                 params.delete(column);
                 if (filterConfig?.onSelect) filterConfig.onSelect("");
-                
+
                 // Sync with global filter state to clear the field
                 try {
-                    setFilterState(prev => ({ 
-                        applied: Array.from(params.keys()).length > 0, 
-                        payload: { ...(prev?.payload || {}), [column]: "" } 
+                    setFilterState(prev => ({
+                        applied: Array.from(params.keys()).length > 0,
+                        payload: { ...(prev?.payload || {}), [column]: "" }
                     }));
                 } catch (err) { /* ignore */ }
 
@@ -1377,11 +1381,11 @@ function FilterTableHeader({
                 // New selection logic
                 params.set(column, value);
                 if (filterConfig?.onSelect) filterConfig.onSelect(value);
-                
+
                 try {
-                    setFilterState(prev => ({ 
-                        applied: true, 
-                        payload: { ...(prev?.payload || {}), [column]: value } 
+                    setFilterState(prev => ({
+                        applied: true,
+                        payload: { ...(prev?.payload || {}), [column]: value }
                     }));
                 } catch (err) { /* ignore */ }
 
@@ -1422,9 +1426,9 @@ function FilterTableHeader({
 
             // Sync to global filter state
             try {
-                setFilterState(prev => ({ 
-                    applied: updated.length > 0, 
-                    payload: { ...(prev?.payload || {}), [column]: updated } 
+                setFilterState(prev => ({
+                    applied: updated.length > 0,
+                    payload: { ...(prev?.payload || {}), [column]: updated }
                 }));
             } catch (err) { /* ignore */ }
 
@@ -1466,35 +1470,35 @@ function FilterTableHeader({
         } catch (err) { /* ignore */ }
         router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
     }
-// function handleSelect(value: string) {
-//         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-//         if (isSingle) {
-//             // If already selected, deselect (clear filter)
-//             const selectedValue = filterConfig?.selectedValue;
-//             if (filterConfig?.onSelect) {
-//                 if (selectedValue === value) {
-//                     filterConfig.onSelect(""); // Deselect
-//                 } else {
-//                     filterConfig.onSelect(value);
-//                 }
-//             }
-//             setShowFilterDropdown(false);
-//         } else {
-//             setSelectedValues((prev) => {
-//                 if (prev.includes(value)) {
-//                     // remove
-//                     const updated = prev.filter((v) => v !== value);
-//                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
-//                     return updated;
-//                 } else {
-//                     // add
-//                     const updated = [...prev, value];
-//                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
-//                     return updated;
-//                 }
-//             });
-//         }
-//     }
+    // function handleSelect(value: string) {
+    //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
+    //         if (isSingle) {
+    //             // If already selected, deselect (clear filter)
+    //             const selectedValue = filterConfig?.selectedValue;
+    //             if (filterConfig?.onSelect) {
+    //                 if (selectedValue === value) {
+    //                     filterConfig.onSelect(""); // Deselect
+    //                 } else {
+    //                     filterConfig.onSelect(value);
+    //                 }
+    //             }
+    //             setShowFilterDropdown(false);
+    //         } else {
+    //             setSelectedValues((prev) => {
+    //                 if (prev.includes(value)) {
+    //                     // remove
+    //                     const updated = prev.filter((v) => v !== value);
+    //                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+    //                     return updated;
+    //                 } else {
+    //                     // add
+    //                     const updated = [...prev, value];
+    //                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+    //                     return updated;
+    //                 }
+    //             });
+    //         }
+    //     }
 
     return (
         <DismissibleDropdown
@@ -1582,7 +1586,7 @@ function FilterTableHeader({
                                     disabled={filteredOptions.length === 0}
                                 />
                             </div>
-                            </>
+                        </>
                         )
                     ) : (
                         <div className="flex flex-col items-center justify-center py-4 text-gray-600 text-sm">
@@ -1943,62 +1947,62 @@ function FilterBy() {
     const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
 
     useEffect(() => {
-    if (!searchParams) return;
+        if (!searchParams) return;
 
-    const paramsObj: Record<string, any> = {};
-    searchParams.forEach((value, key) => {
-        // If the value contains a comma, treat it as an array (matching your .join(',') logic)
-        if (value.includes(',')) {
-            paramsObj[key] = value.split(',');
-        } else if (value === 'all') {
-            paramsObj[key] = 'all';
-        } else {
-            paramsObj[key] = value;
-        }
-    });
-
-    const urlPage = searchParams.get('page');
-    const initialPage = urlPage ? Math.max(0, parseInt(urlPage) - 1) : 0;
-
-    if (hasCustomRenderer) {
-        setCustomPayload(paramsObj);
-    } else {
-        // For built-in filters, we need to match the structure expected by filterByFields
-        const initialFilters: Record<string, string | string[]> = {};
-        (config.header?.filterByFields || []).forEach((f: any) => {
-            const val = paramsObj[f.key];
-            if (val) {
-                initialFilters[f.key] = val;
+        const paramsObj: Record<string, any> = {};
+        searchParams.forEach((value, key) => {
+            // If the value contains a comma, treat it as an array (matching your .join(',') logic)
+            if (value.includes(',')) {
+                paramsObj[key] = value.split(',');
+            } else if (value === 'all') {
+                paramsObj[key] = 'all';
             } else {
-                initialFilters[f.key] = f.isSingle === false ? [] : "";
+                paramsObj[key] = value;
             }
         });
-        setFilters(initialFilters);
-    }
 
-    setTableDetails(prev => ({
-        ...prev,
-        currentPage: initialPage
-    }));
+        const urlPage = searchParams.get('page');
+        const initialPage = urlPage ? Math.max(0, parseInt(urlPage) - 1) : 0;
 
-    if (Object.keys(paramsObj).length > 0) {
-        setAppliedFilters(true);
-        // Sync to global context so TableHeader/Footer see it
-        setFilterState({ 
-            applied: true, 
-            payload: toApiPayload(paramsObj) 
-        });
-    }
+        if (hasCustomRenderer) {
+            setCustomPayload(paramsObj);
+        } else {
+            // For built-in filters, we need to match the structure expected by filterByFields
+            const initialFilters: Record<string, string | string[]> = {};
+            (config.header?.filterByFields || []).forEach((f: any) => {
+                const val = paramsObj[f.key];
+                if (val) {
+                    initialFilters[f.key] = val;
+                } else {
+                    initialFilters[f.key] = f.isSingle === false ? [] : "";
+                }
+            });
+            setFilters(initialFilters);
+        }
 
-    setIsInitialized(true);
-}, []);
+        setTableDetails(prev => ({
+            ...prev,
+            currentPage: initialPage
+        }));
+
+        if (Object.keys(paramsObj).length > 0) {
+            setAppliedFilters(true);
+            // Sync to global context so TableHeader/Footer see it
+            setFilterState({
+                applied: true,
+                payload: toApiPayload(paramsObj)
+            });
+        }
+
+        setIsInitialized(true);
+    }, []);
 
     useEffect(() => {
         if (!hasCustomRenderer) return;
         if (!searchParams || !router) return;
         const params = new URLSearchParams(searchParams.toString());
 
-       // 1. Sync Filters (Custom Payload)
+        // 1. Sync Filters (Custom Payload)
         Object.keys(customPayload || {}).forEach((k) => {
             const v = customPayload[k];
             if (v === 'all') {
@@ -2030,19 +2034,19 @@ function FilterBy() {
     }, [config.header?.filterByFields, hasCustomRenderer]);
 
     useEffect(() => {
-    // This triggers as soon as hydration finishes
-    if (isInitialized && searchParams && searchParams.size > 0) {
-        const urlPage = searchParams.get('page');
-        const pageToLoad = urlPage ? parseInt(urlPage) : 1;
-        if (hasCustomRenderer) {
-            applyCustomPayload(customPayload);
-        } else {
-            // Note: pass the hydrated filters directly to ensure we don't 
-            // wait for a state re-render cycle
-            applyFilter({...filters, page: pageToLoad });
+        // This triggers as soon as hydration finishes
+        if (isInitialized && searchParams && searchParams.size > 0) {
+            const urlPage = searchParams.get('page');
+            const pageToLoad = urlPage ? parseInt(urlPage) : 1;
+            if (hasCustomRenderer) {
+                applyCustomPayload(customPayload);
+            } else {
+                // Note: pass the hydrated filters directly to ensure we don't 
+                // wait for a state re-render cycle
+                applyFilter({ ...filters, page: pageToLoad });
+            }
         }
-    }
-}, [isInitialized, hasCustomRenderer]);
+    }, [isInitialized, hasCustomRenderer]);
 
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
     // Custom logic: if both from_date and to_date are set, count as 1 filter (not 2)
@@ -2101,82 +2105,26 @@ function FilterBy() {
         return payloadForApi;
     };
     const applyFilter = useCallback(async (overridingFilters?: Record<string, any>) => {
-    // Use overridingFilters if provided (for initial load), otherwise use state
-    const currentFilters = overridingFilters || filters;
-    if (Object.keys(currentFilters).length === 0) return;
-    
-    setShowDropdown(false);
-    if (config.api?.filterBy) {
-        setNestedLoading(true);
-        try {
-            const payloadForApi = toApiPayload(currentFilters);
-            setFilterState({ applied: true, payload: payloadForApi });
-            
-            const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
-            const resolved = res instanceof Promise ? await res : res;
-            const { currentPage, totalRecords, pageSize, total, data } = resolved;
-            
-            setTableDetails({
-                data: data || [],
-                total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
-                totalRecords: totalRecords,
-                currentPage: (currentPage || 1) - 1,
-                pageSize: pageSize,
-            });
-            setAppliedFilters(true);
-        } catch (err) {
-            console.error("Filter API error", err);
-        } finally {
-            setNestedLoading(false);
-        }
-    } else {
-        if (activeFilterCount === 0) return;
+        // Use overridingFilters if provided (for initial load), otherwise use state
+        const currentFilters = overridingFilters || filters;
+        if (Object.keys(currentFilters).length === 0) return;
+
         setShowDropdown(false);
-        // call API if provided
         if (config.api?.filterBy) {
+            setNestedLoading(true);
             try {
-                setNestedLoading(true);
-                
-                const payloadForApi: Record<string, string | number | null> = {};
-                const fields = config.header?.filterByFields || [];
-                Object.keys(filters || {}).forEach((k) => {
-                    const field = fields.find(f => f.key === k);
-                    try {
-                        if (field?.applyWhen && !field.applyWhen(filters)) {
-                            // skip this key as its predicate decided it shouldn't apply
-                            return;
-                        }
-                    } catch (err) {
-                        // if predicate throws, default to skipping to be safe
-                        return;
-                    }
-
-                    const v = filters[k];
-                    if (Array.isArray(v)) {
-                        payloadForApi[k] = v.length > 0 ? v.join(',') : "";
-                    } else {
-                        payloadForApi[k] = v as string;
-                    }
-                });
-
-                // persist applied filter payload via context so pagination can reuse it
-                try {
-                    setFilterState({ applied: true, payload: payloadForApi });
-                } catch (err) {
-                    // ignore environments without window
-                }
+                const payloadForApi = toApiPayload(currentFilters);
+                setFilterState({ applied: true, payload: payloadForApi });
 
                 const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
-                const { currentPage, totalRecords, pageSize, total, data } = res instanceof Promise ? await res : res;
-                // prefer totalRecords when provided by API
-                const totalRecordsValue = totalRecords ?? total ?? 0;
-                const pageSizeValue = pageSize || config.pageSize || defaultPageSize;
-                const totalPages = pageSizeValue > 0 ? Math.max(1, Math.ceil(totalRecordsValue / pageSizeValue)) : (total ?? 1);
+                const resolved = res instanceof Promise ? await res : res;
+                const { currentPage, totalRecords, pageSize, total, data } = resolved;
+
                 setTableDetails({
                     data: data || [],
-                    total: totalPages,
+                    total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
                     totalRecords: totalRecords,
-                    currentPage: currentPage - 1 || 0,
+                    currentPage: (currentPage || 1) - 1,
                     pageSize: pageSize,
                 });
                 setAppliedFilters(true);
@@ -2186,46 +2134,102 @@ function FilterBy() {
                 setNestedLoading(false);
             }
         } else {
-            // fallback to client-side filtering
-            const all = tableDetails.data || [];
-            const fields = config.header?.filterByFields || [];
-            const filtered = all.filter((row) => {
-                return Object.keys(filters).every((k) => {
-                    const field = fields.find(f => f.key === k);
+            if (activeFilterCount === 0) return;
+            setShowDropdown(false);
+            // call API if provided
+            if (config.api?.filterBy) {
+                try {
+                    setNestedLoading(true);
+
+                    const payloadForApi: Record<string, string | number | null> = {};
+                    const fields = config.header?.filterByFields || [];
+                    Object.keys(filters || {}).forEach((k) => {
+                        const field = fields.find(f => f.key === k);
+                        try {
+                            if (field?.applyWhen && !field.applyWhen(filters)) {
+                                // skip this key as its predicate decided it shouldn't apply
+                                return;
+                            }
+                        } catch (err) {
+                            // if predicate throws, default to skipping to be safe
+                            return;
+                        }
+
+                        const v = filters[k];
+                        if (Array.isArray(v)) {
+                            payloadForApi[k] = v.length > 0 ? v.join(',') : "";
+                        } else {
+                            payloadForApi[k] = v as string;
+                        }
+                    });
+
+                    // persist applied filter payload via context so pagination can reuse it
                     try {
-                        if (field?.applyWhen && !field.applyWhen(filters)) {
-                            // skip this filter if its predicate says not to apply
+                        setFilterState({ applied: true, payload: payloadForApi });
+                    } catch (err) {
+                        // ignore environments without window
+                    }
+
+                    const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+                    const { currentPage, totalRecords, pageSize, total, data } = res instanceof Promise ? await res : res;
+                    // prefer totalRecords when provided by API
+                    const totalRecordsValue = totalRecords ?? total ?? 0;
+                    const pageSizeValue = pageSize || config.pageSize || defaultPageSize;
+                    const totalPages = pageSizeValue > 0 ? Math.max(1, Math.ceil(totalRecordsValue / pageSizeValue)) : (total ?? 1);
+                    setTableDetails({
+                        data: data || [],
+                        total: totalPages,
+                        totalRecords: totalRecords,
+                        currentPage: currentPage - 1 || 0,
+                        pageSize: pageSize,
+                    });
+                    setAppliedFilters(true);
+                } catch (err) {
+                    console.error("Filter API error", err);
+                } finally {
+                    setNestedLoading(false);
+                }
+            } else {
+                // fallback to client-side filtering
+                const all = tableDetails.data || [];
+                const fields = config.header?.filterByFields || [];
+                const filtered = all.filter((row) => {
+                    return Object.keys(filters).every((k) => {
+                        const field = fields.find(f => f.key === k);
+                        try {
+                            if (field?.applyWhen && !field.applyWhen(filters)) {
+                                // skip this filter if its predicate says not to apply
+                                return true;
+                            }
+                        } catch (err) {
+                            // if predicate throws, skip this filter to be safe
                             return true;
                         }
-                    } catch (err) {
-                        // if predicate throws, skip this filter to be safe
-                        return true;
-                    }
 
-                    const val = filters[k];
-                    if (val === "" || val == null) return true;
-                    const cell = String((row as TableDataType)[k] ?? "").toLowerCase();
-                    if (Array.isArray(val)) {
-                        // match any of the selected values
-                        return val.some(v => cell.includes(String(v).toLowerCase()));
-                    }
-                    return cell.includes(String(val).toLowerCase());
+                        const val = filters[k];
+                        if (val === "" || val == null) return true;
+                        const cell = String((row as TableDataType)[k] ?? "").toLowerCase();
+                        if (Array.isArray(val)) {
+                            // match any of the selected values
+                            return val.some(v => cell.includes(String(v).toLowerCase()));
+                        }
+                        return cell.includes(String(val).toLowerCase());
+                    });
                 });
-            });
-            setTableDetails({
-                data: filtered,
-                total: Math.max(1, Math.ceil(filtered.length / (config.pageSize || defaultPageSize))),
-                currentPage: 0,
-                pageSize: config.pageSize || defaultPageSize,
-            });
-            setAppliedFilters(true);
-        }
+                setTableDetails({
+                    data: filtered,
+                    total: Math.max(1, Math.ceil(filtered.length / (config.pageSize || defaultPageSize))),
+                    currentPage: 0,
+                    pageSize: config.pageSize || defaultPageSize,
+                });
+                setAppliedFilters(true);
+            }
 
-        setShowDropdown(false);
-    };
-}, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
+            setShowDropdown(false);
+        };
+    }, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
 
-const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
+    const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
@@ -2280,18 +2284,18 @@ const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => 
         } finally {
             setIsApplyingCustom(false);
         }
-}, [customPayload, config, tableDetails.data]);
+    }, [customPayload, config, tableDetails.data]);
 
-useEffect(() => {
-    // Only trigger once state is initialized and there are actual params to apply
-    if (isInitialized && searchParams && searchParams.size > 0) {
-        if (hasCustomRenderer) {
-            applyCustomPayload(customPayload);
-        } else {
-            applyFilter(filters);
+    useEffect(() => {
+        // Only trigger once state is initialized and there are actual params to apply
+        if (isInitialized && searchParams && searchParams.size > 0) {
+            if (hasCustomRenderer) {
+                applyCustomPayload(customPayload);
+            } else {
+                applyFilter(filters);
+            }
         }
-    }
-}, [isInitialized, hasCustomRenderer]);
+    }, [isInitialized, hasCustomRenderer]);
 
     const clearAll = async () => {
         if (activeFilterCount === 0) return;

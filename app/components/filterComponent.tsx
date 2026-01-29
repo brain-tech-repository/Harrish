@@ -13,7 +13,6 @@ type FilterComponentProps = FilterRendererProps & {
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
 import { regionList, subRegionList, warehouseList, routeList, salesmanList } from "@/app/services/allApi";
-
 type DropdownOption = {
   value: string;
   label: string;
@@ -55,11 +54,11 @@ type ApiResponse<T> = {
 };
 
 export default function FilterComponent(filterProps: FilterComponentProps) {
-    const { disabled = false } = filterProps;
+  const { disabled = false } = filterProps;
   const {
     customerSubCategoryOptions,
     companyOptions,
-    
+
     // fetchSalesmanByRouteOptions,
     assetsModelOptions,
     ensureCompanyLoaded,
@@ -72,7 +71,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   useEffect(() => {
     ensureCompanyLoaded();
     // ensureSalesmanLoaded();
-    if(showFilter("model")){
+    if (showFilter("model")) {
       ensureAssetsModelLoaded();
 
     };
@@ -113,7 +112,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     region: false,
     area: false,
     warehouse: false,
-    route: false, 
+    route: false,
     salesteam: false,
   });
   const [regionOptions, setRegionOptions] = useState<DropdownOption[]>([]);
@@ -158,7 +157,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     } else {
       setPayload((prev) => ({ ...prev, [key]: value }));
     }
-  } 
+  }
 
   const companyVal = toArray(payload.company_id);
   const regionVal = toArray(payload.region_id);
@@ -176,7 +175,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchRegions = async () => {
-        setSkeleton((prev) => ({ ...prev, region: true }));
+      setSkeleton((prev) => ({ ...prev, region: true }));
       try {
         const regions: ApiResponse<Region[]> = await regionList({
           company_id: companyVal.join(","),
@@ -192,7 +191,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch region list:", err);
         setRegionOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, region: false }));
+      setSkeleton((prev) => ({ ...prev, region: false }));
     };
 
     fetchRegions();
@@ -206,11 +205,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchAreas = async () => {
-        setSkeleton((prev) => ({ ...prev, area: true }));
-    
+      setSkeleton((prev) => ({ ...prev, area: true }));
+
       try {
         const res: ApiResponse<{ data: Area[] } | Area[]> = await subRegionList(
-          { region_id: regionVal.join(","),dropdown:"true" }
+          { region_id: regionVal.join(","), dropdown: "true" }
         );
         const areaList =
           (res as { data: Area[] })?.data || (res as Area[]) || [];
@@ -225,7 +224,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch area list:", err);
         setAreaOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, area: false }));
+      setSkeleton((prev) => ({ ...prev, area: false }));
     };
 
     fetchAreas();
@@ -238,11 +237,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchWarehouses = async () => {
-        setSkeleton((prev) => ({ ...prev, warehouse: true }));
+      setSkeleton((prev) => ({ ...prev, warehouse: true }));
 
       try {
         const res: ApiResponse<{ data: Warehouse[] } | Warehouse[]> =
-          await warehouseList({ area_id: areaVal.join(","),dropdown:"true" });
+          await warehouseList({ area_id: areaVal.join(","), dropdown: "true" });
         const warehousesList =
           (res as { data: Warehouse[] })?.data || (res as Warehouse[]) || [];
 
@@ -256,7 +255,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch warehouse list:", err);
         setWarehouseOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, warehouse: false }));
+      setSkeleton((prev) => ({ ...prev, warehouse: false }));
 
     };
 
@@ -272,11 +271,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
 
     const fetchRoutes = async () => {
-        setSkeleton((prev) => ({ ...prev, route: true }));
+      setSkeleton((prev) => ({ ...prev, route: true }));
       try {
         const res: ApiResponse<{ data: Route[] } | Route[]> = await routeList({
           warehouse_id: warehouseVal.join(","),
-          dropdown:"true",
+          dropdown: "true",
         });
         const routeListData =
           (res as { data: Route[] })?.data || (res as Route[]) || [];
@@ -291,22 +290,22 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch route list:", err);
         setRouteOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, route: false }));
+      setSkeleton((prev) => ({ ...prev, route: false }));
     };
-fetchRoutes();
+    fetchRoutes();
   }, [warehouseVal.join(",")]);
 
-       useEffect(() => {
+  useEffect(() => {
     if (!areaVal.length) {
       setSalesmanOptions([]);
       return;
     }
     const fetchSalesman = async () => {
-        setSkeleton((prev) => ({ ...prev, salesteam: true }));
+      setSkeleton((prev) => ({ ...prev, salesteam: true }));
       try {
         const res: ApiResponse<{ data: Route[] } | Route[]> = await salesmanList({
           route_id: routeVal.join(","),
-          dropdown:"true",
+          dropdown: "true",
         });
         const routeListData =
           (res as { data: Route[] })?.data || (res as Route[]) || [];
@@ -321,7 +320,7 @@ fetchRoutes();
         console.error("Failed to fetch salesman list:", err);
         setSalesmanOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, salesteam: false }));
+      setSkeleton((prev) => ({ ...prev, salesteam: false }));
     };
 
     fetchSalesman();
@@ -344,33 +343,33 @@ fetchRoutes();
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Day Filter Dropdown */}
-       {showFilter("day_filter") && (
-      <InputFields
-        label="Day Filter"
-        name="day_filter"
-        placeholder="Select Filter"
-        type="select"
-        options={[
-          { value: "yesterday", label: "Yesterday" },
-          { value: "today", label: "Today" },
-          { value: "3days", label: "Last 3 Days" },
-          { value: "7days", label: "Last 7 Days" },
-          { value: "lastmonth", label: "Last Month" },
-        ]}
-        value={
-          Array.isArray(payload.day_filter)
-            ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
-            : typeof payload.day_filter === "number"
-            ? String(payload.day_filter)
-            : payload.day_filter || ""
-        }
-        disabled={disabled || !!payload.from_date || !!payload.to_date}
-        onChange={(e) => {
-          const raw = (e as any)?.target?.value ?? e;
-          setPayload((prev) => ({ ...prev, day_filter: raw }));
-        }}
-      />
-       )}
+      {showFilter("day_filter") && (
+        <InputFields
+          label="Day Filter"
+          name="day_filter"
+          placeholder="Select Filter"
+          type="select"
+          options={[
+            { value: "yesterday", label: "Yesterday" },
+            { value: "today", label: "Today" },
+            { value: "3days", label: "Last 3 Days" },
+            { value: "7days", label: "Last 7 Days" },
+            { value: "lastmonth", label: "Last Month" },
+          ]}
+          value={
+            Array.isArray(payload.day_filter)
+              ? payload.day_filter.map((v) => (typeof v === "number" ? String(v) : v))
+              : typeof payload.day_filter === "number"
+                ? String(payload.day_filter)
+                : payload.day_filter || ""
+          }
+          disabled={disabled || !!payload.from_date || !!payload.to_date}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            setPayload((prev) => ({ ...prev, day_filter: raw }));
+          }}
+        />
+      )}
       {/* Start Date */}
       {showFilter("from_date") && (
         <InputFields
@@ -426,8 +425,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("company_id", val);
             // reset downstream when parent changes
             onChangeArray("region_id", []);
@@ -456,8 +455,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("region_id", val);
             onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
@@ -484,8 +483,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
@@ -511,8 +510,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("warehouse_id", val);
             onChangeArray("route_id", []);
             onChangeArray("salesman_id", []);
@@ -538,8 +537,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("route_id", val);
             onChangeArray("salesman_id", []);
           }}
@@ -563,8 +562,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("salesman_id", val);
           }}
         />
@@ -586,8 +585,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("model", val);
           }}
         />

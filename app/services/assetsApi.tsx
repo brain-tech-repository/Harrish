@@ -665,6 +665,17 @@ export const irReportList = async (params: Params) => {
   }
 };
 
+export const irReportByUUID = async (id: string, params?: Params) => {
+  try {
+    const res = await API.get(`/api/assets/ir/${id}`, {
+      params: params,
+    });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 
 
 export const addInstallationReport = async (body: object) => {
@@ -1213,9 +1224,9 @@ export const getCurrentCustomer = async (params: Params) => {
   }
 };
 
-export const assetrequestGlobalFilter = async (body: Object) => {
+export const crfGlobalFilter = async (body: Object) => {
   try {
-    const res = await API.post("/api/assets/chiller-request/globalFilter", body);
+    const res = await API.post("/api/assets/chiller-request/getCRFData", body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1225,6 +1236,16 @@ export const assetrequestGlobalFilter = async (body: Object) => {
 export const callRegisterGlobalFilter = async (body: Object) => {
   try {
     const res = await API.post("/api/assets/call-register/globalFilter", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+
+export const serviceVisitGlobalFilter = async (body: Object) => {
+  try {
+    const res = await API.post("/api/assets/service-visit/globalFilter", body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

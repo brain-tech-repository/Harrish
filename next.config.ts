@@ -288,6 +288,7 @@ const nextConfig: NextConfig = {
       { source: '/chillerinstallation/:uuid', destination: '/chillerInstallation/:uuid' },
       { source: '/chillerinstallation', destination: '/chillerInstallation' },
       { source: '/chillerinstallation/installationreport/add', destination: '/chillerInstallation/installationReport/add' },
+      { source: '/chillerinstallation/installationreport/view/:id', destination: '/chillerInstallation/installationReport/view/:id' },
       { source: '/chillerinstallation/installationreport/:uuid', destination: '/chillerInstallation/installationReport/:uuid' },
       { source: '/chillerinstallation/installationreport', destination: '/chillerInstallation/installationReport' },
       { source: '/chillerinstallation/bulktransfer/add', destination: '/chillerInstallation/bulkTransfer/add' },
@@ -296,7 +297,7 @@ const nextConfig: NextConfig = {
       { source: '/chillerinstallation/bulktransfer', destination: '/chillerInstallation/bulkTransfer' },
       // { source: '/chillerinstallation/iro/view/:id', destination: '/chillerInstallation/iro/view/:id' },
       // { source: '/chillerinstallation/iro', destination: '/chillerInstallation/iro' },
-{ source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
+      { source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
       { source: '/fridgeupdatecustomer/add', destination: '/fridgeUpdateCustomer/add' },
       { source: '/fridgeupdatecustomer/:uuid', destination: '/fridgeUpdateCustomer/:uuid' },
       { source: '/fridgeupdatecustomer', destination: '/fridgeUpdateCustomer' },
@@ -473,7 +474,7 @@ const nextConfig: NextConfig = {
       { source: '/itemreport', destination: '/itemReport' },
       { source: '/attendencereport', destination: '/attendenceReport' },
       { source: '/poorderreport', destination: '/poOrderReport' },
-      
+
       // alert
       { source: '/alert/add', destination: '/alert/add' },
       { source: '/alert/:uuid', destination: '/alert/:uuid' },
@@ -596,7 +597,7 @@ const nextConfig: NextConfig = {
       { source: '/settings/manageassets/sparemenu/add', destination: '/settings/manageAssets/spareMenu/add' },
       { source: '/settings/manageassets/sparemenu/:uuid', destination: '/settings/manageAssets/spareMenu/:uuid' },
       { source: '/settings/manageassets/sparemenu', destination: '/settings/manageAssets/spareMenu' },
-      
+
       { source: '/settings/manageassets/sparecategory/add', destination: '/settings/manageAssets/spareCategory/add' },
       { source: '/settings/manageassets/sparecategory/:uuid', destination: '/settings/manageAssets/spareCategory/:uuid' },
       { source: '/settings/manageassets/sparecategory', destination: '/settings/manageAssets/spareCategory' },

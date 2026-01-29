@@ -382,13 +382,13 @@ export default function AddEditSalesmanUnload() {
                 handleChange("route_id", val);
                 handleChange("salesman_id", "");
                 if (val) {
-                  setSkeleton((prev) => ({ ...prev, salesman: true }));
-                  Promise.resolve(getUnloadSalesmanByRouteId({ route_id: val })).then((res) => {
-                    const data = res?.data ?? res;
-                    setSalesmanOptions(data);
-                  }).finally(() => {
-                    setSkeleton((prev) => ({ ...prev, salesman: false }));
-                  });
+                  // setSkeleton((prev) => ({ ...prev, salesman: true }));
+                  // Promise.resolve(getUnloadSalesmanByRouteId({ route_id: val })).then((res) => {
+                  //   const data = res?.data ?? res;
+                  //   setSalesmanOptions(data);
+                  // }).finally(() => {
+                  //   setSkeleton((prev) => ({ ...prev, salesman: false }));
+                  // });
                 }
               }}
             />
