@@ -3,7 +3,7 @@
 import Table, { listReturnType, TableDataType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { callRegisterList, callRegisterGlobalSearch, exportCallRegister } from "@/app/services/assetsApi";
+import { callRegisterList, callRegisterGlobalSearch, exportCallRegister, getTechicianList } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ export default function CallRegister() {
         csv: false,
         xlsx: false,
     });
+    const [technicianOptions, setTechnicianOptions] = useState([]);
     // Refresh table when permissions load
     useEffect(() => {
         if (permissions.length > 0) {
@@ -34,6 +35,26 @@ export default function CallRegister() {
 
     const router = useRouter();
     const { showSnackbar } = useSnackbar();
+
+    const fetchTechnicians = useCallback(
+        async () => {
+            const res = await getTechicianList();
+            const technicianData = res.data.map((item: any) => ({
+                label: item.name,
+                value: item.id,
+            }));
+            if (res.error) {
+                showSnackbar(res.data.message || "failed to fetch the technicians", "error");
+                throw new Error("Unable to fetch the technicians");
+            } else {
+                setTechnicianOptions(technicianData);
+            }
+        },
+        [showSnackbar]
+    );
+    useEffect(() => {
+        fetchTechnicians();
+    }, [fetchTechnicians]);
 
     const fetchServiceTypes = useCallback(
         async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
@@ -134,7 +155,50 @@ export default function CallRegister() {
                                     onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
                                 },
                             ],
-                            searchBar: true,
+                            filterByFields: [
+                                {
+                                    key: "from_date",
+                                    label: "From Date",
+                                    // isSingle: false,
+                                    multiSelectChips: true,
+                                    // options: regionOptions || [],
+                                },
+                                {
+                                    key: "to_date",
+                                    label: "To Date",
+                                    // isSingle: false,
+                                    multiSelectChips: true,
+                                    // options: areaOptions || [],
+                                },
+                                {
+                                    key: "ticket_type",
+                                    label: "Ticket Type",
+                                    // isSingle: false,
+                                    multiSelectChips: true,
+                                    options: [{ label: "BD", value: "BD" }, { label: "TR", value: "TR" }, { label: "RB", value: "RB" }],
+                                },
+                                {
+                                    key: "technician_id",
+                                    label: "Technician",
+                                    isSingle: false,
+                                    multiSelectChips: true,
+                                    options: technicianOptions || [],
+                                },
+                                {
+                                    key: "status",
+                                    label: "Status",
+                                    // isSingle: false,
+                                    multiSelectChips: true,
+                                    options: [
+                                        { value: "Pending", label: "Pending" },
+                                        { value: "In Progress", label: "In Progress" },
+                                        { value: "Closed By Technician", label: "Closed By Technician" },
+                                        { value: "Completed", label: "Completed" },
+                                        { value: "Cancelled", label: "Cancelled" },
+                                    ],
+                                },
+                            ],
+                            searchBar: false,
                             columnFilter: true,
                             actions: can("create") ? [
                                 <SidebarBtn
@@ -148,7 +212,7 @@ export default function CallRegister() {
                             ] : [],
                         },
                         localStorageKey: "call-register-table",
-                        
+
                         footer: { nextPrevBtn: true, pagination: true },
                         columns: [
                             { key: "osa_code", label: "Ticket Number" },
@@ -181,10 +245,11 @@ export default function CallRegister() {
                                 )
                             },
 
-                            {
-                                key: "approval_status",
-                                label: "Approval Status"
-                            },
+                            // {
+                            //     key: "approval_status",
+                            //     label: "Approval Status",
+                            //     showByDefault: true,
+                            // },
 
                             {
                                 key: "status",

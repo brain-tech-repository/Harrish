@@ -11,6 +11,7 @@ import {
   salesmanUnloadHeaderById,
   salesmanUnloadHeaderUpdate,
   salesmanUnloadData,
+  getUnloadSalesmanByRouteId,
 } from "@/app/services/agentTransaction";
 import { itemList } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
@@ -25,12 +26,12 @@ export default function AddEditSalesmanUnload() {
   const {
     salesmanTypeOptions,
     routeOptions,
-    salesmanOptions,
+    // salesmanOptions,
     warehouseOptions,
     fetchRouteOptions,
     fetchSalesmanByRouteOptions,
     projectOptions,
-   ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded} = useAllDropdownListData();
+    ensureProjectLoaded, ensureRouteLoaded, ensureSalesmanLoaded, ensureSalesmanTypeLoaded, ensureWarehouseLoaded } = useAllDropdownListData();
 
   // Load dropdown data
   useEffect(() => {
@@ -44,14 +45,14 @@ export default function AddEditSalesmanUnload() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const { setLoading } = useLoading();
-  const [nestedLoading,setNestedLoading] = useState(false);
+  const [nestedLoading, setNestedLoading] = useState(false);
   const params = useParams();
   const unloadUUID = params?.uuid as string | undefined;
   const isEditMode = unloadUUID && unloadUUID !== "add";
-   const [skeleton, setSkeleton] = useState({
-      route: false,
-      salesman: false,
-    });
+  const [skeleton, setSkeleton] = useState({
+    route: false,
+    salesman: false,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     salesman_type: "",
@@ -64,6 +65,7 @@ export default function AddEditSalesmanUnload() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [itemData, setItemData] = useState<TableDataType[]>([]);
   const [isItemsLoaded, setIsItemsLoaded] = useState(false);
+  const [salesmanOptions, setSalesmanOptions] = useState<any[]>([]);
 
   // ✅ Fetch salesman unload data when date is selected
   useEffect(() => {
@@ -115,6 +117,31 @@ export default function AddEditSalesmanUnload() {
       setIsItemsLoaded(false);
     }
   }, [form.unload_date, form.salesman_id, isEditMode, setNestedLoading, showSnackbar]);
+
+
+  useEffect(() => {
+    if (form.route_id && !isEditMode) {
+      (async () => {
+        try {
+          setSkeleton((prev) => ({ ...prev, salesman: true }));
+          const res = await getUnloadSalesmanByRouteId({ route_id: form.route_id });
+          const data = res?.data ?? res;
+          console.log("Salesman Data:", data);
+          const salesmanOptions = data.map((item: any) => ({
+            value: item.id,
+            label: `${item.osa_code} - ${item.name}`,
+          }));
+          console.log("Salesman Options:", salesmanOptions);
+          setSalesmanOptions(salesmanOptions);
+        } catch (error) {
+          console.error("Fetch Error:", error);
+          showSnackbar("Failed to fetch salesman data", "error");
+        } finally {
+          setSkeleton((prev) => ({ ...prev, salesman: false }));
+        }
+      })();
+    }
+  }, [form.route_id, isEditMode, setSkeleton, showSnackbar]);
 
   // ✅ Fetch data for edit mode
   useEffect(() => {
@@ -301,11 +328,12 @@ export default function AddEditSalesmanUnload() {
                 label="Project List"
                 value={form.project_type}
                 options={projectOptions}
-                onChange={(e) =>{ handleChange("project_type", e.target.value)
-                   handleChange("warehouse", "");
-                handleChange("route_id", "");
-                handleChange("salesman_id", "");
-                handleChange("unload_date", "");
+                onChange={(e) => {
+                  handleChange("project_type", e.target.value)
+                  handleChange("warehouse", "");
+                  handleChange("route_id", "");
+                  handleChange("salesman_id", "");
+                  handleChange("unload_date", "");
                 }}
               />
             </div>
@@ -314,7 +342,7 @@ export default function AddEditSalesmanUnload() {
 
           <div className="flex flex-col w-full sm:w-[30%]">
             <InputFields
-            searchable
+              searchable
               label="Distributor"
               name="warehouse"
               value={form.warehouse}
@@ -355,7 +383,10 @@ export default function AddEditSalesmanUnload() {
                 handleChange("salesman_id", "");
                 if (val) {
                   setSkeleton((prev) => ({ ...prev, salesman: true }));
-                  Promise.resolve(fetchSalesmanByRouteOptions(val)).finally(() => {
+                  Promise.resolve(getUnloadSalesmanByRouteId({ route_id: val })).then((res) => {
+                    const data = res?.data ?? res;
+                    setSalesmanOptions(data);
+                  }).finally(() => {
                     setSkeleton((prev) => ({ ...prev, salesman: false }));
                   });
                 }
@@ -399,10 +430,10 @@ export default function AddEditSalesmanUnload() {
 
         {/* --- Table --- */}
         <Table
-        
+
           data={itemData.map((row, idx) => ({ ...row, idx: idx.toString() }))}
           config={{
-            showNestedLoading:nestedLoading,
+            showNestedLoading: nestedLoading,
             table: { height: 500 },
             columns: [
               {
@@ -451,10 +482,10 @@ export default function AddEditSalesmanUnload() {
             disabled={submitting}
             leadingIcon="mdi:check"
             label={submitting
-                  ? (isEditMode ? "Updating..." : "Submitting...")
-                  : isEditMode
-                    ? "Update Unload"
-                    : "Create Unload"}
+              ? (isEditMode ? "Updating..." : "Submitting...")
+              : isEditMode
+                ? "Update Unload"
+                : "Create Unload"}
             onClick={handleSubmit}
           />
         </div>

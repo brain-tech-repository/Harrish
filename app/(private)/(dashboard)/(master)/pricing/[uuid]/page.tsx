@@ -1121,7 +1121,9 @@ export default function AddPricing() {
         };
 
         const handleCustomerSearch = async (q: string) => {
-          if (!q || q.trim().length === 0) return [];
+          // console.log(q, "1124");
+          // if (!q || q.trim().length === 0) return [];
+          // console.log(q, "1126");
           try {
             const params: any = { query: q, per_page: "10" };
             if (keyValue["Customer Category"] && keyValue["Customer Category"].length > 0) params.customer_category_id = keyValue["Customer Category"].join(",");
@@ -1687,10 +1689,10 @@ export default function AddPricing() {
           showNextButton={!isLastStep}
           nextButtonText="Save & Next"
           submitButtonText={submitting
-                  ? (isEditMode ? "Updating..." : "Submitting...")
-                  : isEditMode
-                    ? "Update"
-                    : "Submit"}
+            ? (isEditMode ? "Updating..." : "Submitting...")
+            : isEditMode
+              ? "Update"
+              : "Submit"}
         >
           {renderStepContent()}
         </StepperForm>

@@ -8,7 +8,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload,loadExportCollapse,salesmanLoadPdf,loadGlobalFilter } from "@/app/services/agentTransaction";
+import { salesmanLoadHeaderList, exportSalesmanLoad, exportSalesmanLoadDownload, loadExportCollapse, salesmanLoadPdf, loadGlobalFilter } from "@/app/services/agentTransaction";
 import { useRef } from "react";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
@@ -36,13 +36,13 @@ interface SalesmanLoadRow {
 
 export default function SalemanLoad() {
   const { can, permissions } = usePagePermissions();
-  const {  warehouseAllOptions,salesmanOptions,ensureSalesmanLoaded, routeOptions, ensureRouteLoaded,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const { warehouseAllOptions, salesmanOptions, ensureSalesmanLoaded, routeOptions, ensureRouteLoaded, ensureWarehouseAllLoaded } = useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>();
   const [routeId, setRouteId] = useState<string>();
   const [salesmanId, setSalesmanId] = useState<string>();
   const [refreshKey, setRefreshKey] = useState(0);
   const [colFilter, setColFilter] = useState<boolean>(false);
-  const [filterPayload,setFilterPayload] = useState<any>();
+  const [filterPayload, setFilterPayload] = useState<any>();
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -55,16 +55,16 @@ export default function SalemanLoad() {
     ensureRouteLoaded();
     ensureWarehouseAllLoaded();
     ensureSalesmanLoaded();
-  }, [ ensureRouteLoaded, ensureWarehouseAllLoaded,ensureSalesmanLoaded]);
+  }, [ensureRouteLoaded, ensureWarehouseAllLoaded, ensureSalesmanLoaded]);
 
   const columns: configType["columns"] = [
     {
-      key:"osa_code",
-      label:"Code",
+      key: "osa_code",
+      label: "Code",
     },
     {
-      key:"created_at",
-      label:"Load Date",
+      key: "created_at",
+      label: "Load Date",
       render: (row: TableDataType) => formatDate(row?.created_at || "-")
     },
     {
@@ -80,15 +80,15 @@ export default function SalemanLoad() {
         return `${s.warehouse?.code ?? ""} - ${shortName}`;
       },
       filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-                onSelect: (selected) => {
-                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: warehouseId,
-            },
+        isFilterable: true,
+        width: 320,
+        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+        onSelect: (selected) => {
+          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+      },
     },
     {
       key: "route",
@@ -98,15 +98,15 @@ export default function SalemanLoad() {
         return s.route?.code || "-";
       },
       filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(routeOptions) ? routeOptions : [],
-                onSelect: (selected) => {
-                    setRouteId((prev) => prev === selected ? "" : (selected as string));
-                },
-                isSingle: false,
-                selectedValue: routeId,
-            },
+        isFilterable: true,
+        width: 320,
+        options: Array.isArray(routeOptions) ? routeOptions : [],
+        onSelect: (selected) => {
+          setRouteId((prev) => prev === selected ? "" : (selected as string));
+        },
+        isSingle: false,
+        selectedValue: routeId,
+      },
     },
     {
       key: "salesman",
@@ -116,15 +116,15 @@ export default function SalemanLoad() {
         return `${s.salesman?.code ?? ""} - ${s.salesman?.name ?? ""}`;
       },
       filter: {
-                isFilterable: true,
-                width: 320,
-                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
-                onSelect: (selected) => {
-                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: salesmanId,
-            },
+        isFilterable: true,
+        width: 320,
+        options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+        onSelect: (selected) => {
+          setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+        },
+        isSingle: false,
+        selectedValue: salesmanId,
+      },
     },
     {
       key: "salesman_type", label: "Sales Team Type",
@@ -137,7 +137,7 @@ export default function SalemanLoad() {
       key: "project_type",
       label: "Sales Team Role",
       render: (row: TableDataType) => {
-       return `${(row as SalesmanLoadRow).project_type?.name ?? "-"}`;
+        return `${(row as SalesmanLoadRow).project_type?.name ?? "-"}`;
       },
     },
     // {
@@ -168,9 +168,9 @@ export default function SalemanLoad() {
 
   // In-memory cache for salesmanLoadHeaderList API calls
   const salesmanLoadHeaderCache = useRef<{ [key: string]: any }>({});
-     useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [ warehouseId, routeId,salesmanId]);
+  useEffect(() => {
+    setRefreshKey((k) => k + 1);
+  }, [warehouseId, routeId, salesmanId]);
 
   const fetchSalesmanLoadHeader = useCallback(
     async (
@@ -181,16 +181,16 @@ export default function SalemanLoad() {
         page: page.toString(),
         pageSize: pageSize.toString(),
       };
-     
-            if (warehouseId) {
-                params.warehouse_id = String(warehouseId);
-            }
-            if (routeId) {
-                params.route_id = String(routeId);
-            }
-            if (salesmanId) {
-                params.salesman_id = String(salesmanId);
-            }
+
+      if (warehouseId) {
+        params.warehouse_id = String(warehouseId);
+      }
+      if (routeId) {
+        params.route_id = String(routeId);
+      }
+      if (salesmanId) {
+        params.salesman_id = String(salesmanId);
+      }
       const cacheKey = JSON.stringify(params);
       if (salesmanLoadHeaderCache.current[cacheKey]) {
         const listRes = salesmanLoadHeaderCache.current[cacheKey];
@@ -223,7 +223,7 @@ export default function SalemanLoad() {
         };
       }
     },
-    [setLoading, showSnackbar, warehouseId, routeId,salesmanId]
+    [setLoading, showSnackbar, warehouseId, routeId, salesmanId]
   );
 
   // In-memory cache for filterBy API calls
@@ -279,45 +279,45 @@ export default function SalemanLoad() {
     [setLoading]
   );
 
-        const fetchLoadAccordingToGlobalFilter = useCallback(
-          async (
-            payload: Record<string, any>,
-            pageSize: number = 50,
-            pageNo: number = 1
-          ): Promise<listReturnType> => {
-      
-            try {
-              setLoading(true);
-              setFilterPayload(payload);
-              const body = {
-                 per_page: pageSize.toString(),
-            current_page: pageNo.toString(),
-                filter: payload
-              }
-              const listRes = await loadGlobalFilter(body);
-             const pagination =
-              listRes.pagination?.pagination || listRes.pagination || {};
-            return {
-             data: listRes.data || [],
+  const fetchLoadAccordingToGlobalFilter = useCallback(
+    async (
+      payload: Record<string, any>,
+      pageSize: number = 50,
+      pageNo: number = 1
+    ): Promise<listReturnType> => {
+
+      try {
+        setLoading(true);
+        setFilterPayload(payload);
+        const body = {
+          per_page: pageSize.toString(),
+          current_page: pageNo.toString(),
+          filter: payload
+        }
+        const listRes = await loadGlobalFilter(body);
+        const pagination =
+          listRes.pagination?.pagination || listRes.pagination || {};
+        return {
+          data: listRes.data || [],
           total: pagination.last_page || listRes.pagination?.last_page || 1,
           totalRecords:
             pagination.total || listRes.pagination?.total || 0,
           currentPage: pagination.current_page || listRes.pagination?.current_page || 1,
           pageSize: pagination.per_page || pageSize,
-            };
-              // fetchOrdersCache.current[cacheKey] = result;
-              // return listRes;
-            } catch (error: unknown) {
-              console.error("API Error:", error);
-              setLoading(false);
-              throw error;
-            }
-            finally{
-              setLoading(false);
-            }
-          },
-          [loadGlobalFilter, warehouseId, salesmanId]
-        );
+        };
+        // fetchOrdersCache.current[cacheKey] = result;
+        // return listRes;
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+      finally {
+        setLoading(false);
+      }
+    },
+    [loadGlobalFilter, warehouseId, salesmanId]
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -334,7 +334,7 @@ export default function SalemanLoad() {
       // setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
       const response = await salesmanLoadPdf({ uuid: uuid, format: "pdf" });
       if (response && typeof response === 'object' && response.download_url) {
-         const fileName = `load-${uuid}.pdf`;
+        const fileName = `load-${uuid}.pdf`;
         await downloadPDFGlobal(response.download_url, fileName);
         // await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -370,22 +370,22 @@ export default function SalemanLoad() {
   };
 
   const exportCollapseFile = async (format: "csv" | "xlsx" = "csv") => {
-      try {
-        setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-        const response = await loadExportCollapse({ format, filter: filterPayload });
-        if (response && typeof response === "object" && response.download_url) {
-          await downloadFile(response.download_url);
-          showSnackbar("File downloaded successfully ", "success");
-        } else {
-          showSnackbar("Failed to get download URL", "error");
-        }
-        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-      } catch (error) {
-        showSnackbar("Failed to download Distributor data", "error");
-        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-      } finally {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await loadExportCollapse({ format, filter: filterPayload });
+      if (response && typeof response === "object" && response.download_url) {
+        await downloadFile(response.download_url);
+        showSnackbar("File downloaded successfully ", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
       }
-    };
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } catch (error) {
+      showSnackbar("Failed to download Distributor data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -394,21 +394,21 @@ export default function SalemanLoad() {
         config={{
           api: {
             list: fetchSalesmanLoadHeader,
-            filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
-                if (colFilter) {
-                  return filterBy(payload, pageSize);
-                } else {
-                  let pageNo = 1;
-                  if (payload && typeof payload.page === 'number') {
-                    pageNo = payload.page;
-                  } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
-                    pageNo = Number(payload.page);
-                  }
-                  const { page, ...restPayload } = payload || {};
-                  return fetchLoadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+            filterBy: async (payload: Record<string, string | number | null>, pageSize: number) => {
+              if (colFilter) {
+                return filterBy(payload, pageSize);
+              } else {
+                let pageNo = 1;
+                if (payload && typeof payload.page === 'number') {
+                  pageNo = payload.page;
+                } else if (payload && typeof payload.page === 'string' && !isNaN(Number(payload.page))) {
+                  pageNo = Number(payload.page);
                 }
+                const { page, ...restPayload } = payload || {};
+                return fetchLoadAccordingToGlobalFilter(restPayload as Record<string, any>, pageSize, pageNo);
+              }
+            },
           },
-        },
           header: {
             title: "Sales Team Load",
             searchBar: false,
@@ -428,11 +428,11 @@ export default function SalemanLoad() {
               },
             ],
             filterRenderer: (props) => (
-                                                                                    <FilterComponent
-                                                                                    currentDate={true}
-                                                                                      {...props}
-                                                                                    />
-                                                                                  ),
+              <FilterComponent
+                currentDate={true}
+                {...props}
+              />
+            ),
             actions: can("create") ? [
               <SidebarBtn
                 key={0}
