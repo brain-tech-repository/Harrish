@@ -151,7 +151,7 @@ export default function Route() {
             const params: any = {
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
-                ...payload,
+                // ...payload,
             };
             
             if (warehouseId) {

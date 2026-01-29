@@ -22,6 +22,8 @@ import PrintButton from "@/app/components/printButton";
 import { downloadFile } from "@/app/services/allApi";
 import WorkflowApprovalActions from "@/app/components/workflowApprovalActions";
 import TabBtn from "@/app/components/tabBtn";
+import { formatDate } from "@/app/(private)/(dashboard)/(master)/salesTeam/details/[uuid]/page";
+import ImagePreviewModal from "@/app/components/ImagePreviewModal";
 interface CustomerItem {
   id: number;
   uuid: string;
@@ -32,17 +34,21 @@ interface CustomerItem {
   route: { id: number; code: string; name: string };
   salesman: { id: number; code: string; name: string };
   project_type: { id: number; code: string; name: string };
+  salesman_sign: string;
+  created_at: any;
   details: Array<{
     id: number;
     uuid: string;
     osa_code: string;
-    item: { id: number;erp_code:string; code: string; name: string };
+    item: { id: number; erp_code: string; code: string; name: string };
     uom_name: string;
     qty: number;
     price: string;
     status: number;
   }>;
 }
+
+const NEXT_PUBLIC_BASE_URL = "https://api.coreexl.com/osa_developmentV2/public/storage/"
 
 const backBtnUrl = "/salesTeamLoad";
 
@@ -58,11 +64,14 @@ export default function ViewPage() {
   const [loading, setLoadingState] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("overview");
   const title = `Load #${customer?.osa_code || "-"}`;
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imagesToShow, setImagesToShow] = useState<string[]>([]);
+  const [startIndex, setStartIndex] = useState(1);
 
   const tabList = [
-        { key: "overview", label: "Overview" },
-        { key: "items", label: "Load Items" },
-    ];
+    { key: "overview", label: "Overview" },
+    { key: "items", label: "Load Items" },
+  ];
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -105,11 +114,45 @@ export default function ViewPage() {
   const targetRef = useRef<HTMLDivElement | null>(null);
 
   const onTabClick = async (idx: number) => {
-        // ensure index is within range and set the corresponding tab key
-        if (typeof idx !== "number") return;
-        if (typeof tabList === "undefined" || idx < 0 || idx >= tabList.length) return;
-        setActiveTab(tabList[idx].key);
-    };
+    // ensure index is within range and set the corresponding tab key
+    if (typeof idx !== "number") return;
+    if (typeof tabList === "undefined" || idx < 0 || idx >= tabList.length) return;
+    setActiveTab(tabList[idx].key);
+  };
+
+  const openImageModal = (images: string[], index: number) => {
+    setImagesToShow(images);
+    setStartIndex(index);
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setImagesToShow([]);
+    setStartIndex(0);
+  };
+
+  // Helper to get full image URL or null
+  const getImageUrl = (file?: string | null) => {
+    if (!file) return null;
+    // If file is already a full URL, return as is
+    if (file.startsWith('http://') || file.startsWith('https://')) return file;
+    return `${NEXT_PUBLIC_BASE_URL}${file}`;
+  };
+
+  const getFileView = (file?: string | null) => {
+    const imageUrl = getImageUrl(file);
+    return imageUrl ? (
+      <button
+        className="text-blue-600 underline hover:text-blue-800 transition cursor-pointer"
+        onClick={() => openImageModal([imageUrl], 0)}
+      >
+        View Image
+      </button>
+    ) : (
+      "-"
+    );
+  };
   return (
     <>
       {/* ---------- Header ---------- */}
@@ -156,76 +199,90 @@ export default function ViewPage() {
 
             <hr className="border-gray-200 my-5" />
 
-             <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
-                            {tabList.map((tab, index) => (
-                                <div key={index}>
-                                    <TabBtn
-                                        label={tab.label}
-                                        isActive={activeTab === tab.key}
-                                        onClick={() => onTabClick(index)}
-                                    />
-                                </div>
-                            ))}
-                        </ContainerCard>
-{activeTab === "overview" && (
-                <div className="m-auto">
-                    <div className="flex flex-wrap gap-x-[20px]">
-                        <div className="mb-4">
-                        </div>
-                        <div className="flex flex-col gap-6 w-full md:flex-row md:gap-6">
-                            <div className="flex-1 w-full">
-                                <ContainerCard className="w-full h-full">
-                                    <KeyValueData
-                                        title="Overview"
-                                         data={[
-                    {
-                      key: "Distributor",
-                      value:
-                        customer?.warehouse?.code && customer?.warehouse?.name
-                          ? `${customer.warehouse.code} - ${customer.warehouse.name}`
-                          : "-",
-                    },
-                    {
-                      key: "Route",
-                      value: customer?.route
-                        ? `${customer.route.code} - ${customer.route.name}`
-                        : "-",
-                    },
-                    {
-                      key: "Sales Team Type",
-                      value: customer?.salesman_type?.name || "-",
-                    },
-                    {
-                      key: "Project Type",
-                      value: customer?.project_type?.name || "-",
-                    },
-                    {
-                      key: "Sales Team",
-                      value: customer?.salesman
-                        ? `${customer.salesman.code} - ${customer.salesman.name}`
-                        : "-",
-                    },
-                  ]}
-                                    />
-                                  
-                                </ContainerCard>
-                            </div>
-                          
-                        </div>
-                    </div>
+            <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+              {tabList.map((tab, index) => (
+                <div key={index}>
+                  <TabBtn
+                    label={tab.label}
+                    isActive={activeTab === tab.key}
+                    onClick={() => onTabClick(index)}
+                  />
                 </div>
+              ))}
+            </ContainerCard>
+            {activeTab === "overview" && (
+              <div className="m-auto">
+                <div className="flex flex-wrap gap-x-[20px]">
+                  <div className="mb-4">
+                  </div>
+                  <div className="flex flex-col gap-6 w-full md:flex-row md:gap-6">
+                    <div className="flex-1 w-full">
+                      <ContainerCard className="w-full h-full">
+                        <KeyValueData
+                          title="Overview"
+                          data={[
+                            {
+                              key: "Load Date",
+                              value: formatDate(customer?.created_at),
+                            },
+                            {
+                              key: "Distributor",
+                              value:
+                                customer?.warehouse?.code && customer?.warehouse?.name
+                                  ? `${customer.warehouse.code} - ${customer.warehouse.name}`
+                                  : "-",
+                            },
+                            {
+                              key: "Route",
+                              value: customer?.route
+                                ? `${customer.route.code} - ${customer.route.name}`
+                                : "-",
+                            },
+                            {
+                              key: "Sales Team Type",
+                              value: customer?.salesman_type?.name || "-",
+                            },
+                            {
+                              key: "Project Type",
+                              value: customer?.project_type?.name || "-",
+                            },
+                            {
+                              key: "Sales Team",
+                              value: customer?.salesman
+                                ? `${customer.salesman.code} - ${customer.salesman.name}`
+                                : "-",
+                            },
+                            {
+                              key: "Salesman Signature",
+                              value: getFileView(customer?.salesman_sign),
+                            },
+                          ]}
+                        />
+
+                      </ContainerCard>
+                    </div>
+                    <ImagePreviewModal
+                      images={imagesToShow}
+                      isOpen={isImageModalOpen}
+                      onClose={closeImageModal}
+                      startIndex={startIndex}
+                    />
+
+                  </div>
+                </div>
+              </div>
             )}
 
 
             {activeTab === "items" && (
-                // <ContainerCard >
+              // <ContainerCard >
 
-                <div className="flex flex-col h-full">
-                    <Table data={tableData} config={{ columns }} />
-                 
-                </div>
+              <div className="flex flex-col h-full">
+                <Table data={tableData} config={{ columns }} />
 
-                // </ContainerCard>
+              </div>
+
+              // </ContainerCard>
             )}
           </div>
 

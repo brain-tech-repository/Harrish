@@ -73,6 +73,15 @@ export const getSalesmanByWarehouseId = async (params: Params) => {
   }
 };
 
+export const getUnloadSalesmanByRouteId = async (params: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/unload/getProjectSalesmanByRoute`, { params });
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 // Salesman Load Details
 
 export const salesmanLoadDetailsList = async (params: Params) => {
@@ -892,7 +901,7 @@ export const exportAllInvoices = async (uuid: string, params?: Params) => {
   }
 };
 
-export const capsExportCollapse = async ( params?: Params) => {
+export const capsExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/capscollection/exportcollapse`, { params });
     return res.data;
@@ -901,7 +910,7 @@ export const capsExportCollapse = async ( params?: Params) => {
   }
 };
 
-export const loadExportCollapse = async ( params?: Params) => {
+export const loadExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/load/exportcollapse`, { params });
     return res.data;
@@ -910,7 +919,7 @@ export const loadExportCollapse = async ( params?: Params) => {
   }
 };
 
-export const orderExportCollapse = async ( params?: Params) => {
+export const orderExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/orders/exportcollapse`, { params });
     return res.data;
@@ -919,7 +928,7 @@ export const orderExportCollapse = async ( params?: Params) => {
   }
 };
 
-export const invoiceExportCollapse = async ( params?: Params) => {
+export const invoiceExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/invoices/exportcollapse`, { params });
     return res.data;
@@ -928,7 +937,7 @@ export const invoiceExportCollapse = async ( params?: Params) => {
   }
 };
 
-export const returnExportCollapse = async ( params?: Params) => {
+export const returnExportCollapse = async (params?: Params) => {
   try {
     const res = await API.get(`/api/agent_transaction/returns/exportcollapse
 `, { params });
@@ -938,81 +947,81 @@ export const returnExportCollapse = async ( params?: Params) => {
   }
 };
 
-export const unloadExportCollapse = async ( params?: Params) => {
+export const unloadExportCollapse = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/unload/exportcollapse`,{params});
+    const res = await API.get(`/api/agent_transaction/unload/exportcollapse`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const exchangeExportCollapse = async ( params?: Params) => {
+export const exchangeExportCollapse = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/exchanges/exportallcollapse`,{params});
+    const res = await API.get(`/api/agent_transaction/exchanges/exportallcollapse`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const deliveryExportCollapse = async ( params?: Params) => {
+export const deliveryExportCollapse = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/agent-delivery/exportcollapse`,{params});
+    const res = await API.get(`/api/agent_transaction/agent-delivery/exportcollapse`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const salesmanLoadPdf = async ( params?: Params) => {
+export const salesmanLoadPdf = async (params?: Params) => {
   try {
-    const res = await API.get(`/api/agent_transaction/load/exportall`,{params});
+    const res = await API.get(`/api/agent_transaction/load/exportall`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const orderGlobalFilter = async ( body?: Object) => {
+export const orderGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/orders/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/orders/globalFilter`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const deliveryGlobalFilter = async ( body?: Object) => {
+export const deliveryGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/agent-delivery/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/agent-delivery/globalFilter`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const invoiceGlobalFilter = async ( body?: Object) => {
+export const invoiceGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/invoices/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/invoices/globalFilter`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const loadGlobalFilter = async ( body?: Object) => {
+export const loadGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/load/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/load/globalFilter`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const itemsForCaps = async (id:string, params?: Params) => {
+export const itemsForCaps = async (id: string, params?: Params) => {
   try {
-    const res = await API.get(`api/settings/warehouse-stocks/itemsbasedwarehouse/${id}`,{params});
+    const res = await API.get(`api/settings/warehouse-stocks/itemsbasedwarehouse/${id}`, { params });
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
@@ -1020,18 +1029,27 @@ export const itemsForCaps = async (id:string, params?: Params) => {
 };
 
 
-export const unloadGlobalFilter = async ( body?: Object) => {
+export const unloadGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/unload/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/unload/globalFilter`, body);
     return res.data;
   } catch (error: unknown) {
     return handleError(error);
   }
 };
 
-export const returnGlobalFilter = async ( body?: Object) => {
+export const returnGlobalFilter = async (body?: Object) => {
   try {
-    const res = await API.post(`/api/agent_transaction/returns/globalFilter`,body);
+    const res = await API.post(`/api/agent_transaction/returns/globalFilter`, body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const unloadPdfDownload = async ( params?: Params) => {
+  try {
+    const res = await API.get(`/api/agent_transaction/unload/exportall`,{params});
     return res.data;
   } catch (error: unknown) {
     return handleError(error);

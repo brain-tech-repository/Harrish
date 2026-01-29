@@ -3,6 +3,7 @@ import Link from "@/app/components/smartLink";
 import React from "react";
 
 export default function SidebarBtn({
+    formikRef,
     isActive = false,
     href,
     className = "cursor-pointer",
@@ -21,6 +22,7 @@ export default function SidebarBtn({
     isSubmenu = false,
     type = "button",
 }: {
+    formikRef?:any;
     isActive?: boolean;
     className?: string;
     buttonTw?: string;
@@ -77,7 +79,7 @@ export default function SidebarBtn({
 
     if (href) {
         return (
-            <Link href={href} className={`${commonClasses} ${className}`} onClick={onClick}>
+            <Link ref={formikRef} href={href} className={`${commonClasses} ${className}`} onClick={onClick}>
                 {content}
             </Link>
         );
@@ -85,6 +87,7 @@ export default function SidebarBtn({
 
     return (
         <button
+        ref={formikRef}
             type={type}
             onClick={onClick}
             disabled={disabled}

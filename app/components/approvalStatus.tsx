@@ -6,6 +6,7 @@ export const statusStyles: Record<string, { text: string; bg: string }> = {
     // include common synonym
     "APPROVED": { text: '#92400E', bg: '#FFF7ED' },
     "REJECTED": { text: '#C62828', bg: '#FCE4E4' },
+    "COMPLETED": { text: '#027A48', bg: '#ECFDF3' },
     // "REJECTED": { text: '#E1465A', bg: '#FFF0F3' },
 };
 
