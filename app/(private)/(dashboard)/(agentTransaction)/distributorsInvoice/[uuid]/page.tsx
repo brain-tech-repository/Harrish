@@ -2076,6 +2076,7 @@ removeAppledPromotionalItems();
                         Cancel
                     </button>
                     <SidebarBtn
+                        formikRef={formikRef}
                         isActive={true}
                         disabled={isSubmitting || isAnyQtyOverStock}
                         leadingIcon="mdi:check"

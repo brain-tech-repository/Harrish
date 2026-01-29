@@ -1266,15 +1266,13 @@ function FilterTableHeader({
     const { api } = config;
     const [searchBarValue, setSearchBarValue] = useState("");
     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
-    const [selectedValues, setSelectedValues] = useState<string[]>([]);
+    const [selectedValues, setSelectedValues] = useState<any>([]);
     const parentRef = useRef<HTMLDivElement>(null);
     const { filterState, setFilterState } = useContext(TableDetails);
     const selectedRef = useRef<string | string[] | null>(null);
-    const router = useRouter();
+     const router = useRouter();
     const searchParams = useSearchParams(); 
-
-    // 1. Hydrate state from URL on mount
-    useEffect(() => {
+     useEffect(() => {
         const urlVal = searchParams.get(column);
         if (urlVal) {
             const arr = urlVal.split(',');
@@ -1337,104 +1335,128 @@ function FilterTableHeader({
 
     async function handleSelect(value: string) {
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-        const params = new URLSearchParams(searchParams.toString());
-        
-        // Reset to page 1 whenever a filter is changed
-        params.delete('page');
-
+         const params = new URLSearchParams(searchParams.toString());
+         params.delete('page');
         if (isSingle) {
             const selectedValue = filterConfig?.selectedValue;
-            
-            // Toggle logic: If clicking the same value, clear it
-            if (selectedValue === value || value === "") {
-                params.delete(column);
-                if (filterConfig?.onSelect) filterConfig.onSelect("");
-                
-                // Sync with global filter state to clear the field
-                try {
-                    setFilterState(prev => ({ 
-                        applied: Array.from(params.keys()).length > 0, 
-                        payload: { ...(prev?.payload || {}), [column]: "" } 
-                    }));
-                } catch (err) { /* ignore */ }
-
-                // Trigger API reload for the first page
-                if (api?.list) {
+            params.delete(column);
+            if (filterConfig?.onSelect) {
+                if (selectedValue === value) {
+                    filterConfig.onSelect(""); // Deselect
+                    // update global filter state to clear this field
                     try {
-                        setNestedLoading(true);
-                        const res = await api.list(1, defaultPageSize);
-                        const { data, total, currentPage } = await (res instanceof Promise ? res : res);
-                        setTableDetails({
-                            ...tableDetails,
-                            data,
-                            currentPage: currentPage - 1,
-                            total,
-                            pageSize: defaultPageSize,
-                        });
-                    } finally { setNestedLoading(false); }
-                }
-            } else {
-                // New selection logic
-                params.set(column, value);
-                if (filterConfig?.onSelect) filterConfig.onSelect(value);
-                
-                try {
-                    setFilterState(prev => ({ 
-                        applied: true, 
-                        payload: { ...(prev?.payload || {}), [column]: value } 
-                    }));
-                } catch (err) { /* ignore */ }
-
-                if (api?.search) {
+                        setFilterState(prev => ({ applied: false, payload: { ...(prev?.payload || {}), [column]: "" } }));
+                    } catch (err) { }
+                    // Call default list API and clear search filter
+                    if(api?.list) {
+                        try {
+                            setNestedLoading(true);
+                            const res = api.list(1, defaultPageSize);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
+                } 
+                else {
+                    params.set(column, value);
+                    filterConfig.onSelect(value);
                     try {
-                        setNestedLoading(true);
-                        const res = await api.search(value, defaultPageSize, column, 1);
-                        const { data, total, currentPage } = await (res instanceof Promise ? res : res);
-                        setTableDetails({
-                            ...tableDetails,
-                            data,
-                            currentPage: currentPage - 1,
-                            total,
-                            pageSize: defaultPageSize,
-                        });
-                    } finally { setNestedLoading(false); }
+                        setFilterState(prev => ({ applied: true, payload: { ...(prev?.payload || {}), [column]: value } }));
+                    } catch (err) { }
+                    if(api?.search) {
+                        try {
+                            setNestedLoading(true);
+                            const res = api.search(value, defaultPageSize, column, 1);
+                            const result = res instanceof Promise ? await res : res;
+                            const { data, total, currentPage } = result;
+                            setTableDetails({
+                                ...tableDetails,
+                                data,
+                                currentPage: currentPage - 1,
+                                total,
+                                pageSize: defaultPageSize,
+                            });
+                        } catch (err) { /* ignore */ }
+                        finally { setNestedLoading(false); }
+                    }
                 }
             }
             setShowFilterDropdown(false);
         } else {
-            // Multi-select logic
             let updated: string[];
             if (selectedValues.includes(value)) {
-                updated = selectedValues.filter((v) => v !== value);
+                updated = selectedValues.filter((v:any) => v !== value);
             } else {
                 updated = [...selectedValues, value];
             }
-
-            // // Remove all previous instances of the param (plain and array-style) before setting new value
-            // params.delete(column);
-            // params.delete(column + '[]');
-            // if (updated.length > 0) {
-            //     params.set(column, updated.join(','));
-            // }
-
+            // Only update local state, do not call API or onSelect here for multi-select
             setSelectedValues(updated);
-            // if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
-
-            // Sync to global filter state
+            // Optionally update filterState for UI sync, but do NOT trigger API
             try {
-                setFilterState(prev => ({ 
-                    applied: updated.length > 0, 
-                    payload: { ...(prev?.payload || {}), [column]: updated } 
-                }));
-            } catch (err) { /* ignore */ }
-
-            // Update the URL in the browser
-            router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+                setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
+            } catch (err) { }
+            // Do NOT call filterConfig.onSelect or any API here for multi-select
+            //  router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
         }
     }
 
-    // Function to clear filter for this column
-    function clearColumnFilter() {
+    //     function clearColumnFilter() {
+    //     const params = new URLSearchParams(searchParams.toString());
+    //     params.delete(column);
+    //     params.delete(column + '[]');
+    //     setSelectedValues([]);
+    //     if (filterConfig?.onSelect) filterConfig.onSelect("");
+    //     try {
+    //         setFilterState(prev => ({
+    //             applied: Array.from(params.keys()).length > 0,
+    //             payload: { ...(prev?.payload || {}), [column]: "" }
+    //         }));
+    //     } catch (err) { /* ignore */ }
+    //     router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+    // }
+    // Apply filter for multi-select (isSingle: false)
+    async function applyColumnFilter() {
+        const params = new URLSearchParams(searchParams.toString());
+         params.delete(column);
+        params.delete(column + '[]');
+        if (selectedValues.length > 0) {
+            params.set(column, selectedValues.join(','));
+        }
+        if (filterConfig?.isSingle === false) {
+            if (filterConfig?.onSelect) filterConfig.onSelect(selectedValues);
+            try {
+                setFilterState(prev => ({ applied: selectedValues.length > 0, payload: { ...(prev?.payload || {}), [column]: selectedValues } }));
+            } catch (err) { }
+            if (api?.search) {
+                try {
+                    setNestedLoading(true);
+                    const res = api.search(selectedValues, defaultPageSize, column, 1);
+                    const result = res instanceof Promise ? await res : res;
+                    const { data, total, currentPage } = result;
+                    setTableDetails({
+                        ...tableDetails,
+                        data,
+                        currentPage: currentPage - 1,
+                        total,
+                        pageSize: defaultPageSize,
+                    });
+                } catch (err) { /* ignore */ }
+                finally { setNestedLoading(false); }
+            }
+            setShowFilterDropdown(false);
+        }
+        // router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+    }
+
+        function clearColumnFilter() {
         const params = new URLSearchParams(searchParams.toString());
         params.delete(column);
         params.delete(column + '[]');
@@ -1446,54 +1468,9 @@ function FilterTableHeader({
                 payload: { ...(prev?.payload || {}), [column]: "" }
             }));
         } catch (err) { /* ignore */ }
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
+        // router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
     }
-
-    // Function to apply filter for this column (multi-select only)
-    async function applyColumnFilter() {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(column);
-        params.delete(column + '[]');
-        if (selectedValues.length > 0) {
-            params.set(column, selectedValues.join(','));
-        }
-        if (filterConfig?.onSelect) filterConfig.onSelect(String(selectedValues.join(",")));
-        try {
-            setFilterState(prev => ({
-                applied: selectedValues.length > 0,
-                payload: { ...(prev?.payload || {}), [column]: selectedValues }
-            }));
-        } catch (err) { /* ignore */ }
-        // Build params for list API: route_id=1,2,3 etc
-        const listParams: Record<string, string> = {};
-        Object.entries(filterState?.payload || {}).forEach(([key, value]) => {
-            if (Array.isArray(value) && value.length > 0) {
-                listParams[`${key}_id`] = value.join(",");
-            } else if (typeof value === "string" && value) {
-                listParams[`${key}_id`] = value;
-            }
-        });
-        // Add current column selection
-        if (selectedValues.length > 0) {
-            listParams[`${column}_id`] = selectedValues.join(",");
-        }
-        // Call list API (not filterBy)
-        if (api?.list) {
-            try {
-                setNestedLoading(true);
-                const res = await api.list(1, defaultPageSize, listParams);
-                const { data, total, currentPage } = await (res instanceof Promise ? res : res);
-                setTableDetails({
-                    ...tableDetails,
-                    data,
-                    currentPage: currentPage - 1,
-                    total,
-                    pageSize: defaultPageSize,
-                });
-            } finally { setNestedLoading(false); }
-        }
-        router.push(window.location.pathname + '?' + params.toString(), { scroll: false });
-    }
+    
 // function handleSelect(value: string) {
 //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
 //         if (isSingle) {
@@ -1523,6 +1500,8 @@ function FilterTableHeader({
 //             });
 //         }
 //     }
+
+
 
     return (
         <DismissibleDropdown
@@ -1556,28 +1535,8 @@ function FilterTableHeader({
                                 selectedValue={typeof selectedRef.current === 'string' ? (selectedRef.current as string) : (filterConfig?.selectedValue ?? "")}
                                 onSelect={handleSelect}
                             />
-                        ) : (<>
-                            <div className="font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] border-b border-gray-200">
-                                <CustomCheckbox
-                                    id={column + "-select-all"}
-                                    checked={filteredOptions.length > 0 && filteredOptions.every(opt => selectedValues.includes(opt.value))}
-                                    indeterminate={selectedValues.length > 0 && selectedValues.length < filteredOptions.length}
-                                    label="Select All"
-                                    onChange={() => {
-                                        if (filteredOptions.length === 0) return;
-                                        if (filteredOptions.every(opt => selectedValues.includes(opt.value))) {
-                                            // Deselect all
-                                            setSelectedValues([]);
-                                            // if (filterConfig?.onSelect) filterConfig.onSelect("");
-                                        } else {
-                                            // Select all
-                                            const all = filteredOptions.map(opt => opt.value);
-                                            setSelectedValues(all);
-                                            // if (filterConfig?.onSelect) filterConfig.onSelect(all.join(","));
-                                        }
-                                    }}
-                                />
-                            </div>
+                        ) : (
+                            <>
                             {filteredOptions.map((option, idx) => (
                                 <div
                                     key={option.value}
@@ -1597,7 +1556,7 @@ function FilterTableHeader({
                                     isActive={false}
                                     type="button"
                                     onClick={clearColumnFilter}
-                                    label="Clear"
+                                    label="Clear All"
                                     buttonTw="px-3 py-2 h-9"
                                     disabled={filteredOptions.length === 0}
                                 />
@@ -2712,7 +2671,7 @@ useEffect(() => {
 //             pageSize: number,
 //         ) => Promise<listReturnType> | listReturnType;
 //         filterBy?: (
-//             payload: Record<string, string | number | null>,
+//             payload: Record<string, string | number | null | string[] | number[]>,
 //             pageSize: number,
 //             pageNo?: number
 //         ) => Promise<listReturnType> | listReturnType;
@@ -3831,7 +3790,7 @@ useEffect(() => {
 //     const { api } = config;
 //     const [searchBarValue, setSearchBarValue] = useState("");
 //     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
-//     const [selectedValues, setSelectedValues] = useState<string[]>([]);
+//     const [selectedValues, setSelectedValues] = useState<any>([]);
 //     const parentRef = useRef<HTMLDivElement>(null);
 //     const { filterState, setFilterState } = useContext(TableDetails);
 //     const selectedRef = useRef<string | string[] | null>(null);
@@ -3944,18 +3903,47 @@ useEffect(() => {
 //         } else {
 //             let updated: string[];
 //             if (selectedValues.includes(value)) {
-//                 updated = selectedValues.filter((v) => v !== value);
+//                 updated = selectedValues.filter((v:any) => v !== value);
 //             } else {
 //                 updated = [...selectedValues, value];
 //             }
-//             // persist multi-select in global filter state
+//             // Only update local state, do not call API or onSelect here for multi-select
+//             setSelectedValues(updated);
+//             // Optionally update filterState for UI sync, but do NOT trigger API
 //             try {
 //                 setFilterState(prevState => ({ applied: updated.length > 0, payload: { ...(prevState?.payload || {}), [column]: updated } }));
 //             } catch (err) { }
-//             if (filterConfig?.onSelect) filterConfig.onSelect(String(updated));
-//             setSelectedValues(updated);
+//             // Do NOT call filterConfig.onSelect or any API here for multi-select
 //         }
 //     }
+
+//     // Apply filter for multi-select (isSingle: false)
+//     async function applyColumnFilter() {
+//         if (filterConfig?.isSingle === false) {
+//             if (filterConfig?.onSelect) filterConfig.onSelect(selectedValues);
+//             try {
+//                 setFilterState(prev => ({ applied: selectedValues.length > 0, payload: { ...(prev?.payload || {}), [column]: selectedValues } }));
+//             } catch (err) { }
+//             if (api?.search) {
+//                 try {
+//                     setNestedLoading(true);
+//                     const res = api.search(selectedValues, defaultPageSize, column, 1);
+//                     const result = res instanceof Promise ? await res : res;
+//                     const { data, total, currentPage } = result;
+//                     setTableDetails({
+//                         ...tableDetails,
+//                         data,
+//                         currentPage: currentPage - 1,
+//                         total,
+//                         pageSize: defaultPageSize,
+//                     });
+//                 } catch (err) { /* ignore */ }
+//                 finally { setNestedLoading(false); }
+//             }
+//             setShowFilterDropdown(false);
+//         }
+//     }
+    
 // // function handleSelect(value: string) {
 // //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
 // //         if (isSingle) {
@@ -3985,6 +3973,8 @@ useEffect(() => {
 // //             });
 // //         }
 // //     }
+
+
 
 //     return (
 //         <DismissibleDropdown
@@ -4038,7 +4028,7 @@ useEffect(() => {
 //                                 <SidebarBtn
 //                                     isActive={false}
 //                                     type="button"
-//                                     // onClick={clearColumnFilter}
+//                                     onClick={clearColumnFilter}
 //                                     label="Clear All"
 //                                     buttonTw="px-3 py-2 h-9"
 //                                     disabled={filteredOptions.length === 0}

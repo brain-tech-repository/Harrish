@@ -9,8 +9,8 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { salesmanUnloadList,unloadExportCollapse, unloadGlobalFilter } from "@/app/services/agentTransaction";
-import { downloadFile } from "@/app/services/allApi";
+import { salesmanUnloadList,unloadExportCollapse, unloadGlobalFilter,unloadPdfDownload } from "@/app/services/agentTransaction";
+import { downloadFile,downloadPDFGlobal } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -328,6 +328,27 @@ const [threeDotLoading, setThreeDotLoading] = useState({
         }
       };
 
+        const downloadPdf = async (uuid: string) => {
+          try {
+            // setLoading(true);
+            // setThreeDotLoading((prev) => ({ ...prev, pdf: true }));
+            const response = await unloadPdfDownload({ uuid: uuid, format: "pdf" });
+            if (response && typeof response === 'object' && response.download_url) {
+               const fileName = `load-${uuid}.pdf`;
+              await downloadPDFGlobal(response.download_url, fileName);
+              // await downloadFile(response.download_url);
+              showSnackbar("File downloaded successfully ", "success");
+            } else {
+              showSnackbar("Failed to get download URL", "error");
+            }
+          } catch (error) {
+            showSnackbar("Failed to download file", "error");
+          } finally {
+            // setThreeDotLoading((prev) => ({ ...prev, pdf: false }));
+            // setLoading(false);
+          }
+        };
+
   return (
     <div className="flex flex-col h-full">
       {/* <div className="gap-3 mb-4">
@@ -338,7 +359,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
       <Table
         refreshKey={refreshKey}
         config={{
-          api: { list: fetchSalesmanUnloadHeader,  filterBy: async (payload: Record<string, string | number | null>,pageSize: number) => {
+          api: { list: fetchSalesmanUnloadHeader,  filterBy: async (payload: Record<string, string | number | null |any>,pageSize: number) => {
                 if (colFilter) {
                   return filterBy(payload, pageSize);
                 } else {
@@ -398,6 +419,12 @@ const [threeDotLoading, setThreeDotLoading] = useState({
                 const row = data as TableDataType;
                 router.push(`/salesTeamUnload/details/${String(row.uuid)}`);
               },
+              
+            },
+            {
+              icon: "material-symbols:download",
+              showLoading: true,
+              onClick: (row: TableDataType) => downloadPdf(row.uuid),
             },
           ],
           pageSize: 50,

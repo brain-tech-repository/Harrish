@@ -242,7 +242,7 @@ export default function CustomerInvoicePage() {
 
     const filterBy = useCallback(
         async (
-            payload: Record<string, string | number | null>,
+            payload: Record<string, string | number | null | any>,
             pageSize: number = 50,
             pageNo?: number
         ): Promise<listReturnType> => {
