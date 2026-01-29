@@ -140,7 +140,8 @@ export default function VehiclePage() {
         filterkey: "warehouse_id",
         options: warehouseAllOptions,
         onSelect: (selected: string | string[]) => {
-          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+          const val = Array.isArray(selected) ? selected.join(',') : selected;
+          setWarehouseId(val);
         },
         isSingle: false,
         selectedValue: warehouseId,
@@ -164,7 +165,7 @@ export default function VehiclePage() {
       },
     },
   ];
-
+console.log(warehouseId)
   useEffect(() => {
     setRefreshKey((k) => k + 1);
   }, [warehouseId, statusFilterValue, currentStatusFilter]);
@@ -182,7 +183,7 @@ export default function VehiclePage() {
       const params: any = {
         page: page.toString(),
         per_page: pageSize.toString(),
-        ...payload,
+        // ...payload,
       };
 
       // Add warehouse filter if selected
@@ -308,13 +309,13 @@ export default function VehiclePage() {
                   // showOnSelect: true,
                   showWhen: (data: TableDataType[], selectedRow?: number[]) => {
                     if (!selectedRow || selectedRow.length === 0) return false;
-                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    const status = selectedRow?.map((id) => data[id]?.status).map(String);
                     return status?.includes("1") || false;
                   },
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     const status: string[] = [];
                     const ids = selectedRow?.map((id) => {
-                      const currentStatus = data[id].status;
+                      const currentStatus = data[id]?.status;
                       if (!status.includes(currentStatus)) {
                         status.push(currentStatus);
                       }
@@ -329,13 +330,13 @@ export default function VehiclePage() {
                   // showOnSelect: true,
                   showWhen: (data: TableDataType[], selectedRow?: number[]) => {
                     if (!selectedRow || selectedRow.length === 0) return false;
-                    const status = selectedRow?.map((id) => data[id].status).map(String);
+                    const status = selectedRow?.map((id) => data[id]?.status).map(String);
                     return status?.includes("0") || false;
                   },
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     const status: string[] = [];
                     const ids = selectedRow?.map((id) => {
-                      const currentStatus = data[id].status;
+                      const currentStatus = data[id]?.status;
                       if (!status.includes(currentStatus)) {
                         status.push(currentStatus);
                       }

@@ -276,7 +276,7 @@ export default function AgentCustomer() {
             // Build params with all filters
             const params: Record<string, string> = {
                 page: page.toString(),
-                ...payload
+                // ...payload
             };
             if (selectedSubCategoryId) {
                 params.subcategory_id = String(selectedSubCategoryId);

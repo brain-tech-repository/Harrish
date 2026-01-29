@@ -92,7 +92,7 @@ export default function CompanyCustomers() {
     const params: any = {
       page: pageNo.toString(),
       pageSize: pageSize.toString(),
-      ...payload,
+      // ...payload,
     };
 
     // Add status filter if active (true=1, false=0)

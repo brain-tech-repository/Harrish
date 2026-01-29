@@ -80,7 +80,7 @@ export default function RouteVisits() {
           status: filters.status,
           page: page,
           per_page: pageSize,
-          ...payload,
+          // ...payload,
         };
         
         // Add status filter if active (true=1, false=0)
