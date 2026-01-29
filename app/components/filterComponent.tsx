@@ -55,11 +55,11 @@ type ApiResponse<T> = {
 };
 
 export default function FilterComponent(filterProps: FilterComponentProps) {
-    const { disabled = false } = filterProps;
+  const { disabled = false } = filterProps;
   const {
     customerSubCategoryOptions,
     companyOptions,
-    
+
     // fetchSalesmanByRouteOptions,
     assetsModelOptions,
     ensureCompanyLoaded,
@@ -72,7 +72,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   useEffect(() => {
     ensureCompanyLoaded();
     // ensureSalesmanLoaded();
-    if(showFilter("model")){
+    if (showFilter("model")) {
       ensureAssetsModelLoaded();
 
     };
@@ -80,40 +80,41 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const { onlyFilters, currentDate, currentMonth, api } = filterProps;
 
   // Set default date for from_date and to_date based on currentDate or currentMonth
-  useEffect(() => {
-    if (currentMonth) {
-      // Set to first and last day of current month
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-      // First day
-      const firstDay = new Date(year, month, 2);
-      // Last day
-      const lastDay = new Date(year, month + 1, 1);
-      const firstDayStr = firstDay.toISOString().slice(0, 10);
-      const lastDayStr = lastDay.toISOString().slice(0, 10);
-      filterProps.setPayload((prev:any) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
-    } else if (currentDate) {
-      const today = new Date().toISOString().slice(0, 10);
-      if (!filterProps.payload.from_date) {
-        filterProps.setPayload((prev:any) => ({ ...prev, from_date: today }));
-      }
-      if (!filterProps.payload.to_date) {
-        filterProps.setPayload((prev:any) => ({ ...prev, to_date: today }));
-      }
-    } else {
-      // If neither, clear the dates
-      filterProps.setPayload((prev:any) => ({ ...prev, from_date: "", to_date: "" }));
-    }
-    // Only run on mount or when currentDate/currentMonth changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, currentMonth]);
+  // Set default date for from_date and to_date based on currentDate or currentMonth
+  // useEffect(() => {
+  //   if (currentMonth) {
+  //     // Set to first and last day of current month
+  //     const now = new Date();
+  //     const year = now.getFullYear();
+  //     const month = now.getMonth();
+  //     // First day
+  //     const firstDay = new Date(year, month, 2);
+  //     // Last day
+  //     const lastDay = new Date(year, month + 1, 1);
+  //     const firstDayStr = firstDay.toISOString().slice(0, 10);
+  //     const lastDayStr = lastDay.toISOString().slice(0, 10);
+  //     filterProps.setPayload((prev: any) => ({ ...prev, from_date: firstDayStr, to_date: lastDayStr }));
+  //   } else if (currentDate) {
+  //     const today = new Date().toISOString().slice(0, 10);
+  //     if (!filterProps.payload.from_date) {
+  //       filterProps.setPayload((prev: any) => ({ ...prev, from_date: today }));
+  //     }
+  //     if (!filterProps.payload.to_date) {
+  //       filterProps.setPayload((prev: any) => ({ ...prev, to_date: today }));
+  //     }
+  //   } else {
+  //     // If neither, clear the dates
+  //     filterProps.setPayload((prev: any) => ({ ...prev, from_date: "", to_date: "" }));
+  //   }
+  //   // Only run on mount or when currentDate/currentMonth changes
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [currentDate, currentMonth]);
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,
     area: false,
     warehouse: false,
-    route: false, 
+    route: false,
     salesteam: false,
   });
   const [regionOptions, setRegionOptions] = useState<DropdownOption[]>([]);
@@ -154,11 +155,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
   const onChangeArray = (key: string, value: any) => {
     if (keysToArray.includes(key)) {
-      setPayload((prev:any) => ({ ...prev, [key]: toArray(value) }));
+      setPayload((prev: any) => ({ ...prev, [key]: toArray(value) }));
     } else {
-      setPayload((prev:any) => ({ ...prev, [key]: value }));
+      setPayload((prev: any) => ({ ...prev, [key]: value }));
     }
-  } 
+  }
 
   const companyVal = toArray(payload.company_id);
   const regionVal = toArray(payload.region_id);
@@ -176,7 +177,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchRegions = async () => {
-        setSkeleton((prev) => ({ ...prev, region: true }));
+      setSkeleton((prev) => ({ ...prev, region: true }));
       try {
         const regions: ApiResponse<Region[]> = await regionList({
           company_id: companyVal.join(","),
@@ -192,7 +193,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch region list:", err);
         setRegionOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, region: false }));
+      setSkeleton((prev) => ({ ...prev, region: false }));
     };
 
     fetchRegions();
@@ -206,11 +207,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchAreas = async () => {
-        setSkeleton((prev) => ({ ...prev, area: true }));
-    
+      setSkeleton((prev) => ({ ...prev, area: true }));
+
       try {
         const res: ApiResponse<{ data: Area[] } | Area[]> = await subRegionList(
-          { region_id: regionVal.join(","),dropdown:"true" }
+          { region_id: regionVal.join(","), dropdown: "true" }
         );
         const areaList =
           (res as { data: Area[] })?.data || (res as Area[]) || [];
@@ -225,7 +226,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch area list:", err);
         setAreaOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, area: false }));
+      setSkeleton((prev) => ({ ...prev, area: false }));
     };
 
     fetchAreas();
@@ -238,11 +239,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     }
 
     const fetchWarehouses = async () => {
-        setSkeleton((prev) => ({ ...prev, warehouse: true }));
+      setSkeleton((prev) => ({ ...prev, warehouse: true }));
 
       try {
         const res: ApiResponse<{ data: Warehouse[] } | Warehouse[]> =
-          await warehouseList({ area_id: areaVal.join(","),dropdown:"true" });
+          await warehouseList({ area_id: areaVal.join(","), dropdown: "true" });
         const warehousesList =
           (res as { data: Warehouse[] })?.data || (res as Warehouse[]) || [];
 
@@ -256,7 +257,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch warehouse list:", err);
         setWarehouseOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, warehouse: false }));
+      setSkeleton((prev) => ({ ...prev, warehouse: false }));
 
     };
 
@@ -272,11 +273,11 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
 
     const fetchRoutes = async () => {
-        setSkeleton((prev) => ({ ...prev, route: true }));
+      setSkeleton((prev) => ({ ...prev, route: true }));
       try {
         const res: ApiResponse<{ data: Route[] } | Route[]> = await routeList({
           warehouse_id: warehouseVal.join(","),
-          dropdown:"true",
+          dropdown: "true",
         });
         const routeListData =
           (res as { data: Route[] })?.data || (res as Route[]) || [];
@@ -291,22 +292,22 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
         console.error("Failed to fetch route list:", err);
         setRouteOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, route: false }));
+      setSkeleton((prev) => ({ ...prev, route: false }));
     };
-fetchRoutes();
+    fetchRoutes();
   }, [warehouseVal.join(",")]);
 
-       useEffect(() => {
+  useEffect(() => {
     if (!areaVal.length) {
       setSalesmanOptions([]);
       return;
     }
     const fetchSalesman = async () => {
-        setSkeleton((prev) => ({ ...prev, salesteam: true }));
+      setSkeleton((prev) => ({ ...prev, salesteam: true }));
       try {
         const res: ApiResponse<{ data: Route[] } | Route[]> = await salesmanList({
           route_id: routeVal.join(","),
-          dropdown:"true",
+          dropdown: "true",
         });
         const routeListData =
           (res as { data: Route[] })?.data || (res as Route[]) || [];
@@ -321,7 +322,7 @@ fetchRoutes();
         console.error("Failed to fetch salesman list:", err);
         setSalesmanOptions([]);
       }
-        setSkeleton((prev) => ({ ...prev, salesteam: false }));
+      setSkeleton((prev) => ({ ...prev, salesteam: false }));
     };
 
     fetchSalesman();
@@ -344,33 +345,33 @@ fetchRoutes();
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Day Filter Dropdown */}
-       {showFilter("day_filter") && (
-      <InputFields
-        label="Day Filter"
-        name="day_filter"
-        placeholder="Select Filter"
-        type="select"
-        options={[
-          { value: "yesterday", label: "Yesterday" },
-          { value: "today", label: "Today" },
-          { value: "3days", label: "Last 3 Days" },
-          { value: "7days", label: "Last 7 Days" },
-          { value: "lastmonth", label: "Last Month" },
-        ]}
-        value={
-          Array.isArray(payload.day_filter)
-            ? payload.day_filter.map((v:any) => (typeof v === "number" ? String(v) : v))
-            : typeof payload.day_filter === "number"
-            ? String(payload.day_filter)
-            : payload.day_filter || ""
-        }
-        disabled={disabled || !!payload.from_date || !!payload.to_date}
-        onChange={(e) => {
-          const raw = (e as any)?.target?.value ?? e;
-          setPayload((prev:any) => ({ ...prev, day_filter: raw }));
-        }}
-      />
-       )}
+      {showFilter("day_filter") && (
+        <InputFields
+          label="Day Filter"
+          name="day_filter"
+          placeholder="Select Filter"
+          type="select"
+          options={[
+            { value: "yesterday", label: "Yesterday" },
+            { value: "today", label: "Today" },
+            { value: "3days", label: "Last 3 Days" },
+            { value: "7days", label: "Last 7 Days" },
+            { value: "lastmonth", label: "Last Month" },
+          ]}
+          value={
+            Array.isArray(payload.day_filter)
+              ? payload.day_filter.map((v: any) => (typeof v === "number" ? String(v) : v))
+              : typeof payload.day_filter === "number"
+                ? String(payload.day_filter)
+                : payload.day_filter || ""
+          }
+          disabled={disabled || !!payload.from_date || !!payload.to_date}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            setPayload((prev: any) => ({ ...prev, day_filter: raw }));
+          }}
+        />
+      )}
       {/* Start Date */}
       {showFilter("from_date") && (
         <InputFields
@@ -380,12 +381,12 @@ fetchRoutes();
           value={
             typeof payload.from_date === "number"
               ? String(payload.from_date)
-              : (payload.from_date as string | undefined) ?? ""
+              : (payload.from_date as string | undefined) ?? new Date().toISOString().split("T")[0]
           }
           disabled={disabled || !!payload.day_filter}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev:any) => ({ ...prev, from_date: raw }));
+            setPayload((prev: any) => ({ ...prev, from_date: raw }));
           }}
         />
       )}
@@ -399,12 +400,12 @@ fetchRoutes();
           value={
             typeof payload.to_date === "number"
               ? String(payload.to_date)
-              : (payload.to_date as string | undefined) ?? ""
+              : (payload.to_date as string | undefined) ?? new Date().toISOString().split("T")[0]
           }
           disabled={disabled || !!payload.day_filter || !payload.from_date}
           onChange={(e) => {
             const raw = (e as any)?.target?.value ?? e;
-            setPayload((prev:any) => ({ ...prev, to_date: raw }));
+            setPayload((prev: any) => ({ ...prev, to_date: raw }));
           }}
         />
       )}
@@ -426,8 +427,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("company_id", val);
             // reset downstream when parent changes
             onChangeArray("region_id", []);
@@ -456,8 +457,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("region_id", val);
             onChangeArray("area_id", []);
             onChangeArray("warehouse_id", []);
@@ -484,8 +485,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("area_id", val);
             onChangeArray("warehouse_id", []);
             onChangeArray("route_id", []);
@@ -511,8 +512,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("warehouse_id", val);
             onChangeArray("route_id", []);
             onChangeArray("salesman_id", []);
@@ -538,8 +539,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("route_id", val);
             onChangeArray("salesman_id", []);
           }}
@@ -563,8 +564,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("salesman_id", val);
           }}
         />
@@ -586,8 +587,8 @@ fetchRoutes();
             const val = Array.isArray(raw)
               ? raw
               : typeof raw === "string"
-              ? raw.split(",").filter(Boolean)
-              : [];
+                ? raw.split(",").filter(Boolean)
+                : [];
             onChangeArray("model", val);
           }}
         />

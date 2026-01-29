@@ -13,7 +13,7 @@ export default function SearchBar({
     placeholder?: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onEnterPress?: () => void;
+    onEnterPress?: (e?: React.KeyboardEvent<HTMLInputElement>) => void;
     onClear?: () => void;
     icon?: string;
     iconWidth?: number;
@@ -25,7 +25,7 @@ export default function SearchBar({
             </div>
             <input
                 type="text"
-                onKeyDown={(e) => e.key === "Enter" && onEnterPress && onEnterPress()}
+                onKeyDown={(e) => e.key === "Enter" && onEnterPress && onEnterPress(e)}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
