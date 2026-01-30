@@ -36,6 +36,7 @@ interface FormData {
   description: string;
   item_uoms: {
     id: number;
+    uom_id: number;
     item_id: number;
     uom_type: string;
     name: string;
@@ -383,7 +384,7 @@ export default function ExchangeAddEditPage() {
             return { 
               ...uom, 
               price,
-              id: uom.id || `${stockItem.item_id}_${uom.uom_type}`,
+              id: uom.uom_id,
               item_id: stockItem.item_id
             };
           }) : [];
@@ -592,8 +593,8 @@ export default function ExchangeAddEditPage() {
         }
 
         // Default to first UOM
-        item.uom_id = selectedItem?.item_uoms?.[0]?.id
-          ? String(selectedItem.item_uoms[0].id)
+        item.uom_id = selectedItem?.item_uoms?.[0]?.uom_id
+          ? String(selectedItem.item_uoms[0].uom_id)
           : "";
 
         // Price from first UOM with warehouse override

@@ -26,6 +26,10 @@ export default function CallRegister() {
         csv: false,
         xlsx: false,
     });
+    const [filters, setFilters] = useState({
+        from_date: "",
+        to_date: "",
+    });
     const [technicianOptions, setTechnicianOptions] = useState([]);
     // Refresh table when permissions load
     useEffect(() => {
@@ -58,7 +62,7 @@ export default function CallRegister() {
     }, [fetchTechnicians]);
 
     const fetchServiceTypes = useCallback(
-        async (pageNo: number = 1, pageSize: number = 10): Promise<listReturnType> => {
+        async (pageNo: number = 1, pageSize: number = 50): Promise<listReturnType> => {
             setLoading(true);
             const res = await callRegisterList({
                 page: pageNo.toString(),
@@ -72,14 +76,14 @@ export default function CallRegister() {
                 return {
                     data: res.data || [],
                     currentPage: res?.pagination?.page || 0,
-                    pageSize: res?.pagination?.limit || 10,
+                    pageSize: res?.pagination?.limit || 50,
                     total: res?.pagination?.totalPages || 0,
                 };
             }
         }, []
     )
     const searchChiller = useCallback(
-        async (query: string, pageSize: number = 10): Promise<listReturnType> => {
+        async (query: string, pageSize: number = 50): Promise<listReturnType> => {
             setLoading(true);
             let res;
             setSearchQuery(query);
@@ -96,7 +100,7 @@ export default function CallRegister() {
                 return {
                     data: res.data || [],
                     currentPage: res?.pagination?.page || 0,
-                    pageSize: res?.pagination?.limit || 10,
+                    pageSize: res?.pagination?.limit || 50,
                     total: res?.pagination?.totalPages || 0,
                 };
             }
@@ -202,18 +206,32 @@ export default function CallRegister() {
                                     key: "from_date",
                                     label: "From Date",
                                     type: "date",
-                                    // isSingle: false,
                                     multiSelectChips: true,
-                                    // options: regionOptions || [],
-                                    // api={fetchCallRegisterAccordingToGlobalFilter},
+                                    onChange: (value: string) => {
+                                        setFilters((prev) => ({
+                                            ...prev,
+                                            from_date: value,
+                                            to_date:
+                                                prev.to_date && new Date(prev.to_date) < new Date(value)
+                                                    ? "" // reset invalid to_date
+                                                    : prev.to_date,
+                                        }));
+                                    },
                                 },
                                 {
                                     key: "to_date",
                                     label: "To Date",
                                     type: "date",
-                                    // isSingle: false,
                                     multiSelectChips: true,
-                                    // options: areaOptions || [],
+                                    onChange: (value: string) => {
+                                        setFilters((prev) => {
+                                            if (prev.from_date && new Date(value) < new Date(prev.from_date)) {
+                                                showSnackbar("To Date cannot be before From Date", "error");
+                                                return prev; // ❌ block update
+                                            }
+                                            return { ...prev, to_date: value };
+                                        });
+                                    },
                                 },
                                 {
                                     key: "ticket_type",
@@ -319,7 +337,7 @@ export default function CallRegister() {
                                 },
                             }] : []),
                         ],
-                        pageSize: 10,
+                        pageSize: 50,
                     }}
                 />
             </div>

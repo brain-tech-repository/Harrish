@@ -332,7 +332,7 @@ export default function OrderDetailPage() {
         <div className="flex justify-between text-primary">
           <div className="flex justify-between flex-wrap w-full">
             {/* Notes Section */}
-            <div className="hidden flex-col justify-end gap-[20px] w-full lg:flex lg:w-[400px]">
+            {/* <div className="hidden flex-col justify-end gap-[20px] w-full lg:flex lg:w-[400px]">
               <div className="flex flex-col space-y-[10px]">
                 <div className="font-semibold text-[#181D27]">Customer Note</div>
                 <div>
@@ -340,7 +340,7 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-            </div>
+            </div> */}
 
             {/* Totals */}
             {/* <div className="flex flex-col gap-[10px] w-full lg:w-[350px] border-b-[1px] border-[#D5D7DA] lg:border-0 pb-[20px] lg:pb-0 mb-[20px] lg:mb-0">
@@ -360,7 +360,7 @@ export default function OrderDetailPage() {
             </div> */}
 
             {/* Notes (Mobile) */}
-            <div className="flex flex-col justify-end gap-[20px] w-full lg:hidden lg:w-[400px]">
+            {/* <div className="flex flex-col justify-end gap-[20px] w-full lg:hidden lg:w-[400px]">
               <div className="flex flex-col space-y-[10px]">
                 <div className="font-semibold text-[#181D27]">Customer Note</div>
                 <div>
@@ -368,7 +368,7 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-            </div>
+            </div> */}
           </div>
         </div>
 

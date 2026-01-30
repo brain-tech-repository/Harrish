@@ -44,6 +44,8 @@ export type FilterField = {
     multiSelectChips?: boolean;
     applyWhen?: (filters: Record<string, any>) => boolean;
     inputProps?: Record<string, any>;
+    onChange?: (value: any) => void;
+    minDate?: string;
 };
 
 export type FilterRendererProps = {
@@ -56,6 +58,7 @@ export type FilterRendererProps = {
     close: () => void;
     isApplying: boolean;
     isClearing: boolean;
+    onChange?: (value: string | string[]) => void;
 };
 
 export type configType = {

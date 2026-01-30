@@ -7,7 +7,7 @@ import Table, {
 } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import StatusBtn from "@/app/components/statusBtn2";
-import { acfList, addAcf, crfExport, assetrequestGlobalFilter } from "@/app/services/assetsApi";
+import { acfList, addAcf, crfExport, crfGlobalFilter } from "@/app/services/assetsApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
 import { useRouter } from "next/navigation";
@@ -60,17 +60,17 @@ interface WorkflowStep {
 }
 
 const CHILLER_REQUEST_STATUS_MAP: Record<string | number, string> = {
-  1: "Sales Team Requested",
-  2: "Area Sales Manager Accepted",
-  3: "Area Sales Manager Rejected",
-  4: "Chiller Officer Accepted",
-  5: "Chiller Officer Rejected",
-  6: "Completed",
-  7: "Chiller Manager Rejected",
-  8: "Sales/Key Manager Rejected",
-  9: "Refused by Customer",
-  10: "Fridge Manager Accepted",
-  11: "Fridge Manager Rejected",
+    1: "Sales Team Requested",
+    2: "Area Sales Manager Accepted",
+    3: "Area Sales Manager Rejected",
+    4: "Chiller Officer Accepted",
+    5: "Chiller Officer Rejected",
+    6: "Completed",
+    7: "Chiller Manager Rejected",
+    8: "Sales/Key Manager Rejected",
+    9: "Refused by Customer",
+    10: "Fridge Manager Accepted",
+    11: "Fridge Manager Rejected",
 };
 
 
@@ -307,7 +307,7 @@ export default function CustomerInvoicePage() {
                     page: pageNo.toString(),
                     filter: patchedPayload
                 }
-                const listRes = await assetrequestGlobalFilter(body);
+                const listRes = await crfGlobalFilter(body);
                 const pagination =
                     listRes.pagination?.pagination || listRes.pagination || {};
                 return {
@@ -327,14 +327,14 @@ export default function CustomerInvoicePage() {
                 setLoading(false);
             }
         },
-        [assetrequestGlobalFilter, warehouseId]
+        [crfGlobalFilter, warehouseId]
     );
 
     // 🔹 Search Invoices (Mock)
 
 
 
- 
+
 
     useEffect(() => {
         setRefreshKey((k) => k + 1);
@@ -399,22 +399,22 @@ export default function CustomerInvoicePage() {
             render: (data: TableDataType) => `${data.salesman?.osa_code || ""} - ${data.salesman?.name || ""}`,
         },
 
-       
+
         {
             key: "model_number",
             label: "Model",
             render: (data: TableDataType) => data.model_number?.name || "-",
         },
-       
+
 
         // Status
         {
             key: "status",
             label: "Status",
-                render: (data: TableDataType) => {
-                    const statusValue = data.status;
-                    return CHILLER_REQUEST_STATUS_MAP[statusValue] || "-";
-                },
+            render: (data: TableDataType) => {
+                const statusValue = data.status;
+                return CHILLER_REQUEST_STATUS_MAP[statusValue] || "-";
+            },
         },
     ];
 
@@ -426,17 +426,17 @@ export default function CustomerInvoicePage() {
                 config={{
                     api: {
                         // list: filterBy,
-                        filterBy:fetchAssetAccordingToGlobalFilter
+                        filterBy: fetchAssetAccordingToGlobalFilter
                     },
                     header: {
                         title: "Approve CRF Request",
                         columnFilter: true,
                         searchBar: false,
-                        
+
                         filterRenderer: (props) => (
                             <FilterComponent
                                 currentDate={true}
-                                onlyFilters={["company_id","region_id","area_id","warehouse_id","route_id","salesman_id",'model']}
+                                onlyFilters={["company_id", "region_id", "area_id", "warehouse_id", "route_id", "salesman_id", 'model']}
                                 {...props}
                             />
                         ),
