@@ -109,6 +109,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   //   // Only run on mount or when currentDate/currentMonth changes
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [currentDate, currentMonth]);
+
   const [skeleton, setSkeleton] = useState({
     company: false,
     region: false,
@@ -198,6 +199,10 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
 
     fetchRegions();
   }, [companyVal.join(",")]);
+
+  useEffect(() => {
+    !(payload.from_date && payload.to_date) && filterProps.setPayload((prev: any) => ({ ...prev, from_date: new Date().toISOString().split("T")[0], to_date: new Date().toISOString().split("T")[0] }));
+  }, [payload.from_date, payload.to_date]);
 
   // ✅ When Region changes → Fetch Areas
   useEffect(() => {
@@ -381,7 +386,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           value={
             typeof payload.from_date === "number"
               ? String(payload.from_date)
-              : (payload.from_date as string | undefined) ?? new Date().toISOString().split("T")[0]
+              : (payload.from_date as string | undefined) ?? ""
           }
           disabled={disabled || !!payload.day_filter}
           onChange={(e) => {
@@ -400,7 +405,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
           value={
             typeof payload.to_date === "number"
               ? String(payload.to_date)
-              : (payload.to_date as string | undefined) ?? new Date().toISOString().split("T")[0]
+              : (payload.to_date as string | undefined) ?? ""
           }
           disabled={disabled || !!payload.day_filter || !payload.from_date}
           onChange={(e) => {

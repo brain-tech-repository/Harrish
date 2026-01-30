@@ -296,7 +296,7 @@ const nextConfig: NextConfig = {
       { source: '/chillerinstallation/bulktransfer', destination: '/chillerInstallation/bulkTransfer' },
       // { source: '/chillerinstallation/iro/view/:id', destination: '/chillerInstallation/iro/view/:id' },
       // { source: '/chillerinstallation/iro', destination: '/chillerInstallation/iro' },
-{ source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
+      { source: '/chillerinstallation/iro/:path*', destination: '/chillerInstallation/iro/:path*' },
       { source: '/fridgeupdatecustomer/add', destination: '/fridgeUpdateCustomer/add' },
       { source: '/fridgeupdatecustomer/:id', destination: '/fridgeUpdateCustomer/:id' },
       { source: '/fridgeupdatecustomer/view/:uuid', destination: '/fridgeUpdateCustomer/view/:uuid' },
@@ -474,7 +474,8 @@ const nextConfig: NextConfig = {
       { source: '/itemreport', destination: '/itemReport' },
       { source: '/attendencereport', destination: '/attendenceReport' },
       { source: '/poorderreport', destination: '/poOrderReport' },
-      
+      { source: '/comparisonreport', destination: '/comparisonReport' },
+
       // alert
       { source: '/alert/add', destination: '/alert/add' },
       { source: '/alert/:uuid', destination: '/alert/:uuid' },
@@ -597,7 +598,7 @@ const nextConfig: NextConfig = {
       { source: '/settings/manageassets/sparemenu/add', destination: '/settings/manageAssets/spareMenu/add' },
       { source: '/settings/manageassets/sparemenu/:uuid', destination: '/settings/manageAssets/spareMenu/:uuid' },
       { source: '/settings/manageassets/sparemenu', destination: '/settings/manageAssets/spareMenu' },
-      
+
       { source: '/settings/manageassets/sparecategory/add', destination: '/settings/manageAssets/spareCategory/add' },
       { source: '/settings/manageassets/sparecategory/:uuid', destination: '/settings/manageAssets/spareCategory/:uuid' },
       { source: '/settings/manageassets/sparecategory', destination: '/settings/manageAssets/spareCategory' },

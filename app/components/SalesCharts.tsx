@@ -16,7 +16,7 @@ interface ChartData {
   brand: { brand: string; sales: number }[];
 }
 
-export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder';
+export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder' | 'comparison';
 
 interface SalesChartsProps {
   chartData?: ChartData;
@@ -1410,8 +1410,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                              <XAxis 
-                                dataKey="period" 
+                              <XAxis
+                                dataKey="period"
                                 tick={(props) => {
                                   const { x, y, payload } = props;
                                   return (
@@ -1428,9 +1428,9 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                                       </text>
                                     </g>
                                   );
-                                }} 
-                                textAnchor="end" 
-                                height={80} 
+                                }}
+                                textAnchor="end"
+                                height={80}
                               />
                               <YAxis tickFormatter={(value) => `${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
@@ -1504,7 +1504,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       <div className="bg-white p-6 border rounded-lg shadow-sm">
                         <h3 className="text-xl font-semibold text-gray-800 mb-4">Area Sales Trend</h3>
 
-                      {/* Interactive legend to toggle warehouse lines */}
+                        {/* Interactive legend to toggle warehouse lines */}
                         <div className="mb-4">
                           <div className="flex flex-wrap h-10 overflow-auto gap-2 text-[12px]">
                             {areaNames.map((an: string, i: number) => {
@@ -1527,8 +1527,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                              <XAxis 
-                                dataKey="period" 
+                              <XAxis
+                                dataKey="period"
                                 tick={(props) => {
                                   const { x, y, payload } = props;
                                   return (
@@ -1546,8 +1546,8 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                                     </g>
                                   );
                                 }}
-                                textAnchor="end" 
-                                height={80} 
+                                textAnchor="end"
+                                height={80}
                               />
                               <YAxis tickFormatter={(value) => ` ${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
@@ -1646,7 +1646,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={trendSeries} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                <XAxis dataKey="period"tick={(props) => {
+                                <XAxis dataKey="period" tick={(props) => {
                                   const { x, y, payload } = props;
                                   return (
                                     <g transform={`translate(${x},${y}) rotate(-45)`}>
@@ -1734,22 +1734,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                               <XAxis dataKey="period" tick={(props) => {
-                                  const { x, y, payload } = props;
-                                  return (
-                                    <g transform={`translate(${x},${y}) rotate(-45)`}>
-                                      <text
-                                        x={0}
-                                        y={0}
-                                        dy={10}
-                                        textAnchor="end"
-                                        fill="#4b5563"
-                                        fontSize={11}
-                                      >
-                                        {payload.value}
-                                      </text>
-                                    </g>
-                                  );
-                                }} textAnchor="end" height={80} />
+                                const { x, y, payload } = props;
+                                return (
+                                  <g transform={`translate(${x},${y}) rotate(-45)`}>
+                                    <text
+                                      x={0}
+                                      y={0}
+                                      dy={10}
+                                      textAnchor="end"
+                                      fill="#4b5563"
+                                      fontSize={11}
+                                    >
+                                      {payload.value}
+                                    </text>
+                                  </g>
+                                );
+                              }} textAnchor="end" height={80} />
                               <YAxis tickFormatter={(value) => ` ${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
                               <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
                               <Area
@@ -2684,68 +2684,68 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
             )}
 
             {selectedMaxView === 'poOrderOverTime' && (() => {
-                const ordersTrendRaw = dashboardData?.data?.trend_line?.orders_over_time || [];
-                const trendChartData = ordersTrendRaw.map((d: any) => ({
-                  period: d.period,
-                  'Total Orders': d.total_orders ?? 0,
-                  'Order Pending': d.order_pending ?? 0,
-                  'Delivery Pending': d.delivery_pending ?? 0,
-                }));
-                return (
-                  <>
-                    <div className="bg-white p-6 border rounded-lg shadow-sm">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend</h3>
-                      <div className="w-full h-[500px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
-                            <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
-                            <Tooltip formatter={(value: any) => `${value}`} />
-                            <Legend
-                              verticalAlign="top"
-                              align="right"
-                              wrapperStyle={{
-                                paddingBottom: '20px',
-                                color: '#1f2937',
-                                height: '80px',
-                                overflowY: 'auto',
-                                fontSize: '11px',
-                              }}
-                            />
-                            <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                            <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                            <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
+              const ordersTrendRaw = dashboardData?.data?.trend_line?.orders_over_time || [];
+              const trendChartData = ordersTrendRaw.map((d: any) => ({
+                period: d.period,
+                'Total Orders': d.total_orders ?? 0,
+                'Order Pending': d.order_pending ?? 0,
+                'Delivery Pending': d.delivery_pending ?? 0,
+              }));
+              return (
+                <>
+                  <div className="bg-white p-6 border rounded-lg shadow-sm">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend</h3>
+                    <div className="w-full h-[500px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendChartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis dataKey="period" tick={{ fontSize: 12, dy: 5 }} angle={-45} textAnchor="end" height={80} />
+                          <YAxis tickFormatter={(value) => `${value}`} tick={{ fontSize: 13 }} />
+                          <Tooltip formatter={(value: any) => `${value}`} />
+                          <Legend
+                            verticalAlign="top"
+                            align="right"
+                            wrapperStyle={{
+                              paddingBottom: '20px',
+                              color: '#1f2937',
+                              height: '80px',
+                              overflowY: 'auto',
+                              fontSize: '11px',
+                            }}
+                          />
+                          <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                          <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                          <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
-                    <div className="bg-white p-6 border rounded-lg shadow-sm">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend Table</h3>
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b-2 border-gray-200">
-                          <tr>
-                            <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
-                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Orders</th>
-                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Order Pending</th>
-                            <th className="px-6 py-4 text-right font-semibold text-gray-700">Delivery Pending</th>
+                  </div>
+                  <div className="bg-white p-6 border rounded-lg shadow-sm">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Over Time Trend Table</h3>
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Total Orders</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Order Pending</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Delivery Pending</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trendChartData.map((d: any, i: number) => (
+                          <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-800 font-medium">{d.period}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Total Orders']?.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Order Pending']?.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Delivery Pending']?.toLocaleString()}</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {trendChartData.map((d: any, i: number) => (
-                            <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="px-6 py-4 text-gray-800 font-medium">{d.period}</td>
-                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Total Orders']?.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Order Pending']?.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right text-gray-800 font-semibold">{d['Delivery Pending']?.toLocaleString()}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                );
-              })()}
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -2803,22 +2803,22 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                           </text>
                         </g>
                       );
-                    }} 
+                    }}
                     angle={-45} textAnchor="end" height={80}
                   />
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
                     tickFormatter={(value) => `${formatNumberShort(value)}`}
-                    // tickFormatter={(value: number) => {
-                    //   // Use formatNumberShort for units, then localize the number part
-                    //   if (typeof value !== 'number') return value;
-                    //   if (value < 1000) {
-                    //     return value.toLocaleString();
-                    //   };
-                    //   if (value >= 100000) return ` ${(value / 100000).toFixed(2)}L`;
-                    //   return ` ${value.toLocaleString()}`;
-                    // }}
+                  // tickFormatter={(value: number) => {
+                  //   // Use formatNumberShort for units, then localize the number part
+                  //   if (typeof value !== 'number') return value;
+                  //   if (value < 1000) {
+                  //     return value.toLocaleString();
+                  //   };
+                  //   if (value >= 100000) return ` ${(value / 100000).toFixed(2)}L`;
+                  //   return ` ${value.toLocaleString()}`;
+                  // }}
                   />
                   <Tooltip formatter={(value: any) => ` ${value.toLocaleString()}`} />
                   <Area
@@ -3595,7 +3595,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
           </div>
         </div>
 
-         {/* Row 2 - Sales Trend: Neon Area Chart split by area_name */}
+        {/* Row 2 - Sales Trend: Neon Area Chart split by area_name */}
         <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-semibold text-gray-800">Area Sales Trend</h3>
@@ -3728,7 +3728,7 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     );
   }
 
-  
+
   // Item-level KPIs for item report type (company level)
   // Item-level KPIs for item report type
   if (reportType === 'item') {
@@ -4229,20 +4229,20 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                       overflowY: 'auto',
                       fontSize: '13px',
                     }}
-                    // onClick={(e: any) => {
-                    //   if (!e || !e.dataKey) return;
-                    //   setHiddenPoOrderLines((prev: string[]) => prev.includes(e.dataKey) ? prev.filter((k) => k !== e.dataKey) : [...prev, e.dataKey]);
-                    // }}
-                    // formatter={(value) => (
-                    //   <span style={{
-                    //     color: hiddenPoOrderLines.includes(value) ? '#000000' : '#1f2937',
-                    //     fontSize: '12px',
-                    //     cursor: 'pointer',
-                    //     textDecoration: hiddenPoOrderLines.includes(value) ? 'line-through' : 'none'
-                    //   }}>
-                    //     {value}
-                    //   </span>
-                    // )}
+                  // onClick={(e: any) => {
+                  //   if (!e || !e.dataKey) return;
+                  //   setHiddenPoOrderLines((prev: string[]) => prev.includes(e.dataKey) ? prev.filter((k) => k !== e.dataKey) : [...prev, e.dataKey]);
+                  // }}
+                  // formatter={(value) => (
+                  //   <span style={{
+                  //     color: hiddenPoOrderLines.includes(value) ? '#000000' : '#1f2937',
+                  //     fontSize: '12px',
+                  //     cursor: 'pointer',
+                  //     textDecoration: hiddenPoOrderLines.includes(value) ? 'line-through' : 'none'
+                  //   }}>
+                  //     {value}
+                  //   </span>
+                  // )}
                   />
                   {/* {!hiddenPoOrderLines.includes('Total Orders') && (
                     <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />

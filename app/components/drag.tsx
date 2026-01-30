@@ -59,6 +59,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [startDate, setStartDate] = useState(currentDateISO);
   const [endDate, setEndDate] = useState(currentDateISO);
+  const [dateFilter, setDateFilter] = useState(currentDateISO);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [searchbyopen, setSearchbyclose] = useState(false);
 
@@ -79,6 +80,9 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [selectedDataview, setSelectedDataview] = useState('default');
   const [searchType, setSearchType] = useState<string>();
+  const [reportBy, setReportBy] = useState<string>();
+  const [month, setMonth] = useState<string>();
+  const [year, setYear] = useState<string>();
   const [displayQuantity, setDisplayQuantity] = useState<string>();
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 50; // pagination size
@@ -93,22 +97,29 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     { value: 'projects', label: 'Projects' },
     { value: 'salesman', label: 'Salesman' },
     { value: 'sales executive-GT', label: 'Sales Executive-GT' }
-  ] 
-  : reportType === 'poOrder' ? []
-  : [
-    { value: 'quantity', label: 'Quantity' },
-    { value: 'amount', label: 'Amount' },
+  ]
+    : reportType === 'poOrder' || reportType === 'comparison' ? []
+      : [
+        { value: 'quantity', label: 'Quantity' },
+        { value: 'amount', label: 'Amount' },
+      ];
+
+  const reportByOptions = [
+    { value: 'day', label: 'Day' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
   ];
 
-  const displayQuantityOptions = reportType === 'attendence' ? [] 
-  : reportType === 'poOrder' ? []
-  : [
-    { value: 'with_free_good', label: 'With Free Good' },
-    { value: 'without_free_good', label: 'Without Free Good' }
-  ];
+  const displayQuantityOptions = reportType === 'attendence' ? []
+    : reportType === 'poOrder' ? []
+      : [
+        { value: 'with_free_good', label: 'With Free Good' },
+        { value: 'without_free_good', label: 'Without Free Good' }
+      ];
 
   useEffect(() => {
-    if(reportType === 'poOrder') return;
+    if (reportType === 'poOrder') return;
+    else if (reportType === 'comparison') setSearchType('quantity');
     setSearchType(searchTypeOptions[0]?.value);
     setDisplayQuantity(displayQuantityOptions[0]?.value);
   }, []);
@@ -216,16 +227,16 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         return;
       }
 
-    const response = await axios.post(
-      apiEndpoints.dashboard,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+      const response = await axios.post(
+        apiEndpoints.dashboard,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+          }
         }
-      }
-    );
+      );
 
       setDashboardData(response.data);
     } catch (error) {
@@ -1119,10 +1130,10 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const visibleFilters = reportType === 'sales'
     ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
     : reportType === 'customer' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
-    : reportType === 'item' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
-    : reportType === 'attendence' ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
-    : reportType === 'poOrder' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
-    : [];
+      : reportType === 'item' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
+        : reportType === 'attendence' ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
+          : reportType === 'poOrder' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
+            : [];
 
   // For customer reportType, don't show searchby dropdown. For sales, show both salesman and route
   const searchby = reportType === 'sales' ? availableFilters.filter(f => ['salesman', 'route'].includes(f.id)) : [];
@@ -1193,10 +1204,14 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
             <div className="relative w-full sm:w-auto">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-auto" onClick={() => setShowDatePicker(!showDatePicker)}>
+              {reportType !== 'comparison' && (<div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-auto" onClick={() => setShowDatePicker(!showDatePicker)}>
                 <Calendar size={18} className="text-gray-600" />
                 <input type="text" value={dateRange} className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto" readOnly />
-              </div>
+              </div>)}
+              {reportType === 'comparison' && (<div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-fit" onClick={() => setShowDatePicker(!showDatePicker)}>
+                <Calendar size={18} className="text-gray-600" />
+                <span className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto">{dateFilter}</span>
+              </div>)}
               {showDatePicker && (
                 <div id="date-picker-dropdown" className="filter-dropdown absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 w-full sm:w-80">
                   <div className="flex flex-col gap-3">
@@ -1225,7 +1240,38 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
                 >
                   {searchTypeOptions.map((option: { value: string; label: string }, index: number) => (
-                    <option key={option.value+index} value={option.value}>{option.label}</option>
+                    <option key={option.value + index} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+              </div>)}
+
+              {reportByOptions.length > 0 && (<div className="relative w-full sm:w-auto">
+                <select
+                  value={reportBy}
+                  onChange={(e) => setReportBy(e.target.value)}
+                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
+                >
+                  {reportByOptions.map((option: { value: string; label: string }, index: number) => (
+                    <option key={option.value + index} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+              </div>)}
+
+              {reportByOptions.length > 0 && reportBy === 'month' && (<div className="relative w-full sm:w-auto">
+                <input type="month" value={month} />
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+              </div>)}
+
+              {reportByOptions.length > 0 && reportBy === 'year' && (<div className="relative w-full sm:w-auto">
+                <select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
+                >
+                  {reportByOptions.map((option: { value: string; label: string }, index: number) => (
+                    <option key={option.value + index} value={option.value}>{option.label}</option>
                   ))}
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
@@ -1238,7 +1284,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
                 >
                   {displayQuantityOptions.map((option: { value: string; label: string }, index: number) => (
-                    <option key={option.value+index} value={option.value}>{option.label}</option>
+                    <option key={option.value + index} value={option.value}>{option.label}</option>
                   ))}
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
@@ -1287,21 +1333,21 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   onExport={handleCustomerExport}
                   isLoading={isExporting}
                 />
-              ) 
-              : reportType === 'attendence' || reportType === 'poOrder' ? (
-                <AttendenceExportButtons
-                  onExport={() => handleExport(reportType === 'attendence' ? 'attendence-report' : 'po-order-report')}
-                  isLoading={isExporting}
-                />
-              ) 
-              : (
-                <ExportButtons
-                  onExportXLSX={handleExportXLSX}
-                  isLoading={isExporting}
-                  searchType={searchType}
-                  displayQuantity={displayQuantity}
-                />
               )
+                : reportType === 'attendence' || reportType === 'poOrder' ? (
+                  <AttendenceExportButtons
+                    onExport={() => handleExport(reportType === 'attendence' ? 'attendence-report' : 'po-order-report')}
+                    isLoading={isExporting}
+                  />
+                )
+                  : (
+                    <ExportButtons
+                      onExportXLSX={handleExportXLSX}
+                      isLoading={isExporting}
+                      searchType={searchType}
+                      displayQuantity={displayQuantity}
+                    />
+                  )
             )}
           </div>
 
@@ -1581,7 +1627,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Amount</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Items</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Distributor</th>
-                                    </>
+                                  </>
                                 ) : dynamicColumn.type === 'customer-report' ? (
                                   dynamicColumn.columns.map((col: any, idx: number) => (
                                     <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
@@ -1626,7 +1672,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_code || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_id || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.order_sap_id || '-'}</td>
-                                      <td className="px-4 py-3 text-sm text-gray-700">{toInternationalNumber(row.total, {minimumFractionDigits: 0}) || '-'}</td>
+                                      <td className="px-4 py-3 text-sm text-gray-700">{toInternationalNumber(row.total, { minimumFractionDigits: 0 }) || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.unique_item_count || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.warehouse_name || '-'}</td>
                                     </>
