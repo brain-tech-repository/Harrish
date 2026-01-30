@@ -475,6 +475,7 @@ const nextConfig: NextConfig = {
       { source: '/itemreport', destination: '/itemReport' },
       { source: '/attendencereport', destination: '/attendenceReport' },
       { source: '/poorderreport', destination: '/poOrderReport' },
+      { source: '/comparisonreport', destination: '/comparisonReport' },
 
       // alert
       { source: '/alert/add', destination: '/alert/add' },

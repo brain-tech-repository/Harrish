@@ -312,9 +312,10 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
     // Ref to track last API call params
     const searchParams = useSearchParams();
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
+    const initialUrlSyncRef = useRef(false);
     const { selectedColumns, setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
-    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, setFilterState, setSearchState } = useContext(TableDetails);
     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
     const [showDropdown, setShowDropdown] = useState(false);
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -373,11 +374,102 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
 
             // Explicit Mode: Search
             if (type === 'search' && hasSearch && config.api?.search) {
+                const pageParam = searchParams.get("page");
+                const pageNo = pageParam ? parseInt(pageParam) : 1;
+                const pageSize = config.pageSize || defaultPageSize;
+                const searchTerm = searchParams.get("search") || "";
+
+                // Perform Search API Call
+                setNestedLoading(true);
+                try {
+                    const res = await config.api.search(searchTerm, pageSize, "", pageNo);
+                    const result = res instanceof Promise ? await res : res;
+                    const { data, total, currentPage, totalRecords } = result;
+                    const tableInit = {
+                        data,
+                        total: total || 1,
+                        currentPage: (currentPage || pageNo) - 1,
+                        pageSize,
+                        totalRecords
+                    };
+                    setTableDetails(tableInit);
+                    setDisplayedData(data);
+                    setTableDetails(tableInit);
+                    setDisplayedData(data);
+                    setInitialTableData(tableInit);
+                    // Update Global Search State so UI reflects it
+                    try {
+                        if (setSearchState) setSearchState({ applied: true, term: searchTerm });
+                        if (setFilterState) setFilterState({ applied: false, payload: {} });
+                    } catch (e) { }
+                } catch (err) {
+                    console.error("Search API error", err);
+                } finally {
+                    setNestedLoading(false);
+                }
                 return;
             }
+
+            // Explicit Mode: Column Filter (Uses List API as requested)
+            if (type === 'columnFilter' && config.api?.list) {
+                // 1. Initial State Sync: If onSelect exists, call it to update parent state from URL
+                if (!initialUrlSyncRef.current) {
+                    const col = config.columns.find(c => {
+                        const key = c.filter?.filterkey || c.key;
+                        return searchParams.has(key);
+                    });
+
+                    if (col) {
+                        const key = col.filter?.filterkey || col.key;
+                        const val = searchParams.get(key);
+
+                        if (col.filter?.onSelect && val) {
+                            // Standard Column Filter Update
+                            col.filter.onSelect(val);
+                            try { setFilterState({ applied: true, payload: { [key]: val } }); } catch (err) { }
+                            initialUrlSyncRef.current = true;
+                            return;
+                        }
+
+                        // Status Filter Sync (Relies on Parent useEffect, but we must pause fetch)
+                        if (col.filterStatus?.enabled && val !== null) {
+                            initialUrlSyncRef.current = true;
+                            return;
+                        }
+                    }
+                    initialUrlSyncRef.current = true;
+                }
+
+
+                // 2. Fetch Data (assuming parent state is synced or defaulting)
+                const pageParam = searchParams.get("page");
+                const pageNo = pageParam ? parseInt(pageParam) : 1;
+                const pageSize = config.pageSize || defaultPageSize;
+
+                setNestedLoading(true);
+                try {
+                    const res = await config.api.list(pageNo, pageSize);
+                    const result = res instanceof Promise ? await res : res;
+                    const { data, total, currentPage, totalRecords } = result;
+                    const tableInit = {
+                        data,
+                        total: total || 1,
+                        currentPage: (currentPage || pageNo) - 1,
+                        pageSize,
+                        totalRecords
+                    };
+                    setTableDetails(tableInit);
+                    setDisplayedData(data);
+                    setInitialTableData(tableInit);
+                } catch (err) {
+                    console.error("Column Filter List API error", err);
+                } finally {
+                    setNestedLoading(false);
+                }
+                return;
+            }
+
             // Explicit Mode: Filter
-            // If type is filter, we assume filterBy or list-with-params handles it. 
-            // If filterBy exists, return to let FilterBy component handle it.
             if (type === 'filter' && config.api?.filterBy) {
                 return;
             }
@@ -432,9 +524,7 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                     setNestedLoading(false);
                 }
             }
-        }
-        // nothing is passed
-        else {
+        } else {
             throw new Error(
                 "Either pass data or list API function in Table config prop"
             );
@@ -1282,6 +1372,22 @@ function FilterTableHeader({
         }
     }, [filterConfig?.options]);
 
+    // NEW: Sync selectedValues directly from filterConfig.selectedValue (controlled mode)
+    useEffect(() => {
+        if (filterConfig?.selectedValue !== undefined) {
+            const val = filterConfig.selectedValue;
+            if (val == null || (typeof val === 'string' && val === "")) {
+                setSelectedValues([]);
+            } else if (Array.isArray(val)) {
+                // Ensure strings and handle commas if any
+                setSelectedValues(val.flatMap(v => String(v).split(',')));
+            } else {
+                setSelectedValues(String(val).split(','));
+            }
+        }
+    }, [filterConfig?.selectedValue]);
+
+
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -1297,10 +1403,11 @@ function FilterTableHeader({
                 setSelectedValues([]);
             } else if (Array.isArray(val)) {
                 selectedRef.current = val;
-                setSelectedValues(val);
+                const flat = val.flatMap(v => String(v).split(','));
+                setSelectedValues(flat);
             } else {
                 selectedRef.current = String(val);
-                setSelectedValues([String(val)]);
+                setSelectedValues(String(val).split(','));
             }
         } catch (err) {
             // ignore
@@ -1387,6 +1494,19 @@ function FilterTableHeader({
                 urlChanged = true;
             }
 
+            // Enforce mutual exclusion: If we were in Global Filter mode, clear those filters
+            if (params.get("_type") === "filter") {
+                // Clear all current filters as they are Global
+                const activeFilters = Object.keys(filterState?.payload || {});
+                activeFilters.forEach(k => {
+                    if (params.has(k)) {
+                        params.delete(k);
+                        urlChanged = true;
+                    }
+                });
+                params.delete("_type");
+            }
+
             if (newValues.length === 0 || newValues === "") {
                 // Removing filter for this column
                 setFilterState(prev => {
@@ -1416,8 +1536,8 @@ function FilterTableHeader({
                 const valStr = Array.isArray(newValues) ? newValues.join(',') : newValues;
                 if (params.get(key) !== valStr) {
                     params.set(key, valStr);
-                    // Explicitly set type to filter to win over search
-                    params.set("_type", "filter");
+                    // Explicitly set type to columnFilter
+                    params.set("_type", "columnFilter");
                     urlChanged = true;
                 }
             }
@@ -1457,12 +1577,11 @@ function FilterTableHeader({
                 });
             } catch (err) { /* ignore */ }
             finally { setNestedLoading(false); }
-        } else if (api?.search && isSingle && typeof newValues === 'string' && newValues !== "") {
-            // Single Select Apply
+        } else if (api?.list && isSingle && typeof newValues === 'string' && newValues !== "") {
+            // Single Select Apply - User requested LIST API
             try {
                 setNestedLoading(true);
-                // Call search with specific column
-                const res = api.search(newValues, defaultPageSize, column, 1);
+                const res = api.list(1, defaultPageSize);
                 const result = res instanceof Promise ? await res : res;
                 const { data, total, currentPage, totalRecords } = result;
                 setTableDetails({
@@ -1659,6 +1778,7 @@ function FilterTableHeader({
     }
 
     // function handleSelect(value: string) { ... } // Replaced by above logic
+    // console.log(selectedValues)
 
     return (
         <DismissibleDropdown
@@ -1702,17 +1822,17 @@ function FilterTableHeader({
                                             >
                                                 <CustomCheckbox
                                                     id="select-all-filter-options"
-                                                    checked={filteredOptions.every(o => selectedValues.includes(o.value))}
+                                                    checked={filteredOptions.every(o => selectedValues.includes(String(o.value)))}
                                                     label="Select All"
                                                     onChange={() => {
-                                                        const allVisibleSelected = filteredOptions.every(o => selectedValues.includes(o.value));
+                                                        const allVisibleSelected = filteredOptions.every(o => selectedValues.includes(String(o.value)));
                                                         if (allVisibleSelected) {
                                                             // Deselect all visible
-                                                            const visibleValues = new Set(filteredOptions.map(o => o.value));
+                                                            const visibleValues = new Set(filteredOptions.map(o => String(o.value)));
                                                             setSelectedValues(prev => prev.filter(v => !visibleValues.has(v)));
                                                         } else {
                                                             // Select all visible (keep existing invisible ones)
-                                                            const visibleValues = filteredOptions.map(o => o.value);
+                                                            const visibleValues = filteredOptions.map(o => String(o.value));
                                                             const newSet = new Set([...selectedValues, ...visibleValues]);
                                                             setSelectedValues(Array.from(newSet));
                                                         }
@@ -1722,14 +1842,14 @@ function FilterTableHeader({
                                         )}
                                         {filteredOptions.map((option, idx) => (
                                             <div
-                                                key={option.value || idx}
+                                                key={String(option.value) || idx}
                                                 className="h-full font-normal text-[14px] text-[#181D27] flex gap-x-[8px] py-[10px] px-[14px] hover:bg-[#FAFAFA] cursor-pointer"
                                             >
                                                 <CustomCheckbox
-                                                    id={option.value}
-                                                    checked={selectedValues.includes(option.value)}
+                                                    id={String(option.value)}
+                                                    checked={selectedValues.includes(String(option.value))}
                                                     label={option.label}
-                                                    onChange={() => handleSelect(option.value)}
+                                                    onChange={() => handleSelect(String(option.value))}
                                                 />
                                             </div>
                                         ))}
@@ -2108,10 +2228,20 @@ function FilterBy() {
 
     useEffect(() => {
         if (!searchParams) return;
+        // Delegate columnFilter to checkForData/FilterTableHeader and ignore here
+        if (searchParams.get('_type') === 'columnFilter') {
+            // Force clear global filter state so UI doesn't show "Results Found"
+            if (appliedFilters) {
+                setAppliedFilters(false);
+                setCustomPayload({});
+                setFilters({});
+            }
+            return;
+        }
 
         const paramsObj: Record<string, any> = {};
         searchParams.forEach((value, key) => {
-            if (key === 'page' || key === 'search') return; // handled elsewhere
+            if (key === 'page' || key === 'search' || key === '_type') return; // handled elsewhere
             if (value.includes(',')) {
                 paramsObj[key] = value.split(',');
             } else if (value === 'all') {
@@ -2126,7 +2256,9 @@ function FilterBy() {
         if (hasCustomRenderer) {
             setCustomPayload(paramsObj);
             if (hasParams) {
-                applyCustomPayload(paramsObj);
+                const pageParam = searchParams.get("page");
+                const pageNo = pageParam ? parseInt(pageParam) : 1;
+                applyCustomPayload(paramsObj, pageNo);
             } else if (appliedFilters) {
                 // Clear if we had filters but now URL is empty
                 clearAllCustom();
@@ -2186,7 +2318,7 @@ function FilterBy() {
         }
     }, [searchParams, hasCustomRenderer]);
 
-    const updateUrlWithPayload = useCallback((payload: Record<string, any>) => {
+    const updateUrlWithPayload = useCallback((payload: Record<string, any>, pageNo: number = 1) => {
         if (!hasCustomRenderer) return;
         if (!searchParams || !router) return;
         const params = new URLSearchParams(searchParams.toString());
@@ -2194,7 +2326,7 @@ function FilterBy() {
         // 1. Remove all existing filter keys (excluding reserved ones)
         // This ensures that keys removed from payload are removed from URL
         Array.from(params.keys()).forEach((k) => {
-            if (k !== 'page' && k !== 'search' && k !== '_type') {
+            if (k !== 'search' && k !== '_type') {
                 params.delete(k);
             }
         });
@@ -2225,6 +2357,11 @@ function FilterBy() {
             if (params.get('_type') === 'filter') {
                 params.delete('_type');
             }
+        }
+
+        // 4. Set page if > 1
+        if (pageNo > 1) {
+            params.set('page', pageNo.toString());
         }
 
         if (urlRef.current !== params.toString()) {
@@ -2438,7 +2575,7 @@ function FilterBy() {
         };
     }, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
 
-    const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
+    const applyCustomPayload = useCallback(async (payload?: Record<string, any>, pageNo: number = 1) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
@@ -2450,7 +2587,7 @@ function FilterBy() {
             } catch (err) { /* ignore */ }
 
             if (config.api?.filterBy) {
-                const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+                const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize, pageNo);
                 const resolved = res instanceof Promise ? await res : res;
                 const { currentPage, totalRecords, pageSize, total, data } = resolved as any;
                 const totalRecordsValue = totalRecords ?? total ?? 0;
@@ -2490,7 +2627,7 @@ function FilterBy() {
             setShowDropdown(false);
 
             // Explicitly update URL here instead of via effect
-            updateUrlWithPayload(effectivePayload);
+            updateUrlWithPayload(effectivePayload, pageNo);
 
         } catch (err) {
             console.error("Filter API error", err);
@@ -2502,11 +2639,11 @@ function FilterBy() {
     useEffect(() => {
         // Only trigger once state is initialized and there are actual params to apply
         if (isInitialized && searchParams && searchParams.size > 0) {
+            const pageParam = searchParams?.get("page");
+            const pageNo = pageParam ? parseInt(pageParam) : 1;
             if (hasCustomRenderer) {
-                applyCustomPayload(customPayload);
+                applyCustomPayload(customPayload, pageNo);
             } else {
-                const pageParam = searchParams?.get("page");
-                const pageNo = pageParam ? parseInt(pageParam) : 1;
                 applyFilter(filters, pageNo);
             }
         }

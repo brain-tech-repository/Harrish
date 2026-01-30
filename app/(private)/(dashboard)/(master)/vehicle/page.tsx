@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Table, { TableDataType, listReturnType, searchReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { downloadFile, exportVehicleData, vehicleGlobalSearch, vehicleListData, vehicleStatusUpdate, statusFilter } from "@/app/services/allApi";
@@ -67,18 +67,50 @@ export default function VehiclePage() {
     }
   }, [permissions]);
 
+  const searchParams = useSearchParams();
+
+  // Sync Status Filter from URL
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    const type = searchParams.get('_type');
+
+    // Only sync if it's a column filter or just standard filter logic
+    if (statusParam !== null && (type === 'columnFilter' || type === 'filter')) {
+      setCurrentStatusFilter(statusParam === '1');
+    } else {
+      // Only clear if explicitly missing and we are in a mode that implies clearing?
+      // Or just basic sync.
+      if (statusParam === null) setCurrentStatusFilter(null);
+    }
+  }, [searchParams]);
+
   const [threeDotLoading, setThreeDotLoading] = useState<{ csv: boolean; xlsx: boolean; xslx: boolean }>({ csv: false, xlsx: false, xslx: false });
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
 
   const handleStatusFilter = async (status: boolean) => {
     try {
-      // If clicking the same filter, clear it
+      // Toggle logic: If clicking the same filter, clear it
       const newFilter = currentStatusFilter === status ? null : status;
-      setCurrentStatusFilter(newFilter);
 
-      // Refresh the table with the new filter
-      setRefreshKey((k) => k + 1);
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.has("search")) {
+        params.delete("search");
+      }
+
+      if (newFilter !== null) {
+        params.set("status", newFilter ? "1" : "0");
+        params.set("_type", "columnFilter");
+      } else {
+        params.delete("status");
+        // If no other filters, remove _type (simplified check)
+        if (!params.has("warehouse_id")) {
+          params.delete("_type");
+        }
+      }
+      params.delete("page");
+      router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+
     } catch (error) {
       console.error("Error filtering by status:", error);
       showSnackbar("Failed to filter by status", "error");
@@ -165,10 +197,10 @@ export default function VehiclePage() {
       },
     },
   ];
-console.log(warehouseId)
-  useEffect(() => {
-    setRefreshKey((k) => k + 1);
-  }, [warehouseId, statusFilterValue, currentStatusFilter]);
+  // console.log(warehouseId)
+  //   useEffect(() => {
+  //     setRefreshKey((k) => k + 1);
+  //   }, [warehouseId, statusFilterValue, currentStatusFilter]);
 
   const fetchVehicles = async (
 
