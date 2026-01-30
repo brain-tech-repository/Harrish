@@ -51,13 +51,13 @@ const columns = [
         label: "Distributor",
         render: (row: any) => <p>{row.warehouse_code || ""} - {row.warehouse_name || ""}</p>,
     },
-   
+
     {
         key: "salesman_code,salesman_name",
         label: "Sales Team",
         render: (row: any) => <p>{row.salesman_code || ""} - {row.salesman_name || ""}</p>,
     },
-    
+
     {
         key: "schedule_date",
         label: "Schedule Date",
@@ -83,16 +83,16 @@ export default function BulkTransferListPage() {
     const { setLoading } = useLoading();
     const router = useRouter();
 
-    const { warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions , ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded} =
+    const { warehouseAllOptions, regionOptions, areaOptions, assetsModelOptions, ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded } =
         useAllDropdownListData();
 
-  // Load dropdown data
-  useEffect(() => {
-    ensureAreaLoaded();
-    ensureAssetsModelLoaded();
-    ensureRegionLoaded();
-    ensureWarehouseAllLoaded();
-  }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
+    // Load dropdown data
+    useEffect(() => {
+        ensureAreaLoaded();
+        ensureAssetsModelLoaded();
+        ensureRegionLoaded();
+        ensureWarehouseAllLoaded();
+    }, [ensureAreaLoaded, ensureAssetsModelLoaded, ensureRegionLoaded, ensureWarehouseAllLoaded]);
 
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -246,15 +246,16 @@ export default function BulkTransferListPage() {
 
                     columns,
 
-                    // rowSelection: true,
-                    // rowActions: [
-                    //     {
-                    //         icon: "lucide:eye",
-                    //         onClick: (row: any) => {
-                    //             router.push(`/chillerInstallation/bulkTransfer/view/${row.uuid}`);
-                    //         },
-                    //     },
-                    // ],
+                    rowSelection: true,
+                    rowActions: [
+                        {
+                            icon: "lucide:eye",
+                            onClick: (row: any) => {
+                                router.push(`/chillerInstallation/installationReport/view/${row.id}`);
+                                console.log(row.id, "123456");
+                            },
+                        },
+                    ],
 
                     pageSize: 20,
                     localStorageKey: "bulk-transfer-table",

@@ -21,7 +21,7 @@ export default function FilterDropdown({
 }: {
   searchBarValue: string;
   setSearchBarValue: React.Dispatch<React.SetStateAction<string>>;
-  onEnterPress: () => void;
+  onEnterPress: (e?: React.KeyboardEvent<HTMLInputElement>) => void;
   dimensions?: Dimensions;
   children?: React.ReactNode;
   anchorRef?: React.RefObject<HTMLElement | null>;
@@ -135,10 +135,10 @@ export default function FilterDropdown({
       ref={wrapperRef}
       className={`min-w-[200px] w-fit z-50 border-[1px] border-[#E9EAEB] rounded-[8px] ${translateClass}`}
       style={{
-          ...style,
-          width: dimensions?.width ?? style.width,
-          // do NOT put overflow on the outer wrapper; inner container will scroll
-          // keep maxHeight only to help layout but actual scrolling is inside
+        ...style,
+        width: dimensions?.width ?? style.width,
+        // do NOT put overflow on the outer wrapper; inner container will scroll
+        // keep maxHeight only to help layout but actual scrolling is inside
       }}
     >
       <CustomDropdown>
@@ -152,7 +152,7 @@ export default function FilterDropdown({
         >
           {showInternalSearch && (
             <div className="p-[10px] pb-[6px] sticky top-0 bg-white z-10">
-              <SearchBar value={searchBarValue} onChange={(e) => setSearchBarValue(e.target.value)} onEnterPress={onEnterPress} placeholder="Search here..." />
+              <SearchBar value={searchBarValue} onClear={() => setSearchBarValue("")} onChange={(e) => setSearchBarValue(e.target.value)} onEnterPress={onEnterPress} placeholder="Search here..." />
             </div>
           )}
           <div className="w-full overflow-auto scrollbar-none mx-auto">{children}</div>

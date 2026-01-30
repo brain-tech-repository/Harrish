@@ -920,7 +920,7 @@ export default function UserAddEdit() {
                       }
                       setSkeleton((s) => ({ ...s, region: true }));
                       try {
-                        const regions = await regionList({ company_id: vals.join(",") });
+                        const regions = await regionList({ dropdown: true as any, company_id: vals.join(",") });
                         const options = regions.data.map((region: { id: string; region_code: string; region_name: string }) => ({ value: String(region.id), label: (region.region_code || "") + (region.region_code && region.region_name ? " - " : "") + region.region_name })) ?? [];
                         setOptions((prev) => ({ ...prev, region: options, area: [], warehouse: [], route: [], salesman: [], itemCategory: [], item: [], customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                       } catch (e: unknown) {
@@ -955,7 +955,7 @@ export default function UserAddEdit() {
                       }
                       setSkeleton((s) => ({ ...s, area: true }));
                       try {
-                        const area = await subRegionList({ region_id: vals.join(",") });
+                        const area = await subRegionList({ dropdown: true as any, region_id: vals.join(",") });
                         const options = area.data.map((area: { id: string; area_code: string; area_name: string }) => ({ value: String(area.id), label: (area.area_code || "") + (area.area_code && area.area_name ? " - " : "") + area.area_name })) ?? [];
                         setOptions((prev) => ({ ...prev, area: options, warehouse: [], route: [], salesman: [], itemCategory: [], item: [], customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                       } catch (e: unknown) {
@@ -990,7 +990,7 @@ export default function UserAddEdit() {
                       }
                       setSkeleton((s) => ({ ...s, warehouse: true }));
                       try {
-                        const warehouse = await warehouseList({ area_id: vals.join(",") });
+                        const warehouse = await warehouseList({ dropdown: true as any, area_id: vals.join(",") });
                         const options = warehouse.data.map((warehouse: { id: string; warehouse_code: string; warehouse_name: string }) => ({ value: String(warehouse.id), label: (warehouse.warehouse_code || "") + (warehouse.warehouse_code && warehouse.warehouse_name ? " - " : "") + warehouse.warehouse_name })) ?? [];
                         setOptions((prev) => ({ ...prev, warehouse: options, route: [], salesman: [], itemCategory: [], item: [], customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                       } catch (e: unknown) {
@@ -1025,7 +1025,7 @@ export default function UserAddEdit() {
                       }
                       setSkeleton((s) => ({ ...s, route: true }));
                       try {
-                        const routes = await routeList({ warehouse_id: vals.join(",") });
+                        const routes = await routeList({ dropdown: true as any, warehouse_id: vals.join(",") });
                         const options = routes.data.map((route: { id: string; route_name: string; route_code: string; }) => ({ value: String(route.id), label: (route.route_code || "") + (route.route_code && route.route_name ? " - " : "") + (route.route_name || "") })) ?? [];
                         setOptions((prev) => ({ ...prev, route: options, salesman: [], itemCategory: [], item: [], customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                       } catch (e: unknown) {
@@ -1059,7 +1059,7 @@ export default function UserAddEdit() {
                       }
                       setSkeleton((s) => ({ ...s, itemCategory: true }));
                       try {
-                        const regions = await itemCategoryList();
+                        const regions = await itemCategoryList({ dropdown: true as any });
                         const options = regions.data.map((region: { id: string; category_code: string; category_name: string }) => ({ value: String(region.id), label: (region.category_code || "") + (region.category_code && region.category_name ? " - " : "") + (region.category_name || "") })) ?? [];
                         setOptions((prev) => ({ ...prev, itemCategory: options, item: [], customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                       } catch (e: unknown) {
@@ -1122,7 +1122,7 @@ export default function UserAddEdit() {
                         }
                         setSkeleton((s) => ({ ...s, item: true }));
                         try {
-                          const items = await itemList({ category_id: vals.join(",") });
+                          const items = await itemList({ dropdown: true as any, category_id: vals.join(",") });
                           const options = items.data.map((item: { id: string; erp_code: string; name: string }) => ({ value: String(item.id), label: (item.erp_code || "") + (item.erp_code && item.name ? " - " : "") + (item.name || "") })) ?? [];
                           setOptions((prev) => ({ ...prev, item: options, customerChannel: [], customerCategory: [], customerSubCategory: [], customer: [] }));
                         } catch (e: unknown) {
@@ -1158,7 +1158,7 @@ export default function UserAddEdit() {
                         }
                         setSkeleton((s) => ({ ...s, customerChannel: true }));
                         try {
-                          const items = await channelList();
+                          const items = await channelList({ dropdown: true as any });
                           const options = items.data.map((item: { id: string; outlet_channel: string; outlet_channel_code: string }) => ({ value: String(item.id), label: (item.outlet_channel_code || "") + (item.outlet_channel_code && item.outlet_channel ? " - " : "") + (item.outlet_channel || "") })) ?? [];
                           setOptions((prev) => ({ ...prev, customerChannel: options, customerCategory: [], customerSubCategory: [], customer: [] }));
                         } catch (e: unknown) {
@@ -1194,7 +1194,7 @@ export default function UserAddEdit() {
                         }
                         setSkeleton((s) => ({ ...s, customerCategory: true }));
                         try {
-                          const customerCategories = await customerCategoryList({ channel_id: vals.join(",") });
+                          const customerCategories = await customerCategoryList({ dropdown: true as any, channel_id: vals.join(",") });
                           const options = customerCategories.data.map((customerCategory: { id: string; customer_category_code: string; customer_category_name: string }) => ({ value: String(customerCategory.id), label: (customerCategory.customer_category_code || "") + (customerCategory.customer_category_code && customerCategory.customer_category_name ? " - " : "") + (customerCategory.customer_category_name || "") })) ?? [];
                           setOptions((prev) => ({ ...prev, customerCategory: options, customerSubCategory: [], customer: [] }));
                         } catch (e: unknown) {
@@ -1230,7 +1230,7 @@ export default function UserAddEdit() {
                         }
                         setSkeleton((s) => ({ ...s, customerSubCategory: true }));
                         try {
-                          const itemSubCategories = await customerSubCategoryList({ customer_category_id: vals.join(",") });
+                          const itemSubCategories = await customerSubCategoryList({ dropdown: true as any, customer_category_id: vals.join(",") });
                           const options = itemSubCategories.data.map((itemSubCategory: { id: string; customer_sub_category_code: string; customer_sub_category_name: string }) => ({ value: String(itemSubCategory.id), label: (itemSubCategory.customer_sub_category_code || "") + (itemSubCategory.customer_sub_category_code && itemSubCategory.customer_sub_category_name ? " - " : "") + (itemSubCategory.customer_sub_category_name || "") })) ?? [];
                           setOptions((prev) => ({ ...prev, customerSubCategory: options, customer: [] }));
                         } catch (e: unknown) {
@@ -1266,7 +1266,7 @@ export default function UserAddEdit() {
                         }
                         setSkeleton((s) => ({ ...s, customer: true }));
                         try {
-                          const customers = await agentCustomerList({ subcategory_id: vals.join(",") });
+                          const customers = await agentCustomerList({ dropdown: true as any, subcategory_id: vals.join(",") });
                           const options = customers.data.map((customer: { id: string; osa_code: string; name: string }) => ({ value: customer.id, label: (customer.osa_code || "") + (customer.osa_code && customer.name ? " - " : "") + (customer.name || "") })) ?? [];
                           setOptions((prev) => ({ ...prev, customer: options }));
                         } catch (e: unknown) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Table, { TableDataType, listReturnType } from "@/app/components/customTable";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 import { getWarehouse, deleteWarehouse, warehouseListGlobalSearch, exportWarehouseData, warehouseStatusUpdate, downloadFile, statusFilter } from "@/app/services/allApi";
@@ -15,8 +15,8 @@ import { useAllDropdownListData } from "@/app/components/contexts/allDropdownLis
 
 
 export default function Warehouse() {
-  const {warehouseOptions, ensureWarehouseLoaded, salesmanOptions, ensureSalesmanLoaded, regionOptions,ensureRegionLoaded,areaOptions,ensureAreaLoaded  } = useAllDropdownListData();
-    const [warehouseId, setWarehouseId] = useState<string>();
+  const { warehouseOptions, ensureWarehouseLoaded, salesmanOptions, ensureSalesmanLoaded, regionOptions, ensureRegionLoaded, areaOptions, ensureAreaLoaded } = useAllDropdownListData();
+  const [warehouseId, setWarehouseId] = useState<string>();
   const { can, permissions } = usePagePermissions("/distributors");
   const { setLoading } = useLoading();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -39,20 +39,59 @@ export default function Warehouse() {
   }, [permissions]);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showSnackbar } = useSnackbar();
   const [threeDotLoading, setThreeDotLoading] = useState({
     csv: false,
     xlsx: false,
   });
 
+  // Sync state with URL params
+  useEffect(() => {
+    const wId = searchParams.get("warehouse_id") || "";
+    if (wId !== warehouseId) setWarehouseId(wId);
+
+    const rId = searchParams.get("region_id") || "";
+    if (rId !== regionId) setRegionId(rId);
+
+    const aId = searchParams.get("area_id") || "";
+    if (aId !== areaId) setAreaId(aId);
+
+    const s = searchParams.get("status");
+    let sVal: boolean | null = null;
+    if (s === "1") sVal = true;
+    else if (s === "0") sVal = false;
+
+    if (sVal !== currentStatusFilter) setCurrentStatusFilter(sVal);
+
+    // If search is present, ensure we are not filtering by status (Mutual Exclusion)
+    if (searchParams.has("search")) {
+      if (currentStatusFilter !== null) setCurrentStatusFilter(null);
+    }
+  }, [searchParams]);
+
   const handleStatusFilter = async (status: boolean) => {
     try {
       // If clicking the same filter, clear it
       const newFilter = currentStatusFilter === status ? null : status;
       setCurrentStatusFilter(newFilter);
-      
-      // Refresh the table with the new filter
-      setRefreshKey((k) => k + 1);
+
+      // Update URL
+      const params = new URLSearchParams(searchParams.toString());
+      if (newFilter !== null) {
+        params.set("status", newFilter ? "1" : "0");
+        params.set("_type", "filter");
+        params.delete("search"); // Clear search when filtering status
+      } else {
+        params.delete("status");
+        // Remove _type only if no other filters active
+        if (!params.has("region_id") && !params.has("area_id")) {
+          params.delete("_type");
+        }
+      }
+      // Reset page on filter change
+      params.delete("page");
+      router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
     } catch (error) {
       console.error("Error filtering by status:", error);
       showSnackbar("Failed to filter by status", "error");
@@ -60,127 +99,160 @@ export default function Warehouse() {
   };
 
   const columns = [
-  // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
-  // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
-  { key: "warehouse_name", label: "Distributors", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-", 
-    // filter: {
-    //       isFilterable: true,
-    //       width: 320,
-    //       filterkey: "warehouse_id",
-    //       options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
-    //       onSelect: (selected: string | string[]) => {
-    //           setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-    //       },
-    //       isSingle: false,
-    //       selectedValue: warehouseId,
+    // { key: "warehouse_code", label: "Warehouse Code", showByDefault: true, render: (row: WarehouseRow) =>(<span className="font-semibold text-[#181D27] text-[14px]">{ row.warehouse_code || "-"}</span>) },
+    // { key: "registation_no", label: "Registration No.", render: (row: WarehouseRow) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.registation_no || "-" }</span>)},
+    {
+      key: "warehouse_name", label: "Distributors", render: (row: WarehouseRow) => row.warehouse_code + " - " + row.warehouse_name || "-",
+      // filter: {
+      //       isFilterable: true,
+      //       width: 320,
+      //       filterkey: "warehouse_id",
+      //       options: Array.isArray(warehouseOptions) ? warehouseOptions : [],
+      //       onSelect: (selected: string | string[]) => {
+      //           setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+      //       },
+      //       isSingle: false,
+      //       selectedValue: warehouseId,
+      //   },
+    },
+    { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
+    { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
+    // { key: "owner_email", label: "Owner Email", render: (row: WarehouseRow) => row.owner_email || "-" },
+    // { key: "location", label: "Warehouse Location", render: (row: WarehouseRow) => row.location || "-" },
+    // { key: "company", label: "Company Code", render: (row: WarehouseRow) => row.company?.company_code || "-" },
+    // { key: "company", label: "Company Name", render: (row: WarehouseRow) => row.company?.company_name || "-" },
+    { key: "warehouse_manager", label: "Distributors Manager", render: (row: WarehouseRow) => row.warehouse_manager || "-" },
+    { key: "warehouse_manager_contact", label: "Distributors Manager Contact", render: (row: WarehouseRow) => row.warehouse_manager_contact || "-" },
+    // {
+    //   key: "warehouse_type",
+    //   label: "Warehouse Type",
+    //   showByDefault: true,
+    //   render: (row: WarehouseRow) => {
+    //     const value = row.warehouse_type;
+    //     const strValue = value != null ? String(value) : "";
+    //     if (strValue === "0") return "Agent";
+    //     if (strValue === "1") return "Outlet";
+    //     return strValue || "-";
     //   },
-   },
-  { key: "owner_name", label: "Owner Name", render: (row: WarehouseRow) => row.owner_name || "-" },
-  { key: "owner_number", label: "Owner Contact No.", render: (row: WarehouseRow) => row.owner_number || "-" },
-  // { key: "owner_email", label: "Owner Email", render: (row: WarehouseRow) => row.owner_email || "-" },
-  // { key: "location", label: "Warehouse Location", render: (row: WarehouseRow) => row.location || "-" },
-  // { key: "company", label: "Company Code", render: (row: WarehouseRow) => row.company?.company_code || "-" },
-  // { key: "company", label: "Company Name", render: (row: WarehouseRow) => row.company?.company_name || "-" },
-  { key: "warehouse_manager", label: "Distributors Manager", render: (row: WarehouseRow) => row.warehouse_manager || "-" },
-  { key: "warehouse_manager_contact", label: "Distributors Manager Contact", render: (row: WarehouseRow) => row.warehouse_manager_contact || "-" },
-  // {
-  //   key: "warehouse_type",
-  //   label: "Warehouse Type",
-  //   showByDefault: true,
-  //   render: (row: WarehouseRow) => {
-  //     const value = row.warehouse_type;
-  //     const strValue = value != null ? String(value) : "";
-  //     if (strValue === "0") return "Agent";
-  //     if (strValue === "1") return "Outlet";
-  //     return strValue || "-";
-  //   },
-  // },
-  // { key: "business_type", label: "Business Type", render: (row: WarehouseRow) => {
-  //     const value = row.business_type;
-  //     const strValue = value != null ? String(value) : "";
-  //     if (strValue === "1") return "B2B";
-  //     return strValue || "-";
-  //   }, },
-  // { key: "region_id", label: "Region"},
-  { key: "tin_no", label: "TIN No.", render: (row: WarehouseRow) => row.tin_no || "-" },
-  {
-    label: 'Region',
-    // showByDefault: true,
-    key: 'region',
-    render: (row: WarehouseRow) => {
-      return row.region?.name || row.region?.region_name || '-';
-    },
-    filter: {
-                isFilterable: true,
-                width: 320,
-                filterkey: "warehouse_id",
-                options: Array.isArray(regionOptions) ? regionOptions : [],
-                onSelect: (selected: string | string[]) => {
-                    setRegionId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: regionId,
-            },
-  },
-  {
-    label: 'Area',
-    // showByDefault: true,
-    key: 'area',
-    render: (row: WarehouseRow) => {
-      return row.area?.name || row.area?.area_name || '-';
+    // },
+    // { key: "business_type", label: "Business Type", render: (row: WarehouseRow) => {
+    //     const value = row.business_type;
+    //     const strValue = value != null ? String(value) : "";
+    //     if (strValue === "1") return "B2B";
+    //     return strValue || "-";
+    //   }, },
+    // { key: "region_id", label: "Region"},
+    { key: "tin_no", label: "TIN No.", render: (row: WarehouseRow) => row.tin_no || "-" },
+    {
+      label: 'Region',
+      // showByDefault: true,
+      key: 'region',
+      render: (row: WarehouseRow) => {
+        return row.region?.name || row.region?.region_name || '-';
+      },
+      filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "region_id",
+        options: Array.isArray(regionOptions) ? regionOptions : [],
+        onSelect: (selected: string | string[]) => {
+          const val = selected as string;
+          setRegionId((prev) => (prev === val ? "" : val));
 
+          const params = new URLSearchParams(searchParams.toString());
+          if (val && val !== regionId) {
+            params.set("region_id", val);
+            params.set("_type", "filter");
+            params.delete("search"); // Clear search
+          } else if (val === regionId) {
+            // toggle off
+            params.delete("region_id");
+            if (!params.has("status") && !params.has("area_id")) {
+              params.delete("_type");
+            }
+          }
+          params.delete("page");
+          router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+        },
+        isSingle: false,
+        selectedValue: regionId,
+      },
     },
-    filter: {
-                isFilterable: true,
-                width: 320,
-                filterkey: "warehouse_id",
-                options: Array.isArray(areaOptions) ? areaOptions : [],
-                onSelect: (selected: string | string[]) => {
-                    setAreaId((prev) => (prev === selected ? "" : (selected as string)));
-                },
-                isSingle: false,
-                selectedValue: areaId,
-            },
-  },
-  // { key: "sub_region_id", label: "Sub Region"},
-  { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-", },
-  {
-    key: "location", label: "Location", render: (row: WarehouseRow) => {
-      return row.location?.name || row.location?.location_name || row.location_relation?.name || '-';
-    }
-  },
-  // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
-  // { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
-  // { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
-  // { key: "agreed_stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.agreed_stock_capital || "-" },
-  {
-    key: "is_efris", label: "EFRIS",
-    // showByDefault: true,
-    render: (row: WarehouseRow) => {
-      const value = row.is_efris;
-      const strValue = value != null ? String(value) : "";
-      if (strValue === "0") return "Disable";
-      if (strValue === "1") return "Enable";
-      return strValue || "-";
+    {
+      label: 'Area',
+      // showByDefault: true,
+      key: 'area',
+      render: (row: WarehouseRow) => {
+        return row.area?.name || row.area?.area_name || '-';
+
+      },
+      filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "area_id",
+        options: Array.isArray(areaOptions) ? areaOptions : [],
+        onSelect: (selected: string | string[]) => {
+          const val = selected as string;
+          setAreaId((prev) => (prev === val ? "" : val));
+
+          const params = new URLSearchParams(searchParams.toString());
+          if (val && val !== areaId) {
+            params.set("area_id", val);
+            params.set("_type", "filter");
+            params.delete("search"); // Clear search
+          } else if (val === areaId) {
+            // toggle off
+            params.delete("area_id");
+            if (!params.has("status") && !params.has("region_id")) {
+              params.delete("_type");
+            }
+          }
+          params.delete("page");
+          router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+        },
+        isSingle: false,
+        selectedValue: areaId,
+      },
     },
-  },
-  {
-    key: "status",
-    label: "Status",
-    // showByDefault: true,
-    // isSortable: true,
-    render: (row: WarehouseRow) => <StatusBtn isActive={String(row.status) > "0"} />,
-    filterStatus: {
-      enabled: true,
-      onFilter: handleStatusFilter,
-      currentFilter: currentStatusFilter,
+    // { key: "sub_region_id", label: "Sub Region"},
+    { key: "city", label: "City", render: (row: WarehouseRow) => row.city || "-", },
+    {
+      key: "location", label: "Location", render: (row: WarehouseRow) => {
+        return row.location?.name || row.location?.location_name || row.location_relation?.name || '-';
+      }
     },
-  },
-];
+    // { key: "town_village", label: "Town", render: (row: WarehouseRow) => row.town_village || "-" },
+    // { key: "street", label: "Street", render: (row: WarehouseRow) => row.street || "-" },
+    // { key: "landmark", label: "Landmark", render: (row: WarehouseRow) => row.landmark || "-" },
+    // { key: "agreed_stock_capital", label: "Stock Capital", render: (row: WarehouseRow) => row.agreed_stock_capital || "-" },
+    {
+      key: "is_efris", label: "EFRIS",
+      // showByDefault: true,
+      render: (row: WarehouseRow) => {
+        const value = row.is_efris;
+        const strValue = value != null ? String(value) : "";
+        if (strValue === "0") return "Disable";
+        if (strValue === "1") return "Enable";
+        return strValue || "-";
+      },
+    },
+    {
+      key: "status",
+      label: "Status",
+      // showByDefault: true,
+      // isSortable: true,
+      render: (row: WarehouseRow) => <StatusBtn isActive={String(row.status) > "0"} />,
+      filterStatus: {
+        enabled: true,
+        onFilter: handleStatusFilter,
+        currentFilter: currentStatusFilter,
+      },
+    },
+  ];
 
   useEffect(() => {
-        setRefreshKey((k) => k + 1);
-    }, [warehouseId, regionId, areaId, currentStatusFilter]);
+    setRefreshKey((k) => k + 1);
+  }, [warehouseId, regionId, areaId, currentStatusFilter]);
 
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   type TableRow = TableDataType & { id?: string };
@@ -202,7 +274,7 @@ export default function Warehouse() {
     street?: string;
     branch_id?: string;
     town_village?: string;
-    region?: { code?: string; name:string; region_name?: string; }
+    region?: { code?: string; name: string; region_name?: string; }
     get_company_customer?: { owner_name?: string };
     city?: string;
     location?: { code?: string; name?: string; location_code?: string; location_name?: string; }
@@ -225,7 +297,7 @@ export default function Warehouse() {
   };
 
   const [selectedRow, setSelectedRow] = useState<WarehouseRow | null>(null);
-  
+
   const fetchWarehouse = useCallback(
     async (
       page: number = 1,
@@ -233,13 +305,13 @@ export default function Warehouse() {
     ): Promise<listReturnType> => {
       try {
         //  setLoading(true);
-        
+
         // Build params with all filters
         const params: any = {
           page: page.toString(),
           per_page: pageSize.toString(),
         };
-        
+
         // if (warehouseId) {
         //   params.warehouse_id = warehouseId;
         // }
@@ -249,7 +321,7 @@ export default function Warehouse() {
         if (areaId) {
           params.area_id = areaId;
         }
-        
+
         // Add status filter if active (true=1, false=0)
         if (currentStatusFilter !== null) {
           params.status = currentStatusFilter ? "1" : "0";
@@ -292,6 +364,7 @@ export default function Warehouse() {
           total: listRes.pagination.last_page || 1,
           currentPage: listRes.pagination.current_page || 1,
           pageSize: listRes.pagination.limit || pageSize,
+          totalRecords: listRes.pagination.total || 0,
         };
       } catch (error: unknown) {
         console.error("API Error:", error);
@@ -306,7 +379,7 @@ export default function Warehouse() {
   const exportFile = async (format: string) => {
     try {
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportWarehouseData({ format, search: searchFilter,filters:{ area_id: areaId, region_id: regionId, status: currentStatusFilter === null ? undefined : (currentStatusFilter ? "1" : "0") }});
+      const response = await exportWarehouseData({ format, search: searchFilter, filters: { area_id: areaId, region_id: regionId, status: currentStatusFilter === null ? undefined : (currentStatusFilter ? "1" : "0") } });
       if (response && typeof response === 'object' && response.download_url) {
         await downloadFile(response.download_url);
         showSnackbar("File downloaded successfully ", "success");
@@ -375,10 +448,10 @@ export default function Warehouse() {
             },
 
             header: {
-               exportButton: {
-                threeDotLoading:  threeDotLoading,
+              exportButton: {
+                threeDotLoading: threeDotLoading,
                 show: true,
-                onClick: () => exportFile("xlsx"), 
+                onClick: () => exportFile("xlsx"),
               },
               threeDot: [
                 // {

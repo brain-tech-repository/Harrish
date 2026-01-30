@@ -19,24 +19,33 @@ import {
 } from "@/app/services/allApi";
 import { useLoading } from "@/app/services/loadingContext";
 import { useSnackbar } from "@/app/services/snackbarContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 
 
 export default function Route() {
     const { can, permissions } = usePagePermissions();
-    const { warehouseAllOptions , ensureWarehouseAllLoaded} = useAllDropdownListData();
-  // Load dropdown data
-  useEffect(() => {
-    ensureWarehouseAllLoaded();
-  }, [ensureWarehouseAllLoaded]);
+    const { warehouseAllOptions, ensureWarehouseAllLoaded } = useAllDropdownListData();
+    // Load dropdown data
+    useEffect(() => {
+        ensureWarehouseAllLoaded();
+    }, [ensureWarehouseAllLoaded]);
 
-    const [warehouseId, setWarehouseId] = useState<string>("");
-    const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(null);
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    const [warehouseId, setWarehouseId] = useState<string>(searchParams.get("warehouse_id") || "");
+    const [currentStatusFilter, setCurrentStatusFilter] = useState<boolean | null>(() => {
+        const s = searchParams.get("status");
+        if (s === "1") return true;
+        if (s === "0") return false;
+        return null;
+    });
+
     const [selectedRowId, setSelectedRowId] = useState<number | undefined>();
     const [showDeletePopup, setShowDeletePopup] = useState(false);
-    const [searchFilterValue, setSearchFilterValue] = useState<string>("");
+    const [searchFilterValue, setSearchFilterValue] = useState<string>(searchParams.get("search") || "");
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Refresh table when permissions load
@@ -46,8 +55,16 @@ export default function Route() {
         }
     }, [permissions]);
 
+    // Cleanup: If search is present, ensure status filter is cleared? 
+    // The user said: "while I am setting the search it is removing the filterColumnHeader as well"
+    // And "I need for status as well to set in params".
+    // And probably wants mutual exclusion.
+    // If we load with search, we should probably clear status if strict exclusion is desired.
+    // However, if we utilize URL as source of truth, customTable might clear "other" params.
+    // But status is handled here in page.tsx.
+
     const { setLoading } = useLoading();
-    const router = useRouter();
+    // const router = useRouter(); // Defined above
     const { showSnackbar } = useSnackbar();
     const [threeDotLoading, setThreeDotLoading] = useState({
         csv: false,
@@ -59,7 +76,19 @@ export default function Route() {
             // If clicking the same filter, clear it
             const newFilter = currentStatusFilter === status ? null : status;
             setCurrentStatusFilter(newFilter);
-            
+
+            // Update URL
+            const params = new URLSearchParams(searchParams.toString());
+            if (newFilter !== null) {
+                params.set("status", newFilter ? "1" : "0");
+                params.delete("search"); // Clear search when filtering status
+            } else {
+                params.delete("status");
+            }
+            // Reset page on filter change
+            params.delete("page");
+            router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+
             // Refresh the table with the new filter
             setRefreshKey((k) => k + 1);
         } catch (error) {
@@ -67,6 +96,27 @@ export default function Route() {
             showSnackbar("Failed to filter by status", "error");
         }
     };
+
+    // Also sync warehouseId with URL
+    useEffect(() => {
+        const wId = searchParams.get("warehouse_id") || "";
+        if (wId !== warehouseId) setWarehouseId(wId);
+
+        const s = searchParams.get("status");
+        let sVal: boolean | null = null;
+        if (s === "1") sVal = true;
+        else if (s === "0") sVal = false;
+
+        if (sVal !== currentStatusFilter) setCurrentStatusFilter(sVal);
+
+        // If search is present, do we clear status? 
+        // customTable handleSearch clears "search" param but keeps others? No, I implemented "exclusion".
+        // If customTable sees "search", it might assume others are clear.
+        // If "search" param is present, page.tsx should probably reflect that by clearing status visually.
+        if (searchParams.has("search")) {
+            if (currentStatusFilter !== null) setCurrentStatusFilter(null);
+        }
+    }, [searchParams]);
 
     const columns = [
         {
@@ -102,7 +152,19 @@ export default function Route() {
                 filterkey: "warehouse_id",
                 options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
                 onSelect: (selected: string | string[]) => {
-                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                    const val = selected as string;
+                    setWarehouseId((prev) => (prev === val ? "" : val));
+
+                    const params = new URLSearchParams(searchParams.toString());
+                    if (val && val !== warehouseId) {
+                        params.set("warehouse_id", val);
+                        params.delete("search"); // Clear search
+                    } else if (val === warehouseId) {
+                        // toggle off
+                        params.delete("warehouse_id");
+                    }
+                    params.delete("page");
+                    router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
                 },
                 isSingle: false,
                 selectedValue: warehouseId,
@@ -151,13 +213,13 @@ export default function Route() {
             const params: any = {
                 page: pageNo.toString(),
                 per_page: pageSize.toString(),
-                // ...payload,
+                ...payload,
             };
-            
+
             if (warehouseId) {
                 params.warehouse_id = warehouseId;
             }
-            
+
             // Add status filter if active (true=1, false=0)
             if (currentStatusFilter !== null) {
                 params.status = currentStatusFilter ? "1" : "0";
@@ -208,6 +270,7 @@ export default function Route() {
                 total: pagination?.totalPages || 1,
                 currentPage: pagination?.page || 1,
                 pageSize: pagination?.limit || 1,
+                totalRecords: pagination?.totalRecords || 0,
             };
         },
         []
@@ -235,11 +298,11 @@ export default function Route() {
     //     setLoading(true);
     // }, []);
 
-    
+
     const exportFile = async (format: string) => {
         try {
             setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-            const response = await exportRoutes({ format, search: searchFilterValue, filter:{ status: currentStatusFilter == false ? "0" : "1", warehouse_id: warehouseId }});
+            const response = await exportRoutes({ format, search: searchFilterValue, filter: { status: currentStatusFilter == false ? "0" : "1", warehouse_id: warehouseId } });
             if (response && typeof response === 'object' && response.url) {
                 await downloadFile(response.url);
                 showSnackbar("File downloaded successfully ", "success");
@@ -267,11 +330,11 @@ export default function Route() {
                             title: "Routes",
                             exportButton: {
                                 threeDotLoading: threeDotLoading,
-                show: true,
-                onClick: () => exportFile("xlsx"), 
-              },
+                                show: true,
+                                onClick: () => exportFile("xlsx"),
+                            },
                             threeDot: [
-                               
+
                                 {
                                     icon: "lucide:radio",
                                     label: "Inactive",
@@ -353,7 +416,7 @@ export default function Route() {
                 />
             </div>
 
-           
+
         </>
     );
 }
