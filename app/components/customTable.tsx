@@ -2302,7 +2302,7 @@ function FilterBy() {
     const activeFilterCount = count;
 
     const toApiPayload = (payload: Record<string, any>) => {
-        const payloadForApi: Record<string, string | number | null> = {};
+        const payloadForApi: Record<string, string | number | null | any> = {};
         Object.keys(payload || {}).forEach((k) => {
             const v = payload[k];
             if (Array.isArray(v)) {
@@ -2319,13 +2319,13 @@ function FilterBy() {
         if (Object.keys(currentFilters).length === 0) return;
 
         setShowDropdown(false);
-        if (config.api?.filterBy) {
+        if (config.api?.list) {
             setNestedLoading(true);
             try {
                 const payloadForApi = toApiPayload(currentFilters);
                 setFilterState({ applied: true, payload: payloadForApi });
 
-                const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize, pageNo);
+                const res = await config.api.list(1, config.pageSize || defaultPageSize);
                 const resolved = res instanceof Promise ? await res : res;
                 const { currentPage, totalRecords, pageSize, total, data } = resolved;
 
@@ -2346,7 +2346,7 @@ function FilterBy() {
             if (activeFilterCount === 0) return;
             setShowDropdown(false);
             // call API if provided
-            if (config.api?.filterBy) {
+            if (config.api?.list) {
                 try {
                     setNestedLoading(true);
 
@@ -2379,7 +2379,7 @@ function FilterBy() {
                         // ignore environments without window
                     }
 
-                    const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
+                    const res = await config.api.list(1, config.pageSize || defaultPageSize);
                     const { currentPage, totalRecords, pageSize, total, data } = res instanceof Promise ? await res : res;
                     // prefer totalRecords when provided by API
                     const totalRecordsValue = totalRecords ?? total ?? 0;

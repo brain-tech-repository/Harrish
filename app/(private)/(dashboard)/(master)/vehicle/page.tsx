@@ -233,6 +233,7 @@ console.log(warehouseId)
       return {
         data: result.data || [],
         total: pagination.totalPages || 1,
+        totalRecords: pagination.totalRecords,
         currentPage: pagination.current_page || 1,
         pageSize: pagination.limit || 1,
       };

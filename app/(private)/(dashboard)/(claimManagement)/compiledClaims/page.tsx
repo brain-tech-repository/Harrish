@@ -12,14 +12,10 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import StatusBtn from "@/app/components/statusBtn2";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 // 🔹 Dropdown menu data
-interface DropdownItem {
-  icon: string;
-  label: string;
-  iconWidth: number;
-}
+
 
 // const dropdownDataList: DropdownItem[] = [
 //   // { icon: "lucide:layout", label: "SAP", iconWidth: 20 },
@@ -30,7 +26,84 @@ interface DropdownItem {
 // ];
 
 // 🔹 Table columns
-const columns = [
+
+
+export default function CompailedClaim() {
+  const { warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const { can, permissions } = usePagePermissions();
+  const { setLoading } = useLoading();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [warehouseId, setWarehouseId] = useState<string>("");
+
+  useEffect(() => {
+    ensureWarehouseAllLoaded();
+  }, [ensureWarehouseAllLoaded]);
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
+  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter();
+
+  useEffect(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, [warehouseId]);
+  const fetchCompailed = useCallback(
+    async (
+      page: number = 1,
+      pageSize: number = 50
+    ): Promise<listReturnType> => {
+      try {
+        // setLoading(true);
+        const params : any ={page: page.toString(),
+          current_page: pageSize.toString(),}
+        if(warehouseId){
+          params.warehouse_id=warehouseId;
+        }
+        const listRes = await compailedClaimList(params);
+        // setLoading(false);
+        return {
+          data: listRes.data || [],
+          total: listRes.pagination.last_page,
+          totalRecords: listRes.pagination.total,
+          currentPage: listRes.pagination.current_page,
+          pageSize: listRes.pagination.per_page,
+        };
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [warehouseId, setLoading]
+  );
+
+
+  const exportFile = async (format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await exportCompailedData({ format,warehouse_id:warehouseId });
+      if (response && typeof response === 'object' && response.url) {
+        await downloadFile(response.url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+      }
+    } catch (error) {
+      showSnackbar("Failed to download vehicle data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
+
+
+  const columns = [
   { key: "osa_code", label: "Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.osa_code || "-"}</span>) },
   { key: "claim_period", label: "Claim Period", render: (row: TableDataType) => {
   const cp = row.claim_period;
@@ -79,6 +152,18 @@ const columns = [
          
          return <>{code && name? code +"-"+name:"-"}</>;
        },
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: warehouseAllOptions,
+        onSelect: (selected: string | string[]) => {
+          const val = Array.isArray(selected) ? selected.join(',') : selected;
+          setWarehouseId(val);
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+      },
        
    },
   
@@ -86,8 +171,8 @@ const columns = [
   { key: "approved_claim_amount", label: "Approved Claim Amount", render: (row: TableDataType) => toInternationalNumber(row.approved_claim_amount || "-") },
   { key: "rejected_qty_cse", label: "Rejected Qty (CSE)", render: (row: TableDataType) => toInternationalNumber(row.rejected_qty_cse || "-") },
   { key: "rejected_amount", label: "Rejected Amount", render: (row: TableDataType) => toInternationalNumber(row.rejected_amount || "-" )},
-  { key: "area_sales_supervisor", label: "Area Sales Manager", render: (row: TableDataType) => row.area_sales_supervisor || "-" },
-  { key: "regional_sales_manager", label: "Regional Sales Manager", render: (row: TableDataType) => row.regional_sales_manager || "-" },
+  { key: "area_sales_supervisor", label: "ASM", render: (row: TableDataType) => row.area_sales_supervisor || "-" },
+  { key: "regional_sales_manager", label: "RSM", render: (row: TableDataType) => row.regional_sales_manager || "-" },
   {
     key: "status",
     label: "Status",
@@ -96,70 +181,6 @@ const columns = [
     ),
   },
 ];
-
-export default function CompailedClaim() {
-  const { can, permissions } = usePagePermissions();
-  const { setLoading } = useLoading();
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Refresh table when permissions load
-  useEffect(() => {
-    if (permissions.length > 0) {
-      setRefreshKey((prev) => prev + 1);
-    }
-  }, [permissions]);
-
-  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
-  const { showSnackbar } = useSnackbar();
-  const router = useRouter();
-
-
-  const fetchCompailed = useCallback(
-    async (
-      page: number = 1,
-      pageSize: number = 50
-    ): Promise<listReturnType> => {
-      try {
-        // setLoading(true);
-        const listRes = await compailedClaimList({
-          // limit: pageSize.toString(),
-          // page: page.toString(),
-        });
-        // setLoading(false);
-        return {
-          data: listRes.data || [],
-          total: listRes.pagination.totalPages,
-          currentPage: listRes.pagination.page,
-          pageSize: listRes.pagination.limit,
-        };
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
-      }
-    },
-    []
-  );
-
-
-  const exportFile = async (format: string) => {
-    try {
-      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportCompailedData({ format });
-      if (response && typeof response === 'object' && response.url) {
-        await downloadFile(response.url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-      }
-    } catch (error) {
-      showSnackbar("Failed to download vehicle data", "error");
-      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    } finally {
-    }
-  };
-
 
   return (
     <>

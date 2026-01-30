@@ -12,6 +12,7 @@ import { useSnackbar } from "@/app/services/snackbarContext";
 import { useLoading } from "@/app/services/loadingContext";
 import { assetsMasterExport, chillerList, deleteChiller, deleteServiceTypes, serviceTypesList } from "@/app/services/assetsApi";
 import StatusBtn from "@/app/components/statusBtn2";
+import { downloadFile } from "@/app/services/allApi";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 import { formatDate } from "../../(master)/salesTeam/details/[uuid]/page";
@@ -105,51 +106,67 @@ export default function ShelfDisplay() {
 
 
   const handleExport = async (fileType: "csv" | "xlsx") => {
-    try {
-      // setLoading(true);
-      setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
+     try {
+          setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
+          const response = await assetsMasterExport({ format: fileType });
+          if (response && typeof response === "object" && response.download_url) {
+            await downloadFile(response.download_url);
+            showSnackbar("File downloaded successfully ", "success");
+          } else {
+            showSnackbar("Failed to get download URL", "error");
+          }
+        } catch (error) {
+          showSnackbar("Failed to download warehouse data", "error");
+          setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
+        } finally {
+          setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
+    //   setShowExportDropdown(false);
+        }
+    // try {
+    //   // setLoading(true);
+    //   setThreeDotLoading((prev) => ({ ...prev, [fileType]: true }));
 
-      const res = await assetsMasterExport({ format: fileType });
+    //   const res = await assetsMasterExport({ format: fileType });
 
-      let downloadUrl = "";
+    //   let downloadUrl = "";
 
-      if (res?.download_url && res.download_url.startsWith("blob:")) {
-        downloadUrl = res.download_url;
-      } else if (res?.download_url && res.download_url.startsWith("http")) {
-        downloadUrl = res.download_url;
-      } else if (typeof res === "string" && res.includes(",")) {
-        const blob = new Blob([res], {
-          type:
-            fileType === "csv"
-              ? "text/csv;charset=utf-8;"
-              : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        downloadUrl = URL.createObjectURL(blob);
-      } else {
-        showSnackbar("No valid file or URL returned from server", "error");
-        return;
-      }
+    //   if (res?.download_url && res.download_url.startsWith("blob:")) {
+    //     downloadUrl = res.download_url;
+    //   } else if (res?.download_url && res.download_url.startsWith("http")) {
+    //     downloadUrl = res.download_url;
+    //   } else if (typeof res === "string" && res.includes(",")) {
+    //     const blob = new Blob([res], {
+    //       type:
+    //         fileType === "csv"
+    //           ? "text/csv;charset=utf-8;"
+    //           : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    //     });
+    //     downloadUrl = URL.createObjectURL(blob);
+    //   } else {
+    //     showSnackbar("No valid file or URL returned from server", "error");
+    //     return;
+    //   }
 
-      // ⬇️ Trigger browser download
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `assets_export.${fileType}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    //   // ⬇️ Trigger browser download
+    //   const link = document.createElement("a");
+    //   link.href = downloadUrl;
+    //   link.download = `assets_export.${fileType}`;
+    //   document.body.appendChild(link);
+    //   link.click();
+    //   document.body.removeChild(link);
 
-      showSnackbar(
-        `Download started for ${fileType.toUpperCase()} file`,
-        "success"
-      );
-    } catch (error) {
-      console.error("Export error:", error);
-      showSnackbar("Failed to export Assets Master data", "error");
-    } finally {
-      // setLoading(false);
-      setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
-      setShowExportDropdown(false);
-    }
+    //   showSnackbar(
+    //     `Download started for ${fileType.toUpperCase()} file`,
+    //     "success"
+    //   );
+    // } catch (error) {
+    //   console.error("Export error:", error);
+    //   showSnackbar("Failed to export Assets Master data", "error");
+    // } finally {
+    //   // setLoading(false);
+    //   setThreeDotLoading((prev) => ({ ...prev, [fileType]: false }));
+    //   setShowExportDropdown(false);
+    // }
   };
 
 
@@ -172,14 +189,14 @@ export default function ShelfDisplay() {
               title: "Assets Master",
               threeDot: [
                 {
-                  icon: threeDotLoading.csv || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export CSV",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("csv");
                   },
                 },
                 {
-                  icon: threeDotLoading.xlsx || threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
                   label: "Export Excel",
                   onClick: (data: TableDataType[], selectedRow?: number[]) => {
                     handleExport("xlsx");
@@ -235,13 +252,14 @@ export default function ShelfDisplay() {
   // },
 
                
-                             {
-  key: "warehouse",
-  label: "Distributor",
-  render: (row: TableDataType) => {
-    return `${row?.warehouse?.code || ""} - ${row?.warehouse?.warehouse_name || ""}`;
-  },
-}  ,  
+//                              {
+//   key: "warehouse",
+//   label: "Distributor",
+
+//   render: (row: TableDataType) => {
+//     return `${row?.warehouse?.code || ""} - ${row?.warehouse?.warehouse_name || ""}`;
+//   },
+// }  ,  
                              {
   key: "customer",
   label: "Customer",

@@ -73,9 +73,10 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
-  const { warehouseAllOptions, ensureWarehouseAllLoaded } =
+  const { warehouseAllOptions, ensureWarehouseAllLoaded,salesmanOptions,ensureSalesmanLoaded } =
     useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>("");
+  const [salesmanId, setSalesmanId] = useState<string>("");
   const [threeDotLoading, setThreeDotLoading] = useState({
     csv: false,
     xlsx: false,
@@ -84,7 +85,8 @@ export default function Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
     ensureWarehouseAllLoaded();
-  }, [ensureWarehouseAllLoaded]);
+    ensureSalesmanLoaded();
+  }, [ensureWarehouseAllLoaded, ensureSalesmanLoaded]);
   // Refresh table when permissions load
   useEffect(() => {
     if (permissions.length > 0) {
@@ -119,6 +121,9 @@ export default function Page() {
       }
     }
   };
+  useEffect(() => {
+  setRefreshKey((prev) => prev + 1);
+  }, [warehouseId, salesmanId]);
 
   const fetchTableData = useCallback(
     async (
@@ -126,10 +131,15 @@ export default function Page() {
       pageSize: number = 10
     ): Promise<listReturnType> => {
       setLoading(true);
-      const res = await chillerRequestList({
-        page: pageNo.toString(),
-        per_page: pageSize.toString(),
-      });
+      const params : any ={page: pageNo.toString(),
+        limit: pageSize.toString(),}
+        if(warehouseId){
+          params.warehouse_id=warehouseId;
+        }
+        if(salesmanId){
+          params.salesman_id=salesmanId;
+        }
+      const res = await chillerRequestList(params);
       setLoading(false);
       if (res.error) {
         showSnackbar(
@@ -146,7 +156,7 @@ export default function Page() {
         };
       }
     },
-    [setLoading, showSnackbar]
+    [setLoading, showSnackbar, warehouseId, salesmanId]
   );
 
   // Helper function to render nested object data
@@ -215,7 +225,7 @@ export default function Page() {
       // setLoading(true);
       // Pass selected format to the export API
       setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await crfExport({ format });
+      const response = await crfExport({ format,warehouse_id:warehouseId,salesman_id:salesmanId });
       // const url = response?.url || response?.data?.url;
       const url = response?.download_url || response?.url || response?.data?.url;
       if (url) {
@@ -237,76 +247,7 @@ export default function Page() {
 
 
 
-  const columns = [
-    // Essential Information
-    {
-      key: "created_at",
-      label: "Date", render: (data: TableDataType) => formatDate(data.created_at),
-    },
-    {
-      key: "osa_code",
-      label: "OSA Code",
-    },
-    {
-      key: "warehouse",
-      label: "Distributor",
-      render: (data: TableDataType) =>
-        renderCombinedField(data, "warehouse"),
-      filter: {
-        isFilterable: true,
-        width: 320,
-        filterkey: "warehouse_id",
-        options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
-        onSelect: (selected: string | string[]) => {
-          setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
-        },
-        isSingle: false,
-        selectedValue: warehouseId,
-      },
-    },
 
-    {
-      key: "customer",
-      label: "Customer",
-      render: (data: TableDataType) =>
-        renderCombinedField(data, "customer"),
-    },
-    {
-      key: "owner_name",
-      label: "Owner Name",
-    },
-
-    // Combined Relationship Fields
-
-    {
-      key: "contact_number",
-      label: "Contact Number",
-    },
-
-    {
-      key: "outlet",
-      label: "Outlet",
-      render: (data: TableDataType) =>
-        data.outlet?.name || "-",
-    },
-    {
-      key: "model",
-      label: "Model",
-      render: (data: TableDataType) =>
-        renderNestedField(data, "model", "name"),
-    },
-    {
-      key: "approval_status",
-      label: "Approval Status",
-    },
-
-    {
-      key: "status",
-      label: "Status",
-      render: (data: TableDataType) =>
-        CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
-    },
-  ];
 
   return (
     <>
@@ -371,6 +312,16 @@ export default function Page() {
                 label: "Distributor",
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "warehouse"),
+                 filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(warehouseAllOptions) ? warehouseAllOptions : [],
+                onSelect: (selected) => {
+                    setWarehouseId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: warehouseId,
+            },
               },
               {
                 key: "customer",
@@ -390,6 +341,16 @@ export default function Page() {
                 label: "Sales Team",
                 render: (data: TableDataType) =>
                   renderCombinedField(data, "salesman"),
+                 filter: {
+                isFilterable: true,
+                width: 320,
+                options: Array.isArray(salesmanOptions) ? salesmanOptions : [],
+                onSelect: (selected) => {
+                    setSalesmanId((prev) => (prev === selected ? "" : (selected as string)));
+                },
+                isSingle: false,
+                selectedValue: salesmanId,
+            },
               },
 
               {

@@ -336,6 +336,8 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                             setForm({ ...form, condition: e.target.value })
                         }
                     /> : ""}
+
+                    
                     <InputFields
                         required
                         width="full"

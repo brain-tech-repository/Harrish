@@ -10,6 +10,7 @@ import { Icon } from "@iconify-icon/react";
 import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatDate } from "@/app/(private)/(dashboard)/(master)/salesTeam/details/[uuid]/page";
 
 type OptionObj = {
   id: number;
@@ -21,7 +22,7 @@ type Chiller = {
   osa_code: string;
   sap_code: string;
   serial_number: string;
-  acquisition: string;
+  acquisition: string | any;
   assets_type: string;
 
   // Nested API objects
@@ -140,7 +141,7 @@ export default function ViewPage() {
           <KeyValueData
             title="Acquisition and Vendor Information"
             data={[
-              { key: "Acquisition", value: chiller?.acquisition },
+              { key: "Acquisition", value: formatDate(chiller?.acquisition) },
               { key: "Vendor", value: chiller?.vendor?.name },
               { key: "Manufacturer", value: chiller?.manufacturer?.name },
               // { key: "Country", value: chiller?.country?.name },
