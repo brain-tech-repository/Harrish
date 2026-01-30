@@ -170,7 +170,7 @@ export default function CustomerInvoicePage() {
 
     const exportFile = async (format: 'csv' | 'xlsx' = 'csv') => {
         try {
-            setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+            setThreeDotLoading((prev) => ({ ...prev, csv: true }));
             // Build params using same logic as filterBy
             const params: Record<string, string> = {};
             Object.keys(filters || {}).forEach((k) => {
@@ -188,11 +188,11 @@ export default function CustomerInvoicePage() {
             } else {
                 showSnackbar("Failed to get download file", "error");
             }
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            setThreeDotLoading((prev) => ({ ...prev, csv: false }));
         } catch (error) {
             console.error("Export failed:", error);
             showSnackbar("Failed to download invoices", "error");
-            setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+            setThreeDotLoading((prev) => ({ ...prev, csv: false }));
         } finally {
             // setLoading(false);
         }
@@ -473,13 +473,13 @@ useEffect(() => {
                         threeDot: [
                             {
                                 icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                label: "Export CSV",
+                                label: "Export Header",
                                 labelTw: "text-[12px] hidden sm:block",
-                                onClick: () => !threeDotLoading.csv && exportFile("csv"),
+                                onClick: () => !threeDotLoading.csv && exportFile("xlsx"),
                             },
                             {
                                 icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                                label: "Export Excel",
+                                label: "Export Details",
                                 labelTw: "text-[12px] hidden sm:block",
                                 onClick: () => !threeDotLoading.xlsx && exportCollapseFile("xlsx"),
                             },
