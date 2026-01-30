@@ -199,7 +199,7 @@ export default function WorkflowTable() {
                         actions: [
                             <SidebarBtn
                                 key={0}
-                                href="/settings/approval/addWorkflow"
+                                href="/settings/approval/addworkflow"
                                 isActive={true}
                                 leadingIcon="lucide:plus"
                                 label="Add"

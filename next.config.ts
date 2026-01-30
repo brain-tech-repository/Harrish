@@ -475,6 +475,7 @@ const nextConfig: NextConfig = {
       { source: '/itemreport', destination: '/itemReport' },
       { source: '/attendencereport', destination: '/attendenceReport' },
       { source: '/poorderreport', destination: '/poOrderReport' },
+      { source: '/comparisonreport', destination: '/comparisonReport' },
 
       // alert
       { source: '/alert/add', destination: '/alert/add' },
@@ -519,8 +520,9 @@ const nextConfig: NextConfig = {
       { source: '/settings/bonuspoints/:uuid', destination: '/settings/bonusPoints/:uuid' },
       { source: '/settings/bonuspoints', destination: '/settings/bonusPoints' },
 
-      { source: '/settings/approval/add', destination: '/settings/approval/add' },
+      { source: '/settings/approval/:path*', destination: '/settings/approval/:path*' },
       { source: '/settings/approval/:uuid', destination: '/settings/approval/:uuid' },
+      { source: '/settings/approval/addworkflow', destination: '/settings/approval/addworkflow' },
       { source: '/settings/approval', destination: '/settings/approval' },
 
       { source: '/settings/area/add', destination: '/settings/area/add' },

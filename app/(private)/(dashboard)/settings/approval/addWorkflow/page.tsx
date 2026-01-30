@@ -12,7 +12,7 @@ import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
 import ApprovalFlowTable from "./dragTable";
-import { submenuList,roleList,userList, approvalAdd } from "@/app/services/allApi";
+import { submenuList,roleList, approvalAdd } from "@/app/services/allApi";
 // import {VerticalArrow} from "./proccessFlow";
 
 type OldStep = {
@@ -57,41 +57,32 @@ type NewFlow = {
 };
 
 export function convertToNewFlow(old: OldFlow): any {
-  return {
-    name: old.approvalName,
-    description: old.description,
-    is_active: old.status === "1",
-
-    steps: old.steps.map((step, index) => {
-
-      // Normalize formType to array to handle both string and string[]
-      const formTypes = Array.isArray(step.formType) ? step.formType : [step.formType];
-      
-    //   if (formTypes.includes("ADD")) permissions.push("ADD");
-    //   if (formTypes.includes("APPROVE")) permissions.push("APPROVE");
-    //   if (formTypes.includes("REJECT")) permissions.push("REJECT");
-    //   if (formTypes.includes("RETURN_BACK")) permissions.push("RETURN_BACK");
-    //   if (formTypes.includes("UPDATE")) permissions.push("EDIT_BEFORE_APPROVAL");
-
-      // approval type
-      const approvalType = step.condition || "OR";
-
-      // title logic
-      const title = `Step ${index + 1}`;
-
-      return {
-        step_order: index + 1,
-        title: title,
-        approval_type: approvalType,
-        message: step.approvalMessage || null,
-        notification: step.notificationMessage || null,
-        confirmationMessage: step.confirmationMessage || null,
-        permissions: formTypes,
-        user_ids: (step.selectedCustomer ?? step.customer_id ?? []).map(Number),
-        role_ids: (step.selectedRole ?? step.role_id ?? []).map(Number)
-      };
-    })
-  };
+    return {
+        name: old.approvalName,
+        description: old.description,
+        is_active: old.status === "1",
+        steps: Array.isArray(old.steps)
+            ? old.steps.map((step, index) => {
+                    // Normalize formType to array to handle both string and string[]
+                    const formTypes = Array.isArray(step.formType) ? step.formType : [step.formType];
+                    // approval type
+                    const approvalType = step.condition || "OR";
+                    // title logic
+                    const title = `Step ${index + 1}`;
+                    return {
+                        step_order: index + 1,
+                        title: title,
+                        approval_type: approvalType,
+                        message: step.approvalMessage || null,
+                        notification: step.notificationMessage || null,
+                        confirmationMessage: step.confirmationMessage || null,
+                        permissions: formTypes,
+                        user_ids: (step.selectedCustomer ?? step.customer_id ?? []).map(Number),
+                        role_ids: (step.selectedRole ?? step.role_id ?? []).map(Number)
+                    };
+                })
+            : []
+    };
 }
 
 // Dummy module, role, and user data for now
@@ -313,6 +304,9 @@ export default function AddApprovalFlow() {
         catch(err)
         {
         }
+        finally{
+            setLoading(false);
+        }
     };
    const fetchSubmenuList = async () => {     
     try{
@@ -347,30 +341,11 @@ export default function AddApprovalFlow() {
     }
    }
 
-    const fetchUsersList = async () => {     
-    try{
 
-               const res = await userList();
-         const usersDataList:{value:string,label:string}[]= []
-         res.data.map((item:{id:number,name:string}) => {  
-        usersDataList.push({ value: item.id.toString(), label: item.name });
-
-          })
-
-          setUsersData( usersDataList );
-          
-       // API call to fetch users based on roleName can be implemented here
-       // For now, we are using the dummy data defined above
-    }  
-    catch(err){
-
-    }
-   }
 
     useEffect(() => {
         fetchSubmenuList();
 fetchUsersRoleWise();
-fetchUsersList();
         // Fetch any initial data if needed
     }, []);
 

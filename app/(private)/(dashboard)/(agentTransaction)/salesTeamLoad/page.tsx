@@ -61,11 +61,13 @@ export default function SalemanLoad() {
     {
       key: "osa_code",
       label: "Code",
+      showByDefault: true,
     },
     {
       key: "created_at",
       label: "Load Date",
-      render: (row: TableDataType) => formatDate(row?.created_at || "-")
+      render: (row: TableDataType) => formatDate(row?.created_at || "-"),
+      showByDefault: true,
     },
     {
       key: "warehouse",
@@ -79,6 +81,7 @@ export default function SalemanLoad() {
             : s.warehouse?.name || "-";
         return `${s.warehouse?.code ?? ""} - ${shortName}`;
       },
+      showByDefault: true,
       filter: {
         isFilterable: true,
         width: 320,
@@ -97,6 +100,7 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return `${s.route?.code || ""} - ${s.route?.name || ""}`;
       },
+      showByDefault: true,
       filter: {
         isFilterable: true,
         width: 320,
@@ -115,6 +119,7 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return `${s.salesman?.code ?? ""} - ${s.salesman?.name ?? ""}`;
       },
+      showByDefault: true,
       filter: {
         isFilterable: true,
         width: 320,
@@ -132,6 +137,7 @@ export default function SalemanLoad() {
         const s = row as SalesmanLoadRow;
         return `${s.salesman_type?.name ?? ""}`;
       },
+      showByDefault: true,
     },
     {
       key: "project_type",
@@ -139,6 +145,7 @@ export default function SalemanLoad() {
       render: (row: TableDataType) => {
         return `${(row as SalesmanLoadRow).project_type?.name ?? "-"}`;
       },
+      showByDefault: true,
     },
     // {
     //     key: "approval_status",
@@ -153,6 +160,7 @@ export default function SalemanLoad() {
         return <OrderStatus order_flag={{ is_confirmed: row.is_confirmed }} />
         // return row.is_confirmed == 1 ? 'Sales Team Accepted' : 'Waiting For Accept'
       },
+      showByDefault: true,
     },
   ];
 
@@ -374,7 +382,7 @@ export default function SalemanLoad() {
           localStorageKey: "salesmanLoad-table",
           footer: { nextPrevBtn: true, pagination: true },
           columns,
-          rowSelection: true,
+          // rowSelection: true,
           rowActions: [
             {
               icon: "lucide:eye",

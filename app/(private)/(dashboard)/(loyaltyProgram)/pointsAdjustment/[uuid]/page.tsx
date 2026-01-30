@@ -103,7 +103,7 @@ export default function AddEditTier() {
   const validationSchema = yup.object().shape({
     warehouse: yup
       .string()
-      .required("Warehouse is required"),
+      .required("Distributor is required"),
     route: yup
       .string()
       .required("Route is required"),
@@ -344,6 +344,7 @@ export default function AddEditTier() {
                   setSelectedWarehouseOption(opt);
                   setSelectedRouteOption(null);
                   setSelectedCustomerOption(null);
+                  setErrors((prev) => ({ ...prev, warehouse: "" }));
                 }}
                 onClear={() => {
                   setForm((prev) => ({ ...prev, warehouse: "", route: "", customer: "" }));
@@ -352,10 +353,11 @@ export default function AddEditTier() {
                   setSelectedCustomerOption(null);
                 }}
                 className="w-full"
+                error={errors.warehouse}
               />
-              {errors.warehouse && (
+              {/* {errors.warehouse && (
                 <p className="text-red-500 text-sm mt-1">{errors.warehouse}</p>
-              )}
+              )} */}
             </div>
 
             <div className="flex flex-col">
@@ -370,6 +372,7 @@ export default function AddEditTier() {
                   setForm((prev) => ({ ...prev, route: String(opt.value), customer: "" }));
                   setSelectedRouteOption(opt);
                   setSelectedCustomerOption(null);
+                  setErrors((prev) => ({ ...prev, route: "" }));
                 }}
                 onClear={() => {
                   setForm((prev) => ({ ...prev, route: "", customer: "" }));
@@ -377,10 +380,11 @@ export default function AddEditTier() {
                   setSelectedCustomerOption(null);
                 }}
                 className="w-full"
+                error={errors.route}
               />
-              {errors.route && (
+              {/* {errors.route && (
                 <p className="text-red-500 text-sm mt-1">{errors.route}</p>
-              )}
+              )} */}
             </div>
 
             <div className="flex flex-col">
@@ -396,16 +400,18 @@ export default function AddEditTier() {
                   setForm((prev) => ({ ...prev, customer: customerId }));
                   setSelectedCustomerOption(opt);
                   fetchCustomerClosingPoints(customerId);
+                  setErrors((prev) => ({ ...prev, customer: "" }));
                 }}
                 onClear={() => {
                   setForm((prev) => ({ ...prev, customer: "", current_points: "" }));
                   setSelectedCustomerOption(null);
                 }}
                 className="w-full"
+                error={errors.customer}
               />
-              {errors.customer && (
+              {/* {errors.customer && (
                 <p className="text-red-500 text-sm mt-1">{errors.customer}</p>
-              )}
+              )} */}
             </div>
             <div className="flex flex-col">
              

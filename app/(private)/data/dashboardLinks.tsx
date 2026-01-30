@@ -638,6 +638,13 @@ export const initialLinkData: SidebarDataType[] = lowercaseHrefs([
             leadingIcon: "raphael:package",
             iconColor: "text-cyan-500",
           },
+          {
+            isActive: false,
+            href: "/comparisonreport",
+            label: "Comparison Report",
+            leadingIcon: "raphael:package",
+            iconColor: "text-cyan-500",
+          },
         ],
       },
     ],
