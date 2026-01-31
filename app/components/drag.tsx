@@ -12,7 +12,6 @@ import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
 import toInternationalNumber from '../(private)/utils/formatNumber';
-import { report } from 'process';
 
 // Define TypeScript interfaces
 interface FilterChildItem {
@@ -117,9 +116,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         { value: 'without_free_good', label: 'Without Free Good' }
       ];
 
+  const currentYearInt = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 50 }, (_, i) => {
+    const y = currentYearInt - i;
+    return { value: y.toString(), label: y.toString() };
+  });
+
   useEffect(() => {
     if (reportType === 'poOrder') return;
-    else if (reportType === 'comparison') setSearchType('quantity');
+    else if (reportType === 'comparison') {
+      setSearchType('quantity');
+      setReportBy('day');
+      setDisplayQuantity(displayQuantityOptions[0]?.value);
+      return;
+    }
     setSearchType(searchTypeOptions[0]?.value);
     setDisplayQuantity(displayQuantityOptions[0]?.value);
   }, []);
@@ -196,11 +206,22 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     setIsLoadingDashboard(true);
     setDashboardError(null);
 
+    let selectedDate = reportBy === 'day' ? dateFilter
+      : reportBy === 'month' ? month
+        : reportBy === 'year' ? year
+          : null;
+
     try {
       // Build the payload with all filter types
       const payload: any = {
-        from_date: startDate,
-        to_date: endDate,
+        ...(reportType !== 'comparison' ? {
+          from_date: startDate,
+          to_date: endDate,
+        } : {}),
+        ...(reportType === 'comparison' ? {
+          report_by: reportBy,
+          selected_date: selectedDate
+        } : {}),
         search_type: searchType,
         display_quantity: displayQuantity,
         company_ids: selectedChildItems['company']?.map(id => parseInt(id)) || [],
@@ -534,8 +555,19 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         }
       });
 
+      let selectedDate = reportBy === 'day' ? dateFilter
+        : reportBy === 'month' ? month
+          : reportBy === 'year' ? year
+            : null;
+
       // Build the payload with file_type and view_type
-      const payload: any = {
+      const payload: any = reportType === "comparison" ? {
+        report_by: reportBy,
+        selected_date: selectedDate,
+        search_type: searchType,
+        display_quantity: displayQuantity,
+        ...filters
+      } : {
         from_date: startDate,
         to_date: endDate,
         search_type: searchType,
@@ -1131,7 +1163,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
     : reportType === 'customer' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
       : reportType === 'item' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
-        : reportType === 'attendence' ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
+        : reportType === 'attendence' || reportType === 'comparison' ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
           : reportType === 'poOrder' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
             : [];
 
@@ -1208,10 +1240,6 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                 <Calendar size={18} className="text-gray-600" />
                 <input type="text" value={dateRange} className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto" readOnly />
               </div>)}
-              {reportType === 'comparison' && (<div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-fit" onClick={() => setShowDatePicker(!showDatePicker)}>
-                <Calendar size={18} className="text-gray-600" />
-                <span className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto">{dateFilter}</span>
-              </div>)}
               {showDatePicker && (
                 <div id="date-picker-dropdown" className="filter-dropdown absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 w-full sm:w-80">
                   <div className="flex flex-col gap-3">
@@ -1259,9 +1287,16 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
               </div>)}
 
+              {reportType === 'comparison' && reportBy === 'day' && (<div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-fit" onClick={() => setShowDatePicker(!showDatePicker)}>
+                <Calendar size={18} className="text-gray-600" />
+                <span className="border-none outline-none text-sm cursor-pointer bg-transparent w-full sm:w-auto">{dateFilter}</span>
+              </div>)}
+
               {reportByOptions.length > 0 && reportBy === 'month' && (<div className="relative w-full sm:w-auto">
-                <input type="month" value={month} />
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer w-full sm:w-auto">
+                  <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="text-sm" />
+                </div>
+                {/* <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" /> */}
               </div>)}
 
               {reportByOptions.length > 0 && reportBy === 'year' && (<div className="relative w-full sm:w-auto">
@@ -1270,7 +1305,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   onChange={(e) => setYear(e.target.value)}
                   className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
                 >
-                  {reportByOptions.map((option: { value: string; label: string }, index: number) => (
+                  {yearOptions.map((option: { value: string; label: string }, index: number) => (
                     <option key={option.value + index} value={option.value}>{option.label}</option>
                   ))}
                 </select>
@@ -1334,7 +1369,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                   isLoading={isExporting}
                 />
               )
-                : reportType === 'attendence' || reportType === 'poOrder' ? (
+                : ['attendence', 'poOrder', 'comparison'].includes(reportType) ? (
                   <AttendenceExportButtons
                     onExport={() => handleExport(reportType === 'attendence' ? 'attendence-report' : 'po-order-report')}
                     isLoading={isExporting}

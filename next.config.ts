@@ -288,7 +288,6 @@ const nextConfig: NextConfig = {
       { source: '/chillerinstallation/:uuid', destination: '/chillerInstallation/:uuid' },
       { source: '/chillerinstallation', destination: '/chillerInstallation' },
       { source: '/chillerinstallation/installationreport/add', destination: '/chillerInstallation/installationReport/add' },
-      { source: '/chillerinstallation/installationreport/view/:id', destination: '/chillerInstallation/installationReport/view/:id' },
       { source: '/chillerinstallation/installationreport/:uuid', destination: '/chillerInstallation/installationReport/:uuid' },
       { source: '/chillerinstallation/installationreport', destination: '/chillerInstallation/installationReport' },
       { source: '/chillerinstallation/bulktransfer/add', destination: '/chillerInstallation/bulkTransfer/add' },
