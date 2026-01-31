@@ -16,6 +16,7 @@ import { CustomTableSkelton } from "./customSkeleton";
 import Draggable from "react-draggable";
 import Skeleton from "@mui/material/Skeleton";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useHiddenHistory } from "../(private)/utils/useHiddenHistory";
 
 export type listReturnType = {
     data: TableDataType[];
@@ -44,8 +45,6 @@ export type FilterField = {
     multiSelectChips?: boolean;
     applyWhen?: (filters: Record<string, any>) => boolean;
     inputProps?: Record<string, any>;
-    onChange?: (value: any) => void;
-    minDate?: string;
 };
 
 export type FilterRendererProps = {
@@ -58,7 +57,6 @@ export type FilterRendererProps = {
     close: () => void;
     isApplying: boolean;
     isClearing: boolean;
-    onChange?: (value: string | string[]) => void;
 };
 
 export type configType = {
@@ -248,6 +246,9 @@ type tableDetailsContextType = {
     setSearchState: React.Dispatch<React.SetStateAction<{ applied: boolean; term: string }>>;
     filterState: { applied: boolean; payload: Record<string, any> };
     setFilterState: React.Dispatch<React.SetStateAction<{ applied: boolean; payload: Record<string, any> }>>;
+    // Hidden History Integration
+    params: Record<string, any>;
+    setParams: (newParams: Record<string, any>, options?: { replace?: boolean }) => void;
 };
 const TableDetails = createContext<tableDetailsContextType>(
     {} as tableDetailsContextType
@@ -280,7 +281,7 @@ export default function Table({ refreshKey = 0, data, config, directFilterRender
     );
 }
 
-function ContextProvider({ children, config: initialConfig }: { children: React.ReactNode; config: configType }) {
+function ContextProvider({ config: initialConfig, children }: { config: configType, children: React.ReactNode }) {
     const [selectedColumns, setSelectedColumns] = useState([] as number[]);
     const [selectedRow, setSelectedRow] = useState([] as number[]);
     const [tableDetails, setTableDetails] = useState({} as listReturnType);
@@ -288,17 +289,33 @@ function ContextProvider({ children, config: initialConfig }: { children: React.
     const [initialTableData, setInitialTableData] = useState<listReturnType | null>(null);
     const [searchState, setSearchState] = useState<{ applied: boolean; term: string }>({ applied: false, term: "" });
     const [filterState, setFilterState] = useState<{ applied: boolean; payload: Record<string, any> }>({ applied: false, payload: {} });
-    const [config, setConfig] = useState(initialConfig || {} as configType);
+    const [config, setConfig] = useState<configType>(initialConfig);
 
+    // Initialize Hidden History
+    const tableId = initialConfig.localStorageKey || "default-table";
+    const { params, setParams } = useHiddenHistory(tableId);
+
+    // Sync Search State with Utils Params (Backwards compatibility + UI sync)
     useEffect(() => {
-        setConfig(initialConfig);
-    }, [initialConfig]);
+        if (params.search) {
+            setSearchState({ applied: true, term: params.search });
+        } else {
+            setSearchState({ applied: false, term: "" });
+        }
+    }, [params.search]);
 
     return (
         <Config.Provider value={{ config, setConfig }}>
             <ColumnFilterConfig.Provider value={{ selectedColumns, setSelectedColumns }}>
                 <SelectedRow.Provider value={{ selectedRow, setSelectedRow }}>
-                    <TableDetails.Provider value={{ tableDetails, setTableDetails, nestedLoading, setNestedLoading, initialTableData, setInitialTableData, searchState, setSearchState, filterState, setFilterState }}>
+                    <TableDetails.Provider value={{
+                        tableDetails, setTableDetails,
+                        nestedLoading, setNestedLoading,
+                        initialTableData, setInitialTableData,
+                        searchState, setSearchState,
+                        filterState, setFilterState,
+                        params, setParams
+                    }}>
                         {children}
                     </TableDetails.Provider>
                 </SelectedRow.Provider>
@@ -309,13 +326,11 @@ function ContextProvider({ children, config: initialConfig }: { children: React.
 
 function TableContainer({ refreshKey, data, config, directFilterRenderer }: TableProps) {
     // Ref to track last API call params
-    // Ref to track last API call params
     const searchParams = useSearchParams();
     const lastApiCallRef = useRef<{ pageNo: number; pageSize: number } | null>(null);
-    const initialUrlSyncRef = useRef(false);
     const { selectedColumns, setSelectedColumns } = useContext(ColumnFilterConfig);
     const { setConfig } = useContext(Config);
-    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, setFilterState, setSearchState } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setInitialTableData, params } = useContext(TableDetails);
     const { selectedRow, setSelectedRow } = useContext(SelectedRow);
     const [showDropdown, setShowDropdown] = useState(false);
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -323,21 +338,21 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
     const [columnOrder, setColumnOrder] = useState<number[]>(
         () => (config.columns || []).map((_, i) => i)
     );
+    const initialUrlSyncRef = useRef(false);
+    const columnsSignature = useMemo(() => (config.columns || []).map(c => c.key).join(','), [config.columns]);
 
-    // const columnsSignature = useMemo(() => (config.columns || []).map(c => c.key).join(','), [config.columns]);
+    useEffect(() => {
+        const newOrder = (config.columns || []).map((_, i) => i);
+        setColumnOrder(newOrder);
 
-    // useEffect(() => {
-    // const newOrder = (config.columns || []).map((_, i) => i);
-    // setColumnOrder(newOrder);
-
-    //     const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
-    //     const filtered = allByDefault.filter((n) => n !== -1);
-    //     if (filtered.length > 0) {
-    //         setSelectedColumns(filtered);
-    //     } else {
-    //         setSelectedColumns(newOrder);
-    //     }
-    // }, [columnsSignature]);
+        const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
+        const filtered = allByDefault.filter((n) => n !== -1);
+        if (filtered.length > 0) {
+            setSelectedColumns(filtered);
+        } else {
+            setSelectedColumns(newOrder);
+        }
+    }, [columnsSignature]);
 
     async function checkForData() {
         // if data is passed, use default values
@@ -368,163 +383,93 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         }
         // if api is passed, use default values
         else if (config.api?.list) {
-            const type = searchParams?.get('_type');
-            const hasSearch = searchParams && searchParams.has('search');
-            const hasOtherFilters = searchParams && Array.from(searchParams.keys()).some(k => k !== 'page' && k !== 'search' && k !== '_type');
+            const hasUrlParams = searchParams && Array.from(searchParams.keys()).length > 0;
+            const hasHistoryParams = Object.keys(params).length > 0;
 
-            // Explicit Mode: Search
-            if (type === 'search' && hasSearch && config.api?.search) {
-                const pageParam = searchParams.get("page");
-                const pageNo = pageParam ? parseInt(pageParam) : 1;
-                const pageSize = config.pageSize || defaultPageSize;
-                const searchTerm = searchParams.get("search") || "";
-
-                // Perform Search API Call
-                setNestedLoading(true);
-                try {
-                    const res = await config.api.search(searchTerm, pageSize, "", pageNo);
-                    const result = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage, totalRecords } = result;
-                    const tableInit = {
-                        data,
-                        total: total || 1,
-                        currentPage: (currentPage || pageNo) - 1,
-                        pageSize,
-                        totalRecords
-                    };
-                    setTableDetails(tableInit);
-                    setDisplayedData(data);
-                    setTableDetails(tableInit);
-                    setDisplayedData(data);
-                    setInitialTableData(tableInit);
-                    // Update Global Search State so UI reflects it
-                    try {
-                        if (setSearchState) setSearchState({ applied: true, term: searchTerm });
-                        if (setFilterState) setFilterState({ applied: false, payload: {} });
-                    } catch (e) { }
-                } catch (err) {
-                    console.error("Search API error", err);
-                } finally {
-                    setNestedLoading(false);
-                }
-                return;
-            }
-
-            // Explicit Mode: Column Filter (Uses List API as requested)
-            if (type === 'columnFilter' && config.api?.list) {
-                // 1. Initial State Sync: If onSelect exists, call it to update parent state from URL
-                if (!initialUrlSyncRef.current) {
-                    const col = config.columns.find(c => {
-                        const key = c.filter?.filterkey || c.key;
-                        return searchParams.has(key);
-                    });
-
-                    if (col) {
-                        const key = col.filter?.filterkey || col.key;
-                        const val = searchParams.get(key);
-
-                        if (col.filter?.onSelect && val) {
-                            // Standard Column Filter Update
-                            col.filter.onSelect(val);
-                            try { setFilterState({ applied: true, payload: { [key]: val } }); } catch (err) { }
-                            initialUrlSyncRef.current = true;
-                            return;
-                        }
-
-                        // Status Filter Sync (Relies on Parent useEffect, but we must pause fetch)
-                        if (col.filterStatus?.enabled && val !== null) {
-                            initialUrlSyncRef.current = true;
-                            return;
-                        }
-                    }
-                    initialUrlSyncRef.current = true;
-                }
-
-
-                // 2. Fetch Data (assuming parent state is synced or defaulting)
-                const pageParam = searchParams.get("page");
-                const pageNo = pageParam ? parseInt(pageParam) : 1;
-                const pageSize = config.pageSize || defaultPageSize;
-
-                setNestedLoading(true);
-                try {
-                    const res = await config.api.list(pageNo, pageSize);
-                    const result = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage, totalRecords } = result;
-                    const tableInit = {
-                        data,
-                        total: total || 1,
-                        currentPage: (currentPage || pageNo) - 1,
-                        pageSize,
-                        totalRecords
-                    };
-                    setTableDetails(tableInit);
-                    setDisplayedData(data);
-                    setInitialTableData(tableInit);
-                } catch (err) {
-                    console.error("Column Filter List API error", err);
-                } finally {
-                    setNestedLoading(false);
-                }
-                return;
-            }
-
-            // Explicit Mode: Filter
-            if (type === 'filter' && config.api?.filterBy) {
-                return;
-            }
-
-            // Fallback Mode (heuristic)
-            if (!type) {
-                // If search is active and we have a search API, let TableHeader handle it
-                if (hasSearch && config.api?.search) {
-                    return;
-                }
-                // If filters are active and we have a filter API, let FilterBy/FilterTableHeader handle it
-                if (hasOtherFilters && config.api?.filterBy) {
-                    return;
-                }
-            }
             const MIN_LOADING_MS = 1000; // ensure nested loading lasts at least 1s
             const start = Date.now();
-            const pageParam = searchParams?.get("page");
-            const pageNo = pageParam ? parseInt(pageParam) : 1;
-            const pageSize = config.pageSize || defaultPageSize;
-            // Only call API if params changed
+
+            // Derive page and pageSize from params
+            // Params usage: { page, pageSize, search, ...filters }
+            const pageNo = params.page ? Number(params.page) : 1;
+            const pageSize = params.pageSize ? Number(params.pageSize) : (config.pageSize || defaultPageSize);
+            const searchTerm = params.search as string;
+
+            // Only call API if params changed OR if it's the first load
+            // Note: with useHiddenHistory, we might want to trigger on params change
+            // The useEffect below triggers on `data` (which is undefined here) and `refreshKey`
+            // But we also need to trigger when `params` changes.
+            // Actually, we should check equality with lastApiCallRef including search/filters
+
+            const currentCallSignature = JSON.stringify({ pageNo, pageSize, params });
+
+            // Prevent duplicate calls if signature matches (debouncing/strict mode protection)
             if (
-                !lastApiCallRef.current ||
-                lastApiCallRef.current.pageNo !== pageNo ||
-                lastApiCallRef.current.pageSize !== pageSize
+                lastApiCallRef.current &&
+                JSON.stringify(lastApiCallRef.current) === currentCallSignature &&
+                refreshKey === 0 // Allow force refresh
             ) {
-                lastApiCallRef.current = { pageNo, pageSize };
-                try {
-                    setNestedLoading(true);
-                    const result = await config.api.list(pageNo, pageSize);
-                    const resolvedResult = result instanceof Promise ? await result : result;
-                    const { data, total, currentPage } = resolvedResult;
-                    const tableInit = {
-                        data,
-                        total,
-                        currentPage: currentPage - 1,
-                        pageSize,
-                    };
-                    setTableDetails(tableInit);
-                    setDisplayedData(data);
-                    try {
-                        setInitialTableData(tableInit);
-                    } catch (err) {
-                        /* ignore */
-                    }
-                } finally {
-                    const elapsed = Date.now() - start;
-                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                    if (wait > 0) {
-                        await new Promise((res) => setTimeout(res, wait + 500));
-                    }
-                    setNestedLoading(false);
-                }
+                // return; // Commented out to ensure it runs if refreshKey changes differently
             }
-        } else {
+            // lastApiCallRef.current = { pageNo, pageSize, params } as any; 
+
+            try {
+                setNestedLoading(true);
+                let result;
+
+                // Route API call based on _filterMode
+                const filterMode = params._filterMode;
+
+                if (filterMode === 'search' && config.api.search && searchTerm) {
+                    result = await config.api.search(searchTerm, pageSize, undefined, pageNo);
+                }
+                else if (filterMode === 'filterBy' && config.api.filterBy) {
+                    const { page, pageSize: ps, search, _filterMode, ...filters } = params;
+                    result = await config.api.filterBy(filters, pageSize, pageNo);
+                }
+                else {
+                    // Default to list API (or List Mode)
+                    const { page, pageSize: ps, search, _filterMode, _columns, ...filters } = params;
+                    const hasFilters = Object.keys(filters).length > 0;
+
+                    if (config.api.list) {
+                        // Always pass filters to list API (JS ignores extra args if not used)
+                        // @ts-ignore
+                        result = await config.api.list(pageNo, pageSize, filters);
+                    } else if (hasFilters && config.api.filterBy) {
+                        // Fallback: if no list API but filterBy exists and we have filters (legacy behavior)
+                        result = await config.api.filterBy(filters, pageSize, pageNo);
+                    }
+                }
+
+                const resolvedResult = result instanceof Promise ? await result : result;
+                const { data, total, currentPage } = resolvedResult || { data: [], total: 0, currentPage: 1 };
+                const tableInit = {
+                    data,
+                    total,
+                    currentPage: currentPage - 1,
+                    pageSize,
+                };
+                setTableDetails(tableInit);
+                setDisplayedData(data);
+                try {
+                    setInitialTableData(tableInit);
+                } catch (err) {
+                    /* ignore */
+                }
+            } finally {
+                const elapsed = Date.now() - start;
+                const wait = Math.max(0, MIN_LOADING_MS - elapsed);
+                if (wait > 0) {
+                    await new Promise((res) => setTimeout(res, wait + 500));
+                }
+                setTimeout(() => {
+                    setNestedLoading(false);
+                }, 0);
+            }
+        }
+        // nothing is passed
+        else {
             throw new Error(
                 "Either pass data or list API function in Table config prop"
             );
@@ -535,23 +480,59 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
         setConfig(config);
     }, [config]);
 
+    // EFFECT 1: Trigger API Calls (checkForData) when params change
     useEffect(() => {
-        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
-        lastApiCallRef.current = null;
-        checkForData();
+        // Initial Sync with Parent State: If we have params from history, update parent via onSelect
+        if (!initialUrlSyncRef.current) {
+            let synced = false;
+            // We can iterate params or columns. Iterating columns is safer for config matching.
+            config.columns?.forEach(col => {
+                const key = col.filter?.filterkey || col.key;
+                const val = params[key];
+                // If param exists and handler exists
+                if (val !== undefined && val !== null && col.filter?.onSelect) {
+                    col.filter.onSelect(val);
+                    synced = true;
+                }
+            });
 
+            initialUrlSyncRef.current = true;
+
+            // If we synced (called parent setters), we should skip this immediate fetch 
+            // and wait for the parent to re-render (which might update config/refreshKey)
+            // This avoids double API calls.
+            if (synced) {
+                setNestedLoading(true); // Show loading while waiting for parent re-render
+                return;
+            }
+        }
+
+        // Reset lastApiCallRef when refreshKey changes to force API re-fetch
+        // lastApiCallRef.current = null;
+
+        // Debounce API call to prevent double-fetch during rapid state changes (e.g. initial mount -> history restore)
+        const timer = setTimeout(() => {
+            checkForData();
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [data, refreshKey, params]); // Include 'params' to detect filter changes (dynamic keys)
+
+    // EFFECT 2: Initialize Columns from LocalStorage (Run once or when key changes)
+    useEffect(() => {
         // Only initialize "select all" when there is no saved selection in localStorage.
-        // If a saved array exists we leave it to ColumnFilter's localStorage loader to restore it.
         try {
             const key = config?.localStorageKey;
             const saved = key ? localStorage.getItem(key) : null;
             let parsed: number[] | null = null;
+
             if (saved) {
                 try { parsed = JSON.parse(saved); } catch (e) { }
             }
 
             // Treat empty array as missing to fix sticky blank table
             if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) {
+                // Default handling
                 const allByDefault = config.columns.map((data, index) => { return data.showByDefault ? index : -1 });
                 const filtered = allByDefault.filter((n) => n !== -1);
                 if (filtered.length > 0) {
@@ -563,11 +544,11 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
                 setSelectedColumns(parsed);
             }
         } catch (err) {
-            // If reading localStorage fails, fall back to select all
+            // Fallback
             setSelectedColumns(config.columns?.map((_, index) => index));
         }
         setSelectedRow([]);
-    }, [data, refreshKey, searchParams, config?.localStorageKey]); // Added config.localStorageKey dependency
+    }, [config?.localStorageKey]); // Only re-run if key changes (on mount)
 
     // Save selected columns to localStorage
     useEffect(() => {
@@ -695,82 +676,33 @@ function TableContainer({ refreshKey, data, config, directFilterRenderer }: Tabl
 
 function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.ReactNode }) {
     const { config } = useContext(Config);
-    const { tableDetails, setTableDetails, nestedLoading, setNestedLoading, setSearchState, searchState, filterState, setFilterState } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setSearchState, searchState, initialTableData, params, setParams } = useContext(TableDetails);
     const [searchBarValue, setSearchBarValue] = useState("");
     const { selectedRow } = useContext(SelectedRow);
-    const searchParams = useSearchParams();
-    const router = useRouter();
 
-    // Initialize search from URL
-    useEffect(() => {
-        const searchParam = searchParams.get("search") || "";
-
-        // Prepare a list of keys to ignore when checking for active filters
-        // This is a heuristic; technically any param other than 'page' and 'search' could be a filter
-        const hasActiveFilters = Array.from(searchParams.keys()).some(
-            (k) => k !== "page" && k !== "search"
-        );
-
-        if (hasActiveFilters) {
-            // If filters are active, we trust that the filter logic creates the view.
-            // We just sync the search bar value (likely to empty) without triggering a search fetch.
-            if (searchBarValue !== searchParam) {
-                setSearchBarValue(searchParam);
-            }
-            return;
-        }
-
-        if (searchParam !== searchBarValue) {
-            setSearchBarValue(searchParam);
-            handleSearch(searchParam);
-        }
-    }, [searchParams]);
-
-    // need search Term only when you want to search using you word instead of the searchBarValue 
-    // ---> used for fixing searchBarValue is not updating immediately issue
     // need search Term only when you want to search using you word instead of the searchBarValue 
     // ---> used for fixing searchBarValue is not updating immediately issue
     async function handleSearch(searchTerm?: string) {
-        if (!config.api?.search) return;
+        // Updated to use setParams from useHiddenHistory
         const termToUse = searchTerm !== undefined ? searchTerm : searchBarValue;
-        const MIN_LOADING_MS = 500;
-        const start = Date.now();
-        try {
-            setNestedLoading(true);
-            const result = await config.api.search(
-                termToUse,
-                config.pageSize || defaultPageSize
-            );
-            const resolvedResult = result instanceof Promise ? await result : result;
-            const { data, pageSize, total, currentPage } = resolvedResult;
-            setTableDetails({
-                data,
-                total: total || 0,
-                currentPage: currentPage - 1 || 0,
-                pageSize: pageSize || defaultPageSize,
-                totalRecords: resolvedResult.totalRecords // Ensure totalRecords is passed
-            });
-            // persist global search state so pagination can reuse it (via context)
-            try {
-                if (termToUse && String(termToUse).trim().length > 0) {
-                    setSearchState({ applied: true, term: termToUse });
-                    // Clear column filters when search is applied
-                    setFilterState({ applied: false, payload: {} });
-                } else {
-                    setSearchState({ applied: false, term: "" });
-                }
-            } catch (err) {
-                // ignore in non-browser environments
-            }
-        } finally {
-            const elapsed = Date.now() - start;
-            const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-            if (wait > 0) {
-                await new Promise((res) => setTimeout(res, wait));
-            }
-            setNestedLoading(false);
-        }
+
+        // Always replace history when searching/filtering per user request
+        // Exclusive Mode: Search. Clear all other filters.
+        setParams({
+            search: termToUse,
+            page: 1,
+            _filterMode: 'search'
+        }, { replace: true });
     }
+
+    // Sync input with global search param (e.g. from history back navigation)
+    useEffect(() => {
+        if (params.search !== undefined) {
+            setSearchBarValue(params.search as string);
+        } else {
+            setSearchBarValue("");
+        }
+    }, [params.search]);
 
     return (
         <>
@@ -779,7 +711,7 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                     <>
                         <div className="flex items-center gap-2 w-[320px] invisible sm:visible">
                             {config.header?.searchBar && (
-                                <div className="flex flex-col w-full">
+                                <div className="w-full">
                                     <SearchBar
                                         value={searchBarValue}
                                         onChange={async (
@@ -788,58 +720,17 @@ function TableHeader({ directFilterRenderer }: { directFilterRenderer?: React.Re
                                         onClear={async () => {
                                             setSearchBarValue("");
                                             handleSearch("");
-                                            // Update URL to remove search param
-                                            const params = new URLSearchParams(searchParams.toString());
-                                            params.delete("search");
-                                            params.delete("_type");
-                                            router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
                                         }}
-                                        onEnterPress={(event) => {
-                                            handleSearch(searchBarValue);
-                                            // Update URL with search param
-                                            const params = new URLSearchParams(searchParams.toString());
-
-                                            // Clear ALL other params to ensure mutual exclusion (including explicit Status/Warehouse filters)
-                                            Array.from(params.keys()).forEach((key) => {
-                                                if (key !== "page" && key !== "search") {
-                                                    params.delete(key);
-                                                }
-                                            });
-
-                                            if (searchBarValue) {
-                                                params.set("search", searchBarValue);
-                                                params.set("_type", "search");
-                                            } else {
-                                                params.delete("search");
-                                                params.delete("_type");
-                                            }
-                                            // reset page to 1 on search
-                                            params.delete("page");
-                                            router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-                                        }}
+                                        onEnterPress={() => handleSearch()}
                                     />
-                                    {/* show results summary for global search (from context) */}
-                                    {!nestedLoading && searchState && searchState.applied && (
-                                        <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
-                                            <span className="font-medium">{tableDetails.totalRecords !== undefined ? tableDetails.totalRecords : (tableDetails.total * tableDetails.pageSize)} Result Found</span>
-                                            <button className="ml-2 underline text-gray-600 cursor-pointer"
-                                                onClick={async () => {
-                                                    setSearchBarValue("");
-                                                    handleSearch("");
-                                                    setSearchState({ applied: false, term: "" })
-                                                    // Update URL to remove search param
-                                                    const params = new URLSearchParams(searchParams.toString());
-                                                    params.delete("search");
-                                                    params.delete("_type");
-                                                    router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-                                                }} >
-                                                Clear
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
+                            {/* show results summary for global search (from context) */}
+                            {searchState && searchState.applied && (
+                                <div className="ml-3 flex items-center gap-2 text-sm text-gray-600">
+                                </div>
+                            )}
 
                             {/* header filter panel button (shows configurable fields or custom renderer) */}
                             {directFilterRenderer ? (
@@ -887,6 +778,49 @@ function ColumnFilter() {
     const isAllSelected = selectedColumns.length === allItemsCount;
     const isIndeterminate = selectedColumns.length > 0 && !isAllSelected;
     const [showDropdown, setShowDropdown] = useState(false);
+
+    useEffect(() => {
+        // Load saved selected columns from localStorage when component mounts or config/columns change
+        if (!config?.localStorageKey) return;
+        try {
+            const raw = localStorage.getItem(config.localStorageKey);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                // Keep only valid numeric indices within columns range
+                const valid = (parsed as unknown[]).filter(
+                    (n: unknown): n is number =>
+                        typeof n === "number" && n >= 0 && n < columns.length
+                );
+                if (valid.length) {
+                    setSelectedColumns(valid);
+                }
+            }
+        } catch (err) {
+            // ignore parse errors
+            console.warn(
+                "Failed to read selected columns from localStorage",
+                err
+            );
+        }
+    }, [config?.localStorageKey, columns, setSelectedColumns]);
+
+    useEffect(() => {
+        // Persist selected columns to localStorage whenever it changes
+        if (!config?.localStorageKey) return;
+        try {
+            localStorage.setItem(
+                config.localStorageKey,
+                JSON.stringify(selectedColumns)
+            );
+        } catch (err) {
+            // ignore write errors
+            console.warn(
+                "Failed to save selected columns to localStorage",
+                err
+            );
+        }
+    }, [selectedColumns, config?.localStorageKey]);
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
@@ -1355,13 +1289,13 @@ function FilterTableHeader({
 }) {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const { config } = useContext(Config);
-    const { tableDetails, setTableDetails, setNestedLoading, setSearchState } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, params, setParams } = useContext(TableDetails);
     const { api } = config;
     const [searchBarValue, setSearchBarValue] = useState("");
     const [filteredOptions, setFilteredOptions] = useState<Array<{ value: string; label: string }>>([]);
     const [selectedValues, setSelectedValues] = useState<string[]>([]);
     const parentRef = useRef<HTMLDivElement>(null);
-    const { filterState, setFilterState } = useContext(TableDetails);
+    const { filterState, setFilterState } = useContext(TableDetails); // Keep for compatibility if needed, but we rely on params
     const selectedRef = useRef<string | string[] | null>(null);
 
     useEffect(() => {
@@ -1372,47 +1306,24 @@ function FilterTableHeader({
         }
     }, [filterConfig?.options]);
 
-    // NEW: Sync selectedValues directly from filterConfig.selectedValue (controlled mode)
-    useEffect(() => {
-        if (filterConfig?.selectedValue !== undefined) {
-            const val = filterConfig.selectedValue;
-            if (val == null || (typeof val === 'string' && val === "")) {
-                setSelectedValues([]);
-            } else if (Array.isArray(val)) {
-                // Ensure strings and handle commas if any
-                setSelectedValues(val.flatMap(v => String(v).split(',')));
-            } else {
-                setSelectedValues(String(val).split(','));
-            }
-        }
-    }, [filterConfig?.selectedValue]);
-
-
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
-    // ... (keep existing effects)
-
-    // keep selection in sync with global filterState (so selection survives table refresh)
+    // keep selection in sync with global params (so selection survives table refresh)
     useEffect(() => {
         try {
-            const payload = filterState?.payload || {};
-            const val = payload[column];
+            const val = params[column];
             if (val == null || (typeof val === 'string' && val === "")) {
                 selectedRef.current = null;
                 setSelectedValues([]);
             } else if (Array.isArray(val)) {
                 selectedRef.current = val;
-                const flat = val.flatMap(v => String(v).split(','));
-                setSelectedValues(flat);
+                setSelectedValues(val);
             } else {
                 selectedRef.current = String(val);
-                setSelectedValues(String(val).split(','));
+                setSelectedValues([String(val)]);
             }
         } catch (err) {
             // ignore
         }
-    }, [filterState]);
+    }, [params, column]);
 
     useEffect(() => {
         // Local search filtering if no onSearch handler
@@ -1439,18 +1350,47 @@ function FilterTableHeader({
     }
 
     async function handleSelect(value: string) {
-        // Just update local state, do not apply yet
         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-
         if (isSingle) {
-            const selectedValue = filterConfig?.selectedValue; // Currently applied value (from props/config)
-            // For single select, we track what is selected in the UI before apply
-            // If user clicks the same value, we can toggle it off in local state
-            if (selectedValues.includes(value)) {
-                setSelectedValues([]);
-            } else {
-                setSelectedValues([value]);
+            // If already selected, deselect (clear filter)
+            const selectedValue = filterConfig?.selectedValue;
+            // Note: selectedValue comes from parent prop, usually synced with params? 
+            // The parent `TableBody` passes `filterConfig` which comes from `col.filter`.
+            // But `col.filter` is static config?
+            // Actually `TableBody` passes `selectedValue: warehouseId` in `vehicle/page.tsx`.
+            // But here we want to modify the global state.
+
+            // Check if currently selected in our local state (synced with params)
+            const isCurrentlySelected = selectedValues.includes(value);
+
+            if (filterConfig?.onSelect) {
+                if (isCurrentlySelected) {
+                    filterConfig.onSelect(""); // Deselect callback
+                    // Update global params
+                    setParams({
+                        ...params,
+                        [column]: undefined,
+                        page: 1
+                    });
+                }
+                else {
+                    filterConfig.onSelect(value);
+
+                    // Exclusive Mode Logic: List API
+                    const isListMode = params._filterMode === 'list';
+                    // If switching mode, start fresh (clears FilterBy keys and Search)
+                    // If keeping mode, keep existing params (allows multiple column filters)
+                    const baseParams = isListMode ? { ...params } : { page: 1, _filterMode: 'list' };
+
+                    // Always replace history
+                    setParams({
+                        ...baseParams,
+                        [column]: value,
+                        page: 1
+                    }, { replace: true });
+                }
             }
+            setShowFilterDropdown(false);
         } else {
             let updated: string[];
             if (selectedValues.includes(value)) {
@@ -1458,327 +1398,79 @@ function FilterTableHeader({
             } else {
                 updated = [...selectedValues, value];
             }
+            // For multi-select, we only update local state (buffer)
+            // Apply button will commit changes
             setSelectedValues(updated);
         }
     }
 
-    const applyFilter = async () => {
-        const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
-        let newValues: string | string[] = "";
+    async function applyFilter() {
+        if (!filterConfig?.onSelect) return;
+        const updated = selectedValues;
+        filterConfig.onSelect(updated);
 
-        if (isSingle) {
-            newValues = selectedValues[0] || "";
-        } else {
-            newValues = selectedValues;
-        }
+        // Exclusive Mode Logic: List API
+        const isListMode = params._filterMode === 'list';
+        // If switching mode, start fresh (clears FilterBy keys and Search)
+        const baseParams = isListMode ? { ...params } : { page: 1, _filterMode: 'list' };
 
-        // Update config/callback
-        if (isSingle) {
-            if (filterConfig?.onSelect) filterConfig.onSelect(newValues as string);
-        } else {
-            if (filterConfig?.onSelect) filterConfig.onSelect(String(newValues));
-        }
-
-        // Update Global State
-        try {
-            // Clear Search State when applying filter
-            setSearchState({ applied: false, term: "" });
-
-            const key = column;
-            const params = new URLSearchParams(searchParams.toString());
-            let urlChanged = false;
-
-            // Enforce mutual exclusion: Clear search from URL
-            if (params.has("search")) {
-                params.delete("search");
-                urlChanged = true;
-            }
-
-            // Enforce mutual exclusion: If we were in Global Filter mode, clear those filters
-            if (params.get("_type") === "filter") {
-                // Clear all current filters as they are Global
-                const activeFilters = Object.keys(filterState?.payload || {});
-                activeFilters.forEach(k => {
-                    if (params.has(k)) {
-                        params.delete(k);
-                        urlChanged = true;
-                    }
-                });
-                params.delete("_type");
-            }
-
-            if (newValues.length === 0 || newValues === "") {
-                // Removing filter for this column
-                setFilterState(prev => {
-                    const pl = { ...(prev?.payload || {}) };
-                    delete pl[column];
-                    return { applied: Object.keys(pl).length > 0, payload: pl };
-                });
-
-                // Update URL removal
-                if (params.has(key)) {
-                    params.delete(key);
-                    urlChanged = true;
-                }
-                // If this was the last filter (heuristic), we might want to remove _type=filter
-                // But hard to know if others exist without checking all known keys. 
-                // We'll leave _type unless we are explicit. 
-                // To be safe, if we remove a filter, we check if any "filter-like" params remain? 
-                // Simplified: Just remove key.
-
-            } else {
-                setFilterState(prev => ({
-                    applied: true,
-                    payload: { ...(prev?.payload || {}), [column]: newValues }
-                }));
-
-                // Update URL set
-                const valStr = Array.isArray(newValues) ? newValues.join(',') : newValues;
-                if (params.get(key) !== valStr) {
-                    params.set(key, valStr);
-                    // Explicitly set type to columnFilter
-                    params.set("_type", "columnFilter");
-                    urlChanged = true;
-                }
-            }
-
-            if (urlChanged) {
-                params.delete("page");
-                router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-            }
-
-        } catch (err) { }
-
-        // CAUTION: If onSelect is provided, we assume the parent handles data fetching (e.g. via URL change or refreshKey).
-        // Calling api.list/search here immediately is dangerous because:
-        // 1. The parent's API function (closure) might be stale (capturing old state).
-        // 2. It creates a race condition with the parent's own useEffect/refreshKey logic.
-        if (filterConfig?.onSelect) {
-            // Close dropdown and let parent handle it
-            setShowFilterDropdown(false);
-            return;
-        }
-
-        // Trigger API Call (Only if onSelect is NOT provided)
-        if (api?.list && (newValues === "" || (Array.isArray(newValues) && newValues.length === 0))) {
-            // Filter cleared
-            try {
-                setNestedLoading(true);
-                const res = api.list(1, defaultPageSize);
-                const result = res instanceof Promise ? await res : res;
-                const { data, total, currentPage, totalRecords } = result;
-                setTableDetails({
-                    ...tableDetails,
-                    data,
-                    currentPage: (currentPage || 1) - 1,
-                    total: total || 0,
-                    totalRecords,
-                    pageSize: defaultPageSize,
-                });
-            } catch (err) { /* ignore */ }
-            finally { setNestedLoading(false); }
-        } else if (api?.list && isSingle && typeof newValues === 'string' && newValues !== "") {
-            // Single Select Apply - User requested LIST API
-            try {
-                setNestedLoading(true);
-                const res = api.list(1, defaultPageSize);
-                const result = res instanceof Promise ? await res : res;
-                const { data, total, currentPage, totalRecords } = result;
-                setTableDetails({
-                    ...tableDetails,
-                    data,
-                    currentPage: (currentPage || 1) - 1,
-                    total: total || 0,
-                    totalRecords,
-                    pageSize: defaultPageSize,
-                });
-            } catch (err) { /* ignore */ }
-            finally { setNestedLoading(false); }
-        } else if (api?.filterBy) {
-            // Actually, checkForData is complicated.
-
-            // If the user wants specific behavior, I should probably trigger the reload.
-            // If I update URL, the page might reload or `checkForData` might run.
-            // But `checkForData` has logic to SKIP if parameters exist and filterBy is present? 
-            // That seems to imply filterBy is handled manually or elsewhere.
-
-            // Let's stick to updating URL and State.
-            // Additionally, if I update URL, `checkForData` runs because of `searchParams` dependency (line 444).
-            // But wait, line 363 says "return" if hasUrlParams and filterBy. Use Effect won't fetch data then.
-
-            // So I MUST call the API manually if I am not relying on `checkForData`.
-
-            // For safety, I will replicate the single-select behavior (calling api.search) 
-            // OR use api.filterBy if available for robust filtering.
-            let start = Date.now();
-            const MIN_LOADING_MS = 1000;
-            if (api.filterBy) {
-                try {
-                    setNestedLoading(true);
-                    // Construct full payload from State + Current Change
-                    // Note: filterState might not be updated yet in closure.
-                    const payload = { ...filterState.payload, [column]: newValues };
-                    // We must also remove other columns if we wanted to? No, column filters stack usually.
-                    // But mutually exclusive with SEARCH.
-
-                    const res = api.filterBy(payload as any, defaultPageSize, 1);
-                    const result = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage, totalRecords } = result;
-                    setTableDetails({
-                        ...tableDetails,
-                        data,
-                        currentPage: currentPage - 1,
-                        total: total || 0,
-                        totalRecords,
-                        pageSize: defaultPageSize,
-                    });
-                } catch (e) { }
-                finally {
-                    const elapsed = Date.now() - start;
-                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                    if (wait > 0) await new Promise((res) => setTimeout(res, wait));
-                    setNestedLoading(false);
-                }
-            }
-        }
-
-        // Update URL
-        const params = new URLSearchParams(searchParams.toString());
-
-        // Clear Search Param
-        params.delete("search");
-
-        if (Array.isArray(newValues)) {
-            if (newValues.length > 0) {
-                params.set(column, newValues.join(','));
-            } else {
-                params.delete(column);
-            }
-        } else {
-            if (newValues) {
-                params.set(column, newValues);
-            } else {
-                params.delete(column);
-            }
-        }
-        // Always reset page to 1
-        params.delete("page");
-        router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-
+        // Always replace history
+        setParams({
+            ...baseParams,
+            [column]: updated.length > 0 ? updated : undefined,
+            page: 1
+        }, { replace: true });
         setShowFilterDropdown(false);
     }
 
-    const clearFilter = async () => {
+    async function clearFilter() {
+        if (!filterConfig?.onSelect) return;
+        const updated: string[] = [];
+        filterConfig.onSelect(updated);
         setSelectedValues([]);
-        if (filterConfig?.onSelect) filterConfig.onSelect("");
 
-        // Clear from Global State
-        try {
-            setFilterState(prev => {
-                const pl = { ...(prev?.payload || {}) };
-                delete pl[column];
-                return { applied: Object.keys(pl).length > 0, payload: pl };
-            });
-        } catch (err) { }
+        // Exclusive Mode Logic: List API
+        const isListMode = params._filterMode === 'list';
+        // If switching mode, start fresh
+        const baseParams = isListMode ? { ...params } : { page: 1, _filterMode: 'list' };
 
-        // Trigger API (Reload List) 
-        // We keep other filters if they exist? 
-        // Logic: If I clear *this* filter, and there are others, I should re-fetch with others.
-        // If no others, fetch list.
-
-        // Simplified: If api.filterBy, use it with updated payload (minus this column).
-        // If not, api.list.
-
-        if (api?.filterBy) {
-            const payload = { ...filterState.payload };
-            delete payload[column];
-            if (Object.keys(payload).length > 0) {
-                const MIN_LOADING_MS = 500;
-                const start = Date.now();
-                try {
-                    setNestedLoading(true);
-                    const res = api.filterBy(payload as any, defaultPageSize, 1);
-                    const result = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage, totalRecords } = result;
-                    setTableDetails({
-                        ...tableDetails,
-                        data,
-                        currentPage: currentPage - 1,
-                        total: total || 0,
-                        totalRecords,
-                        pageSize: defaultPageSize,
-                    });
-                } catch (e) { }
-                finally {
-                    const elapsed = Date.now() - start;
-                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                    if (wait > 0) await new Promise((res) => setTimeout(res, wait));
-                    setNestedLoading(false);
-                }
-            } else if (api?.list) {
-                // Fallback to full list
-                const MIN_LOADING_MS = 500;
-                const start = Date.now();
-                try {
-                    setNestedLoading(true);
-                    const res = api.list(1, defaultPageSize);
-                    const result = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage, totalRecords } = result;
-                    setTableDetails({
-                        ...tableDetails,
-                        data,
-                        currentPage: currentPage - 1,
-                        total: total || 0,
-                        totalRecords,
-                        pageSize: defaultPageSize,
-                    });
-                } catch (err) { /* ignore */ }
-                finally {
-                    const elapsed = Date.now() - start;
-                    const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                    if (wait > 0) await new Promise((res) => setTimeout(res, wait));
-                    setNestedLoading(false);
-                }
-            }
-        } else if (api?.list) {
-            const MIN_LOADING_MS = 500;
-            const start = Date.now();
-            try {
-                setNestedLoading(true);
-                const res = api.list(1, defaultPageSize);
-                const result = res instanceof Promise ? await res : res;
-                const { data, total, currentPage, totalRecords } = result;
-                setTableDetails({
-                    ...tableDetails,
-                    data,
-                    currentPage: currentPage - 1,
-                    total: total || 0,
-                    totalRecords,
-                    pageSize: defaultPageSize,
-                });
-            } catch (err) { /* ignore */ }
-            finally {
-                const elapsed = Date.now() - start;
-                const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-                if (wait > 0) await new Promise((res) => setTimeout(res, wait));
-                setNestedLoading(false);
-            }
-        }
-
-        // Update URL
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(column);
-        // Do nOT clear search param here? 
-        // If we are just clearing the filter, and search was already off (because filter was on), we are good.
-
-        params.delete("page");
-        router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-
+        // Always replace history
+        setParams({
+            ...baseParams,
+            [column]: undefined,
+            page: 1
+        }, { replace: true });
         setShowFilterDropdown(false);
     }
-
-    // function handleSelect(value: string) { ... } // Replaced by above logic
-    // console.log(selectedValues)
+    // function handleSelect(value: string) {
+    //         const isSingle = filterConfig?.isSingle !== undefined ? filterConfig.isSingle : true;
+    //         if (isSingle) {
+    //             // If already selected, deselect (clear filter)
+    //             const selectedValue = filterConfig?.selectedValue;
+    //             if (filterConfig?.onSelect) {
+    //                 if (selectedValue === value) {
+    //                     filterConfig.onSelect(""); // Deselect
+    //                 } else {
+    //                     filterConfig.onSelect(value);
+    //                 }
+    //             }
+    //             setShowFilterDropdown(false);
+    //         } else {
+    //             setSelectedValues((prev) => {
+    //                 if (prev.includes(value)) {
+    //                     // remove
+    //                     const updated = prev.filter((v) => v !== value);
+    //                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+    //                     return updated;
+    //                 } else {
+    //                     // add
+    //                     const updated = [...prev, value];
+    //                     if (filterConfig?.onSelect) filterConfig.onSelect(updated);
+    //                     return updated;
+    //                 }
+    //             });
+    //         }
+    //     }
 
     return (
         <DismissibleDropdown
@@ -1801,7 +1493,7 @@ function FilterTableHeader({
                     dimensions={dimensions}
                     searchBarValue={searchBarValue}
                     setSearchBarValue={setSearchBarValue}
-                    onEnterPress={handleSearch}
+                    onEnterPress={() => handleSearch()}
                 >
                     {children ? (
                         <div>{children}</div>
@@ -1855,20 +1547,22 @@ function FilterTableHeader({
                                         ))}
                                     </>)}
                             </div>
-                            <div className="flex justify-between items-center p-2 border-t border-gray-200 mt-2 bg-white sticky bottom-0">
-                                <button
-                                    onClick={clearFilter}
-                                    className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded border border-gray-200 cursor-pointer"
-                                >
-                                    Clear
-                                </button>
-                                <button
-                                    onClick={applyFilter}
-                                    className="text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded cursor-pointer"
-                                >
-                                    Apply
-                                </button>
-                            </div>
+                            {filterConfig?.isSingle === false && (
+                                <div className="flex justify-between items-center p-2 border-t border-gray-200 mt-2 bg-white sticky bottom-0">
+                                    <button
+                                        onClick={clearFilter}
+                                        className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded border border-gray-200 cursor-pointer"
+                                    >
+                                        Clear
+                                    </button>
+                                    <button
+                                        onClick={applyFilter}
+                                        className="text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded cursor-pointer"
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-4 text-gray-600 text-sm">
@@ -1889,95 +1583,21 @@ function FilterTableHeader({
 function TableFooter() {
     const { config } = useContext(Config);
     const { api, footer, pageSize = defaultPageSize } = config;
-    const { tableDetails, nestedLoading, setTableDetails, setNestedLoading, searchState, filterState } = useContext(TableDetails);
+    const { tableDetails, nestedLoading, setTableDetails, setNestedLoading, searchState, filterState, params, setParams } = useContext(TableDetails);
     const { selectedRow } = useContext(SelectedRow);
     const { selectedColumns } = useContext<columnFilterConfigType>(ColumnFilterConfig);
     const cPage = tableDetails.currentPage || 0;
     const totalPages = tableDetails.total || 1;
 
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
     async function handlePageChange(pageNo: number) {
         if (pageNo < 0 || pageNo > totalPages - 1) return;
 
-        // Update URL
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("page", (pageNo + 1).toString());
-        router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false });
-
-        const MIN_LOADING_MS = 1000;
-        const start = Date.now();
-        try {
-            setNestedLoading(true);
-
-            // If a global search is active, prefer search-based paging
-            try {
-                const globalSearch = searchState;
-                if (globalSearch && globalSearch.applied && api?.search) {
-                    const term = globalSearch.term ?? "";
-                    const res = await api.search(term, pageSize, undefined, pageNo + 1);
-                    const resolvedResult = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage } = resolvedResult;
-                    setTableDetails({
-                        ...tableDetails,
-                        data,
-                        currentPage: currentPage - 1,
-                        total,
-                        pageSize,
-                    });
-                    return;
-                }
-            } catch (err) {
-                console.warn('Search-based pagination failed', err);
-            }
-
-            // If filters are applied (persisted globally) and filter API exists, call filter API for the page
-            try {
-                const globalFilter = filterState;
-                if (globalFilter && globalFilter.applied && api?.filterBy) {
-                    // reuse payload and request the requested page; do NOT add .page to payload, instead pass as 3rd arg
-                    const payload = { ...(globalFilter.payload || {}) } as Record<string, any>;
-                    const res = await api.filterBy(payload, pageSize, pageNo + 1);
-                    const resolvedResult = res instanceof Promise ? await res : res;
-                    const { data, total, currentPage } = resolvedResult;
-                    setTableDetails({
-                        ...tableDetails,
-                        data,
-                        currentPage: currentPage - 1,
-                        total,
-                        pageSize,
-                    });
-                    return;
-                }
-            } catch (err) {
-                // if filter-based paging fails, fall back to list or client-side
-                console.warn('Filter-based pagination failed', err);
-            }
-
-            if (api?.list) {
-                const result = await api.list(pageNo + 1, pageSize);
-                const resolvedResult =
-                    result instanceof Promise ? await result : result;
-                const { data, total, currentPage } = resolvedResult;
-                setTableDetails({
-                    ...tableDetails,
-                    data,
-                    currentPage: currentPage - 1,
-                    total,
-                    pageSize,
-                });
-            } else {
-                setTableDetails({ ...tableDetails, currentPage: pageNo });
-            }
-        } finally {
-            const elapsed = Date.now() - start;
-            const wait = Math.max(0, MIN_LOADING_MS - elapsed);
-            if (wait > 0) {
-                await new Promise((res) => setTimeout(res, wait));
-            }
-            setNestedLoading(false);
-        }
+        // Update params with new page number (1-indexed)
+        // TableContainer's useEffect will handle the data fetching
+        setParams({
+            ...params,
+            page: pageNo + 1
+        });
     }
 
     // Floating Info Bar State
@@ -2210,7 +1830,7 @@ export function FilterOptionList({
 // FilterBy Component for global table filtering (Top Left Corner of Table) - dropdown near search bar
 function FilterBy() {
     const { config } = useContext(Config);
-    const { tableDetails, setTableDetails, setNestedLoading, setFilterState, initialTableData } = useContext(TableDetails);
+    const { tableDetails, setTableDetails, setNestedLoading, setFilterState, initialTableData, params, setParams } = useContext(TableDetails);
     const [showDropdown, setShowDropdown] = useState(false);
     const buttonRef = useRef<HTMLDivElement | null>(null);
     const [searchBarValue, setSearchBarValue] = useState("");
@@ -2221,28 +1841,31 @@ function FilterBy() {
     const [customPayload, setCustomPayload] = useState<Record<string, string | number | null | (string | number)[]>>({});
     const [isApplyingCustom, setIsApplyingCustom] = useState(false);
     const [isClearingCustom, setIsClearingCustom] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false); // fixes the loop and going back of url with params to url without params
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const urlRef = useRef<string | null>(searchParams ? searchParams.toString() : null);
+    const [isInitialized, setIsInitialized] = useState(false);
+    // Removed router and searchParams as we use params from useHiddenHistory
 
     useEffect(() => {
-        if (!searchParams) return;
-        // Delegate columnFilter to checkForData/FilterTableHeader and ignore here
-        if (searchParams.get('_type') === 'columnFilter') {
-            // Force clear global filter state so UI doesn't show "Results Found"
-            if (appliedFilters) {
-                setAppliedFilters(false);
-                setCustomPayload({});
-                setFilters({});
-            }
+        // Strict Mode Check: If params says we are NOT in 'filterBy' mode (and we have a mode set),
+        // we must clear our local state to avoid showing "Active Filters" from other modes or stale state.
+        if (params._filterMode && params._filterMode !== 'filterBy') {
+            setFilters({});
+            setCustomPayload({});
+            setAppliedFilters(false);
+            setFilterState({ applied: false, payload: {} });
+            setIsInitialized(true);
             return;
         }
 
+        // Sync local state from global params (e.g. on load or back button)
+        // Parse params into filters/customPayload
         const paramsObj: Record<string, any> = {};
-        searchParams.forEach((value, key) => {
-            if (key === 'page' || key === 'search' || key === '_type') return; // handled elsewhere
-            if (value.includes(',')) {
+        // params from context are already an object. 
+        // We need to parse comma-separated strings back to arrays for UI
+        Object.keys(params).forEach(key => {
+            const value = params[key];
+            if (['page', 'pageSize', 'search', '_filterMode'].includes(key)) return; // distinct from filters
+
+            if (typeof value === 'string' && value.includes(',')) {
                 paramsObj[key] = value.split(',');
             } else if (value === 'all') {
                 paramsObj[key] = 'all';
@@ -2251,125 +1874,36 @@ function FilterBy() {
             }
         });
 
-        const hasParams = Object.keys(paramsObj).length > 0;
-
         if (hasCustomRenderer) {
             setCustomPayload(paramsObj);
-            if (hasParams) {
-                const pageParam = searchParams.get("page");
-                const pageNo = pageParam ? parseInt(pageParam) : 1;
-                applyCustomPayload(paramsObj, pageNo);
-            } else if (appliedFilters) {
-                // Clear if we had filters but now URL is empty
-                clearAllCustom();
-            }
         } else {
-            // For built-in filters
-            const newFilters: Record<string, string | string[]> = {};
-
-            // 1. Check filterByFields
+            const initialFilters: Record<string, string | string[]> = {};
             (config.header?.filterByFields || []).forEach((f: any) => {
                 const val = paramsObj[f.key];
                 if (val) {
-                    newFilters[f.key] = val;
+                    initialFilters[f.key] = val;
                 } else {
-                    newFilters[f.key] = f.isSingle === false ? [] : "";
+                    initialFilters[f.key] = f.isSingle === false ? [] : "";
                 }
             });
-
-            // 2. Check column filters
-            (config.columns || []).forEach((col) => {
-                const key = col.key;
-                const val = paramsObj[key];
-                const filterKey = col.filter?.filterkey || key;
-                const filterVal = paramsObj[filterKey];
-                const effectiveVal = filterVal || val;
-
-                if (effectiveVal && col.filter) {
-                    newFilters[filterKey] = effectiveVal;
-                }
-            });
-
-            setFilters(newFilters);
-
-            if (hasParams) {
-                const pageParam = searchParams.get("page");
-                const pageNo = pageParam ? parseInt(pageParam) : 1;
-                // Only apply if different from current applied state? 
-                // For now, we trust activeFilterCount check in applyFilter or just call it.
-                // We pass newFilters explicitly to avoid state lag.
-                applyFilter(newFilters, pageNo);
-            } else {
-                if (appliedFilters) {
-                    // Check if search is active. If so, do not fetch list (clearAll), just reset state.
-                    if (searchParams.has('search')) {
-                        const cleared: Record<string, string | string[]> = {};
-                        (config.header?.filterByFields || []).forEach((f: FilterField) => {
-                            cleared[f.key] = f.isSingle === false ? [] : "";
-                        });
-                        setFilters(cleared);
-                        setAppliedFilters(false);
-                        try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
-                    } else {
-                        clearAll();
-                    }
-                }
-            }
+            setFilters(initialFilters);
         }
-    }, [searchParams, hasCustomRenderer]);
 
-    const updateUrlWithPayload = useCallback((payload: Record<string, any>, pageNo: number = 1) => {
-        if (!hasCustomRenderer) return;
-        if (!searchParams || !router) return;
-        const params = new URLSearchParams(searchParams.toString());
-
-        // 1. Remove all existing filter keys (excluding reserved ones)
-        // This ensures that keys removed from payload are removed from URL
-        Array.from(params.keys()).forEach((k) => {
-            if (k !== 'search' && k !== '_type') {
-                params.delete(k);
-            }
-        });
-
-        // 2. Add keys from payload
-        Object.keys(payload || {}).forEach((k) => {
-            const v = payload[k];
-            if (v === 'all') {
-                params.set(k, 'all');
-            } else if (Array.isArray(v)) {
-                if (v.length > 0) {
-                    params.set(k, v.join(','));
-                }
-            } else if (v !== null && String(v).trim().length > 0) {
-                params.set(k, String(v));
-            }
-        });
-
-        // 3. Set _type=filter if there are active filters
-        // Check if any filter keys exist in the params now
-        const hasFilters = Array.from(params.keys()).some(k => k !== 'page' && k !== 'search' && k !== '_type');
-        if (hasFilters) {
-            params.set('_type', 'filter');
-            // Ensure search is cleared if mutual exclusion is desired (User requested this previously)
-            params.delete('search');
+        if (Object.keys(paramsObj).length > 0) {
+            setAppliedFilters(true);
+            setFilterState({
+                applied: true,
+                payload: toApiPayload(paramsObj)
+            });
         } else {
-            // No filters, remove _type if it was filter
-            if (params.get('_type') === 'filter') {
-                params.delete('_type');
-            }
+            setAppliedFilters(false);
+            setFilterState({ applied: false, payload: {} });
         }
 
-        // 4. Set page if > 1
-        if (pageNo > 1) {
-            params.set('page', pageNo.toString());
-        }
+        setIsInitialized(true);
+    }, [params, hasCustomRenderer, config.header?.filterByFields]);
 
-        if (urlRef.current !== params.toString()) {
-            urlRef.current = params.toString();
-            const newRelativePathQuery = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            router.push(newRelativePathQuery, { scroll: false });
-        }
-    }, [hasCustomRenderer, router, searchParams]);
+    // Removed URL sync effect as useHiddenHistory handles it (or we relying on hidden history)
 
     // initialize filters when fields change (only for built-in filterByFields)
     useEffect(() => {
@@ -2383,15 +1917,11 @@ function FilterBy() {
 
     useEffect(() => {
         // This triggers as soon as hydration finishes
-        if (isInitialized && searchParams && searchParams.size > 0) {
-            if (hasCustomRenderer) {
-                applyCustomPayload(customPayload);
-            } else {
-                // Note: pass the hydrated filters directly to ensure we don't 
-                // wait for a state re-render cycle
-                applyFilter(filters);
-            }
-        }
+        // We can keep this if we want to force apply filters from params on init
+        // BUT TableContainer already does checkData on mount/params change.
+        // So this might be redundant or double-fetching?
+        // Let's remove the redundancy. TableContainer handles data fetching.
+        // This effect was ensuring UI sync with URL which we handle in the first useEffect now.
     }, [isInitialized, hasCustomRenderer]);
 
     const sourcePayload = hasCustomRenderer ? customPayload : filters;
@@ -2450,244 +1980,91 @@ function FilterBy() {
         });
         return payloadForApi;
     };
-    const applyFilter = useCallback(async (overridingFilters?: Record<string, any>, pageNo: number = 1) => {
-        // Use overridingFilters if provided (for initial load), otherwise use state
+    const applyFilter = useCallback(async (overridingFilters?: Record<string, any>) => {
         const currentFilters = overridingFilters || filters;
         if (Object.keys(currentFilters).length === 0) return;
 
         setShowDropdown(false);
-        if (config.api?.filterBy) {
-            setNestedLoading(true);
-            try {
-                const payloadForApi = toApiPayload(currentFilters);
-                setFilterState({ applied: true, payload: payloadForApi });
+        const payloadForApi = toApiPayload(currentFilters);
+        setFilterState({ applied: true, payload: payloadForApi });
+        setAppliedFilters(true);
 
-                const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize, pageNo);
-                const resolved = res instanceof Promise ? await res : res;
-                const { currentPage, totalRecords, pageSize, total, data } = resolved;
+        // Update global params - this triggers data fetch in TableContainer
+        // Exclusive Mode Logic: FilterBy API
+        // Start fresh (clears Search and List filters)
+        setParams({
+            ...payloadForApi,
+            page: 1,
+            _filterMode: 'filterBy'
+        }, { replace: true });
+    }, [filters, params, setParams]);
 
-                setTableDetails({
-                    data: data || [],
-                    total: pageSize > 0 ? Math.max(1, Math.ceil((totalRecords ?? total ?? 0) / pageSize)) : (total ?? 1),
-                    totalRecords: totalRecords,
-                    currentPage: (currentPage || pageNo) - 1,
-                    pageSize: pageSize,
-                });
-                setAppliedFilters(true);
-            } catch (err) {
-                console.error("Filter API error", err);
-            } finally {
-                setNestedLoading(false);
-            }
-        } else {
-            if (activeFilterCount === 0) return;
-            setShowDropdown(false);
-            // call API if provided
-            if (config.api?.filterBy) {
-                try {
-                    setNestedLoading(true);
-
-                    const payloadForApi: Record<string, string | number | null> = {};
-                    const fields = config.header?.filterByFields || [];
-                    Object.keys(filters || {}).forEach((k) => {
-                        const field = fields.find(f => f.key === k);
-                        try {
-                            if (field?.applyWhen && !field.applyWhen(filters)) {
-                                // skip this key as its predicate decided it shouldn't apply
-                                return;
-                            }
-                        } catch (err) {
-                            // if predicate throws, default to skipping to be safe
-                            return;
-                        }
-
-                        const v = filters[k];
-                        if (Array.isArray(v)) {
-                            payloadForApi[k] = v.length > 0 ? v.join(',') : "";
-                        } else {
-                            payloadForApi[k] = v as string;
-                        }
-                    });
-
-                    // persist applied filter payload via context so pagination can reuse it
-                    try {
-                        setFilterState({ applied: true, payload: payloadForApi });
-                    } catch (err) {
-                        // ignore environments without window
-                    }
-
-                    const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize);
-                    const { currentPage, totalRecords, pageSize, total, data } = res instanceof Promise ? await res : res;
-                    // prefer totalRecords when provided by API
-                    const totalRecordsValue = totalRecords ?? total ?? 0;
-                    const pageSizeValue = pageSize || config.pageSize || defaultPageSize;
-                    const totalPages = pageSizeValue > 0 ? Math.max(1, Math.ceil(totalRecordsValue / pageSizeValue)) : (total ?? 1);
-                    setTableDetails({
-                        data: data || [],
-                        total: totalPages,
-                        totalRecords: totalRecords,
-                        currentPage: currentPage - 1 || 0,
-                        pageSize: pageSize,
-                    });
-                    setAppliedFilters(true);
-                } catch (err) {
-                    console.error("Filter API error", err);
-                } finally {
-                    setNestedLoading(false);
-                }
-            } else {
-                // fallback to client-side filtering
-                const all = tableDetails.data || [];
-                const fields = config.header?.filterByFields || [];
-                const filtered = all.filter((row) => {
-                    return Object.keys(filters).every((k) => {
-                        const field = fields.find(f => f.key === k);
-                        try {
-                            if (field?.applyWhen && !field.applyWhen(filters)) {
-                                // skip this filter if its predicate says not to apply
-                                return true;
-                            }
-                        } catch (err) {
-                            // if predicate throws, skip this filter to be safe
-                            return true;
-                        }
-
-                        const val = filters[k];
-                        if (val === "" || val == null) return true;
-                        const cell = String((row as TableDataType)[k] ?? "").toLowerCase();
-                        if (Array.isArray(val)) {
-                            // match any of the selected values
-                            return val.some(v => cell.includes(String(v).toLowerCase()));
-                        }
-                        return cell.includes(String(val).toLowerCase());
-                    });
-                });
-                setTableDetails({
-                    data: filtered,
-                    total: Math.max(1, Math.ceil(filtered.length / (config.pageSize || defaultPageSize))),
-                    currentPage: 0,
-                    pageSize: config.pageSize || defaultPageSize,
-                });
-                setAppliedFilters(true);
-            }
-
-            setShowDropdown(false);
-        };
-    }, [filters, config, setTableDetails, setNestedLoading, setFilterState]);
-
-    const applyCustomPayload = useCallback(async (payload?: Record<string, any>, pageNo: number = 1) => {
+    const applyCustomPayload = useCallback(async (payload?: Record<string, any>) => {
         const effectivePayload = payload || customPayload || {};
         if (Object.keys(effectivePayload || {}).length === 0) return;
         setIsApplyingCustom(true);
         try {
             const payloadForApi = toApiPayload(effectivePayload);
-
-            try {
-                setFilterState({ applied: true, payload: payloadForApi });
-            } catch (err) { /* ignore */ }
-
-            if (config.api?.filterBy) {
-                const res = await config.api.filterBy(payloadForApi, config.pageSize || defaultPageSize, pageNo);
-                const resolved = res instanceof Promise ? await res : res;
-                const { currentPage, totalRecords, pageSize, total, data } = resolved as any;
-                const totalRecordsValue = totalRecords ?? total ?? 0;
-                const pageSizeValue = pageSize || config.pageSize || defaultPageSize;
-                const totalPages = pageSizeValue > 0 ? Math.max(1, Math.ceil(totalRecordsValue / pageSizeValue)) : (total ?? 1);
-                setTableDetails({
-                    data: data || [],
-                    total: totalPages,
-                    totalRecords: totalRecords,
-                    currentPage: currentPage - 1 || 0,
-                    pageSize: pageSize,
-                });
-            } else {
-                // client-side fallback using payload keys
-                const all = tableDetails.data || [];
-                const filtered = all.filter((row) => {
-                    return Object.keys(effectivePayload || {}).every((k) => {
-                        const val = (effectivePayload as any)[k];
-                        if (val === "" || val == null) return true;
-                        const cell = String((row as TableDataType)[k] ?? "").toLowerCase();
-                        if (Array.isArray(val)) {
-                            return val.some(v => cell.includes(String(v).toLowerCase()));
-                        }
-                        return cell.includes(String(val).toLowerCase());
-                    });
-                });
-                setTableDetails({
-                    data: filtered,
-                    total: Math.max(1, Math.ceil(filtered.length / (config.pageSize || defaultPageSize))),
-                    currentPage: 0,
-                    pageSize: config.pageSize || defaultPageSize,
-                });
-            }
-
+            setFilterState({ applied: true, payload: payloadForApi });
             setCustomPayload(effectivePayload);
             setAppliedFilters(true);
             setShowDropdown(false);
 
-            // Explicitly update URL here instead of via effect
-            updateUrlWithPayload(effectivePayload, pageNo);
-
-        } catch (err) {
-            console.error("Filter API error", err);
+            // Update global params
+            // Start fresh
+            setParams({
+                ...payloadForApi,
+                page: 1,
+                _filterMode: 'filterBy'
+            }, { replace: true });
         } finally {
             setIsApplyingCustom(false);
         }
-    }, [customPayload, config, tableDetails.data, updateUrlWithPayload]);
+    }, [customPayload, params, setParams]);
 
     useEffect(() => {
-        // Only trigger once state is initialized and there are actual params to apply
-        if (isInitialized && searchParams && searchParams.size > 0) {
-            const pageParam = searchParams?.get("page");
-            const pageNo = pageParam ? parseInt(pageParam) : 1;
-            if (hasCustomRenderer) {
-                applyCustomPayload(customPayload, pageNo);
-            } else {
-                applyFilter(filters, pageNo);
-            }
-        }
+        // Redundant sync effect removed.
     }, [isInitialized, hasCustomRenderer]);
 
     const clearAll = async () => {
         if (activeFilterCount === 0) return;
 
-        // build cleared state matching initialization (arrays for multi-selects)
+        // build cleared state 
         const cleared: Record<string, string | string[]> = {};
         (config.header?.filterByFields || []).forEach((f: FilterField) => {
             cleared[f.key] = f.isSingle === false ? [] : "";
         });
         setFilters(cleared);
         setAppliedFilters(false);
-
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
 
-        if (config.api?.list) {
-            const pageSize = config.pageSize || defaultPageSize;
-            try {
-                setNestedLoading(true);
-                const result = await config.api.list(1, pageSize);
-                const resolved = result instanceof Promise ? await result : result;
-                const { data, total, currentPage, pageSize: resPageSize, totalRecords } = resolved as any;
-                setTableDetails({
-                    data: data || [],
-                    total: total || 1,
-                    totalRecords: totalRecords,
-                    currentPage: (currentPage ? currentPage - 1 : 0),
-                    pageSize: resPageSize || pageSize,
-                });
-            } catch (err) {
-                console.error("List API error while clearing filters", err);
-            } finally {
-                setNestedLoading(false);
-            }
-        } else if (initialTableData) {
-            try {
-                setTableDetails(initialTableData as any);
-            } catch (err) {
-                // ignore
-            }
+        // Clear params (except page/size/search)
+        // Actually we need to remove the filter keys from params.
+        // Or set them to undefined.
+        // We iterate current params and clear those that match filter keys?
+        // Or better: we construct a new params object.
+        // remove from params
+        const newParams = { ...params };
+        (config.header?.filterByFields || []).forEach((f: FilterField) => {
+            delete newParams[f.key];
+        });
+        if (config.header?.filterRenderer) {
+            // If custom renderer, we might not know keys easily unless we track them.
+            // But we can just use the cleared customPayload logic if needed.
+            // For now, assuming clearAll handles known fields.
         }
+
+        // Smart History: clearing means we definitely had filters, so replace?
+        // Or if user considers "No Filter" as a new state?
+        // Let's use replace to minimize history clutter as requested.
+        newParams.page = 1;
+        // If we clear FilterBy, do we exit 'filterBy' mode?
+        // Likely yes. Return to default? Or keep params but empty?
+        // If we remove all keys, we are effectively in no mode.
+        // If params has no mode, TableContainer defaults to 'list' (no filters).
+        delete newParams._filterMode; // Reset mode
+
+        setParams(newParams, { replace: true });
     };
 
     const clearAllCustom = async () => {
@@ -2695,43 +2072,15 @@ function FilterBy() {
         setIsClearingCustom(true);
         setCustomPayload({});
         setAppliedFilters(false);
-
-        // Explicitly clear URL
-        updateUrlWithPayload({});
-
         try { setFilterState({ applied: false, payload: {} }); } catch (err) { }
 
-        if (config.api?.list) {
-            const pageSize = config.pageSize || defaultPageSize;
-            try {
-                setNestedLoading(true);
-                const result = await config.api.list(1, pageSize);
-                const resolved = result instanceof Promise ? await result : result;
-                const { data, total, currentPage, pageSize: resPageSize, totalRecords } = resolved as any;
-                setTableDetails({
-                    data: data || [],
-                    total: total || 1,
-                    totalRecords: totalRecords,
-                    currentPage: (currentPage ? currentPage - 1 : 0),
-                    pageSize: resPageSize || pageSize,
-                });
-            } catch (err) {
-                console.error("List API error while clearing filters", err);
-            } finally {
-                setNestedLoading(false);
-                setIsClearingCustom(false);
-            }
-        } else if (initialTableData) {
-            try {
-                setTableDetails(initialTableData as any);
-            } catch (err) {
-                // ignore
-            } finally {
-                setIsClearingCustom(false);
-            }
-        } else {
-            setIsClearingCustom(false);
-        }
+        // For custom filters, we assume all keys in customPayload are filters.
+        const newParams = { ...params };
+        Object.keys(customPayload).forEach(k => delete newParams[k]);
+        newParams.page = 1;
+
+        setParams(newParams);
+        setIsClearingCustom(false);
     };
 
     // Reset only local filter UI state (used when external actions like pagination change)
