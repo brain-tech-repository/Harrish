@@ -158,11 +158,11 @@ export default function WorkflowTable() {
         const end = start + pageSize;
 
         // WORKFLOW_DATA.slice(start, end);
-       const pageData:any =  await workFlowList()
+        const pageData: any = await workFlowList()
         return {
             data: pageData.data,
             currentPage: 1,
-            pageSize:50,
+            pageSize: 50,
             total: 1,
         };
     };
@@ -204,7 +204,7 @@ export default function WorkflowTable() {
                                 leadingIcon="lucide:plus"
                                 label="Add"
                                 labelTw="hidden sm:block"
-                            />,<SidebarBtn
+                            />, <SidebarBtn
                                 key={1}
                                 href="/settings/approval/assignworkflow"
                                 isActive={true}
@@ -225,7 +225,7 @@ export default function WorkflowTable() {
                         {
                             icon: "lucide:edit-2",
                             onClick: (row: TableDataType) => {
-                                localStorage.setItem("selectedFlow",JSON.stringify(row))
+                                localStorage.setItem("selectedFlow", JSON.stringify(row))
                                 router.push(`/settings/approval/${row.uuid}`);
                             },
                         },

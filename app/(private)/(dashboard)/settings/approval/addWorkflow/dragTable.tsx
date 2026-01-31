@@ -12,7 +12,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Icon } from "@iconify-icon/react";
 import SidebarBtn from "@/app/components/dashboardSidebarBtn";
-import { authUserList } from "@/app/services/allApi";
+import { assetApprovalStatus, authUserList } from "@/app/services/allApi";
+import CustomCheckbox from "@/app/components/customCheckbox";
 
 type OptionType = { value: string; label: string };
 
@@ -20,11 +21,12 @@ type SelectedOption = OptionType | null;
 
 interface ApprovalStep {
   id: string;
-  stepId:string;
+  stepId: string;
   targetType: string;
   condition: string;
   roleOrCustomer: string;
   allowApproval: boolean;
+  assetApproval: boolean;
   allowReject: boolean;
   returnToStepNo: boolean;
   canEditBeforeApproval: boolean;
@@ -75,6 +77,24 @@ const formTypeOptions: OptionType[] = [
 export default function ApprovalFlowTable({ roleListData, usersData, steps, setSteps }: { roleListData: OptionType[], usersData: OptionType[], steps: ApprovalStep[], setSteps: React.Dispatch<React.SetStateAction<ApprovalStep[]>> }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [userOptions, setUserOptions] = useState<OptionType[]>([]);
+  const [assetApprovalStatusOptions, setAssetApprovalStatusOptions] = useState<[]>([]);
+
+
+  useEffect(() => {
+    const fetchAssetApprovalStatusOptions = async () => {
+      try {
+        const response = await assetApprovalStatus();
+        const data = response?.data?.map((item: any) => ({
+          value: item.name,
+          label: item.name,
+        }));
+        setAssetApprovalStatusOptions(data);
+      } catch (error) {
+        console.error('Error fetching asset approval status options:', error);
+      }
+    };
+    fetchAssetApprovalStatusOptions();
+  }, []);
 
   type FormState = {
     formType: string[];
@@ -85,6 +105,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     selectedCustomer?: SelectedOption[];
     customer_id?: string;
     allowApproval: boolean;
+    assetApproval: boolean;
     allowReject: boolean;
     returnToStepNo: boolean;
     canEditBeforeApproval: boolean;
@@ -105,6 +126,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
     selectedCustomer: [],
     customer_id: undefined,
     allowApproval: false,
+    assetApproval: false,
     allowReject: false,
     returnToStepNo: false,
     canEditBeforeApproval: false,
@@ -151,6 +173,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
       selectedCustomer: [],
       customer_id: undefined,
       allowApproval: false,
+      assetApproval: false,
       allowReject: false,
       returnToStepNo: false,
       canEditBeforeApproval: false,
@@ -338,7 +361,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
               setForm({ ...form, condition: e.target.value })
             }
           /> : ""}
-        {/* {form.targetType?   <div className="grid grid-cols-2 gap-4">
+          {/* {form.targetType?   <div className="grid grid-cols-2 gap-4">
 
         <InputFields
                 required
@@ -372,11 +395,11 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
               />
               </div>:""} */}
 
-        {/* Role / Customer */}
+          {/* Role / Customer */}
 
 
-        {/* Checkboxes */}
-        {/* <div className="grid grid-cols-4 gap-2 mt-3">
+          {/* Checkboxes */}
+          {/* <div className="grid grid-cols-4 gap-2 mt-3">
           {[
             "allowApproval",
             "allowReject",
@@ -404,17 +427,44 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
           ))}
         </div> */}
 
-        {/* Messages */}
-          <InputFields
-            required
-            width="full"
-            placeholder="Pending,Success,Reject"
-            label="Approval Status"
-            value={form.approvalMessage}
-            onChange={(e) =>
-              setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
-            }
-          />
+          <div className="flex items-center gap-2">
+            <CustomCheckbox
+              id="assetApproval"
+              label="Approval for Assets"
+              checked={form.assetApproval}
+              onChange={(e) => {
+                setForm({ ...form, assetApproval: e.target.checked })
+                console.log(e.target.checked, "assetApproval")
+              }}
+            />
+          </div>
+
+          {form.assetApproval && (
+            <InputFields
+              required
+              width="full"
+              placeholder="Pending,Success,Reject"
+              label="Approval Status"
+              value={form.approvalMessage}
+              options={assetApprovalStatusOptions}
+              onChange={(e) =>
+                setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+              }
+            />
+          )}
+
+          {!form.assetApproval && (
+            <InputFields
+              required
+              width="full"
+              placeholder="Pending,Success,Reject"
+              label="Approval Status"
+              value={form.approvalMessage}
+              onChange={(e) =>
+                setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+              }
+            />
+          )}
 
           <InputFields
             required
@@ -542,26 +592,26 @@ function SortableRow({
       </td>
       <td className="px-[24px] py-[12px] bg-white   ">{Array.isArray(step.formType) ? step.formType.join(", ") : step.formType}</td>
       <td className="px-[24px] py-[12px] bg-white   ">{step.targetType === "1" ? "Role" : "User"}</td>
-  <td className="px-[24px] py-[12px] bg-white w-[400px]">{step.targetType === "1"?
-              // <InputFields
-              //   value={step.selectedRole}
-              //   isSingle={false}
-              //   options={roleOptions}
-              //   width="full"
-              //   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {}}
-              // />
-              step.selectedRole?.map((role: any) => roleOptions.find(r => r.value === role)?.label).join(", ")
-              :"-"}</td>
-                <td className="px-[24px] py-[12px] bg-white w-[400px]">{step.targetType === "2"?
-              //     <InputFields
-              //   value={step.selectedCustomer}
-              //   isSingle={false}
-              //   options={userOptions}
-              //   width="full"
-              //   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {}}
-              // />
-              step.selectedCustomer?.map((user: any) => userOptions.find(u => u.value === user)?.label).join(", ")
-              :"-"}</td>
+      <td className="px-[24px] py-[12px] bg-white w-[400px]">{step.targetType === "1" ?
+        // <InputFields
+        //   value={step.selectedRole}
+        //   isSingle={false}
+        //   options={roleOptions}
+        //   width="full"
+        //   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {}}
+        // />
+        step.selectedRole?.map((role: any) => roleOptions.find(r => r.value === role)?.label).join(", ")
+        : "-"}</td>
+      <td className="px-[24px] py-[12px] bg-white w-[400px]">{step.targetType === "2" ?
+        //     <InputFields
+        //   value={step.selectedCustomer}
+        //   isSingle={false}
+        //   options={userOptions}
+        //   width="full"
+        //   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {}}
+        // />
+        step.selectedCustomer?.map((user: any) => userOptions.find(u => u.value === user)?.label).join(", ")
+        : "-"}</td>
 
       <td className="px-[24px] py-[12px] bg-white   ">{step.condition}</td>
       {/* === Related Steps Multi Select === */}

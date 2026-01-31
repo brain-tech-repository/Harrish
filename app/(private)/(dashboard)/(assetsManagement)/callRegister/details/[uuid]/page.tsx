@@ -86,7 +86,7 @@ export default function ViewPage() {
                 </div>
             </ContainerCard>
 
-            <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
+            {/* <ContainerCard className="w-full flex gap-[4px] overflow-x-auto" padding="5px">
                 {tabs.map((tab, index) => (
                     <TabBtn
                         key={index}
@@ -95,30 +95,47 @@ export default function ViewPage() {
                         onClick={() => onTabClick(index)}
                     />
                 ))}
+            </ContainerCard> */}
+
+            <ContainerCard
+                className="w-full flex gap-[4px] overflow-x-auto"
+                padding="5px"
+            >
+                {tabs.map((tab, index) => (
+                    <div key={index}>
+                        <TabBtn
+                            label={tab.name}
+                            isActive={activeTab === index}
+                            onClick={() => {
+                                onTabClick(index);
+                            }}
+                        />
+                    </div>
+                ))}
             </ContainerCard>
 
             {activeTab === 0 && (
                 <>
                     <h2 className="text-lg font-semibold mt-2">Call Register Details</h2>
 
-                    <div className="flex flex-wrap gap-x-[20px] gap-y-[20px]">
-                        <ContainerCard className="w-full lg:w-[680px]">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-[20px] mt-4">
+                        <ContainerCard className="w-full">
                             <KeyValueData
                                 data={[
                                     { key: "Ticket Type", value: data?.ticket_type },
                                     { key: "Ticket Date", value: formatWithPattern(new Date(data?.ticket_date as string), "DD MMM YYYY", "en-GB")?.toLowerCase() },
                                     { key: "Chiller Serial Number", value: data?.chiller_serial_number },
                                     { key: "Asset Number", value: data?.asset_number || "-" },
-                                    { key: "Model Number", value: data?.model_number },
+                                    { key: "Model Number", value: data?.model_number?.name || "-" },
                                     { key: "Chiller Code", value: data?.chiller_code },
                                 ]}
                             />
                         </ContainerCard>
 
-                        <ContainerCard className="w-full lg:w-[680px]">
+                        <ContainerCard className="w-full">
                             <KeyValueData
                                 data={[
-                                    { key: "Branding", value: data?.branding || "-" },
+                                    { key: "Branding", value: data?.branding?.name || "-" },
                                     { key: "CTC Status", value: data?.ctc_status },
                                     {
                                         key: "Status",

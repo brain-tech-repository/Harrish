@@ -17,6 +17,8 @@ import SidebarBtn from "@/app/components/dashboardSidebarBtn";
 // import { authUserList } from "@/app/services/allApi"; // Removed internal fetch
 import { customer } from "@/app/(private)/data/customerDetails";
 import Skeleton from "@mui/material/Skeleton";
+import CustomCheckbox from "@/app/components/customCheckbox";
+import { assetApprovalStatus } from "@/app/services/allApi";
 
 type OptionType = { value: string; label: string };
 
@@ -30,6 +32,7 @@ interface ApprovalStep {
     condition: string;
     roleOrCustomer: string;
     allowApproval: boolean;
+    assetApproval: boolean;
     allowReject: boolean;
     returnToStepNo: boolean;
     canEditBeforeApproval: boolean;
@@ -67,14 +70,32 @@ const conditionOptions: OptionType[] = [
 ];
 
 const formTypeOptions: OptionType[] = [
-  { value: "APPROVE", label: "APPROVE" },
-  { value: "REJECT", label: "REJECT" },
-  { value: "RETURN_BACK", label: "RETURN BACK" },
-  { value: "EDIT_BEFORE_APPROVAL", label: "EDIT BEFORE APPROVAL" },
+    { value: "APPROVE", label: "APPROVE" },
+    { value: "REJECT", label: "REJECT" },
+    { value: "RETURN_BACK", label: "RETURN BACK" },
+    { value: "EDIT_BEFORE_APPROVAL", label: "EDIT BEFORE APPROVAL" },
 ];
 export default function ApprovalFlowTable({ roleListData, usersData, steps, setSteps }: { roleListData: OptionType[], usersData: OptionType[], steps: ApprovalStep[], setSteps: React.Dispatch<React.SetStateAction<ApprovalStep[]>> }) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingIndex, setEditingIndex] = useState<number | any>(null);
+    const [assetApprovalStatusOptions, setAssetApprovalStatusOptions] = useState<[]>([]);
+
+
+    useEffect(() => {
+        const fetchAssetApprovalStatusOptions = async () => {
+            try {
+                const response = await assetApprovalStatus();
+                const data = response?.data?.map((item: any) => ({
+                    value: item.name,
+                    label: item.name,
+                }));
+                setAssetApprovalStatusOptions(data);
+            } catch (error) {
+                console.error('Error fetching asset approval status options:', error);
+            }
+        };
+        fetchAssetApprovalStatusOptions();
+    }, []);
 
     // Removed internal userOptions state
     // const [userOptions, setUserOptions] = useState<OptionType[]>([]);
@@ -108,6 +129,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
         selectedCustomer: [],
         customer_id: undefined,
         allowApproval: false,
+        assetApproval: false,
         allowReject: false,
         returnToStepNo: false,
         canEditBeforeApproval: false,
@@ -149,6 +171,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
             selectedCustomer: [],
             customer_id: undefined,
             allowApproval: false,
+            assetApproval: false,
             allowReject: false,
             returnToStepNo: false,
             canEditBeforeApproval: false,
@@ -176,6 +199,7 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                 customer_id: step?.selectedCustomer ?? [],
                 selectedCustomer: step?.selectedCustomer ?? [],
                 approvalMessage: step?.approvalMessage ?? "",
+                assetApproval: step?.assetApproval ?? false,
                 notificationMessage: step?.notificationMessage ?? "",
                 confirmationMessage: step?.confirmationMessage ?? "",
             } as any);
@@ -337,17 +361,44 @@ export default function ApprovalFlowTable({ roleListData, usersData, steps, setS
                         }
                     /> : ""}
 
-                    
-                    <InputFields
-                        required
-                        width="full"
-                        placeholder="Pending,Success,Reject"
-                        label="Approval Status"
-                        value={form.approvalMessage}
-                        onChange={(e) =>
-                            setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
-                        }
-                    />
+                    <div className="flex items-center gap-2">
+                        <CustomCheckbox
+                            id="assetApproval"
+                            label="Approval for Assets"
+                            checked={form.assetApproval}
+                            onChange={(e) => {
+                                setForm({ ...form, assetApproval: e.target.checked })
+                                console.log(e.target.checked, "assetApproval")
+                            }}
+                        />
+                    </div>
+
+                    {form.assetApproval && (
+                        <InputFields
+                            required
+                            width="full"
+                            placeholder="Pending,Success,Reject"
+                            label="Approval Status"
+                            value={form.approvalMessage}
+                            options={assetApprovalStatusOptions}
+                            onChange={(e) =>
+                                setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+                            }
+                        />
+                    )}
+
+                    {!form.assetApproval && (
+                        <InputFields
+                            required
+                            width="full"
+                            placeholder="Pending,Success,Reject"
+                            label="Approval Status"
+                            value={form.approvalMessage}
+                            onChange={(e) =>
+                                setForm({ ...form, approvalMessage: (e as React.ChangeEvent<HTMLInputElement>).target.value })
+                            }
+                        />
+                    )}
 
                     <InputFields
                         required

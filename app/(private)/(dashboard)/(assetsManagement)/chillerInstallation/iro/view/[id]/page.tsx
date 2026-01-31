@@ -131,9 +131,9 @@ export default function CustomerInvoicePage() {
         region: "",
         routeCode: "",
     });
-  
+
     // Load dropdown data
-   
+
     const [refreshKey, setRefreshKey] = useState(0);
     const [showDropdown, setShowDropdown] = useState(false);
 
@@ -153,12 +153,12 @@ export default function CustomerInvoicePage() {
 
                 const result = await iroViewList(id);
 
-                // Flatten details so each row is a detail
                 const mapped =
                     result?.data?.flatMap((h: any) => {
                         const details = Array.isArray(h.details) ? h.details : [];
-                        return details.map((detail: any) => ({
+                        return details.map((detail: any, index: any) => ({
                             id: h.id,
+                            uuid: details[index].chillerRequest?.uuid,
                             osa_code: h.osa_code,
                             chiller_code: detail.chillerRequest?.code || "-",
                             customer: `${detail.customer?.code || ""} - ${detail.customer?.name || ""}`,
@@ -166,9 +166,6 @@ export default function CustomerInvoicePage() {
                             location: detail.customer?.location || "-",
                             contact_number: detail.contact_no?.contact_no || "-",
                             model: detail.chillerRequest?.model?.name || "-",
-                            // outlet: `${detail.outlet?.code || ""} - ${detail.outlet?.name || ""}`,
-                            // salesman: `${detail.salesman?.code || "",
-                            // warehouse_name: detail.warehouse?.uuid || "-",
                             date: detail.created_at ? formatDate(detail.created_at) : "-",
                             status: h.status,
                         }));
@@ -199,87 +196,84 @@ export default function CustomerInvoicePage() {
 
 
     const columns = [
-    {
-        key: "date",
-        label: "Date",
-    },
-    {
-        key: "chiller_code",
-        label: "CRF Code",
-    },
-    {
-        key: "warehouse",
-        label: "Distributor",
-    },
-    {
-        key: "customer",
-        label: "Customer",
-    },
-    {
-        key: "location",
-        label: "Location",
-    },
-    {
-        key: "contact_number",
-        label: "Contact Number",
-    },
-    {
-        key: "model",
-        label: "Model",
-    },
-  
-    {
-        key: "status",
-        label: "Installation Status",
-        render: (data: any) => {
-            const statusObj = Status.find(s => String(s.value) === String(data.status));
-            return statusObj ? statusObj.label : "-";
-        }
-    },
-];
- 
+        {
+            key: "date",
+            label: "Date",
+        },
+        {
+            key: "chiller_code",
+            label: "CRF Code",
+        },
+        {
+            key: "warehouse",
+            label: "Distributor",
+        },
+        {
+            key: "customer",
+            label: "Customer",
+        },
+        {
+            key: "location",
+            label: "Location",
+        },
+        {
+            key: "contact_number",
+            label: "Contact Number",
+        },
+        {
+            key: "model",
+            label: "Model",
+        },
+
+        {
+            key: "status",
+            label: "Installation Status",
+            render: (data: any) => {
+                const statusObj = Status.find(s => String(s.value) === String(data.status));
+                return statusObj ? statusObj.label : "-";
+            }
+        },
+    ];
+
 
     return (
         <>
-        <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6">
                 <Link href="/chillerInstallation/iro" back>
                     <Icon icon="lucide:arrow-left" width={24} />
                 </Link>
                 <h1 className="text-xl font-semibold mb-1">Installation Request Order Details</h1>
                 {/* <h1 className="text-2xl font-semibold">Installation Request Order Details</h1> */}
-      </div>
-        <div className="flex flex-col h-full">
-            
-            <Table
-                refreshKey={refreshKey}
-                config={{
-                    api: { list: fetchIRO },
-                    header: {
-                        // title: "Installation Request Order Details",
-                        columnFilter: true,
-                        searchBar: false,
-                    },
-                    // footer: { nextPrevBtn: true, pagination: true },
-                    columns,
-                    rowSelection: true,
+            </div>
+            <div className="flex flex-col h-full">
 
-                    localStorageKey: "invoice-table",
-                    rowActions: [
-                        {
-                            icon: "lucide:eye",
-                            onClick: (row: TableDataType) => {
-                                if (hasChillerRequest(row)) {
-                                    router.push(`/assetsRequest/view/${row.chiller_request.uuid}`);
-                                } else {
-                                    showSnackbar("Invalid row data", "error");
-                                }
-                            },
+                <Table
+                    refreshKey={refreshKey}
+                    config={{
+                        api: { list: fetchIRO },
+                        header: {
+                            // title: "Installation Request Order Details",
+                            columnFilter: true,
+                            searchBar: false,
                         },
-                    ],
-                    pageSize: 10,
-                }}
-            />
-        </div>
+                        // footer: { nextPrevBtn: true, pagination: true },
+                        columns,
+                        rowSelection: true,
+
+                        localStorageKey: "invoice-table",
+                        rowActions: [
+                            {
+                                icon: "lucide:eye",
+                                onClick: (row: TableDataType) => {
+                                    router.push(`/assetsRequest/view/${row.uuid}`);
+                                    console.log(row.chillerRequest?.uuid, "row")
+                                },
+                            },
+                        ],
+                        pageSize: 10,
+                    }}
+                />
+            </div>
         </>
     );
 }

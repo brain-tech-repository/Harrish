@@ -12,48 +12,48 @@ import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
 import ApprovalFlowTable from "./dragTable";
-import { submenuList,roleList, approvalAdd } from "@/app/services/allApi";
+import { submenuList, roleList, approvalAdd } from "@/app/services/allApi";
 // import {VerticalArrow} from "./proccessFlow";
 
 type OldStep = {
-  id: string;
-  formType: string[];
-  condition: string;
-  targetType: string;
-  selectedRole?: string[] | [];
-  selectedCustomer?: string[] | [];
-  role_id?: string[] | [];
-  customer_id?: string[] | [];
-  approvalMessage: string;
-  notificationMessage: string;
-  confirmationMessage?: string;
+    id: string;
+    formType: string[];
+    condition: string;
+    targetType: string;
+    selectedRole?: string[] | [];
+    selectedCustomer?: string[] | [];
+    role_id?: string[] | [];
+    customer_id?: string[] | [];
+    approvalMessage: string;
+    notificationMessage: string;
+    confirmationMessage?: string;
 };
 
 type OldFlow = {
-  approvalName: string;
-  description: string;
-  formType: string;
-  status: string;
-  steps: OldStep[];
+    approvalName: string;
+    description: string;
+    formType: string;
+    status: string;
+    steps: OldStep[];
 };
 
 type NewStep = {
-  step_order: number;
-  title: string;
-  approval_type: string;
-  message: string | null;
-  notification: string | null;
-  confirmationMessage: string | null;
-  permissions: string[];
-  user_ids: number[];
-  role_ids?: number[];
+    step_order: number;
+    title: string;
+    approval_type: string;
+    message: string | null;
+    notification: string | null;
+    confirmationMessage: string | null;
+    permissions: string[];
+    user_ids: number[];
+    role_ids?: number[];
 };
 
 type NewFlow = {
-  name: string;
-  description: string;
-  is_active: boolean;
-  steps: NewStep[];
+    name: string;
+    description: string;
+    is_active: boolean;
+    steps: NewStep[];
 };
 
 export function convertToNewFlow(old: OldFlow): any {
@@ -61,27 +61,36 @@ export function convertToNewFlow(old: OldFlow): any {
         name: old.approvalName,
         description: old.description,
         is_active: old.status === "1",
-        steps: Array.isArray(old.steps)
-            ? old.steps.map((step, index) => {
-                    // Normalize formType to array to handle both string and string[]
-                    const formTypes = Array.isArray(step.formType) ? step.formType : [step.formType];
-                    // approval type
-                    const approvalType = step.condition || "OR";
-                    // title logic
-                    const title = `Step ${index + 1}`;
-                    return {
-                        step_order: index + 1,
-                        title: title,
-                        approval_type: approvalType,
-                        message: step.approvalMessage || null,
-                        notification: step.notificationMessage || null,
-                        confirmationMessage: step.confirmationMessage || null,
-                        permissions: formTypes,
-                        user_ids: (step.selectedCustomer ?? step.customer_id ?? []).map(Number),
-                        role_ids: (step.selectedRole ?? step.role_id ?? []).map(Number)
-                    };
-                })
-            : []
+
+        steps: old.steps.map((step, index) => {
+
+            // Normalize formType to array to handle both string and string[]
+            const formTypes = Array.isArray(step.formType) ? step.formType : [step.formType];
+
+            //   if (formTypes.includes("ADD")) permissions.push("ADD");
+            //   if (formTypes.includes("APPROVE")) permissions.push("APPROVE");
+            //   if (formTypes.includes("REJECT")) permissions.push("REJECT");
+            //   if (formTypes.includes("RETURN_BACK")) permissions.push("RETURN_BACK");
+            //   if (formTypes.includes("UPDATE")) permissions.push("EDIT_BEFORE_APPROVAL");
+
+            // approval type
+            const approvalType = step.condition || "OR";
+
+            // title logic
+            const title = `Step ${index + 1}`;
+
+            return {
+                step_order: index + 1,
+                title: title,
+                approval_type: approvalType,
+                message: step.approvalMessage || null,
+                notification: step.notificationMessage || null,
+                confirmationMessage: step.confirmationMessage || null,
+                permissions: formTypes,
+                user_ids: (step.selectedCustomer ?? step.customer_id ?? []).map(Number),
+                role_ids: (step.selectedRole ?? step.role_id ?? []).map(Number)
+            };
+        })
     };
 }
 
@@ -133,27 +142,28 @@ export default function AddApprovalFlow() {
         { id: 2, label: "Roles & Users" },
     ];
     interface ApprovalStep {
-  id: string;
-  stepId: string;
-  targetType: string;
-  roleOrCustomer: string;
-  allowApproval: boolean;
-  allowReject: boolean;
-  returnToStepNo: boolean;
-  canEditBeforeApproval: boolean;
-  approvalMessage: string;
-  confirmationMessage:string;
-  notificationMessage: string;
-  condition: string; // condition expression or type (e.g. "AND" | "OR")
-  conditionType: string; // AND / OR
-  relatedSteps: string[]; // multi-selection
-  formType: string | string[]; // allow both string and string[] to match dragTable prop types
-}
-      const [stepsProccess, setStepsProcess] = useState<ApprovalStep[]>([]);
-    
-   const [modulesList, setModulesList] = useState<{ value: string; label: string }[]>([]);
-   const [roleListData, setRoleListData] = useState<{ value: string; label: string }[]>([]);
-   const [usersData, setUsersData] = useState<{ value: string; label: string }[]>([]);
+        id: string;
+        stepId: string;
+        targetType: string;
+        roleOrCustomer: string;
+        allowApproval: boolean;
+        assetApproval: boolean;
+        allowReject: boolean;
+        returnToStepNo: boolean;
+        canEditBeforeApproval: boolean;
+        approvalMessage: string;
+        confirmationMessage: string;
+        notificationMessage: string;
+        condition: string; // condition expression or type (e.g. "AND" | "OR")
+        conditionType: string; // AND / OR
+        relatedSteps: string[]; // multi-selection
+        formType: string | string[]; // allow both string and string[] to match dragTable prop types
+    }
+    const [stepsProccess, setStepsProcess] = useState<ApprovalStep[]>([]);
+
+    const [modulesList, setModulesList] = useState<{ value: string; label: string }[]>([]);
+    const [roleListData, setRoleListData] = useState<{ value: string; label: string }[]>([]);
+    const [usersData, setUsersData] = useState<{ value: string; label: string }[]>([]);
 
     const { currentStep, nextStep, prevStep, markStepCompleted, isStepCompleted, isLastStep } =
         useStepperForm(steps.length);
@@ -219,7 +229,7 @@ export default function AddApprovalFlow() {
                     status: Yup.string().required("Status is required"),
                 });
                 await Step1Schema.validate(form, { abortEarly: false });
-                
+
                 setErrors((prev) => {
                     const next = { ...prev };
                     delete next.approvalName;
@@ -273,79 +283,76 @@ export default function AddApprovalFlow() {
         // Validate all steps and the full form before submitting
         const step1Valid = await validateCurrentStep(1);
         const step2Valid = await validateCurrentStep(2);
-            const newFormData:any = { ...form, steps: stepsProccess }
-           const result:any = convertToNewFlow(newFormData )
+        const newFormData: any = { ...form, steps: stepsProccess }
+        const result: any = convertToNewFlow(newFormData)
         // if (!step1Valid || !step2Valid) {
         //     showSnackbar("Please fix validation errors before submitting.", "error");
         //     return;
         // }
- 
+
         try {
             // Full form schema validation
             // await ApprovalSchema.validate(form, { abortEarly: false });
             setLoading(true);
             const resultData = await approvalAdd(result)
 
-  
-             if(resultData.success)
-            {
-            showSnackbar("Approval Flow Created Successfully ✅", "success");
-            setLoading(false);
-            
-            router.push("/settings/approval");
+            if (resultData.success) {
+                showSnackbar("Approval Flow Created Successfully ✅", "success");
+                setLoading(false);
 
+                router.push("/settings/approval");
             }
-            else{
-            showSnackbar("Something went wrong.", "error");
-
+            else {
+                showSnackbar("Something went wrong.", "error");
+                setLoading(false);
             }
             // router.push("/approval");
         }
-        catch(err)
-        {
-        }
-        finally{
+        catch (err) {
+            setLoading(false);
+        } finally {
             setLoading(false);
         }
+
     };
-   const fetchSubmenuList = async () => {     
-    try{
-       const res = await submenuList();
-       const subMenuListDta:{value:string,label:string}[]= []
-       res.data.map((item:{id:number,name:string}) => {
-        subMenuListDta.push({ value: item.id.toString(), label: item.name });
-       });
-       setModulesList( subMenuListDta );
-    }  
-    catch(err){
+    const fetchSubmenuList = async () => {
+        try {
+            const res = await submenuList();
+            const subMenuListDta: { value: string, label: string }[] = []
+            res.data.map((item: { id: number, name: string }) => {
+                subMenuListDta.push({ value: item.id.toString(), label: item.name });
+            });
+            setModulesList(subMenuListDta);
+        }
+        catch (err) {
 
+        }
     }
-   }
 
-   const fetchUsersRoleWise = async () => {     
-    try{
+    const fetchUsersRoleWise = async () => {
+        try {
 
-               const res = await roleList();
-         const roleListDta:{value:string,label:string}[]= []
-         res.data.map((item:{id:number,name:string}) => {  
-        roleListDta.push({ value: item.id.toString(), label: item.name });
+            const res = await roleList();
+            const roleListDta: { value: string, label: string }[] = []
+            res.data.map((item: { id: number, name: string }) => {
+                roleListDta.push({ value: item.id.toString(), label: item.name });
 
-          })
+            })
 
-          setRoleListData( roleListDta );
-       // API call to fetch users based on roleName can be implemented here
-       // For now, we are using the dummy data defined above
-    }  
-    catch(err){
+            setRoleListData(roleListDta);
+            // API call to fetch users based on roleName can be implemented here
+            // For now, we are using the dummy data defined above
+        }
+        catch (err) {
 
+        }
     }
-   }
 
 
 
     useEffect(() => {
         fetchSubmenuList();
-fetchUsersRoleWise();
+        fetchUsersRoleWise();
         // Fetch any initial data if needed
     }, []);
 
@@ -375,7 +382,7 @@ fetchUsersRoleWise();
                                 width="full"
 
                             />
-                          
+
                             <div>
                                 <InputFields
                                     required
@@ -403,7 +410,7 @@ fetchUsersRoleWise();
             case 2:
                 const availableUsers = usersByRole[form.role as keyof typeof usersByRole] || [];
                 return (
-                    <><ApprovalFlowTable roleListData={roleListData} usersData={usersData} steps={stepsProccess} setSteps={setStepsProcess}/></>
+                    <><ApprovalFlowTable roleListData={roleListData} usersData={usersData} steps={stepsProccess} setSteps={setStepsProcess} /></>
                 );
 
             default:

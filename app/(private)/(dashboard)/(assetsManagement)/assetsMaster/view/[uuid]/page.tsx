@@ -38,7 +38,7 @@ type Chiller = {
   capacity: string;
   manufacturing_year: string;
   remarks: string;
-  status: number;
+  status: { id: number; name: string };
 };
 
 const title = "Assets Details";
@@ -75,7 +75,7 @@ export default function ViewPage() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/assetsMaster" back>
+        <Link href="/assetsMaster">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
@@ -112,10 +112,21 @@ export default function ViewPage() {
         </div>
         {/* action buttons */}
         <div className="flex items-center gap-[10px]">
-          <StatusBtn
-            isActive={chiller?.status ? true : false}
-          />
+          {chiller?.status?.name ? (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
+        ${chiller.status.name.toLowerCase() === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+                }`}
+            >
+              {chiller.status.name}
+            </span>
+          ) : (
+            "-"
+          )}
         </div>
+
       </ContainerCard>
 
 

@@ -1251,3 +1251,21 @@ export const serviceVisitGlobalFilter = async (body: Object) => {
     return handleError(error);
   }
 };
+
+export const chillerGlobalFilter = async (body: Object) => {
+  try {
+    const res = await API.post("/api/assets/chiller/filterData", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
+export const chillerRequestGlobalFilter = async (body: Object) => {
+  try {
+    const res = await API.post("/api/assets/chiller-request/globalFilter", body);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
