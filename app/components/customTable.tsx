@@ -905,7 +905,7 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
     // columns is derived from orderedColumns passed from TableContainer; fallback to config.columns
     const columns = orderedColumns && orderedColumns.length > 0 ? orderedColumns : config.columns;
     const dragIndex = useRef<number | null>(null);
-    const { tableDetails, nestedLoading, setNestedLoading } = useContext(TableDetails);
+    const { tableDetails, nestedLoading, setNestedLoading, params, setParams } = useContext(TableDetails);
     const tableData = tableDetails.data || [];
 
     const [displayedData, setDisplayedData] = useState<TableDataType[]>([]);
@@ -1098,21 +1098,35 @@ function TableBody({ orderedColumns, setColumnOrder }: { orderedColumns: configT
                                                             icon="ep:arrow-up"
                                                             width={12}
                                                             height={12}
-                                                            className={`cursor-pointer transition-colors ${col.filterStatus.currentFilter === true
+                                                            className={`cursor-pointer transition-colors ${params[col.key] === true
                                                                 ? "text-blue-600"
                                                                 : "text-gray-400 hover:text-gray-600"
                                                                 }`}
-                                                            onClick={() => col.filterStatus?.onFilter(true)}
+                                                            onClick={() => {
+                                                                // Toggle logic: if already true, clear it. Else set true.
+                                                                const newVal = params[col.key] === true ? undefined : true;
+                                                                // We update params, triggering checkForData.
+                                                                // Removing 'page' reset might be needed? Usually filter change resets page.
+                                                                // Let's reset page to 1 for safety.
+                                                                const newParams = { ...params, [col.key]: newVal };
+                                                                if (newVal === undefined) delete newParams[col.key];
+                                                                setParams({ ...newParams, page: 1 }, { replace: true });
+                                                            }}
                                                         />
                                                         <Icon
                                                             icon="ep:arrow-down"
                                                             width={12}
                                                             height={12}
-                                                            className={`cursor-pointer transition-colors ${col.filterStatus.currentFilter === false
+                                                            className={`cursor-pointer transition-colors ${params[col.key] === false
                                                                 ? "text-blue-600"
                                                                 : "text-gray-400 hover:text-gray-600"
                                                                 }`}
-                                                            onClick={() => col.filterStatus?.onFilter(false)}
+                                                            onClick={() => {
+                                                                const newVal = params[col.key] === false ? undefined : false;
+                                                                const newParams = { ...params, [col.key]: newVal };
+                                                                if (newVal === undefined) delete newParams[col.key];
+                                                                setParams({ ...newParams, page: 1 }, { replace: true });
+                                                            }}
                                                         />
                                                     </div>
                                                 )}

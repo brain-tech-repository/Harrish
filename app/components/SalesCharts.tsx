@@ -772,6 +772,13 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
     color: ['#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899'][idx % 10]
   })) || [];
 
+  // Comparison Data
+  const topCategoriesCurrent = dashboardData?.top_categories_current || [];
+  const topCategoriesPrevious = dashboardData?.top_categories_previous || [];
+  const topItemsCurrent = dashboardData?.top_items_current || [];
+  const topItemsPrevious = dashboardData?.top_items_previous || [];
+  const comparisonTrend = dashboardData?.trend || [];
+
   const totalSalesmen = topSalesmenChartData.reduce((sum: number, item: any) => sum + item.value, 0);
   const totalWarehouses = topWarehousesChartData.reduce((sum: number, item: any) => sum + item.value, 0);
   const totalCustomers = topCustomersChartData.reduce((sum: number, item: any) => sum + item.value, 0);
@@ -1166,6 +1173,11 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
               {selectedMaxView === 'leastSold' && 'Least Selling Item Details'}
               {selectedMaxView === 'leastPurchased' && 'Least Purchased Item Details'}
               {selectedMaxView === 'poOrderOverTime' && 'PO Order Over Time Details'}
+              {selectedMaxView === 'comparisonTopCategoriesCurrent' && 'Current Top Categories'}
+              {selectedMaxView === 'comparisonTopItemsCurrent' && 'Current Top Items'}
+              {selectedMaxView === 'comparisonTopItemsPrevious' && 'Previous Top Items'}
+              {selectedMaxView === 'comparisonTopCategoriesPrevious' && 'Previous Top Categories'}
+              {selectedMaxView === 'comparisonTrend' && 'Comparison Trend Details'}
             </h2>
             <button
               onClick={() => setSelectedMaxView(null)}
@@ -2419,6 +2431,235 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                             <td className="px-6 py-4 text-gray-600">{idx + 1}</td>
                             <td className="px-6 py-4 text-gray-800 font-medium">{item.area_name}</td>
                             <td className="px-6 py-4 text-right text-gray-800 font-semibold">{toInternationalNumber(item.total_sales || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Comparison Charts Maximized Views */}
+            {selectedMaxView === 'comparisonTopCategoriesCurrent' && topCategoriesCurrent.length > 0 && (
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Current Top Categories</h3>
+                  <div className="w-full h-[520px]">
+                    <Column3DChart
+                      data={topCategoriesCurrent.map((i: any) => ({ name: i.item_category_name, value: i.current_sales }))}
+                      xAxisKey="name"
+                      yAxisKey="value"
+                      colors={['#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899']}
+                      height="480px"
+                    />
+                  </div>
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Current Top Categories Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Category Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topCategoriesCurrent.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{index + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.item_category_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">
+                              {item.current_sales?.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedMaxView === 'comparisonTopItemsCurrent' && topItemsCurrent.length > 0 && (
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Current Top Items</h3>
+                  <div className="w-full h-[520px]">
+                    <Column3DChart
+                      data={topItemsCurrent.map((i: any) => ({ name: i.item_name, value: i.current_sales }))}
+                      xAxisKey="name"
+                      yAxisKey="value"
+                      colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                      height="480px"
+                    />
+                  </div>
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Current Top Items Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Item Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topItemsCurrent.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{index + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.item_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">
+                              {item.current_sales?.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedMaxView === 'comparisonTopItemsPrevious' && topItemsPrevious.length > 0 && (
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Top Items</h3>
+                  <div className="w-full h-[520px]">
+                    <Column3DChart
+                      data={topItemsPrevious.map((i: any) => ({ name: i.item_name, value: i.previous_sales }))}
+                      xAxisKey="name"
+                      yAxisKey="value"
+                      colors={['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981', '#14b8a6', '#0ea5e9', '#06b6d4', '#f59e0b', '#f97316']}
+                      height="480px"
+                    />
+                  </div>
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Top Items Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Item Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topItemsPrevious.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{index + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.item_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">
+                              {item.previous_sales?.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedMaxView === 'comparisonTopCategoriesPrevious' && topCategoriesPrevious.length > 0 && (
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Top Categories</h3>
+                  <div className="w-full h-[520px]">
+                    <Column3DChart
+                      data={topCategoriesPrevious.map((i: any) => ({ name: i.item_category_name, value: i.previous_sales }))}
+                      xAxisKey="name"
+                      yAxisKey="value"
+                      colors={['#8b5cf6', '#a78bfa', '#c084fc', '#d8b4fe', '#f3e8ff', '#818cf8', '#6366f1', '#4f46e5', '#3730a3', '#312e81']}
+                      height="480px"
+                    />
+                  </div>
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Previous Top Categories Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Rank</th>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Category Name</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topCategoriesPrevious.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-600">{index + 1}</td>
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.item_category_name}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">
+                              {item.previous_sales?.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedMaxView === 'comparisonTrend' && comparisonTrend.length > 0 && (
+              <>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Comparison Trend</h3>
+                  <div className="w-full h-[500px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={comparisonTrend} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="period" tick={(props) => {
+                          const { x, y, payload } = props;
+                          return (
+                            <g transform={`translate(${x},${y}) rotate(-45)`}>
+                              <text
+                                x={0}
+                                y={0}
+                                dy={10}
+                                textAnchor="end"
+                                fill="#4b5563"
+                                fontSize={11}
+                              >
+                                {payload.value}
+                              </text>
+                            </g>
+                          );
+                        }} textAnchor="end" height={80} />
+                        <YAxis tickFormatter={(value) => `${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
+                        <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                        <Legend verticalAlign="top" height={36} />
+                        <Line name="Current" type="monotone" dataKey="current_sales" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                        <Line name="Previous" type="monotone" dataKey="previous_sales" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="bg-white p-6 border rounded-lg shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4">Comparison Trend Table</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2 border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left font-semibold text-gray-700">Period</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Current Sales</th>
+                          <th className="px-6 py-4 text-right font-semibold text-gray-700">Previous Sales</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comparisonTrend.map((item: any, index: number) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-6 py-4 text-gray-800 font-medium">{item.period}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{item.current_sales?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                            <td className="px-6 py-4 text-right text-gray-800 font-semibold">{item.previous_sales?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -4256,6 +4497,157 @@ const SalesCharts: React.FC<SalesChartsProps> = ({
                   <Line type="monotone" dataKey="Total Orders" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   <Line type="monotone" dataKey="Order Pending" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   <Line type="monotone" dataKey="Delivery Pending" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Comparison Report Type Logic
+  if (reportType === 'comparison') {
+    return (
+      <div className="mt-5 space-y-6">
+        <MaximizedView />
+
+        {/* Current Top Categires & Items */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {topCategoriesCurrent.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Current Top Categories</h3>
+                <button
+                  onClick={() => setSelectedMaxView('comparisonTopCategoriesCurrent')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[400px]">
+                <Column3DChart
+                  data={topCategoriesCurrent.map((i: any) => ({ name: i.item_category_name, value: i.current_sales }))}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899']}
+                  height="400px"
+                />
+              </div>
+            </div>
+          )}
+
+          {topItemsCurrent.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Current Top Items</h3>
+                <button
+                  onClick={() => setSelectedMaxView('comparisonTopItemsCurrent')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[400px]">
+                <Column3DChart
+                  data={topItemsCurrent.map((i: any) => ({ name: i.item_name, value: i.current_sales }))}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#a78bfa', '#f472b6', '#fb7185', '#fdba74', '#fde047']}
+                  height="400px"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Previous Top Categires & Items */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {topItemsPrevious.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Previous Top Items</h3>
+                <button
+                  onClick={() => setSelectedMaxView('comparisonTopItemsPrevious')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[400px]">
+                <Column3DChart
+                  data={topItemsPrevious.map((i: any) => ({ name: i.item_name, value: i.previous_sales }))}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981', '#14b8a6', '#0ea5e9', '#06b6d4', '#f59e0b', '#f97316']}
+                  height="400px"
+                />
+              </div>
+            </div>
+          )}
+
+          {topCategoriesPrevious.length > 0 && (
+            <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Previous Top Categories</h3>
+                <button
+                  onClick={() => setSelectedMaxView('comparisonTopCategoriesPrevious')}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Maximize2 size={16} />
+                </button>
+              </div>
+              <div className="w-full h-[400px]">
+                <Column3DChart
+                  data={topCategoriesPrevious.map((i: any) => ({ name: i.item_category_name, value: i.previous_sales }))}
+                  xAxisKey="name"
+                  yAxisKey="value"
+                  colors={['#8b5cf6', '#a78bfa', '#c084fc', '#d8b4fe', '#f3e8ff', '#818cf8', '#6366f1', '#4f46e5', '#3730a3', '#312e81']}
+                  height="400px"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Trend Chart */}
+        {comparisonTrend.length > 0 && (
+          <div className="bg-white p-5 border rounded-lg shadow-sm border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Comparison Trend</h3>
+              <button
+                onClick={() => setSelectedMaxView('comparisonTrend')}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            <div className="w-full h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={comparisonTrend} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="period" tick={(props) => {
+                    const { x, y, payload } = props;
+                    return (
+                      <g transform={`translate(${x},${y}) rotate(-45)`}>
+                        <text
+                          x={0}
+                          y={0}
+                          dy={10}
+                          textAnchor="end"
+                          fill="#4b5563"
+                          fontSize={11}
+                        >
+                          {payload.value}
+                        </text>
+                      </g>
+                    );
+                  }} textAnchor="end" height={80} />
+                  <YAxis tickFormatter={(value) => `${formatNumberShort(value)}`} tick={{ fontSize: 13 }} />
+                  <Tooltip formatter={(value: any) => `${value.toLocaleString()}`} />
+                  <Legend verticalAlign="top" height={36} />
+                  <Line name="Current" type="monotone" dataKey="current_sales" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line name="Previous" type="monotone" dataKey="previous_sales" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
