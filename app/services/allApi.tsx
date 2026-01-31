@@ -2334,6 +2334,16 @@ export const approvalWorkfolowUpdate = async (payload: object) => {
   }
 };
 
+export const assetApprovalStatus = async () => {
+  try {
+    const res = await API.get(
+      `/api/settings/assets-status/dropdown`);
+    return res.data;
+  } catch (error: unknown) {
+    return handleError(error);
+  }
+};
+
 export const workFlowList = async () => {
   try {
     const res = await API.get(
@@ -4296,7 +4306,7 @@ export const routeVisitCustomerImport = async (formData: FormData) => {
 };
 
 
-export const itemPurchase = async ( params?: Params) => {
+export const itemPurchase = async (params?: Params) => {
   try {
     const res = await API.get(`/api/hariss_transaction/po_orders/itembsdpoorders`, { params });
     return res.data;

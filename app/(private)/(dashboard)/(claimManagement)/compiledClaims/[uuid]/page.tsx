@@ -330,10 +330,11 @@ export default function AddEditRoute() {
                   handleChange("warehouse", "");
                   handleChange("vehicleType", "");
                 }}
+                error={errors.warehouse}
               />
-              {errors.warehouse && (
+              {/* {errors.warehouse && (
                 <p className="text-red-500 text-sm mt-1">{errors.warehouse}</p>
-              )}
+              )} */}
             </div>
             <div>
               <SidebarBtn

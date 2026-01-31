@@ -136,10 +136,22 @@ export default function RouteVisits() {
           per_page: pageSize.toString(),
           page: page.toString(),
         });
+         const transformedData = (listRes.data || []).map((item: any) => {
+          const rv = Array.isArray(item.route_visits) && item.route_visits.length > 0 ? item.route_visits[0] : undefined;
+          return {
+            ...item,
+            customer_type:
+              rv && rv.customer_type == 1 ? "Field Customer" : rv && rv.customer_type == 2 ? "Merchandiser" : "",
+            status: rv ? rv.status : "",
+            from_date: rv && rv.from_date ? rv.from_date : "",
+            to_date: rv && rv.to_date ? rv.to_date : "",
+          };
+        });
         setLoading(false);
         return {
-          data: listRes.data || [],
+          data: transformedData,
           total: listRes.pagination.totalPages,
+          totalRecords: listRes.pagination.total,
           currentPage: listRes.pagination.page,
           pageSize: listRes.pagination.per_page,
         };

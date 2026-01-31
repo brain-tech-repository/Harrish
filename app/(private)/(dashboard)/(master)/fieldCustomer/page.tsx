@@ -401,6 +401,7 @@ export default function AgentCustomer() {
             return {
                 data: result?.data || [],
                 total: result?.pagination?.totalPages || 1,
+                totalRecords: result?.pagination?.totalRecords || 1,
                 currentPage: result?.pagination?.page || 1,
                 pageSize: result?.pagination?.limit || pageSize,
             };

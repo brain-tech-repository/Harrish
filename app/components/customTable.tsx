@@ -1969,7 +1969,7 @@ function FilterBy() {
     const activeFilterCount = count;
 
     const toApiPayload = (payload: Record<string, any>) => {
-        const payloadForApi: Record<string, string | number | null> = {};
+        const payloadForApi: Record<string, string | number | null | any> = {};
         Object.keys(payload || {}).forEach((k) => {
             const v = payload[k];
             if (Array.isArray(v)) {

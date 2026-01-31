@@ -10,6 +10,7 @@ import { Icon } from "@iconify-icon/react";
 import Link from "@/app/components/smartLink";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatDate } from "@/app/(private)/(dashboard)/(master)/salesTeam/details/[uuid]/page";
 
 type OptionObj = {
   id: number;
@@ -21,7 +22,7 @@ type Chiller = {
   osa_code: string;
   sap_code: string;
   serial_number: string;
-  acquisition: string;
+  acquisition: string | any;
   assets_type: string;
 
   // Nested API objects
@@ -37,7 +38,7 @@ type Chiller = {
   capacity: string;
   manufacturing_year: string;
   remarks: string;
-  status: number;
+  status: { id: number; name: string };
 };
 
 const title = "Assets Details";
@@ -74,7 +75,7 @@ export default function ViewPage() {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/assetsMaster" back>
+        <Link href="/assetsMaster">
           <Icon icon="lucide:arrow-left" width={24} />
         </Link>
         <h1 className="text-xl font-semibold mb-1">{title}</h1>
@@ -111,10 +112,21 @@ export default function ViewPage() {
         </div>
         {/* action buttons */}
         <div className="flex items-center gap-[10px]">
-          <StatusBtn
-            isActive={chiller?.status ? true : false}
-          />
+          {chiller?.status?.name ? (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
+        ${chiller.status.name.toLowerCase() === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+                }`}
+            >
+              {chiller.status.name}
+            </span>
+          ) : (
+            "-"
+          )}
         </div>
+
       </ContainerCard>
 
 
@@ -140,7 +152,7 @@ export default function ViewPage() {
           <KeyValueData
             title="Acquisition and Vendor Information"
             data={[
-              { key: "Acquisition", value: chiller?.acquisition },
+              { key: "Acquisition", value: formatDate(chiller?.acquisition) },
               { key: "Vendor", value: chiller?.vendor?.name },
               { key: "Manufacturer", value: chiller?.manufacturer?.name },
               // { key: "Country", value: chiller?.country?.name },

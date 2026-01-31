@@ -12,7 +12,7 @@ import { petitClaimList,exportPetitData } from "@/app/services/claimManagement";
 import toInternationalNumber from "@/app/(private)/utils/formatNumber";
 import ImageThumbnail from "@/app/components/ImageThumbnail";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
-
+import { useAllDropdownListData } from "@/app/components/contexts/allDropdownListData";
 
 
 // const dropdownDataList: DropdownItem[] = [
@@ -24,7 +24,84 @@ import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
 // ];
 
 // 🔹 Table columns
-const columns = [
+
+export default function VehiclePage() {
+  const { warehouseAllOptions,ensureWarehouseAllLoaded } = useAllDropdownListData();
+  const { can, permissions } = usePagePermissions();
+  const { setLoading } = useLoading();
+  const [refreshKey, setRefreshKey] = useState(0);
+const [warehouseId, setWarehouseId] = useState<string>("");
+  // Refresh table when permissions load
+  useEffect(() => {
+    if (permissions.length > 0) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  }, [permissions]);
+
+  useEffect(() => {
+    ensureWarehouseAllLoaded();
+  }, [ensureWarehouseAllLoaded]);
+
+
+  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
+  const { showSnackbar } = useSnackbar();
+  const router = useRouter();
+
+  useEffect(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, [warehouseId]);
+  const fetchVehicles = useCallback(
+    async (
+      page: number = 1,
+      pageSize: number = 50
+    ): Promise<listReturnType> => {
+      try {
+        // setLoading(true);
+        const params : any ={page: page.toString(),
+          current_page: pageSize.toString(),}
+        if(warehouseId){
+          params.warehouse_id=warehouseId;
+        }
+        const listRes = await petitClaimList(params);
+        // setLoading(false);
+        return {
+          data: listRes.data || [],
+          total: listRes.pagination.totalPages,
+          currentPage: listRes.pagination.page,
+          pageSize: listRes.pagination.limit,
+        };
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [warehouseId]
+  );
+
+
+
+  const exportFile = async (format: string) => {
+    try {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
+      const response = await exportPetitData({ format,warehouse_id:warehouseId });
+      if (response && typeof response === 'object' && response.url) {
+        await downloadFile(response.url);
+        showSnackbar("File downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to get download URL", "error");
+        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+      }
+    } catch (error) {
+      showSnackbar("Failed to download vehicle data", "error");
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    } finally {
+      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
+    }
+  };
+
+
+  const columns = [
   { key: "osa_code", label: "Code", render: (row: TableDataType) => (<span className="font-semibold text-[#181D27] text-[14px]">{row.osa_code || "-"}</span>) },
   { key: "claim_period", label: "Claim Period", render: (row: TableDataType) => `${row.year || "-"} ${row.month_range || "-"}` },
   
@@ -44,7 +121,18 @@ const columns = [
          
          return <>{code && name? code +"-"+name:"-"}</>;
        },
-       
+        filter: {
+        isFilterable: true,
+        width: 320,
+        filterkey: "warehouse_id",
+        options: warehouseAllOptions,
+        onSelect: (selected: string | string[]) => {
+          const val = Array.isArray(selected) ? selected.join(',') : selected;
+          setWarehouseId(val);
+        },
+        isSingle: false,
+        selectedValue: warehouseId,
+      },
    },
   
   { key: "fuel_amount", label: "Fuel Spport Amount", render: (row: TableDataType) => toInternationalNumber(row.fuel_amount || "-") },
@@ -80,70 +168,6 @@ const columns = [
     ),
   },
 ];
-export default function VehiclePage() {
-  const { can, permissions } = usePagePermissions();
-  const { setLoading } = useLoading();
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Refresh table when permissions load
-  useEffect(() => {
-    if (permissions.length > 0) {
-      setRefreshKey((prev) => prev + 1);
-    }
-  }, [permissions]);
-
-  const [threeDotLoading, setThreeDotLoading] = useState<{ [key: string]: boolean }>({ csv: false, xlsx: false });
-  const { showSnackbar } = useSnackbar();
-  const router = useRouter();
-
-
-  const fetchVehicles = useCallback(
-    async (
-      page: number = 1,
-      pageSize: number = 50
-    ): Promise<listReturnType> => {
-      try {
-        // setLoading(true);
-        const listRes = await petitClaimList({
-          // limit: pageSize.toString(),
-          // page: page.toString(),
-        });
-        // setLoading(false);
-        return {
-          data: listRes.data || [],
-          total: listRes.pagination.totalPages,
-          currentPage: listRes.pagination.page,
-          pageSize: listRes.pagination.limit,
-        };
-      } catch (error: unknown) {
-        console.error("API Error:", error);
-        setLoading(false);
-        throw error;
-      }
-    },
-    []
-  );
-
-
-
-  const exportFile = async (format: string) => {
-    try {
-      setThreeDotLoading((prev) => ({ ...prev, [format]: true }));
-      const response = await exportPetitData({ format });
-      if (response && typeof response === 'object' && response.url) {
-        await downloadFile(response.url);
-        showSnackbar("File downloaded successfully", "success");
-      } else {
-        showSnackbar("Failed to get download URL", "error");
-        setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-      }
-    } catch (error) {
-      showSnackbar("Failed to download vehicle data", "error");
-      setThreeDotLoading((prev) => ({ ...prev, [format]: false }));
-    } finally {
-    }
-  };
-
 
   return (
     <>
