@@ -13,6 +13,7 @@ type FilterComponentProps = FilterRendererProps & {
 import SidebarBtn from "./dashboardSidebarBtn";
 import InputFields from "./inputFields";
 import { regionList, subRegionList, warehouseList, routeList, salesmanList } from "@/app/services/allApi";
+import { assetsStatusList } from "@/app/services/assetsApi";
 
 type DropdownOption = {
   value: string;
@@ -122,6 +123,7 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const [warehouseOptions, setWarehouseOptions] = useState<DropdownOption[]>([]);
   const [routeOptions, setRouteOptions] = useState<DropdownOption[]>([]);
   const [salesmanOptions, setSalesmanOptions] = useState<DropdownOption[]>([]);
+  const [assetsStatusOptions, setAssetsStatusOptions] = useState<DropdownOption[]>([]);
 
   const {
     payload,
@@ -143,6 +145,8 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
     "company_id",
     "salesman_id",
     "model",
+    "status",
+    "request_status",
   ];
 
   const toArray = (v: any) => {
@@ -168,6 +172,30 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
   const routeVal = toArray(payload.route_id);
   const salesVal = toArray(payload.salesman_id);
   const modelNumberVal = toArray(payload.model);
+  const statusVal = toArray(payload.status);
+  const requestStatusVal = toArray(payload.request_status);
+
+  // Fetch Assets Status List
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await assetsStatusList({});
+        const data = Array.isArray(res) ? res : res?.data;
+
+        if (Array.isArray(data)) {
+          const options = data.map((item: any) => ({
+            value: String(item.id),
+            label: `${item.name}`,
+          }));
+          setAssetsStatusOptions(options);
+        }
+      } catch (err) {
+        console.error("Failed to fetch asset status list:", err);
+      }
+    })();
+  }, []);
+
+
 
   // ✅ When Company changes → Fetch Regions
   useEffect(() => {
@@ -590,6 +618,63 @@ export default function FilterComponent(filterProps: FilterComponentProps) {
                 ? raw.split(",").filter(Boolean)
                 : [];
             onChangeArray("model", val);
+          }}
+        />
+      )}
+      {/* Status */}
+      {showFilter("status") && (
+        <InputFields
+          label="Status"
+          name="status"
+          type="select"
+          searchable={true}
+          isSingle={false}
+          multiSelectChips
+          disabled={disabled}
+          options={Array.isArray(assetsStatusOptions) ? assetsStatusOptions : []}
+          value={statusVal as any}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            const val = Array.isArray(raw)
+              ? raw
+              : typeof raw === "string"
+                ? raw.split(",").filter(Boolean)
+                : [];
+            onChangeArray("status", val);
+          }}
+        />
+      )}
+      {showFilter("request_status") && (
+        <InputFields
+          label="Request Status"
+          name="request_status"
+          type="select"
+          searchable={true}
+          isSingle={false}
+          multiSelectChips
+          disabled={disabled}
+          options={[
+            { value: "1", label: "Sales Team Requested" },
+            { value: "2", label: "Area Sales Manager Accepted" },
+            { value: "3", label: "Area Sales Manager Rejected" },
+            { value: "4", label: "Chiller Officer Accepted" },
+            { value: "5", label: "Chiller Officer Rejected" },
+            { value: "6", label: "Completed" },
+            { value: "7", label: "Chiller Manager Rejected" },
+            { value: "8", label: "Sales/Key Manager Rejected" },
+            { value: "9", label: "Refused by Customer" },
+            { value: "10", label: "Fridge Manager Accepted" },
+            { value: "11", label: "Fridge Manager Rejected" },
+          ]}
+          value={requestStatusVal as any}
+          onChange={(e) => {
+            const raw = (e as any)?.target?.value ?? e;
+            const val = Array.isArray(raw)
+              ? raw
+              : typeof raw === "string"
+                ? raw.split(",").filter(Boolean)
+                : [];
+            onChangeArray("request_status", val);
           }}
         />
       )}

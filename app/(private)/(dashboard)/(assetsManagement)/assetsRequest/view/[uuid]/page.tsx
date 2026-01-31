@@ -173,11 +173,22 @@ export default function ViewPage() {
         </div>
         {/* action buttons */}
         <div className="flex items-center gap-[10px]">
-          <div className="flex items-center gap-[10px] text-[14px] font-medium text-[#181D27]">
-            {chillerRequest?.status
-              ? CHILLER_REQUEST_STATUS_MAP[chillerRequest.status] || "-"
-              : "-"}
+          <div className="flex items-center gap-[10px] text-[14px] font-medium">
+            {chillerRequest?.status ? (
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
+        ${Number(chillerRequest.status) === 6
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-700"
+                  }`}
+              >
+                {CHILLER_REQUEST_STATUS_MAP[chillerRequest.status] || "-"}
+              </span>
+            ) : (
+              "-"
+            )}
           </div>
+
 
 
         </div>

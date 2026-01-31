@@ -20,7 +20,7 @@ import {
   chillerRequestList,
   crfExport,
   deleteChillerRequest,
-  // assetrequestGlobalFilter
+  chillerRequestGlobalFilter
 } from "@/app/services/assetsApi";
 import FilterComponent from "@/app/components/filterComponent";
 import { usePagePermissions } from "@/app/(private)/utils/usePagePermissions";
@@ -73,6 +73,7 @@ export default function Page() {
   const [deleteSelectedRow, setDeleteSelectedRow] = useState<string | null>(
     null
   );
+  const [filterPayload, setFilterPayload] = useState<Record<string, any>>({});
   const { warehouseAllOptions, ensureWarehouseAllLoaded } =
     useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>("");
@@ -308,6 +309,46 @@ export default function Page() {
     },
   ];
 
+  const fetchChillerRequestAccordingToGlobalFilter = useCallback(
+    async (
+      payload: Record<string, any>,
+      pageSize: number = 50,
+      pageNo: number = 1
+    ): Promise<listReturnType> => {
+
+      try {
+        setLoading(true);
+        setFilterPayload(payload);
+        const body = {
+          limit: pageSize.toString(),
+          page: pageNo.toString(),
+          filter: payload
+        }
+        const listRes = await chillerRequestGlobalFilter(body);
+        const pagination =
+          listRes.pagination?.pagination || listRes.pagination || {};
+        return {
+          data: listRes.data || [],
+          total: pagination.totalPages || listRes.pagination?.totalPages || 1,
+          totalRecords:
+            pagination.totalRecords || listRes.pagination?.totalRecords || 0,
+          currentPage: pagination.page || listRes.pagination?.page || 1,
+          pageSize: pagination.limit || pageSize,
+        };
+        // fetchOrdersCache.current[cacheKey] = result;
+        // return listRes;
+      } catch (error: unknown) {
+        console.error("API Error:", error);
+        setLoading(false);
+        throw error;
+      }
+      finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return (
     <>
       {/* Table */}
@@ -318,23 +359,36 @@ export default function Page() {
             api: {
               list: fetchTableData,
               search: searchChillerRequest,
+              filterBy: fetchChillerRequestAccordingToGlobalFilter,
             },
             header: {
               title: "Assets Requests",
-              threeDot: [
-                {
-                  icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export CSV",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.csv && exportFile("csv"),
-                },
-                {
-                  icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
-                  label: "Export Excel",
-                  labelTw: "text-[12px] hidden sm:block",
-                  onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
-                },],
-              searchBar: true,
+              exportButton: {
+                threeDotLoading: threeDotLoading,
+                show: true,
+                onClick: () => exportFile("xlsx"),
+              },
+              // threeDot: [
+              //   {
+              //     icon: threeDotLoading.csv ? "eos-icons:three-dots-loading" : "gala:file-document",
+              //     label: "Export CSV",
+              //     labelTw: "text-[12px] hidden sm:block",
+              //     onClick: () => !threeDotLoading.csv && exportFile("csv"),
+              //   },
+              //   {
+              //     icon: threeDotLoading.xlsx ? "eos-icons:three-dots-loading" : "gala:file-document",
+              //     label: "Export Excel",
+              //     labelTw: "text-[12px] hidden sm:block",
+              //     onClick: () => !threeDotLoading.xlsx && exportFile("xlsx"),
+              //   },],
+              searchBar: false,
+              filterRenderer: (props) => (
+                <FilterComponent
+                  currentDate={true}
+                  onlyFilters={["from_date", "to_date", "company_id", "region_id", "area_id", "warehouse_id", "route_id", "salesman_id", 'request_status']}
+                  {...props}
+                />
+              ),
               columnFilter: true,
               // filterRenderer: (props) => (
               //                 <FilterComponent
@@ -417,9 +471,27 @@ export default function Page() {
               {
                 key: "status",
                 label: "Status",
-                render: (data: TableDataType) =>
-                  CHILLER_REQUEST_STATUS_MAP[data.status ?? ""] || "-",
-              },
+                render: (data: TableDataType) => {
+                  const statusId = data.status;
+                  const label = CHILLER_REQUEST_STATUS_MAP[statusId ?? ""];
+
+                  const isCompleted = Number(statusId) === 6;
+
+                  return label ? (
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
+          ${isCompleted
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                        }`}
+                    >
+                      {label}
+                    </span>
+                  ) : (
+                    "-"
+                  );
+                },
+              }
             ],
             rowSelection: true,
             rowActions: [

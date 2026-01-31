@@ -183,6 +183,7 @@ export default function AddApprovalFlow() {
         targetType: string;
         roleOrCustomer: string;
         allowApproval: boolean;
+        assetApproval: boolean;
         allowReject: boolean;
         returnToStepNo: boolean;
         canEditBeforeApproval: boolean;
@@ -354,10 +355,13 @@ export default function AddApprovalFlow() {
             }
             else {
                 showSnackbar("Something went wrong.", "error");
-
+                setLoading(false);
             }
         }
         catch (err) {
+            setLoading(false);
+        } finally {
+            setLoading(false);
         }
     };
     const fetchSubmenuList = async () => {
