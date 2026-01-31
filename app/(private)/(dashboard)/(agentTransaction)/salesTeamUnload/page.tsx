@@ -222,16 +222,17 @@ const [threeDotLoading, setThreeDotLoading] = useState({
 
   // ✅ Table Columns
   const columns: configType["columns"] = [
-    { key: "osa_code", label: "Code"},
+    { key: "osa_code", label: "Code",showByDefault: true,},
     { key: "unload_date", label: "Unload Date",render: (row: TableDataType) => {
       return formatWithPattern(
                 new Date(row.unload_date),
                 "DD MMM YYYY",
                 "en-GB",
               );
-            }
+            },
+            showByDefault: true,
     },
-    { key: "unload_time", label: "Unload Time"},
+    { key: "unload_time", label: "Unload Time",showByDefault: true,},
     { key: "laod_date", label: "Load Date",showByDefault: false  },
     {
       key: "salesman",
@@ -243,6 +244,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
             : row.salesman;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      showByDefault: true,
       filter: {
                 isFilterable: true,
                 width: 320,
@@ -264,6 +266,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
             : row.warehouse;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      showByDefault: true,
        filter: {
                 isFilterable: true,
                 width: 320,
@@ -283,6 +286,7 @@ const [threeDotLoading, setThreeDotLoading] = useState({
           typeof row.route === "string" ? JSON.parse(row.route) : row.route;
         return obj ? `${obj.code} - ${obj.name}` : "-";
       },
+      showByDefault: true,
       filter: {
                 isFilterable: true,
                 width: 320,
@@ -294,18 +298,19 @@ const [threeDotLoading, setThreeDotLoading] = useState({
                 selectedValue: routeId,
             },
     },
-    { key: "Salesman_type", label: "Sales Team Role" },
-    { key: "unload_no", label: "Unload No." },
-    { key: "unload_from", label: "Unload By" },
+    { key: "Salesman_type", label: "Sales Team Role",showByDefault: false, },
+    { key: "unload_no", label: "Unload No.",showByDefault: true, },
+    { key: "unload_from", label: "Unload By",showByDefault: true, },
     {
       key: "approval_status",
       label: "Approval Status",
-      // showByDefault: true,
+      showByDefault: false,
       render: (row: TableDataType) => <ApprovalStatus status={row.approval_status || "-"} />,
     },
     {
       key: "status",
       label: "Status",
+      showByDefault: true,
       render: (row: TableDataType) => (<StatusBtn isActive={row.status ? true : false} />),
     },
   ];

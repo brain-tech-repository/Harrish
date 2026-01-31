@@ -102,6 +102,8 @@ const validationSchema = Yup.object({
     .max(100, "Outlet Name cannot exceed 100 characters"),
   contact_number: Yup.string()
     .required("Contact Number is required"),
+  // location: Yup.string()
+  //   .required("Location is required"),
   landmark: Yup.string()
     .trim()
     .max(255, "Landmark cannot exceed 255 characters"),
@@ -136,12 +138,14 @@ const stepSchemas = [
     owner_name: validationSchema.fields.owner_name,
     contact_number: validationSchema.fields.contact_number,
     landmark: validationSchema.fields.landmark,
+    // location: validationSchema.fields.location,
     outlet_id: validationSchema.fields.outlet_id,
     model: validationSchema.fields.model,
   }),
 
   // Step 2: Location and Personnel
   Yup.object().shape({
+    outlet_weekly_sale_volume_current: validationSchema.fields.outlet_weekly_sale_volume_current,
   }),
 
   // Step 3: Chiller Details
@@ -709,7 +713,7 @@ export default function AddCompanyWithStepper() {
   };
 
   const stepFields = [
-    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "outlet_weekly_sale_volume_current", "display_location", "chiller_safty_grill", "model"],
+    ["owner_name", "contact_number", "landmark", "existing_coolers", "outlet_weekly_sale_volume", "display_location", "chiller_safty_grill", "model"],
     ["warehouse_id", "salesman_id", "outlet_id", "manager_sales_marketing"],
     ["national_id", "outlet_stamp", "model", "hil", "ir_reference_no", "installation_done_by", "date_lnitial", "date_lnitial2", "contract_attached", "machine_number", "brand", "asset_number"],
     ["lc_letter", "trading_licence", "password_photo", "outlet_address_proof", "chiller_asset_care_manager", "national_id_file", "password_photo_file", "outlet_address_proof_file", "trading_licence_file", "lc_letter_file", "outlet_stamp_file", "sign__customer_file", "chiller_manager_id", "is_merchandiser", "status", "fridge_status", "iro_id", "remark"]
@@ -982,13 +986,13 @@ export default function AddCompanyWithStepper() {
                   name="location"
                   value={values.location}
                   onChange={(e) => setFieldValue("location", e.target.value)}
-                // error={touched.landmark && errors.landmark}
+                // error={touched.location && errors.location}
                 />
-                <ErrorMessage
+                {/* <ErrorMessage
                   name="location"
                   component="div"
                   className="text-sm text-red-600 mb-1"
-                />
+                /> */}
               </div>
               <div>
                 <InputFields
@@ -1090,11 +1094,11 @@ export default function AddCompanyWithStepper() {
                 //   errors.outlet_weekly_sale_volume
                 // }
                 />
-                <ErrorMessage
+                {/* <ErrorMessage
                   name="outlet_weekly_sale_volume_current"
                   component="div"
                   className="text-sm text-red-600 mb-1"
-                />
+                /> */}
               </div>
 
 

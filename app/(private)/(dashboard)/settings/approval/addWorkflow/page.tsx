@@ -12,7 +12,7 @@ import { Icon } from "@iconify-icon/react";
 import Loading from "@/app/components/Loading";
 // import ApprovalFlowTable from "./dragTable";
 import ApprovalFlowTable from "./dragTable";
-import { submenuList, roleList, userList, approvalAdd } from "@/app/services/allApi";
+import { submenuList, roleList, approvalAdd } from "@/app/services/allApi";
 // import {VerticalArrow} from "./proccessFlow";
 
 type OldStep = {
@@ -313,6 +313,7 @@ export default function AddApprovalFlow() {
         } finally {
             setLoading(false);
         }
+
     };
     const fetchSubmenuList = async () => {
         try {
@@ -347,30 +348,11 @@ export default function AddApprovalFlow() {
         }
     }
 
-    const fetchUsersList = async () => {
-        try {
 
-            const res = await userList();
-            const usersDataList: { value: string, label: string }[] = []
-            res.data.map((item: { id: number, name: string }) => {
-                usersDataList.push({ value: item.id.toString(), label: item.name });
-
-            })
-
-            setUsersData(usersDataList);
-
-            // API call to fetch users based on roleName can be implemented here
-            // For now, we are using the dummy data defined above
-        }
-        catch (err) {
-
-        }
-    }
 
     useEffect(() => {
         fetchSubmenuList();
         fetchUsersRoleWise();
-        fetchUsersList();
         // Fetch any initial data if needed
     }, []);
 

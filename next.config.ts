@@ -475,6 +475,7 @@ const nextConfig: NextConfig = {
       { source: '/itemreport', destination: '/itemReport' },
       { source: '/attendencereport', destination: '/attendenceReport' },
       { source: '/poorderreport', destination: '/poOrderReport' },
+      { source: '/comparisonreport', destination: '/comparisonReport' },
 
       // alert
       { source: '/alert/add', destination: '/alert/add' },
@@ -521,6 +522,7 @@ const nextConfig: NextConfig = {
 
       { source: '/settings/approval/addworkflow', destination: '/settings/approval/addworkflow' },
       { source: '/settings/approval/:uuid', destination: '/settings/approval/:uuid' },
+      { source: '/settings/approval/addworkflow', destination: '/settings/approval/addworkflow' },
       { source: '/settings/approval', destination: '/settings/approval' },
       { source: '/settings/approval/assignworkflow', destination: '/settings/approval/assignworkflow' },
 
