@@ -80,8 +80,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const [selectedDataview, setSelectedDataview] = useState('default');
   const [searchType, setSearchType] = useState<string>();
   const [reportBy, setReportBy] = useState<string>();
-  const [month, setMonth] = useState<string>();
-  const [year, setYear] = useState<string>();
+  const [month, setMonth] = useState<string>(currentDateISO.substring(0, 7));
+  const [year, setYear] = useState<string>(currentDateISO.substring(0, 4));
   const [displayQuantity, setDisplayQuantity] = useState<string>();
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 50; // pagination size
@@ -199,19 +199,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     // Check if at least one filter is selected
     const hasFilterSelections = Object.values(selectedChildItems).some(items => items.length > 0);
     if (!hasFilterSelections) {
-      showSnackbar('Please select at least one filter (Company, Region, Area, etc.) before loading dashboard data', 'warning');
+      showSnackbar('Please select at least one filter before loading dashboard data', 'warning');
       return;
     }
 
     setIsLoadingDashboard(true);
     setDashboardError(null);
 
-    let selectedDate = reportBy === 'day' ? dateFilter
-      : reportBy === 'month' ? month
-        : reportBy === 'year' ? year
-          : null;
 
     try {
+      let selectedDate = reportBy === 'day' ? dateFilter
+        : reportBy === 'month' ? (month ? `${month}-01` : null)
+          : reportBy === 'year' ? (year ? `${year}-01-01` : null)
+            : null;
+
       // Build the payload with all filter types
       const payload: any = {
         ...(reportType !== 'comparison' ? {
@@ -477,14 +478,14 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       return;
     }
 
-    if (!startDate || !endDate) {
+    if (!["comparison"].includes(reportType) && (!startDate || !endDate)) {
       showSnackbar('Please select a date range before loading table data', 'warning');
       return;
     }
 
     // Validate search type selection
     if (!["poOrder"].includes(reportType) && !searchType) {
-      showSnackbar('Please select the search type (Type by Price or Type by Quantity)', 'warning');
+      showSnackbar('Please select the search type (Type by Amount or Type by Quantity)', 'warning');
       return;
     }
 
@@ -496,16 +497,39 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
     setIsLoadingTable(true);
     try {
-      // Get only the lowest-level filter for table data
-      const lowestLevelFilters = getLowestLevelFilters();
+      // for comparison report
+      let selectedDate = reportBy === 'day' ? dateFilter
+        : reportBy === 'month' ? (month ? `${month}-01` : null)
+          : reportBy === 'year' ? (year ? `${year}-01-01` : null)
+            : null;
 
+      // Get only the lowest-level filter for table data
+      let lowestLevelFilters;
+      if (reportType !== "comparison") lowestLevelFilters = getLowestLevelFilters();
+
+      let filters: Record<string, number[]> = {};
+      if (reportType === "comparison") {
+        Object.entries(selectedChildItems).forEach(([filterId, items]) => {
+          if (items.length > 0) {
+            const key = `${filterId}_ids`;
+            filters[key] = (items as string[]).map((id: string) => parseInt(id));
+          }
+        });
+      }
       // Build the request payload with dates and only the lowest filter
       const payload = {
-        from_date: startDate,
-        to_date: endDate,
+        ...(reportType !== 'comparison' ? {
+          from_date: startDate,
+          to_date: endDate,
+        } : {}),
+        ...(reportType === 'comparison' ? {
+          report_by: reportBy,
+          selected_date: selectedDate,
+
+        } : {}),
         search_type: searchType,
         display_quantity: displayQuantity,
-        ...lowestLevelFilters // Spread only the lowest-level filter IDs
+        ...(reportType === "comparison" ? filters : lowestLevelFilters) // Spread only the lowest-level filter IDs
       };
 
       const response = await fetch(`${apiEndpoints.table}?page=${page || 1}`, {
@@ -556,8 +580,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       });
 
       let selectedDate = reportBy === 'day' ? dateFilter
-        : reportBy === 'month' ? month
-          : reportBy === 'year' ? year
+        : reportBy === 'month' ? (month ? `${month}-01` : null)
+          : reportBy === 'year' ? (year ? `${year}-01-01` : null)
             : null;
 
       // Build the payload with file_type and view_type
@@ -767,6 +791,22 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         lowestFilter = filterId;
         break;
       }
+    }
+
+    // Special handling for comparison report type
+    if (reportType === 'comparison') {
+      return {
+        type: 'comparison',
+        columns: [
+          { label: 'Item Name', field: 'item_name' },
+          { label: 'Current Period', field: 'current_period', width: 250 },
+          { label: 'Previous Period', field: 'previous_period', width: 250 },
+          { label: 'Current Sales', field: 'current_sales' },
+          { label: 'Previous Sales', field: 'previous_sales' },
+          { label: 'Difference', field: 'difference' },
+          { label: 'Growth Percent', field: 'growth_percent' }
+        ]
+      };
     }
 
     // Special handling for customer report type - show customer-centric columns
@@ -1274,7 +1314,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
               </div>)}
 
-              {reportByOptions.length > 0 && (<div className="relative w-full sm:w-auto">
+              {reportByOptions.length > 0 && reportType === 'comparison' && (<div className="relative w-full sm:w-auto">
                 <select
                   value={reportBy}
                   onChange={(e) => setReportBy(e.target.value)}
@@ -1371,7 +1411,12 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
               )
                 : ['attendence', 'poOrder', 'comparison'].includes(reportType) ? (
                   <AttendenceExportButtons
-                    onExport={() => handleExport(reportType === 'attendence' ? 'attendence-report' : 'po-order-report')}
+                    onExport={() => handleExport(
+                      reportType === 'attendence' ? 'attendence-report'
+                        : reportType === 'poOrder' ? 'po-order-report'
+                          : reportType === 'comparison' ? 'comparison-report'
+                            : "null"
+                    )}
                     isLoading={isExporting}
                   />
                 )
@@ -1587,7 +1632,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                         })}
                       </div>
                       {droppedFilters.length > 0 && (
-                        <button onClick={handleClearAllFilters} className="text-[#252B37] italic text-xs sm:text-sm underline hover:text-red-600 whitespace-nowrap mt-2 sm:mt-0 self-start sm:self-auto">Clear Filter</button>
+                        <button onClick={handleClearAllFilters} className="cursor-pointer text-[#252B37] italic text-xs sm:text-sm underline hover:text-red-600 whitespace-nowrap mt-2 sm:mt-0 self-start sm:self-auto">Clear Filter</button>
                       )}
                     </div>
                   </div>
@@ -1663,6 +1708,10 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Items</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Distributor</th>
                                   </>
+                                ) : reportType === 'comparison' ? (
+                                  dynamicColumn.columns.map((col: any, idx: number) => (
+                                    <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700" style={col.width ? { width: Number(col.width), minWidth: Number(col.width) } : undefined}>{col.label}</th>
+                                  ))
                                 ) : dynamicColumn.type === 'customer-report' ? (
                                   dynamicColumn.columns.map((col: any, idx: number) => (
                                     <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{col.label}</th>
@@ -1711,6 +1760,18 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.unique_item_count || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.warehouse_name || '-'}</td>
                                     </>
+                                  ) : reportType === 'comparison' ? (
+                                    dynamicColumn.columns.map((col: any, idx: number) => {
+                                      let value = row[col.field];
+                                      if (['current_sales', 'previous_sales', 'difference'].includes(col.field)) {
+                                        value = value !== undefined ? toInternationalNumber(value) : '-';
+                                      } else if (col.field === 'growth_percent') {
+                                        value = value !== undefined ? `${Number(value).toFixed(2)}%` : '-';
+                                      } else {
+                                        value = value || '-';
+                                      }
+                                      return <td key={idx} className="px-4 py-3 text-sm text-gray-700">{value}</td>
+                                    })
                                   ) : dynamicColumn.type === 'customer-report' ? (
                                     dynamicColumn.columns.map((col: any, idx: number) => (
                                       <td key={idx} className="px-4 py-3 text-sm text-gray-700">{resolveRowValue(row, col.field) || '-'}</td>
@@ -1799,7 +1860,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                   <button
                                     key={p}
                                     onClick={() => changePage(p + 1)}
-                                    className={`px-3 py-1 border rounded ${apiCurrentPage === p + 1 ? 'bg-gray-900 text-white' : 'bg-white'}`}
+                                    className={`px-3 py-1 border cursor-pointer rounded ${apiCurrentPage === p + 1 ? 'bg-gray-900 text-white' : 'bg-white'}`}
                                   >
                                     {p + 1}
                                   </button>
