@@ -74,7 +74,7 @@ export default function Page() {
     null
   );
   const [filterPayload, setFilterPayload] = useState<Record<string, any>>({});
-  const { warehouseAllOptions, ensureWarehouseAllLoaded } =
+  const { warehouseAllOptions, ensureWarehouseAllLoaded, salesmanOptions, ensureSalesmanLoaded } =
     useAllDropdownListData();
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [salesmanId, setSalesmanId] = useState<string>("");
