@@ -149,7 +149,18 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     'customer-category': { name: 'Customer Category', icon: 'mdi:account-supervisor' },
     customer: { name: 'Customer', icon: 'mdi:account' },
     'display-quantity': { name: 'Display Quantity', icon: 'mdi:numeric' },
-    amount: { name: 'Amount', icon: 'mdi:currency-usd' }
+    amount: { name: 'Amount', icon: 'mdi:currency-usd' },
+    matbrand: { name: 'Material Brand', icon: 'mdi:tag' },
+    matgroup: { name: 'Material Group', icon: 'mdi:shape' },
+    material: { name: 'Material', icon: 'mdi:package-variant' },
+
+
+    //  region: { name: 'Region', icon: 'mingcute:location-line' },
+    'sub-region': { name: 'Sub Region', icon: 'mdi:map-marker' },
+    // warehouse: { name: 'Warehouse', icon: 'hugeicons:warehouse' },
+    // route: { name: 'Route', icon: 'mdi:routes' },
+    trading: { name: 'Trading', icon: 'mdi:store' },
+    // customer: { name: 'Customer', icon: 'mdi:account' }
   };
 
   const hierarchyOrder = [
@@ -177,15 +188,72 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     'channel-categories': ['customer'],
     'customer-category': ['customer']
   };
+  const [phpReportType, setPhpReportType] = useState<string>("1");
+
+
+
 
   // Fetch dashboard data from API
   const fetchDashboardData = async () => {
-    // Validate required fields
-    if (!startDate || !endDate) {
+
+    // 🔹 1️⃣ COMMON DATE VALIDATION (For All Except Comparison)
+    if (reportType !== "comparison" && (!startDate || !endDate)) {
       showSnackbar('Please select a date range before loading dashboard data', 'warning');
       return;
     }
 
+    // 🔥 2️⃣ PHP SPECIAL LOGIC
+   if (reportType === "php") {
+
+  if (!startDate || !endDate) {
+    showSnackbar('Please select a date range before loading dashboard data', 'warning');
+    return;
+  }
+
+  setIsLoadingDashboard(true);
+  setDashboardError(null);
+
+  try {
+
+    const payload = {
+      fromdate: startDate,
+      todate: endDate,
+      region_id: selectedChildItems['region']?.join(',') || "",
+      sub_region_id: selectedChildItems['sub-region']?.join(',') || "",
+      warehouse_id: selectedChildItems['warehouse']?.join(',') || "",
+      route_id: selectedChildItems['route']?.join(',') || "",
+      trading_center_id: selectedChildItems['trading']?.join(',') || "",
+      customer_id: selectedChildItems['customer']?.join(',') || "",
+      brand_id: selectedChildItems['matbrand']?.join(',') || "",
+      material_group_id: selectedChildItems['matgroup']?.join(',') || "",
+      material_id: selectedChildItems['material']?.join(',') || "",
+      report_type: String(phpReportType)
+    };
+
+    console.log("FINAL PHP PAYLOAD:", payload);
+
+    const response = await axios.post(
+      apiEndpoints.dashboard,
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    setDashboardData(response.data);
+
+  } catch (error) {
+    console.error("PHP Dashboard error:", error);
+    showSnackbar("Failed to load dashboard data", "error");
+  } finally {
+    setIsLoadingDashboard(false);
+  }
+
+  return;
+}
+
+
+
+
+    // 🔹 3️⃣ NON-PHP VALIDATIONS
     if (!["poOrder"].includes(reportType) && !searchType) {
       showSnackbar('Please select the search type (Amount or Quantity)', 'warning');
       return;
@@ -196,8 +264,9 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       return;
     }
 
-    // Check if at least one filter is selected
-    const hasFilterSelections = Object.values(selectedChildItems).some(items => items.length > 0);
+    const hasFilterSelections = Object.values(selectedChildItems)
+      .some(items => items.length > 0);
+
     if (!hasFilterSelections) {
       showSnackbar('Please select at least one filter before loading dashboard data', 'warning');
       return;
@@ -206,23 +275,25 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     setIsLoadingDashboard(true);
     setDashboardError(null);
 
-
     try {
-      let selectedDate = reportBy === 'day' ? dateFilter
-        : reportBy === 'month' ? (month ? `${month}-01` : null)
-          : reportBy === 'year' ? (year ? `${year}-01-01` : null)
-            : null;
 
-      // Build the payload with all filter types
+      let selectedDate =
+        reportBy === 'day' ? dateFilter
+          : reportBy === 'month' ? (month ? `${month}-01` : null)
+            : reportBy === 'year' ? (year ? `${year}-01-01` : null)
+              : null;
+
       const payload: any = {
         ...(reportType !== 'comparison' ? {
           from_date: startDate,
           to_date: endDate,
         } : {}),
+
         ...(reportType === 'comparison' ? {
           report_by: reportBy,
           selected_date: selectedDate
         } : {}),
+
         search_type: searchType,
         display_quantity: displayQuantity,
         company_ids: selectedChildItems['company']?.map(id => parseInt(id)) || [],
@@ -238,17 +309,6 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
         customer_ids: selectedChildItems['customer']?.map(id => parseInt(id)) || []
       };
 
-      // Check URL size to prevent exceeding limits
-      const payloadString = JSON.stringify(payload);
-      const estimatedUrlSize = apiEndpoints.dashboard.length + payloadString.length;
-      const MAX_URL_SIZE = 8000; // Safe limit for most servers (typical limit is 8192)
-
-      if (estimatedUrlSize > MAX_URL_SIZE) {
-        showSnackbar('Too many filters selected! URL size exceeds safe limit. Please reduce your selection.', 'error');
-        setIsLoadingDashboard(false);
-        return;
-      }
-
       const response = await axios.post(
         apiEndpoints.dashboard,
         payload,
@@ -261,17 +321,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       );
 
       setDashboardData(response.data);
+
     } catch (error) {
       console.error('Dashboard fetch failed:', error);
       const errorMessage = axios.isAxiosError(error)
         ? error.response?.data?.detail || error.message
         : 'Failed to load dashboard data';
+
       setDashboardError(errorMessage);
       showSnackbar(errorMessage, 'error');
     } finally {
       setIsLoadingDashboard(false);
     }
   };
+
 
   const handleDashboardClick = () => {
     const searchByIds = ['salesman', 'route'];
@@ -300,6 +363,153 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   // Fetch filters from API
   const fetchFiltersData = async (currentFilterId?: string, onDrop?: boolean) => {
     setFilterError(null);
+
+ if (reportType === "php") {
+  try {
+
+    // 🔹 FIRST LOAD (Independent + Region)
+    if (!currentFilterId && availableFilters.length === 0) {
+
+      const [
+        regionRes,
+        brandRes,
+        groupRes,
+        materialRes
+      ] = await Promise.all([
+        fetch("http://165.227.64.72/mpldev/index.php/api/get_region_dashboard"),
+        fetch("http://165.227.64.72/mpldev/index.php/api/get_matbrands_dashboard"),
+        fetch("http://165.227.64.72/mpldev/index.php/api/get_matgroups_dashboard"),
+        fetch("http://165.227.64.72/mpldev/index.php/api/get_materials_dashboard")
+      ]);
+
+      const regionData = (await regionRes.json())?.Result || [];
+      const brandData = (await brandRes.json())?.Result || [];
+      const groupData = (await groupRes.json())?.Result || [];
+      const materialData = (await materialRes.json())?.Result || [];
+
+      setAvailableFilters([
+        {
+          id: "region",
+          name: "Region",
+          icon: "mingcute:location-line",
+          childData: regionData.map((r: any) => ({
+            id: String(r.id),
+            name: r.region_name
+          }))
+        },
+        {
+          id: "matbrand",
+          name: "Material Brand",
+          icon: filterMetadata["matbrand"]?.icon || "mdi:tag",
+          childData: brandData.map((b: any) => ({
+            id: String(b.id),
+            name: b.brand_name
+          }))
+        },
+        {
+          id: "matgroup",
+          name: "Material Group",
+          icon: filterMetadata["matgroup"]?.icon || "mdi:shape",
+          childData: groupData.map((g: any) => ({
+            id: String(g.id),
+            name: g.category_name
+          }))
+        },
+        {
+          id: "material",
+          name: "Material",
+          icon: filterMetadata["material"]?.icon || "mdi:package-variant",
+          childData: materialData.map((m: any) => ({
+            id: String(m.id),
+            name: m.material_name
+          }))
+        }
+      ]);
+
+      return;
+    }
+
+    // 🔹 CASCADE ONLY FOR REGION HIERARCHY
+    if (!currentFilterId) return;
+
+    const selectedIds = selectedChildItems[currentFilterId]?.join(",");
+    if (!selectedIds) return;
+
+    const apiMap: Record<string, {
+      endpoint: string;
+      nextId: string;
+      label: string;
+      field: string;
+    }> = {
+      region: {
+        endpoint: "get_sub_region_dashboard",
+        nextId: "sub-region",
+        label: "Sub Region",
+        field: "sub_region_name"
+      },
+      "sub-region": {
+        endpoint: "get_warehouse_dashboard",
+        nextId: "warehouse",
+        label: "Warehouse",
+        field: "warehouse_name"
+      },
+      warehouse: {
+        endpoint: "get_route_dashboard",
+        nextId: "route",
+        label: "Route",
+        field: "route_name"
+      },
+      route: {
+        endpoint: "get_trading_dashboard",
+        nextId: "trading",
+        label: "Trading",
+        field: "trading_name"
+      },
+      trading: {
+        endpoint: "get_customer_dashboard",
+        nextId: "customer",
+        label: "Customer",
+        field: "customer_name"
+      }
+    };
+
+    const config = apiMap[currentFilterId];
+    if (!config) return;
+
+    const response = await fetch(
+      `http://165.227.64.72/mpldev/index.php/api/${config.endpoint}/${selectedIds}`
+    );
+
+    const json = await response.json();
+    const data = json?.Result || [];
+
+    setAvailableFilters(prev => {
+      const withoutNext = prev.filter(f => f.id !== config.nextId);
+
+      return [
+        ...withoutNext,
+        {
+          id: config.nextId,
+          name: config.label,
+          icon: filterMetadata[config.nextId]?.icon || "mdi:circle",
+          childData: data.map((item: any) => ({
+            id: String(item.id),
+            name: item[config.field]
+          }))
+        }
+      ];
+    });
+
+    return;
+
+  } catch (error) {
+    console.error("PHP filter fetch error:", error);
+  }
+}
+
+
+
+
 
     // Determine which filters need to be loaded based on selections
     const filtersToLoad = new Set<string>();
@@ -330,33 +540,66 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
       // Build query params
       const params = new URLSearchParams();
 
-      if (selectedChildItems['company']?.length) {
-        params?.append('company_ids', selectedChildItems['company'].join(','));
-      }
-      if (selectedChildItems['region']?.length) {
-        params?.append('region_ids', selectedChildItems['region'].join(','));
-      }
-      if (selectedChildItems['area']?.length) {
-        params?.append('area_ids', selectedChildItems['area'].join(','));
-      }
-      if (selectedChildItems['warehouse']?.length) {
-        params?.append('warehouse_ids', selectedChildItems['warehouse'].join(','));
-      }
-      if (selectedChildItems['route']?.length || selectedChildItems['salesman']?.length) {
-        const searchBy = [...(selectedChildItems['route'] || []), ...(selectedChildItems['salesman'] || [])].join(',');
-        if (searchBy) params?.append('search_by', searchBy);
-      }
-      if (selectedChildItems['item-category']?.length) {
-        params?.append('item_category_ids', selectedChildItems['item-category'].join(','));
-      }
-      if (selectedChildItems['channel-categories']?.length) {
-        const channelIds = selectedChildItems['channel-categories'].join(',');
-        params?.append('channel_category_ids', channelIds);
-        params?.append('customer_channel_ids', channelIds);
-      }
-      if (selectedChildItems['customer-category']?.length) {
-        params?.append('customer_category_ids', selectedChildItems['customer-category'].join(','));
-      }
+      params.append(
+        'company_ids',
+        selectedChildItems['company']?.join(',') || ''
+      );
+
+      params.append(
+        'region_ids',
+        selectedChildItems['region']?.join(',') || ''
+      );
+
+      params.append(
+        'area_ids',
+        selectedChildItems['area']?.join(',') || ''
+      );
+
+      params.append(
+        'warehouse_ids',
+        selectedChildItems['warehouse']?.join(',') || ''
+      );
+
+      // Combine route + salesman
+      const searchBy =
+        [
+          ...(selectedChildItems['route'] || []),
+          ...(selectedChildItems['salesman'] || [])
+        ].join(',');
+
+      params.append('search_by', searchBy || '');
+
+      params.append(
+        'item_category_ids',
+        selectedChildItems['item-category']?.join(',') || ''
+      );
+
+      const channelIds =
+        selectedChildItems['channel-categories']?.join(',') || '';
+
+      params.append('channel_category_ids', channelIds);
+      params.append('customer_channel_ids', channelIds);
+
+      params.append(
+        'customer_category_ids',
+        selectedChildItems['customer-category']?.join(',') || ''
+      );
+
+      params.append(
+        'brand_id',
+        selectedChildItems['matbrand']?.join(',') || ''
+      );
+
+      params.append(
+        'material_group_id',
+        selectedChildItems['matgroup']?.join(',') || ''
+      );
+
+      params.append(
+        'material_id',
+        selectedChildItems['material']?.join(',') || ''
+      );
+
 
       const queryString = params?.toString();
       const url = `${apiEndpoints.filters}${queryString ? `?${queryString}` : ''}`;
@@ -473,6 +716,63 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Fetch Table Data function
   const handleTableView = async (page?: number) => {
+    if (reportType === "php") {
+
+
+
+      setIsLoadingTable(true);
+      try {
+        const payload: any = {
+          from_date: startDate,
+          to_date: endDate,
+          report_type: phpReportType // 👈 now "1" or "2"
+        };
+
+
+
+        if (selectedChildItems['region']?.length)
+          payload.region_ids = selectedChildItems['region'].map(id => parseInt(id));
+
+        if (selectedChildItems['sub-region']?.length)
+          payload.sub_region_ids = selectedChildItems['sub-region'].map(id => parseInt(id));
+
+        if (selectedChildItems['warehouse']?.length)
+          payload.warehouse_ids = selectedChildItems['warehouse'].map(id => parseInt(id));
+
+        if (selectedChildItems['route']?.length)
+          payload.route_ids = selectedChildItems['route'].map(id => parseInt(id));
+
+        if (selectedChildItems['trading']?.length)
+          payload.trading_ids = selectedChildItems['trading'].map(id => parseInt(id));
+
+        if (selectedChildItems['customer']?.length)
+          payload.customer_ids = selectedChildItems['customer'].map(id => parseInt(id));
+
+        const response = await fetch(apiEndpoints.table, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        // normalize response format
+        if (Array.isArray(data)) {
+          setTableData({ data });
+        } else {
+          setTableData(data);
+        }
+
+      } catch (error) {
+        console.error("PHP table fetch failed", error);
+      } finally {
+        setIsLoadingTable(false);
+      }
+      return;
+    }
+
     if (droppedFilters.length === 0 || Object.values(selectedChildItems).every(items => items.length === 0)) {
       showSnackbar('Please drag and drop at least one filter with selections to view table data', 'warning');
       return;
@@ -1126,6 +1426,8 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   };
 
   const handleChildItemToggle = (filterId: string, childItemId: string) => {
+
+
     lastChangedFilterRef.current = filterId;
     setSelectedChildItems(prev => {
       const current = prev[filterId] || [];
@@ -1158,6 +1460,7 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           }
         });
       }
+
       return newState;
     });
   };
@@ -1199,13 +1502,34 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Organize filters into groups
   // For customer reportType, show route directly with other visible filters
-  const visibleFilters = reportType === 'sales'
-    ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
-    : reportType === 'customer' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
-      : reportType === 'item' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
-        : reportType === 'attendence' || reportType === 'comparison' ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
-          : reportType === 'poOrder' ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
-            : [];
+  const visibleFilters =
+    reportType === 'sales'
+      ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
+      : reportType === 'customer'
+        ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route'].includes(f.id))
+        : reportType === 'item'
+          ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse', 'route', 'items', 'item-category', 'item_brands'].includes(f.id))
+          : reportType === 'attendence' || reportType === 'comparison'
+            ? availableFilters.filter(f => ['warehouse', 'salesman'].includes(f.id))
+            : reportType === 'poOrder'
+              ? availableFilters.filter(f => ['company', 'region', 'area', 'warehouse'].includes(f.id))
+              : reportType === 'php'
+                ? availableFilters.filter(f =>
+                  [
+                    'region',
+                    'sub-region',
+                    'warehouse',
+                    'route',
+                    'trading',
+                    'customer',
+                    'matbrand',
+                    'matgroup',
+                    'material'
+                  ].includes(f.id)
+                )
+
+                : [];
+
 
   // For customer reportType, don't show searchby dropdown. For sales, show both salesman and route
   const searchby = reportType === 'sales' ? availableFilters.filter(f => ['salesman', 'route'].includes(f.id)) : [];
@@ -1301,18 +1625,26 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
             </div>
 
             <div className="relative w-full gap-3 flex sm:w-auto">
-              {searchTypeOptions.length > 0 && (<div className="relative w-full sm:w-auto">
-                <select
-                  value={searchType}
-                  onChange={(e) => setSearchType(e.target.value)}
-                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
-                >
-                  {searchTypeOptions.map((option: { value: string; label: string }, index: number) => (
-                    <option key={option.value + index} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
-              </div>)}
+
+              {reportType === "php" && (
+                <div className="relative w-full sm:w-auto">
+                  <select
+                    value={phpReportType}
+                    onChange={(e) => setPhpReportType(e.target.value)}
+                    className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm"
+                  >
+                    <option value="1">Report 1</option>
+                    <option value="2">Report 2</option>
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"
+                  />
+                </div>
+              )}
+
+
+
 
               {reportByOptions.length > 0 && reportType === 'comparison' && (<div className="relative w-full sm:w-auto">
                 <select
@@ -1352,18 +1684,19 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
               </div>)}
 
-              {displayQuantityOptions.length > 0 && (<div className="relative w-full sm:w-auto">
-                <select
-                  value={displayQuantity}
-                  onChange={(e) => setDisplayQuantity(e.target.value)}
-                  className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
-                >
-                  {displayQuantityOptions.map((option: { value: string; label: string }, index: number) => (
-                    <option key={option.value + index} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
-              </div>)}
+              {reportType !== 'php' && displayQuantityOptions.length > 0 && (
+                <div className="relative w-full sm:w-auto">
+                  <select
+                    value={displayQuantity}
+                    onChange={(e) => setDisplayQuantity(e.target.value)}
+                    className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg appearance-none cursor-pointer text-sm w-full sm:w-auto"
+                  >
+                    {displayQuantityOptions.map((option: { value: string; label: string }, index: number) => (
+                      <option key={option.value + index} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                </div>)}
             </div>
           </div>
 

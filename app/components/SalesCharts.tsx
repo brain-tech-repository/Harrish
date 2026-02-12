@@ -16,7 +16,7 @@ interface ChartData {
   brand: { brand: string; sales: number }[];
 }
 
-export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder' | 'comparison';
+export type typeofReportType = 'sales' | 'customer' | 'item' | 'attendence' | 'poOrder' | 'comparison'|"php";
 
 interface SalesChartsProps {
   chartData?: ChartData;
