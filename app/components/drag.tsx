@@ -203,52 +203,51 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
     }
 
     // 🔥 2️⃣ PHP SPECIAL LOGIC
-   if (reportType === "php") {
+    if (reportType === "php") {
 
-  if (!startDate || !endDate) {
-    showSnackbar('Please select a date range before loading dashboard data', 'warning');
-    return;
-  }
+      if (!startDate || !endDate) {
+        showSnackbar('Please select a date range before loading dashboard data', 'warning');
+        return;
+      }
 
-  setIsLoadingDashboard(true);
-  setDashboardError(null);
+      setIsLoadingDashboard(true);
+      setDashboardError(null);
 
-  try {
+      try {
 
-    const payload = {
-      fromdate: startDate,
-      todate: endDate,
-      region_id: selectedChildItems['region']?.join(',') || "",
-      sub_region_id: selectedChildItems['sub-region']?.join(',') || "",
-      warehouse_id: selectedChildItems['warehouse']?.join(',') || "",
-      route_id: selectedChildItems['route']?.join(',') || "",
-      trading_center_id: selectedChildItems['trading']?.join(',') || "",
-      customer_id: selectedChildItems['customer']?.join(',') || "",
-      brand_id: selectedChildItems['matbrand']?.join(',') || "",
-      material_group_id: selectedChildItems['matgroup']?.join(',') || "",
-      material_id: selectedChildItems['material']?.join(',') || "",
-      report_type: String(phpReportType)
-    };
+        const payload = {
+          fromdate: startDate,
+          todate: endDate,
+          region_id: selectedChildItems['region']?.join(',') || "",
+          sub_region_id: selectedChildItems['sub-region']?.join(',') || "",
+          warehouse_id: selectedChildItems['warehouse']?.join(',') || "",
+          route_id: selectedChildItems['route']?.join(',') || "",
+          trading_center_id: selectedChildItems['trading']?.join(',') || "",
+          customer_id: selectedChildItems['customer']?.join(',') || "",
+          brand_id: selectedChildItems['matbrand']?.join(',') || "",
+          material_group_id: selectedChildItems['matgroup']?.join(',') || "",
+          material_id: selectedChildItems['material']?.join(',') || "",
+          report_type: String(phpReportType)
+        };
 
-    console.log("FINAL PHP PAYLOAD:", payload);
+        console.log("FINAL PHP PAYLOAD:", payload);
 
-    const response = await axios.post(
-      apiEndpoints.dashboard,
-      payload,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+        const response = await axios.post(
+          apiEndpoints.dashboard,
+          payload,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+        setDashboardData(response.data.Result);
 
-    setDashboardData(response.data);
+      } catch (error) {
+        console.error("PHP Dashboard error:", error);
+        showSnackbar("Failed to load dashboard data", "error");
+      } finally {
+        setIsLoadingDashboard(false);
+      }
 
-  } catch (error) {
-    console.error("PHP Dashboard error:", error);
-    showSnackbar("Failed to load dashboard data", "error");
-  } finally {
-    setIsLoadingDashboard(false);
-  }
-
-  return;
-}
+      return;
+    }
 
 
 
@@ -364,148 +363,148 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
   const fetchFiltersData = async (currentFilterId?: string, onDrop?: boolean) => {
     setFilterError(null);
 
- if (reportType === "php") {
-  try {
+    if (reportType === "php") {
+      try {
 
-    // 🔹 FIRST LOAD (Independent + Region)
-    if (!currentFilterId && availableFilters.length === 0) {
+        // 🔹 FIRST LOAD (Independent + Region)
+        if (!currentFilterId && availableFilters.length === 0) {
 
-      const [
-        regionRes,
-        brandRes,
-        groupRes,
-        materialRes
-      ] = await Promise.all([
-        fetch("http://165.227.64.72/mpldev/index.php/api/get_region_dashboard"),
-        fetch("http://165.227.64.72/mpldev/index.php/api/get_matbrands_dashboard"),
-        fetch("http://165.227.64.72/mpldev/index.php/api/get_matgroups_dashboard"),
-        fetch("http://165.227.64.72/mpldev/index.php/api/get_materials_dashboard")
-      ]);
+          const [
+            regionRes,
+            brandRes,
+            groupRes,
+            materialRes
+          ] = await Promise.all([
+            fetch("http://165.227.64.72/mpldev/index.php/api/get_region_dashboard"),
+            fetch("http://165.227.64.72/mpldev/index.php/api/get_matbrands_dashboard"),
+            fetch("http://165.227.64.72/mpldev/index.php/api/get_matgroups_dashboard"),
+            fetch("http://165.227.64.72/mpldev/index.php/api/get_materials_dashboard")
+          ]);
 
-      const regionData = (await regionRes.json())?.Result || [];
-      const brandData = (await brandRes.json())?.Result || [];
-      const groupData = (await groupRes.json())?.Result || [];
-      const materialData = (await materialRes.json())?.Result || [];
+          const regionData = (await regionRes.json())?.Result || [];
+          const brandData = (await brandRes.json())?.Result || [];
+          const groupData = (await groupRes.json())?.Result || [];
+          const materialData = (await materialRes.json())?.Result || [];
 
-      setAvailableFilters([
-        {
-          id: "region",
-          name: "Region",
-          icon: "mingcute:location-line",
-          childData: regionData.map((r: any) => ({
-            id: String(r.id),
-            name: r.region_name
-          }))
-        },
-        {
-          id: "matbrand",
-          name: "Material Brand",
-          icon: filterMetadata["matbrand"]?.icon || "mdi:tag",
-          childData: brandData.map((b: any) => ({
-            id: String(b.id),
-            name: b.brand_name
-          }))
-        },
-        {
-          id: "matgroup",
-          name: "Material Group",
-          icon: filterMetadata["matgroup"]?.icon || "mdi:shape",
-          childData: groupData.map((g: any) => ({
-            id: String(g.id),
-            name: g.category_name
-          }))
-        },
-        {
-          id: "material",
-          name: "Material",
-          icon: filterMetadata["material"]?.icon || "mdi:package-variant",
-          childData: materialData.map((m: any) => ({
-            id: String(m.id),
-            name: m.material_name
-          }))
+          setAvailableFilters([
+            {
+              id: "region",
+              name: "Region",
+              icon: "mingcute:location-line",
+              childData: regionData.map((r: any) => ({
+                id: String(r.id),
+                name: r.region_name
+              }))
+            },
+            {
+              id: "matbrand",
+              name: "Material Brand",
+              icon: filterMetadata["matbrand"]?.icon || "mdi:tag",
+              childData: brandData.map((b: any) => ({
+                id: String(b.id),
+                name: b.brand_name
+              }))
+            },
+            {
+              id: "matgroup",
+              name: "Material Group",
+              icon: filterMetadata["matgroup"]?.icon || "mdi:shape",
+              childData: groupData.map((g: any) => ({
+                id: String(g.id),
+                name: g.category_name
+              }))
+            },
+            {
+              id: "material",
+              name: "Material",
+              icon: filterMetadata["material"]?.icon || "mdi:package-variant",
+              childData: materialData.map((m: any) => ({
+                id: String(m.id),
+                name: m.material_name
+              }))
+            }
+          ]);
+
+          return;
         }
-      ]);
 
-      return;
-    }
+        // 🔹 CASCADE ONLY FOR REGION HIERARCHY
+        if (!currentFilterId) return;
 
-    // 🔹 CASCADE ONLY FOR REGION HIERARCHY
-    if (!currentFilterId) return;
+        const selectedIds = selectedChildItems[currentFilterId]?.join(",");
+        if (!selectedIds) return;
 
-    const selectedIds = selectedChildItems[currentFilterId]?.join(",");
-    if (!selectedIds) return;
+        const apiMap: Record<string, {
+          endpoint: string;
+          nextId: string;
+          label: string;
+          field: string;
+        }> = {
+          region: {
+            endpoint: "get_sub_region_dashboard",
+            nextId: "sub-region",
+            label: "Sub Region",
+            field: "sub_region_name"
+          },
+          "sub-region": {
+            endpoint: "get_warehouse_dashboard",
+            nextId: "warehouse",
+            label: "Warehouse",
+            field: "warehouse_name"
+          },
+          warehouse: {
+            endpoint: "get_route_dashboard",
+            nextId: "route",
+            label: "Route",
+            field: "route_name"
+          },
+          route: {
+            endpoint: "get_trading_dashboard",
+            nextId: "trading",
+            label: "Trading",
+            field: "trading_name"
+          },
+          trading: {
+            endpoint: "get_customer_dashboard",
+            nextId: "customer",
+            label: "Customer",
+            field: "customer_name"
+          }
+        };
 
-    const apiMap: Record<string, {
-      endpoint: string;
-      nextId: string;
-      label: string;
-      field: string;
-    }> = {
-      region: {
-        endpoint: "get_sub_region_dashboard",
-        nextId: "sub-region",
-        label: "Sub Region",
-        field: "sub_region_name"
-      },
-      "sub-region": {
-        endpoint: "get_warehouse_dashboard",
-        nextId: "warehouse",
-        label: "Warehouse",
-        field: "warehouse_name"
-      },
-      warehouse: {
-        endpoint: "get_route_dashboard",
-        nextId: "route",
-        label: "Route",
-        field: "route_name"
-      },
-      route: {
-        endpoint: "get_trading_dashboard",
-        nextId: "trading",
-        label: "Trading",
-        field: "trading_name"
-      },
-      trading: {
-        endpoint: "get_customer_dashboard",
-        nextId: "customer",
-        label: "Customer",
-        field: "customer_name"
+        const config = apiMap[currentFilterId];
+        if (!config) return;
+
+        const response = await fetch(
+          `http://165.227.64.72/mpldev/index.php/api/${config.endpoint}/${selectedIds}`
+        );
+
+        const json = await response.json();
+        const data = json?.Result || [];
+
+        setAvailableFilters(prev => {
+          const withoutNext = prev.filter(f => f.id !== config.nextId);
+
+          return [
+            ...withoutNext,
+            {
+              id: config.nextId,
+              name: config.label,
+              icon: filterMetadata[config.nextId]?.icon || "mdi:circle",
+              childData: data.map((item: any) => ({
+                id: String(item.id),
+                name: item[config.field]
+              }))
+            }
+          ];
+        });
+
+        return;
+
+      } catch (error) {
+        console.error("PHP filter fetch error:", error);
       }
-    };
-
-    const config = apiMap[currentFilterId];
-    if (!config) return;
-
-    const response = await fetch(
-      `http://165.227.64.72/mpldev/index.php/api/${config.endpoint}/${selectedIds}`
-    );
-
-    const json = await response.json();
-    const data = json?.Result || [];
-
-    setAvailableFilters(prev => {
-      const withoutNext = prev.filter(f => f.id !== config.nextId);
-
-      return [
-        ...withoutNext,
-        {
-          id: config.nextId,
-          name: config.label,
-          icon: filterMetadata[config.nextId]?.icon || "mdi:circle",
-          childData: data.map((item: any) => ({
-            id: String(item.id),
-            name: item[config.field]
-          }))
-        }
-      ];
-    });
-
-    return;
-
-  } catch (error) {
-    console.error("PHP filter fetch error:", error);
-  }
-}
+    }
 
 
 
@@ -716,37 +715,34 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
   // Fetch Table Data function
   const handleTableView = async (page?: number) => {
-    if (reportType === "php") {
+    console.log("TABLE CLICKED");
+    console.log("reportType:", reportType);
+    console.log("selectedChildItems:", selectedChildItems);
 
-
+    if (reportType?.toLowerCase() === "php") {
 
       setIsLoadingTable(true);
+
       try {
-        const payload: any = {
-          from_date: startDate,
-          to_date: endDate,
-          report_type: phpReportType // 👈 now "1" or "2"
+
+        const payload = {
+          fromdate: startDate,
+          todate: endDate,
+
+          region_id: selectedChildItems['region']?.join(',') || "",
+          sub_region_id: selectedChildItems['sub-region']?.join(',') || "",
+          warehouse_id: selectedChildItems['warehouse']?.join(',') || "",
+          route_id: selectedChildItems['route']?.join(',') || "",
+          trading_center_id: selectedChildItems['trading']?.join(',') || "",
+          customer_id: selectedChildItems['customer']?.join(',') || "",
+          brand_id: selectedChildItems['matbrand']?.join(',') || "",
+          material_group_id: selectedChildItems['matgroup']?.join(',') || "",
+          material_id: selectedChildItems['material']?.join(',') || "",
+
+          report_type: String(phpReportType)
         };
 
-
-
-        if (selectedChildItems['region']?.length)
-          payload.region_ids = selectedChildItems['region'].map(id => parseInt(id));
-
-        if (selectedChildItems['sub-region']?.length)
-          payload.sub_region_ids = selectedChildItems['sub-region'].map(id => parseInt(id));
-
-        if (selectedChildItems['warehouse']?.length)
-          payload.warehouse_ids = selectedChildItems['warehouse'].map(id => parseInt(id));
-
-        if (selectedChildItems['route']?.length)
-          payload.route_ids = selectedChildItems['route'].map(id => parseInt(id));
-
-        if (selectedChildItems['trading']?.length)
-          payload.trading_ids = selectedChildItems['trading'].map(id => parseInt(id));
-
-        if (selectedChildItems['customer']?.length)
-          payload.customer_ids = selectedChildItems['customer'].map(id => parseInt(id));
+        console.log("✅ FINAL PHP TABLE PAYLOAD:", payload);
 
         const response = await fetch(apiEndpoints.table, {
           method: "POST",
@@ -756,22 +752,46 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json();
+        const raw = await response.json();
+        console.log("📥 RAW PHP TABLE RESPONSE:", raw);
 
-        // normalize response format
-        if (Array.isArray(data)) {
-          setTableData({ data });
-        } else {
-          setTableData(data);
+        let formattedData = { data: [] };
+
+        if (raw?.API_Status === 1) {
+
+          // 🔥 correct path for PHP
+          if (raw?.Result?.details_wiase_data &&
+            Array.isArray(raw.Result.details_wiase_data)) {
+
+            formattedData = {
+              data: raw.Result.details_wiase_data
+            };
+          }
+
+          // fallback
+          else if (Array.isArray(raw?.Result)) {
+            formattedData = { data: raw.Result };
+          }
+
+         
+
         }
 
+        console.log("✅ FORMATTED TABLE DATA:", formattedData);
+
+        setTableData(formattedData);
+
+
+
       } catch (error) {
-        console.error("PHP table fetch failed", error);
+        console.error("❌ PHP TABLE ERROR:", error);
       } finally {
         setIsLoadingTable(false);
       }
+
       return;
     }
+
 
     if (droppedFilters.length === 0 || Object.values(selectedChildItems).every(items => items.length === 0)) {
       showSnackbar('Please drag and drop at least one filter with selections to view table data', 'warning');
@@ -2041,6 +2061,20 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total Items</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Distributor</th>
                                   </>
+                                ) : reportType === 'php' ? (
+                                  <>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Invoice Date</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Customer Code</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Customer Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Route</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Warehouse</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Trading</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Net Amount</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">VAT</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Total</th>
+                                  </>
+
                                 ) : reportType === 'comparison' ? (
                                   dynamicColumn.columns.map((col: any, idx: number) => (
                                     <th key={idx} className="px-4 py-3 text-left text-sm font-semibold text-gray-700" style={col.width ? { width: Number(col.width), minWidth: Number(col.width) } : undefined}>{col.label}</th>
@@ -2093,6 +2127,58 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.unique_item_count || '-'}</td>
                                       <td className="px-4 py-3 text-sm text-gray-700">{row.warehouse_name || '-'}</td>
                                     </>
+
+                                  ) : reportType === 'php' ? (
+                                    <>
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.invoice_number || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.invoice_date || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.customer_code || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.customer_name || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.route_name || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.warehouse_name || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.trading_name || '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.net_amount
+                                          ? `${row.currency_notation} ${toInternationalNumber(row.net_amount, { minimumFractionDigits: 0 })}`
+                                          : '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm text-gray-700">
+                                        {row.vat
+                                          ? `${row.currency_notation} ${toInternationalNumber(row.vat, { minimumFractionDigits: 0 })}`
+                                          : '-'}
+                                      </td>
+
+                                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                                        {row.total
+                                          ? `${row.currency_notation} ${toInternationalNumber(row.total, { minimumFractionDigits: 0 })}`
+                                          : '-'}
+                                      </td>
+                                    </>
+
+
+
                                   ) : reportType === 'comparison' ? (
                                     dynamicColumn.columns.map((col: any, idx: number) => {
                                       let value = row[col.field];
