@@ -12,6 +12,7 @@ import { usePagePermissions } from '@/app/(private)/utils/usePagePermissions';
 import { useLoading } from '../services/loadingContext';
 import Loading from './Loading'
 import toInternationalNumber from '../(private)/utils/formatNumber';
+import PhpLineChart from './PhpLineChart';
 
 // Define TypeScript interfaces
 interface FilterChildItem {
@@ -237,7 +238,22 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
           payload,
           { headers: { 'Content-Type': 'application/json' } }
         );
-        setDashboardData(response.data.Result);
+        const result = response.data?.Result;
+
+        let formattedData: any[] = [];
+
+        if (Array.isArray(result)) {
+          formattedData = result;
+        }
+        else if (Array.isArray(result?.details_wiase_data)) {
+          formattedData = result.details_wiase_data;
+        }
+        else if (Array.isArray(result?.headers_wiase_data)) {
+          formattedData = result.headers_wiase_data;
+        }
+
+        setDashboardData(formattedData);
+
 
       } catch (error) {
         console.error("PHP Dashboard error:", error);
@@ -759,23 +775,29 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
 
         if (raw?.API_Status === 1) {
 
-          // 🔥 correct path for PHP
-          if (raw?.Result?.details_wiase_data &&
-            Array.isArray(raw.Result.details_wiase_data)) {
-
+          // ✅ TYPE 1 (existing structure)
+          if (Array.isArray(raw?.Result?.details_wiase_data)) {
             formattedData = {
               data: raw.Result.details_wiase_data
             };
           }
 
-          // fallback
-          else if (Array.isArray(raw?.Result)) {
-            formattedData = { data: raw.Result };
+          // ✅ TYPE 2 (NEW structure example – update field name as per API)
+          else if (Array.isArray(raw?.Result?.headers_wiase_data)) {
+            formattedData = {
+              data: raw.Result.headers_wiase_data
+            };
           }
 
-         
+          // ✅ Direct Result Array fallback
+          else if (Array.isArray(raw?.Result)) {
+            formattedData = {
+              data: raw.Result
+            };
+          }
 
         }
+
 
         console.log("✅ FORMATTED TABLE DATA:", formattedData);
 
@@ -1994,16 +2016,31 @@ const SalesReportDashboard = (props: SalesReportDashboardProps) => {
             </div>
 
             {/* Charts Grid or Table View */}
-            {viewType === 'graph' ? (
-              <SalesCharts
-                chartData={chartData}
-                dashboardData={dashboardData}
-                isLoading={isLoadingDashboard}
-                error={dashboardError}
-                searchType={searchType}
-                reportType={reportType}
-              />
-            ) : viewType === 'table' ? (
+            {/* Charts Grid or Table View */}
+            {viewType === "graph" ? (
+
+              reportType === "php" ? (
+
+                <PhpLineChart
+                  data={dashboardData}
+                  isLoading={isLoadingDashboard}
+                />
+
+              ) : (
+
+                <SalesCharts
+                  chartData={chartData}
+                  dashboardData={dashboardData}
+                  isLoading={isLoadingDashboard}
+                  error={dashboardError}
+                  searchType={searchType}
+                  reportType={reportType}
+                />
+
+              )
+
+            ) : viewType === "table" ? (
+
               <div className="mt-4">
                 {isLoadingTable ? (
                   <div className="flex flex-col justify-center items-center py-20 mt-5 h-80">
